@@ -2,11 +2,11 @@
 
 ## Окружение
 
-Клонируйте закрытый `Junduge/TI-REBORN` после принятия приглашения. Требуется Python 3.11+,
+После переноса в организацию клонируйте свой закрытый fork `ilyaplot/TI-REBORN` после принятия приглашения Read. Создание fork: [порядок доступа](ACCESS_AND_RELEASE.md). Требуется Python 3.11+,
 рекомендуемая версия CI — 3.12. Команды выполняются из корня репозитория.
 
 ```powershell
-git clone https://github.com/Junduge/TI-REBORN.git
+git clone https://github.com/ilyaplot/TI-REBORN.git
 cd TI-REBORN
 python -m venv .venv
 .venv\Scripts\Activate.ps1
@@ -49,4 +49,4 @@ python -m server --config config/development.local.toml
 3. Зафиксировать воспроизводимый пример и ожидаемое поведение нескольких аккаунтов.
 4. Внести небольшой патч. Изменение wire-format согласовать отдельно.
 5. Выполнить базовые и тематические тесты; приложить результат в PR.
-6. Запросить review у Junduge. Деплой выполняет владелец после review и резервной копии.
+6. Отправить pull request из своего fork в `TI-Reborn/TI-REBORN` и запросить review у Junduge. Деплой выполняет владелец после review и резервной копии.
