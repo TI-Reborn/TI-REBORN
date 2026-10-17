@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "action_points_per_changed_actor": 2,
+  "maximum_staged_actions": 128,
+  "maximum_staged_actors": 12,
+  "recent_confirmations_per_owner": 32,
+  "notes": "Manual p40 charges 2 AP once per inventory confirmation; AP belong to each mercenary. Limits are explicit emulator resource policy. Staging is bound to the active owner turn and is canceled on reconnect, turn end, escape or incompatible inventory mutation. F6/v1 is a new emulator client extension, not a recovered historical packet."
+}

@@ -1,0 +1,7 @@
+{
+  "credits_per_hp": 2,
+  "seconds_per_hp": 10,
+  "status": "USER_APPROVED_REGEN_EXISTING_LOCAL_TARIFF",
+  "sources": ["base/english.lng se05d: accelerated healing outside battle", "base/services.cfg service5: multipliers2/3", "silver.dll 8C8B30 and8C8DB4: missing HP multiplied by server tariff", "https://ti.ggeek.ru/files/TIO_manual.pdf page90: hospital or normal recovery"],
+  "limitations": "Original base tariff and regeneration speed have not been recovered. Two credits/HP retains existing emulator policy; one HP/10s including offline is the user-approved configurable provisional rate. Offline recovery enabled; no premium accelerator purchase implemented."
+}

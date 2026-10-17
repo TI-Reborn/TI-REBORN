@@ -1,0 +1,117 @@
+<?xml version='1.0' encoding='utf-8'?>
+<skills>
+  <skill id="1" name="Healtly">
+    <table>5 10 15 20</table>
+    <value key="effectText" val="m186" />
+  </skill>
+  <skill id="2" name="Strong Back">
+    <table>80 160 240 320</table>
+    <value key="effectText" val="m188" />
+  </skill>
+  <skill id="4" name="More Criticals">
+    <table>1 2 3 4</table>
+    <value key="effectText" val="m187" />
+  </skill>
+  <skill id="6" name="Stone Skin">
+    <table>15 28 39 48</table>
+    <value key="effectText" val="m189" />
+  </skill>
+  <skill id="10" name="Melee Master (Level 1)">
+    <table>5 10</table>
+    <value key="effectText" val="nn15" />
+  </skill>
+  <skill id="12" name="Dog Barking">
+    <table>4 5 6 7</table>
+    <value key="effectText" val="m415" />
+    <value key="castRange" val="0" />
+    <value key="apConsume" val="5" />
+    <value key="reuseTurns" val="2" />
+    <value key="operateType" val="OP_ACTIVE" />
+    <value key="target" val="target_self" />
+  </skill>
+  <skill id="14" name="Dog Opener">
+    <table>1</table>
+    <value key="effectText" val="p14n" />
+  </skill>
+  <skill id="15" name="Dog Defence">
+    <table>52 67 83 99</table>
+    <value key="effectText" val="p15e" />
+  </skill>
+  <skill id="16" name="Dog Health">
+    <table>5 10 15 20</table>
+    <value key="effectText" val="m186" />
+  </skill>
+  <skill id="17" name="Light Weapons skill">
+    <table>5 10 15</table>
+    <value key="effectText" val="m198" />
+  </skill>
+  <skill id="18" name="Dog accuracy">
+    <table>2 5 7 10</table>
+    <value key="effectText" val="m199" />
+  </skill>
+  <skill id="19" name="Dog Closer">
+    <table>1</table>
+    <value key="effectText" val="p19n" />
+  </skill>
+  <skill id="20" name="Freak Healtly 1">
+    <table>20 28 36 44</table>
+    <value key="effectText" val="m186" />
+  </skill>
+  <skill id="21" name="Freak Strong Back 1">
+    <table>60 110 160 210</table>
+    <value key="effectText" val="m188" />
+  </skill>
+  <skill id="22" name="Freak Slash">
+    <table>125 145 160 170</table>
+    <value key="effectText" val="m394" />
+    <value key="castRange" val="1" />
+    <value key="apConsume" val="7" />
+    <value key="reuseTurns" val="3" />
+    <value key="operateType" val="OP_ACTIVE" />
+    <value key="target" val="target_one" />
+  </skill>
+  <skill id="23" name="Dog Cure">
+    <table>12 20 27 35</table>
+    <value key="effectText" val="m395" />
+    <value key="castRange" val="0" />
+    <value key="apConsume" val="7" />
+    <value key="reuseTurns" val="3" />
+    <value key="operateType" val="OP_ACTIVE" />
+    <value key="target" val="target_self" />
+  </skill>
+  <skill id="24" name="Freak Base Defence 1">
+    <table>52 67 83 99</table>
+    <value key="effectText" val="m370" />
+  </skill>
+  <skill id="26" name="Dog Deathbite">
+    <table>80 100 120 140</table>
+    <value key="effectText" val="m414" />
+    <value key="castRange" val="1" />
+    <value key="apConsume" val="8" />
+    <value key="reuseTurns" val="2" />
+    <value key="operateType" val="OP_ACTIVE" />
+    <value key="target" val="target_one" />
+  </skill>
+  <skill id="27" name="Sub Grenade">
+    <table>90</table>
+    <value key="effectText" val="p27d" />
+    <value key="castRange" val="10" />
+    <value key="apConsume" val="6" />
+    <value key="reuseTurns" val="0" />
+    <value key="MinRange" val="4" />
+    <value key="SplashRange" val="2" />
+    <value key="hide" val="1" />
+    <value key="soundnodelay" val="0" />
+    <value key="operateType" val="OP_ACTIVE" />
+    <value key="target" val="target_area" />
+  </skill>
+  <skill id="28" name="Radio Help">
+    <table>1</table>
+    <value key="effectText" val="skill_help_desc" />
+    <value key="operateType" val="OP_ACTIVE" />
+    <value key="target" val="target_self" />
+    <value key="apConsume" val="0" />
+    <value key="castRange" val="0" />
+    <value key="reuseTurns" val="0" />
+  </skill>
+</skills>

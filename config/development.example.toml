@@ -1,0 +1,9 @@
+# Copy to development.local.toml; never put hosted data here.
+bind_address = "127.0.0.1"
+advertised_address = "127.0.0.1"
+game_port = 28512
+session_port = 28513
+data_directory = "../data/development"
+log_level = "INFO"
+multi_account = true
+contracts_enabled = true

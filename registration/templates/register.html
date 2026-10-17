@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>TIO — Регистрация</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><main><p class="brand">TOTAL INFLUENCE · PRIVATE SERVER</p><h1>Создать аккаунт</h1><p>Зарегистрируйтесь и вернитесь в игру.</p>
+<form method="post" action="/register/">
+<input type="hidden" name="csrf" value="{{ token }}">
+<label>Логин<input name="login" autocomplete="username" required minlength="3" maxlength="32" pattern="[a-z0-9_]{3,32}"></label><small>3–32 символа: строчные латинские буквы, цифры, _</small>
+<p>Имя и пол персонажа вы выберете в игре после первого входа.</p>
+<label>Пароль<input type="password" name="password" autocomplete="new-password" required minlength="12" maxlength="64" pattern="[!-~]{12,64}"></label><small>12–64 латинских символа, цифры или знаки, без пробелов.</small>
+<label>Повторите пароль<input type="password" name="confirm" autocomplete="new-password" required minlength="12" maxlength="64"></label>
+<button type="submit">Зарегистрироваться</button></form><p class="note">Для каждого игрока нужен отдельный аккаунт.</p></main></body></html>

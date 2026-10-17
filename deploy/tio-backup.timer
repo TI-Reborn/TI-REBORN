@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily TIO backup at 03:00 UTC
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 UTC
+Persistent=true
+RandomizedDelaySec=5min
+Unit=tio-backup.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,49 @@
+{
+  "policy": "Original manual pp32-33: paid bids increase price/time; last bidder wins; manual/automatic lots; prepaid bot budget, last-second random eligible bot and refund of unused bids; prize arrives by mail. Fees, steps, duration, catalogue, bounds and replenishment below are explicit server policy; original numeric tariffs are unknown. Native signed Delphi Integer limits prices and bot thresholds to 2147483647, and duration/extension seconds to 2147483; bids cannot extend remaining time above that limit. Final lot price is paid once when the winner buys it in the cabinet. Unclaimed wins expire seven days after authoritative closure, as stated by the original claim GUI; seven days is server policy, not a recovered manual tariff. Expiry creates a durable event without charging the undebited final price or refunding spent bids; unused bot holds were already refunded at closure.",
+  "maximum_bot_bids": 10000,
+  "maximum_rows": 200,
+  "maximum_live_lots": 200,
+  "claim_expires_seconds": 604800,
+  "history_page_rows": 100,
+  "offers": [
+    {
+      "key": "bandages-auto",
+      "template": 9,
+      "count": 5,
+      "enhance": 0,
+      "currency": "credits",
+      "start_price": 100,
+      "bid_fee": 5,
+      "price_step": 1,
+      "duration": 300,
+      "extension": 10,
+      "automatic": true
+    },
+    {
+      "key": "ammo-manual",
+      "template": 3,
+      "count": 50,
+      "enhance": 0,
+      "currency": "credits",
+      "start_price": 100,
+      "bid_fee": 5,
+      "price_step": 1,
+      "duration": 300,
+      "extension": 10,
+      "automatic": false
+    },
+    {
+      "key": "credits-armour-auto",
+      "template": 301,
+      "count": 1,
+      "enhance": 10,
+      "currency": "credits",
+      "start_price": 100,
+      "bid_fee": 100,
+      "price_step": 100,
+      "duration": 600,
+      "extension": 10,
+      "automatic": true
+    }
+  ]
+}

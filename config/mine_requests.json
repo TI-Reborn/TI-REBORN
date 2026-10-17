@@ -1,0 +1,6 @@
+{
+  "source": "Original TIO manual mining help; silver.dll B014/B019/B02C and typed B018. evidence/mine_help_native.json",
+  "per_city_role_limit": 64,
+  "total_limit": 256,
+  "policy_note": "Queue size limits are explicit server policy. FIFO within a city and role; defense waits for miner help and a second raider waits for the first raider help. No payment or holds. Restart discards pending requests; reconnect does not restore them."
+}

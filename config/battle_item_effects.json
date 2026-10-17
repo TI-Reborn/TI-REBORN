@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "sources": ["Original manual printed pp39-40,63-64,79-82", "Installed legacy items.cfg normalized in evidence/items_diagnostic.xml"],
+  "policy": {
+    "duration_clock": "affected_actor_completed_turns",
+    "area_duration_clock": "source_owner_completed_turns_cleanup_if_owner_eliminated",
+    "smoke_turns": 3,
+    "smoke_geometry": "opaque_disk_blocks_sight_and_direct_fire",
+    "recon_turns": 1,
+    "recon_visibility": "coalition_disk_with_center_los",
+    "night_vision_toggle": "item_action33_unspecified_option",
+    "night_vision_auto_disable": "no_item_or_not_enough_ap",
+    "night_vision_armor": "20_while_active",
+    "dark_sight_penalty": 3,
+    "suicide_damage": "uniform_135_160_before_armor_no_falloff_self_always_dies",
+    "booster_recipient": "selected_saved_fighter",
+    "booster_stacking": "replace_same_family_reject_identical_active",
+    "experience_blocker_priority": "block_over_trainer",
+    "booster_application": "freeze_at_damage_or_kill_event"
+  },
+  "bindings": {"smoke":318,"flash":320,"binocular":24,"suicide":334,"champagne":33,"vision":35,"flare":5001,"night_vision":5002},
+  "items": {
+    "318": {"kind":"smoke","ap":7,"radius":3,"range":10,"spread":3,"accuracy":60,"turns":3},
+    "320": {"kind":"flash","ap":6,"radius":3,"range":10,"spread":2,"accuracy":60,"turns":1,"sight_cap":4},
+    "24": {"kind":"binocular","ap":5,"radius":5,"wear":5,"turns":1},
+    "334": {"kind":"suicide","ap":4,"radius":4,"damage_base":135,"damage_random":25},
+    "33": {"kind":"champagne","ap":2,"heal":24},
+    "35": {"kind":"vision","ap":10,"sight_bonus":1,"turns":10,"cooldown":15},
+    "5001": {"kind":"flare","ap":5,"radius":3,"range":10,"spread":2,"accuracy":60,"turns":3,"gold":1},
+    "5002": {"kind":"night_vision","ap":3,"sight_bonus":2,"armor":20,"level":4,"wear":3,"gold":10},
+    "5003": {"kind":"booster","family":"trainer","value":30,"seconds":3600,"level":1,"gold":5},
+    "5004": {"kind":"booster","family":"trainer","value":50,"seconds":3600,"level":1,"gold":8},
+    "5005": {"kind":"booster","family":"trainer","value":100,"seconds":3600,"level":1,"gold":16},
+    "5006": {"kind":"booster","family":"advisor","value":5,"seconds":3600,"level":6,"gold":8},
+    "5007": {"kind":"booster","family":"advisor","value":10,"seconds":3600,"level":11,"gold":15},
+    "5008": {"kind":"booster","family":"advisor","value":20,"seconds":3600,"level":16,"gold":30},
+    "5009": {"kind":"booster","family":"block_xp","value":100,"seconds":3600,"level":4,"gold":3},
+    "5010": {"kind":"booster","family":"block_xp","value":100,"seconds":7200,"level":4,"gold":5},
+    "5011": {"kind":"booster","family":"block_xp","value":100,"seconds":28800,"level":4,"gold":8}
+  }
+}

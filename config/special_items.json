@@ -1,0 +1,19 @@
+{
+  "policy": "Explicit emulator balance for incomplete legacy special items. IDs, ranges, AP and source damage intervals are original; missing Land Mine damage, persistent burns, charges and prices below are server policy, not recovered original formulas.",
+  "mines": {
+    "321": {"damage_base": 80, "damage_random": 10, "radius": 1, "ap": 8, "credits": 180},
+    "325": {"damage_base": 80, "damage_random": 10, "radius": 1, "ap": 10, "credits": 180}
+  },
+  "burns": {
+    "319": {"damage": 10, "turns": 3},
+    "324": {"damage": 10, "turns": 2}
+  },
+  "mine_limit_per_battle": 128,
+  "mines_trigger_all_sides": true,
+  "mine_visibility": "Planting side only; hostile mines are disclosed by the explosion, not ordinary sight.",
+  "flamethrower_fuel": "Native item durability is the reservoir: a 9-AP burst requires at least 9 durability and consumes 9 through normal weapon wear (existing premium half-wear applies); repair replenishes it. No invented ammunition template ID.",
+  "shop_prices": {"319": 120, "323": 3200, "324": 3000},
+  "grenade_launcher_ammo": 317,
+  "grenade_launcher_ammo_count": 1,
+  "burn_policy": "Successful Molotov/flamethrower hits apply one non-stacking burn per victim; 10 raw damage once at each subsequent actor turn, mitigated by normal armor, lasting 3/2 victim turns. Leaving/joining/reconnecting does not reset generations. Stronger/longer effects refresh, never multiply."
+}

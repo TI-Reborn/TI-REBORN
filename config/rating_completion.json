@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "team_players": 4,
+  "minimum_level": 4,
+  "maximum_level": 20,
+  "maximum_soldiers": 1,
+  "calendar": "UTC calendar month",
+  "repeat_window_seconds": 86400,
+  "maximum_rated_opposing_pairs": 3,
+  "rating_model": "Gaussian two-team model; a fixed four-account squad is one rating entity",
+  "draw_policy": "Keep Gaussian rating; count the draw",
+  "season_rewards": [],
+  "historical_season_schedule_confirmed": false,
+  "historical_season_rewards_confirmed": false,
+  "qualification": "Eight distinct authenticated human accounts, no AI, both sides cause authoritative opposing damage",
+  "wall_rating_is_server_policy": true,
+  "ranked_soldiers_minimum": 1,
+  "ranked_soldiers_maximum": 4,
+  "ranked_four_soldier_turn_seconds": 120,
+  "historical_four_soldier_turn_duration_confirmed": false,
+  "ranked_matching": "Equal soldier count and current classic level band; saved equipment only"
+}

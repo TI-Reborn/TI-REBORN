@@ -1,0 +1,11 @@
+{
+  "status": "User-authorized provisional progression; damage factor recovered from client",
+  "maximum": 200,
+  "initial": 35,
+  "level_one_cap": 75,
+  "cap_per_level": 5,
+  "human_level_one_total": 285,
+  "total_per_level": 20,
+  "hit_gain_per_ap": 0.04,
+  "miss_multiplier": 0.35
+}

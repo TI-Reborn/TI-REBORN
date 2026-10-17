@@ -1,0 +1,21 @@
+server {
+    listen 80;
+    server_name 185.184.42.88;
+    location /.well-known/acme-challenge/ { root /var/www/tio-acme; }
+    location / { return 301 https://185.184.42.88$request_uri; }
+}
+server {
+    listen 443 ssl;
+    server_name 185.184.42.88;
+    ssl_certificate /etc/letsencrypt/live/185.184.42.88/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/185.184.42.88/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    client_max_body_size 4k;
+    access_log off;
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host 185.184.42.88;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $remote_addr;
+    }
+}

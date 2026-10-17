@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "source": "Original manual printed11-13,26,50; installed towns.cfg/ground.xml/maps; no historical coordinates claim for extensions",
+  "coefficients": {
+    "period_seconds": 3600,
+    "dynamic_towns": [2,5,8,18],
+    "rotation": ["4/5","1","6/5","1"],
+    "emulator_policy": "Balanced UTC hourly rotation of XP/influence/profit around manual1/1/4; immutable match snapshot at admission. Historical fluctuation algorithm is unavailable.",
+    "fixed": {"3":{"experience":"1","influence":"0","profit":"1","kill_bonus":0},"4":{"experience":"3/4","influence":"0","profit":"1","kill_bonus":0}}
+  },
+  "ranking": {"limit":100,"sorts":["rank","rating","wins","damage","experience"],"tie":"public casefolded character name, then saved owner key","experience":"Sum current owned roster cumulative XP; dismissed soldiers do not contribute","rank":"Current PublicProfile top3/3 + remaining/15 signed squad points; negative points all /3"},
+  "prison": {"max_sentence_seconds":31536000,"max_online_heartbeat_gap":60,"emulator_policy":"Trusted moderation sentences add online seconds once per operation. Online heartbeat charges only one uninterrupted authenticated session; gaps over60s and reconnect never charge offline time. Completion restores prior eligible location, else Reservation."},
+  "locations": [
+    {"id":4,"name":"Military Outpost","kind":"town","bounds":[225,-437,305,-357],"levels":[4,20],"background":"loc_outpost","profile":"military_zone","carry_items":false,"max_upgrade":0,"arena":true,"capture":false,"prison_only":false,"source":"Exact original towns.cfg ID/bounds/background; manual level4-20 and no inventory admission"},
+    {"id":7,"name":"Military Outpost Base","kind":"base","bounds":[315,-410,335,-390],"levels":[4,20],"background":"loc_outpost","profile":"assault","carry_items":false,"max_upgrade":3,"arena":false,"capture":true,"prison_only":false,"assault_map":"assault\\mo.xml","original_bounds":[175,-346,195,-326],"source":"Original ID7 and assault map; new collision-free emulator relocation, original rectangle belongs to active Mine14"},
+    {"id":10,"name":"Prison","kind":"town","bounds":[-330,59,-304,85],"levels":[1,20],"background":"loc_prison","profile":null,"carry_items":false,"max_upgrade":0,"arena":false,"capture":false,"prison_only":true,"source":"Exact original towns.cfg ID/bounds/background; manual online sentence and no battles"},
+    {"id":18,"name":"Detroit","kind":"town","bounds":[-150,50,-90,110],"levels":[4,20],"background":"loc_detroit","profile":"detroit","carry_items":true,"max_upgrade":25,"arena":true,"capture":false,"prison_only":false,"ground_brush":6,"maps":["junktown/detroit_small_01.s","junktown/detroit_large_02.s"],"source":"New unused emulator ID/coordinates; original Detroit background/whole TI SET maps and junk ground6; manual level4-20/equipment/+10 rank rules"},
+    {"id":19,"name":"Training Base 4-6","kind":"base","bounds":[-240,-320,-220,-300],"levels":[4,6],"background":"loc_outpost","profile":"assault_training","carry_items":true,"max_upgrade":10,"arena":false,"capture":false,"prison_only":false,"assault_map":"assault\\mo.xml","source":"New unused emulator ID/coordinates; supported base menu and original assault map. Manual noncapturable training bases; upgrade bands follow current assault ruleset."},
+    {"id":20,"name":"Training Base 7-10","kind":"base","bounds":[-240,-420,-220,-400],"levels":[7,10],"background":"loc_outpost","profile":"assault_training","carry_items":true,"max_upgrade":15,"arena":false,"capture":false,"prison_only":false,"assault_map":"assault\\mo.xml","source":"New unused emulator ID/coordinates; supported base menu and original assault map. Manual noncapturable training bases; upgrade bands follow current assault ruleset."},
+    {"id":21,"name":"Training Base 11-15","kind":"base","bounds":[-245,-370,-225,-350],"levels":[11,15],"background":"loc_forest","profile":"assault_training","carry_items":true,"max_upgrade":20,"arena":false,"capture":false,"prison_only":false,"assault_map":"assault\\denver.xml","source":"New unused emulator ID/coordinates; supported base menu and original assault map. Manual noncapturable training bases; upgrade bands follow current assault ruleset."},
+    {"id":22,"name":"Training Base 16-20","kind":"base","bounds":[110,-320,130,-300],"levels":[16,20],"background":"loc_outpost","profile":"assault_training","carry_items":true,"max_upgrade":25,"arena":false,"capture":false,"prison_only":false,"assault_map":"assault\\mo.xml","source":"New unused emulator ID/coordinates; supported base menu and original assault map. Manual noncapturable training bases; upgrade bands follow current assault ruleset."}
+  ]
+}

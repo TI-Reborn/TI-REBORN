@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "rain_percent": 40,
+  "profiles": [
+    "reservation",
+    "denver",
+    "new_york",
+    "military_zone",
+    "detroit",
+    "trueskill_contest",
+    "assault",
+    "encounter_ash",
+    "encounter_autumn",
+    "encounter_blight"
+  ],
+  "snow_enabled": false,
+  "policy": "Cosmetic rain shared by match seed; no combat/vision modifiers. Sparse recipient-visible outdoor cells only. Building-fragment rectangles and enclosed rooms behind door/wall boundaries are conservatively sheltered. Thunder advances once per four actor-turn generations. No historical weather frequency is claimed."
+}

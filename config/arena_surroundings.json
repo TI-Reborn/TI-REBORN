@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "profiles": {
+    "reservation": {
+      "enabled": true,
+      "variants": [
+        {"id": "R1", "scene_by_size": {"38": "as_rv_1_38", "57": "as_rv_1_57"}},
+        {"id": "R2", "scene_by_size": {"38": "as_rv_2_38", "57": "as_rv_2_57"}},
+        {"id": "R3", "scene_by_size": {"38": "as_rv_3_38", "57": "as_rv_3_57"}}
+      ]
+    },
+    "denver": {
+      "enabled": true,
+      "variants": [
+        {"id": "D1", "scene_by_size": {"38": "as_de_1_38", "57": "as_de_1_57"}},
+        {"id": "D2", "scene_by_size": {"38": "as_de_2_38", "57": "as_de_2_57"}},
+        {"id": "D3", "scene_by_size": {"38": "as_de_3_38", "57": "as_de_3_57"}}
+      ]
+    },
+    "new_york": {
+      "enabled": true,
+      "variants": [
+        {"id": "N1", "scene_by_size": {"38": "as_ny_1_38", "57": "as_ny_1_57"}},
+        {"id": "N2", "scene_by_size": {"38": "as_ny_2_38", "57": "as_ny_2_57"}},
+        {"id": "N3", "scene_by_size": {"38": "as_ny_3_38", "57": "as_ny_3_57"}}
+      ]
+    },
+    "military_zone": {
+      "enabled": true,
+      "variants": [
+        {"id": "M1", "scene_by_size": {"38": "as_mz_1_38", "57": "as_mz_1_57"}},
+        {"id": "M2", "scene_by_size": {"38": "as_mz_2_38", "57": "as_mz_2_57"}},
+        {"id": "M3", "scene_by_size": {"38": "as_mz_3_38", "57": "as_mz_3_57"}}
+      ]
+    }
+  }
+}

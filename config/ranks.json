@@ -1,0 +1,236 @@
+{
+  "source": "https://ti.ggeek.ru/files/TIO_manual.pdf pp.52-54",
+  "ranks": [
+    {
+      "id": 1,
+      "points": 0,
+      "name": "Рекрут",
+      "english": "Recruit"
+    },
+    {
+      "id": 2,
+      "points": 20,
+      "name": "Рядовой",
+      "english": "Private"
+    },
+    {
+      "id": 3,
+      "points": 50,
+      "name": "Рядовой Первого класса",
+      "english": "Private First Class"
+    },
+    {
+      "id": 4,
+      "points": 80,
+      "name": "Специалист",
+      "english": "Specialist"
+    },
+    {
+      "id": 5,
+      "points": 120,
+      "name": "Младший капрал",
+      "english": "Lance Corporal"
+    },
+    {
+      "id": 6,
+      "points": 180,
+      "name": "Капрал",
+      "english": "Corporal"
+    },
+    {
+      "id": 7,
+      "points": 250,
+      "name": "Штурм-капрал",
+      "english": "Sturm-Corporal"
+    },
+    {
+      "id": 8,
+      "points": 320,
+      "name": "Младший сержант",
+      "english": "Lance Sergeant"
+    },
+    {
+      "id": 9,
+      "points": 450,
+      "name": "Сержант",
+      "english": "Sergeant"
+    },
+    {
+      "id": 10,
+      "points": 600,
+      "name": "Штурм-сержант",
+      "english": "Sturm-Sergeant"
+    },
+    {
+      "id": 11,
+      "points": 750,
+      "name": "Мастер Сержант",
+      "english": "Master Sergeant"
+    },
+    {
+      "id": 12,
+      "points": 1050,
+      "name": "Младший унтер-офицер",
+      "english": "Lance Unterofficer"
+    },
+    {
+      "id": 13,
+      "points": 1400,
+      "name": "Унтер-офицер",
+      "english": "Unterofficer"
+    },
+    {
+      "id": 14,
+      "points": 1800,
+      "name": "Младший лейтенант",
+      "english": "Second Lieutenant"
+    },
+    {
+      "id": 15,
+      "points": 2400,
+      "name": "Лейтенант",
+      "english": "Lieutenant"
+    },
+    {
+      "id": 16,
+      "points": 3300,
+      "name": "Штурм-лейтенант",
+      "english": "Sturm-Lieutenant"
+    },
+    {
+      "id": 17,
+      "points": 4300,
+      "name": "Старший лейтенант",
+      "english": "Senior Lieutenant"
+    },
+    {
+      "id": 18,
+      "points": 5400,
+      "name": "Капитан",
+      "english": "Captain"
+    },
+    {
+      "id": 19,
+      "points": 7000,
+      "name": "Кригс-капитан",
+      "english": "Kriegs-Captain"
+    },
+    {
+      "id": 20,
+      "points": 8600,
+      "name": "Майор",
+      "english": "Major"
+    },
+    {
+      "id": 21,
+      "points": 10200,
+      "name": "Кригс-майор",
+      "english": "Kriegs-Major"
+    },
+    {
+      "id": 22,
+      "points": 12000,
+      "name": "Подполковник",
+      "english": "Sub-Colonel"
+    },
+    {
+      "id": 23,
+      "points": 14000,
+      "name": "Полковник",
+      "english": "Colonel"
+    },
+    {
+      "id": 24,
+      "points": 16500,
+      "name": "Командор",
+      "english": "Commander"
+    },
+    {
+      "id": 25,
+      "points": 19000,
+      "name": "Кригс-командор",
+      "english": "Kriegs-Commander"
+    },
+    {
+      "id": 26,
+      "points": 22000,
+      "name": "Бригадный генерал",
+      "english": "Brigadier General"
+    },
+    {
+      "id": 27,
+      "points": 26000,
+      "name": "Генерал-майор",
+      "english": "Major General"
+    },
+    {
+      "id": 28,
+      "points": 30000,
+      "name": "Генерал-лейтенант",
+      "english": "Lieutenant General"
+    },
+    {
+      "id": 29,
+      "points": 35000,
+      "name": "Генерал",
+      "english": "General"
+    }
+  ],
+  "level_caps": [
+    [
+      1,
+      120
+    ],
+    [
+      2,
+      320
+    ],
+    [
+      4,
+      1050
+    ],
+    [
+      6,
+      2400
+    ],
+    [
+      9,
+      5400
+    ],
+    [
+      13,
+      12000
+    ],
+    [
+      17,
+      22000
+    ],
+    [
+      20,
+      35000
+    ]
+  ],
+  "minimum_victim_level": [
+    1,
+    1,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    14,
+    15,
+    9,
+    10,
+    11,
+    12,
+    13,
+    13,
+    14,
+    15,
+    15,
+    15
+  ],
+  "minimum_victim_note": "Rows 9/10 use literal manual values 14/15, explicitly requested by user."
+}

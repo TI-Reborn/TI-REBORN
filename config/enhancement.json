@@ -1,0 +1,11 @@
+{
+  "max_level": 25,
+  "safe_levels": 2,
+  "armor_success_percent": 63,
+  "weapon_success_percent": 63,
+  "durability_per_level": 65,
+  "kit_template_id": 30,
+  "provenance": "Normal max25: silver.dll A712FD/A7BE80. Safe2, chance63, durability65 and SE reset: TIO_manual.pdf p83. Chance is server-supplied in this client, not a hardcoded probability.",
+  "se_failure_level_loss": 1,
+  "se_failure_durability_loss": 100
+}

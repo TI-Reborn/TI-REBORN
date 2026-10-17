@@ -1,0 +1,10 @@
+{
+  "enemy_kill_sight_bonus": 1,
+  "enemy_kill_sight_source": "Original manual printed p39: each enemy killed grants the killer +1 sight until the battle ends. Native sight is an unsigned byte; it saturates at 255. Allied deaths give no sight. Mine/burn deaths use their original source actor and count only once.",
+  "scatter_radii_manual": {"316": 3, "317": 2, "340": 1},
+  "scatter_radius_source": "Original manual printed pp63-64: RPG 3, Frag Grenade 2, Sub Grenade 1 cells, matching legacy item spread. Other supported blast weapons use their own recovered spread field.",
+  "scatter_distribution": "accuracy_then_uniform_disk",
+  "scatter_geometry": "squared_euclidean",
+  "scatter_invalid_cells": "exclude",
+  "scatter_policy": "The manual specifies radius but does not specify the probability distribution or terrain collision formula. Server policy: the existing capped legacy weapon accuracy roll retains the requested cell on success; on failure choose uniformly from noncentral cells within the spread disk. Candidates must be inside the server map and passable; rockets must retain clear flight LOS. If no candidate exists, retain the validated requested cell. Requested range rules stay unchanged; a scattered endpoint may extend past maximum range by at most spread. Thrown projectiles retain the existing arc/landing policy. Blast damage, ally/self damage and cover LOS are calculated around the actual impact. The native 4B packet keeps both requested target and actual impact. Server RNG is journaled and restored on rejected attacks."
+}

@@ -1,0 +1,12 @@
+{
+  "base_credit_fee": 100,
+  "money_fee_percent": 5,
+  "item_fee_per_stack": 25,
+  "expires_seconds": 864000,
+  "maximum_attachments": 20,
+  "maximum_subject_bytes": 100,
+  "maximum_body_bytes": 2048,
+  "maximum_inbox": 200,
+  "warehouse_capacity": 3000,
+  "policy_note": "Manual confirms 100 credits and ten days. Extra money/item tariffs and storage limits are explicit emulator policy."
+}

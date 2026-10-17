@@ -1,0 +1,24 @@
+[Unit]
+Description=TIO self-registration
+After=network.target
+
+[Service]
+User=tio
+Group=tio
+WorkingDirectory=/opt/tio-emulator
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONUNBUFFERED=1
+Environment=TIO_WEB_ORIGIN=https://185.184.42.88
+Environment=TIO_WEB_SECRET_FILE=/etc/tio-server/web-secret
+ExecStart=/opt/tio-emulator/.venv-web/bin/python -m registration
+Restart=on-failure
+RestartSec=5
+UMask=0027
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/tio-server
+
+[Install]
+WantedBy=multi-user.target

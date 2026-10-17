@@ -1,0 +1,103 @@
+{
+  "source": "https://ti.ggeek.ru/files/TIO_manual.pdf pages 93-100; original base/maps/mines_01, mobs.udf and ground.xml",
+  "bands": [
+    [
+      4,
+      6,
+      1000,
+      150,
+      160,
+      57,
+      79
+    ],
+    [
+      7,
+      10,
+      1500,
+      249,
+      270,
+      70,
+      96
+    ],
+    [
+      11,
+      15,
+      2000,
+      249,
+      270,
+      86,
+      118
+    ],
+    [
+      16,
+      20,
+      3000,
+      300,
+      310,
+      89,
+      122
+    ]
+  ],
+  "mob_count": 10,
+  "deposits_min": 2,
+  "deposits_max": 3,
+  "mob_ap": 20,
+  "mob_attack_ap": 5,
+  "mutant_patrol_radius": 6,
+  "mutant_ai_note": "Local policy, not recovered original server AI: individual sight and patrols within six walkable steps of each initial spawn. No respawn or shared enemy detection.",
+  "market_initial_rate_units": 10000000,
+  "market_min_rate_units": 10000,
+  "market_rise_interval": 600,
+  "market_rise_units": 100000,
+  "market_sale_min": 1000,
+  "market_sale_max": 50000,
+  "notes": "Rates use 10000000 units/credit. Initial rate 1 credit and floor 0.001 credit are provisional emulator policy; original initial/floor rate not recovered. One unit decrease per crystal implements -0.0001 per 1000. No clan owner in local test, therefore no clan tax.",
+  "locations": [
+    {
+      "id": 13,
+      "name": "Mine 4-6",
+      "bounds": [
+        -180,
+        -284,
+        -160,
+        -264
+      ],
+      "band": 0
+    },
+    {
+      "id": 14,
+      "name": "Mine 7-10",
+      "bounds": [
+        175,
+        -346,
+        195,
+        -326
+      ],
+      "band": 1
+    },
+    {
+      "id": 15,
+      "name": "Mine 11-15",
+      "bounds": [
+        88,
+        -10,
+        108,
+        10
+      ],
+      "band": 2
+    },
+    {
+      "id": 16,
+      "name": "Mine 16-20",
+      "bounds": [
+        255,
+        -170,
+        275,
+        -150
+      ],
+      "band": 3
+    }
+  ],
+  "location_note": "Mine 4-6 and 16-20 entrances aligned with user screenshot (41.3%,38.7%) and (73.1%,53.0%) on 2026-09-20; other placements provisional.",
+  "market_history_points": 144
+}

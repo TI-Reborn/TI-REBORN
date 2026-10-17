@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "clan_rejoin_seconds": 86400,
+  "clan_rejoin_provenance": "Explicit emulator policy: duration is absent from original manual and russian.lng s287; no historical24h claim.",
+  "clan_rejoin_reasons": ["leave", "kick", "dissolve"],
+  "legacy_cooldown_backfill": false,
+  "alliance_cancellation": "Manual printed20: three-day cancellation, existing name/cohort, no extra credits/influence; typed command avoids ambiguous AF0C retry toggle."
+}

@@ -1,0 +1,323 @@
+{
+  "status": "LOCAL_PROVISIONAL_NOT_ORIGINAL_SC_ASSORTMENT_OR_PRICES",
+  "source": "evidence/items_diagnostic_provenance.json",
+  "source_sha256": "0a98eecef7762d14064566c79cbc6bcb14ef11e1886da777916abd32bf2c877b",
+  "policy": "Credits-only base offers; same item and pack use the unified price.",
+  "offers": [
+    {
+      "lot_id": 100008,
+      "item_id": 8,
+      "name": "Missile",
+      "durability": 1,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 180
+    },
+    {
+      "lot_id": 100014,
+      "item_id": 14,
+      "name": "Vindicator Ammo",
+      "durability": 1,
+      "pack_count": 100,
+      "stock_per_account": 1000,
+      "credits": 300
+    },
+    {
+      "lot_id": 100019,
+      "item_id": 19,
+      "name": "Super Repair Kit",
+      "durability": 3600,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 2400
+    },
+    {
+      "lot_id": 100030,
+      "item_id": 30,
+      "name": "Upgrade Kit",
+      "durability": 1,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 1050
+    },
+    {
+      "lot_id": 100033,
+      "item_id": 33,
+      "name": "Champagne",
+      "durability": 1,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 140
+    },
+    {
+      "lot_id": 100034,
+      "item_id": 34,
+      "name": "Candies",
+      "durability": 1,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 75
+    },
+    {
+      "lot_id": 100035,
+      "item_id": 35,
+      "name": "Vision Injection",
+      "durability": 1,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 180
+    },
+    {
+      "lot_id": 100208,
+      "item_id": 208,
+      "name": "Helmet",
+      "durability": 300,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 50
+    },
+    {
+      "lot_id": 100222,
+      "item_id": 222,
+      "name": "Leather Jacket",
+      "durability": 300,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 250
+    },
+    {
+      "lot_id": 100223,
+      "item_id": 223,
+      "name": "Rags",
+      "durability": 300,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 180
+    },
+    {
+      "lot_id": 100224,
+      "item_id": 224,
+      "name": "Rags Longines",
+      "durability": 300,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 120
+    },
+    {
+      "lot_id": 100227,
+      "item_id": 227,
+      "name": "Superhero Helmet",
+      "durability": 300,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 450
+    },
+    {
+      "lot_id": 100236,
+      "item_id": 236,
+      "name": "Raider Helmet",
+      "durability": 300,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 180
+    },
+    {
+      "lot_id": 100237,
+      "item_id": 237,
+      "name": "Raider Armor",
+      "durability": 300,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 450
+    },
+    {
+      "lot_id": 100238,
+      "item_id": 238,
+      "name": "Raider Longies",
+      "durability": 300,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 350
+    },
+    {
+      "lot_id": 100248,
+      "item_id": 248,
+      "name": "Heavy Combat Armor SE",
+      "durability": 350,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 6000
+    },
+    {
+      "lot_id": 100249,
+      "item_id": 249,
+      "name": "Heavy Combat Helmet SE",
+      "durability": 350,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 2200
+    },
+    {
+      "lot_id": 100250,
+      "item_id": 250,
+      "name": "Heavy Combat Longies SE",
+      "durability": 350,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 3800
+    },
+    {
+      "lot_id": 100251,
+      "item_id": 251,
+      "name": "Heavy Battle Helmet SE",
+      "durability": 400,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 5500
+    },
+    {
+      "lot_id": 100252,
+      "item_id": 252,
+      "name": "Heavy Battle Armor SE",
+      "durability": 400,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 7500
+    },
+    {
+      "lot_id": 100253,
+      "item_id": 253,
+      "name": "Heavy Battle Longies SE",
+      "durability": 400,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 4800
+    },
+    {
+      "lot_id": 100256,
+      "item_id": 256,
+      "name": "Tank Armor SE",
+      "durability": 500,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 18000
+    },
+    {
+      "lot_id": 100257,
+      "item_id": 257,
+      "name": "Santa Hat",
+      "durability": 300,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 300
+    },
+    {
+      "lot_id": 100263,
+      "item_id": 263,
+      "name": "Female Exo Armor",
+      "durability": 325,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 6000
+    },
+    {
+      "lot_id": 100264,
+      "item_id": 264,
+      "name": "Female Exo Armor SE",
+      "durability": 500,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 15000
+    },
+    {
+      "lot_id": 100266,
+      "item_id": 266,
+      "name": "Dog Solid Armor SE",
+      "durability": 500,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 6000
+    },
+    {
+      "lot_id": 100314,
+      "item_id": 314,
+      "name": "M60",
+      "durability": 300,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 5000
+    },
+    {
+      "lot_id": 100315,
+      "item_id": 315,
+      "name": "Minigun",
+      "durability": 300,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 7500
+    },
+    {
+      "lot_id": 100316,
+      "item_id": 316,
+      "name": "RPG",
+      "durability": 300,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 4500
+    },
+    {
+      "lot_id": 100318,
+      "item_id": 318,
+      "name": "Smoke Grenade",
+      "durability": 300,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 180
+    },
+    {
+      "lot_id": 100319,
+      "item_id": 319,
+      "name": "Molotov Koktail",
+      "durability": 300,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 120
+    },
+    {
+      "lot_id": 100321,
+      "item_id": 321,
+      "name": "Land Mine",
+      "durability": 300,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 180
+    },
+    {
+      "lot_id": 100323,
+      "item_id": 323,
+      "name": "Grenade Launcher",
+      "durability": 300,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 3200
+    },
+    {
+      "lot_id": 100324,
+      "item_id": 324,
+      "name": "Flamethrower",
+      "durability": 300,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 3000
+    },
+    {
+      "lot_id": 100328,
+      "item_id": 328,
+      "name": "Steel Pipe",
+      "durability": 300,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 120
+    }
+  ]
+}

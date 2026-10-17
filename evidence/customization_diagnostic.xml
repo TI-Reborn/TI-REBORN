@@ -1,0 +1,43 @@
+<list>
+
+  <customisation type="HeadHairType">
+    <ver id="0" price="100" premium="false" name="none" > 1 </ver>
+    <ver id="1" price="300" premium="false" filename="hair_man_01" name="Redneck" > 1 </ver>
+    <ver id="2" price="300" premium="false" filename="hair_man_02" name="Smoothed"> 1 </ver>
+    <ver id="3" price="300" premium="false" filename="hair_man_03" name="Standart"> 1 </ver>
+    <ver id="4" price="300" premium="false" filename="hair_man_04" name="Elvis style"> 1 </ver>
+    <ver id="5" price="300" premium="false" filename="hair_man_05" name="Macho"> 1 </ver>
+    <ver id="6" price="300" premium="false" filename="hair_man_06" name="Ponytail"> 1 </ver>
+
+    <ver id="8" price="300" premium="false" filename="hair_woman_01" name="Emo"> 2 </ver>
+    <ver id="9" price="300" premium="false" filename="hair_woman_02" name="Ponytail"> 2 </ver>
+    <ver id="10" price="300" premium="false" filename="hair_woman_03" name="Stylish hair"> 2 </ver>
+    <ver id="11" price="300" premium="false" filename="hair_woman_04" name="Turman style"> 2 </ver>
+    <ver id="12" price="300" premium="false" filename="hair_woman_05" name="Long hair"> 2 </ver>
+    <ver id="13" price="1500" premium="true" filename="hair_woman_06" name="Organa style"> 2 </ver>
+    <ver id="14" price="1500" premium="true" filename="hair_man_08" name="Punk short"> 1 </ver>
+    <ver id="15" price="1500" premium="true" filename="hair_man_09" name="Punk long"> 1 </ver>
+    <ver id="16" price="1500" premium="true" filename="hair_man_10" name="Prodigy"> 1 </ver>
+  </customisation>
+
+  <customisation type="FacialHairType">
+    <ver id="0" price="50" premium="false" name="none" > 1 </ver>
+    <ver id="1" price="150" premium="false" filename="hairf_man_01" name="Lenin cut"> 1 </ver>
+    <ver id="2" price="150" premium="false" filename="hairf_man_02" name="Siberian beard"> 1 </ver>
+    <ver id="3" price="150" premium="false" filename="hairf_man_03" name="Sherif moustaches"> 1 </ver>
+    <ver id="4" price="150" premium="false" filename="hairf_man_04" name="Short beard"> 1 </ver>
+  </customisation>
+
+  <customisation type="HairColor">
+    <ver id="1" price="300" premium="false" name="black" texture="hair_black.jpg"> 1 2 </ver>
+    <ver id="2" price="300" premium="false" name="blonde" texture="hair_blond.jpg"> 1 2 </ver>
+    <ver id="3" price="300" premium="false" name="brown" texture="hair_brown.jpg"> 1 2 </ver>
+    <ver id="4" price="300" premium="false" name="red" texture="hair_red.jpg"> 2 </ver>
+  </customisation>
+
+  <customisation type="HeadModel">
+    <ver id="1" price="500" premium="false" name="Male head" filename="chr_man_head" texture="chr_man_head.jpg"> 1 </ver>
+    <ver id="2" price="500" premium="false" name="Female head" filename="chr_woman_head" texture="chr_woman_head.jpg"> 2 </ver>
+  </customisation>
+
+</list>

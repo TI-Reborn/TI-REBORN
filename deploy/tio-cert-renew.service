@@ -1,0 +1,5 @@
+[Unit]
+Description=Renew TIO IP HTTPS certificate
+[Service]
+Type=oneshot
+ExecStart=/opt/tio-certbot/bin/certbot renew --quiet --deploy-hook "/usr/sbin/nginx -t && /usr/bin/systemctl reload nginx"

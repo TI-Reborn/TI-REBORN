@@ -1,0 +1,15 @@
+{
+  "name": "Reservation training field",
+  "layout_origin": "Local emulator layout using installed client ground and map fragments",
+  "ground_id": 0,
+  "width": 32,
+  "height": 32,
+  "player_spawns": [[12, 14], [12, 16], [12, 18]],
+  "bot_spawns": [[20, 14], [20, 16], [20, 18]],
+  "objects": [
+    {"file": "shed_v1.s", "x": 2, "y": 2},
+    {"file": "outpost_v2.s", "x": 16, "y": 9},
+    {"file": "outpost_v2.s", "x": 16, "y": 22},
+    {"file": "forest_tree_v01.s", "x": 25, "y": 4}
+  ]
+}

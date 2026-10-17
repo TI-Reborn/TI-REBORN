@@ -1,0 +1,938 @@
+{
+  "source": "https://ti.ggeek.ru/files/TIO_manual.pdf",
+  "era": "2008-2011 manual, not later SC sale prices",
+  "mirrors": {
+    "weapons": "https://aurols.ucoz.ua/index/vooruzhenie/0-19",
+    "armor": "https://aurols.ucoz.ua/index/obmundrovanie/0-18",
+    "ammunition": "https://aurols.ucoz.ua/index/amunicija/0-17"
+  },
+  "notes": [
+    "Null is unavailable in that currency, not zero/free.",
+    "Bandages: 55 credits each; 1 gold buys THREE.",
+    "Dog Meat is not sold. Existing owned items are preserved.",
+    "Freak Heavy Legs: source explicitly says 2200 credits /15 gold; do not derive a conversion.",
+    "Town restrictions and original restock schedules are outside price recovery."
+  ],
+  "items": [
+    {
+      "item_id": 301,
+      "name": "Beretta",
+      "credits": 150,
+      "gold": 1,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 326,
+      "name": "Knife",
+      "credits": null,
+      "gold": 4,
+      "credit_pack": null,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 3,
+      "name": "Ammo 9mm",
+      "credits": 50,
+      "gold": null,
+      "credit_pack": 50,
+      "gold_pack": null,
+      "source_section": "ammunition",
+      "status": "documented"
+    },
+    {
+      "item_id": 4,
+      "name": "Shells",
+      "credits": 54,
+      "gold": null,
+      "credit_pack": 18,
+      "gold_pack": null,
+      "source_section": "ammunition",
+      "status": "documented"
+    },
+    {
+      "item_id": 5,
+      "name": "5.56 x 45 mm",
+      "credits": 40,
+      "gold": null,
+      "credit_pack": 40,
+      "gold_pack": null,
+      "source_section": "ammunition",
+      "status": "documented"
+    },
+    {
+      "item_id": 6,
+      "name": "7.62 x 51 mm",
+      "credits": 36,
+      "gold": null,
+      "credit_pack": 9,
+      "gold_pack": null,
+      "source_section": "ammunition",
+      "status": "documented"
+    },
+    {
+      "item_id": 7,
+      "name": "7.62 x 39 mm",
+      "credits": 50,
+      "gold": null,
+      "credit_pack": 50,
+      "gold_pack": null,
+      "source_section": "ammunition",
+      "status": "documented"
+    },
+    {
+      "item_id": 9,
+      "name": "Bandages",
+      "credits": 55,
+      "gold": 1,
+      "credit_pack": 1,
+      "gold_pack": 3,
+      "source_section": "ammunition",
+      "status": "documented"
+    },
+    {
+      "item_id": 10,
+      "name": "Small Medikit",
+      "credits": 150,
+      "gold": 1,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "ammunition",
+      "status": "documented"
+    },
+    {
+      "item_id": 11,
+      "name": "Big Medikit",
+      "credits": 300,
+      "gold": 2,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "ammunition",
+      "status": "documented"
+    },
+    {
+      "item_id": 12,
+      "name": "Magnum Rounds",
+      "credits": 48,
+      "gold": null,
+      "credit_pack": 6,
+      "gold_pack": null,
+      "source_section": "ammunition",
+      "status": "documented"
+    },
+    {
+      "item_id": 13,
+      "name": "5.7 x 28 mm",
+      "credits": 60,
+      "gold": null,
+      "credit_pack": 30,
+      "gold_pack": null,
+      "source_section": "ammunition",
+      "status": "documented"
+    },
+    {
+      "item_id": 15,
+      "name": "9 x 19 mm Parabellum",
+      "credits": 15,
+      "gold": null,
+      "credit_pack": 15,
+      "gold_pack": null,
+      "source_section": "ammunition",
+      "status": "documented"
+    },
+    {
+      "item_id": 17,
+      "name": "Repair Kit",
+      "credits": 450,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "ammunition",
+      "status": "documented"
+    },
+    {
+      "item_id": 18,
+      "name": "Advanced Repair Kit",
+      "credits": null,
+      "gold": 5,
+      "credit_pack": null,
+      "gold_pack": 1,
+      "source_section": "ammunition",
+      "status": "documented"
+    },
+    {
+      "item_id": 19,
+      "name": "Super Repair Kit",
+      "credits": null,
+      "gold": 10,
+      "credit_pack": null,
+      "gold_pack": 1,
+      "source_section": "ammunition",
+      "status": "documented"
+    },
+    {
+      "item_id": 24,
+      "name": "Binoculars",
+      "credits": null,
+      "gold": 10,
+      "credit_pack": null,
+      "gold_pack": 1,
+      "source_section": "ammunition",
+      "status": "documented"
+    },
+    {
+      "item_id": 30,
+      "name": "Upgrade Kit",
+      "credits": 1050,
+      "gold": 7,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "ammunition",
+      "status": "documented"
+    },
+    {
+      "item_id": 32,
+      "name": "Dog Meat",
+      "credits": null,
+      "gold": null,
+      "credit_pack": null,
+      "gold_pack": null,
+      "source_section": "ammunition",
+      "status": "not_sold"
+    },
+    {
+      "item_id": 36,
+      "name": "Ammo 9x39 S",
+      "credits": 40,
+      "gold": null,
+      "credit_pack": 40,
+      "gold_pack": null,
+      "source_section": "ammunition",
+      "status": "documented"
+    },
+    {
+      "item_id": 37,
+      "name": "Freak Ammo Nails",
+      "credits": 60,
+      "gold": null,
+      "credit_pack": 30,
+      "gold_pack": null,
+      "source_section": "ammunition",
+      "status": "documented"
+    },
+    {
+      "item_id": 210,
+      "name": "Light Combat Armor",
+      "credits": 800,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 211,
+      "name": "Light Combat Helmet",
+      "credits": 400,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 212,
+      "name": "Light Combat Longies",
+      "credits": 750,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 213,
+      "name": "Medium Combat Helmet",
+      "credits": 450,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 214,
+      "name": "Medium Combat Armor",
+      "credits": 930,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 215,
+      "name": "Medium Combat Longies",
+      "credits": 850,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 216,
+      "name": "Light Military Helmet",
+      "credits": 320,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 217,
+      "name": "Light Military Armor",
+      "credits": 700,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 218,
+      "name": "Light Military Longies",
+      "credits": 700,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 219,
+      "name": "Medium Military Helmet",
+      "credits": 450,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 220,
+      "name": "Medium Military Armor",
+      "credits": 800,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 221,
+      "name": "Medium Military Longies",
+      "credits": 800,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 229,
+      "name": "Light Battle Armor",
+      "credits": 500,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 230,
+      "name": "Light Battle Helmet",
+      "credits": 250,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 231,
+      "name": "Light Battle Longies",
+      "credits": 850,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 232,
+      "name": "Medium Battle Armor",
+      "credits": 750,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 233,
+      "name": "Medium Battle Helmet",
+      "credits": 360,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 234,
+      "name": "Medium Battle Longies",
+      "credits": 1070,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 239,
+      "name": "Heavy Military Helmet",
+      "credits": 450,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 240,
+      "name": "Heavy Military Armor",
+      "credits": 900,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 241,
+      "name": "Heavy Military Longies",
+      "credits": 900,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 242,
+      "name": "Heavy Battle Helmet",
+      "credits": 1350,
+      "gold": 9,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 243,
+      "name": "Heavy Battle Armor",
+      "credits": 1800,
+      "gold": 12,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 244,
+      "name": "Heavy Battle Longies",
+      "credits": 1200,
+      "gold": 8,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 245,
+      "name": "Heavy Combat Helmet",
+      "credits": 600,
+      "gold": 4,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 246,
+      "name": "Heavy Combat Armor",
+      "credits": 1650,
+      "gold": 11,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 247,
+      "name": "Heavy Combat Longies",
+      "credits": 1050,
+      "gold": 7,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 248,
+      "name": "Heavy Combat Armor SE",
+      "credits": null,
+      "gold": 55,
+      "credit_pack": null,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 249,
+      "name": "Heavy Combat Helmet SE",
+      "credits": null,
+      "gold": 25,
+      "credit_pack": null,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 250,
+      "name": "Heavy Combat Longies SE",
+      "credits": null,
+      "gold": 45,
+      "credit_pack": null,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 251,
+      "name": "Heavy Battle Helmet SE",
+      "credits": null,
+      "gold": 90,
+      "credit_pack": null,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 252,
+      "name": "Heavy Battle Armor SE",
+      "credits": null,
+      "gold": 126,
+      "credit_pack": null,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 253,
+      "name": "Heavy Battle Longies SE",
+      "credits": null,
+      "gold": 66,
+      "credit_pack": null,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 254,
+      "name": "Tank Armor",
+      "credits": 7500,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 255,
+      "name": "Dog Armor",
+      "credits": 1200,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 256,
+      "name": "Tank Armor SE",
+      "credits": null,
+      "gold": 150,
+      "credit_pack": null,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 258,
+      "name": "Freak Medium Armor",
+      "credits": 1200,
+      "gold": 8,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 259,
+      "name": "Freak Medium Longies",
+      "credits": 1050,
+      "gold": 7,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 260,
+      "name": "Freak Heavy Armor",
+      "credits": 2550,
+      "gold": 17,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 261,
+      "name": "Freak Heavy Longies",
+      "credits": 2200,
+      "gold": 15,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 262,
+      "name": "Freak Helmet",
+      "credits": 1200,
+      "gold": 8,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 263,
+      "name": "Female Exo Armor",
+      "credits": 6000,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 264,
+      "name": "Female Exo Armor SE",
+      "credits": null,
+      "gold": 175,
+      "credit_pack": null,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 265,
+      "name": "Dog Solid Armor",
+      "credits": 2100,
+      "gold": null,
+      "credit_pack": 1,
+      "gold_pack": null,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 266,
+      "name": "Dog Solid Armor SE",
+      "credits": null,
+      "gold": 70,
+      "credit_pack": null,
+      "gold_pack": 1,
+      "source_section": "armor",
+      "status": "documented"
+    },
+    {
+      "item_id": 302,
+      "name": "Shotgun",
+      "credits": 600,
+      "gold": 4,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 303,
+      "name": "HK MP5",
+      "credits": 450,
+      "gold": 3,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 304,
+      "name": "AK 47",
+      "credits": 900,
+      "gold": 6,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 305,
+      "name": "UZI",
+      "credits": 300,
+      "gold": 2,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 306,
+      "name": "P90",
+      "credits": 750,
+      "gold": 5,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 307,
+      "name": "Spas",
+      "credits": 750,
+      "gold": 5,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 308,
+      "name": "Pancor Jackhammer",
+      "credits": 750,
+      "gold": 5,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 309,
+      "name": "Famas",
+      "credits": 600,
+      "gold": 4,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 310,
+      "name": "SKS Carbine",
+      "credits": 750,
+      "gold": 5,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 311,
+      "name": "Steyr Aug",
+      "credits": 1050,
+      "gold": 7,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 312,
+      "name": "AWP",
+      "credits": 1200,
+      "gold": 8,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 313,
+      "name": "HK G3SG/1",
+      "credits": 1200,
+      "gold": 8,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 317,
+      "name": "Frag Grenade",
+      "credits": 300,
+      "gold": 2,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 320,
+      "name": "Flash Grenade",
+      "credits": 150,
+      "gold": 1,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 327,
+      "name": "Machete",
+      "credits": 150,
+      "gold": 1,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 329,
+      "name": "Wrench",
+      "credits": 150,
+      "gold": 1,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 330,
+      "name": "Colt M4",
+      "credits": 750,
+      "gold": 5,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 331,
+      "name": "USP Match",
+      "credits": 150,
+      "gold": 1,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 332,
+      "name": "Magnum",
+      "credits": 300,
+      "gold": 2,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 334,
+      "name": "Suicide Jacket",
+      "credits": 1800,
+      "gold": 12,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 335,
+      "name": "Freak Hammer",
+      "credits": 1350,
+      "gold": 9,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 336,
+      "name": "Freak Nailgun",
+      "credits": 1050,
+      "gold": 7,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 338,
+      "name": "Vintorez",
+      "credits": 1500,
+      "gold": 10,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 339,
+      "name": "Groza",
+      "credits": 1350,
+      "gold": 9,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 340,
+      "name": "Groza Subgrenade",
+      "credits": 300,
+      "gold": 2,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    },
+    {
+      "item_id": 341,
+      "name": "Freak Shield",
+      "credits": 1200,
+      "gold": 8,
+      "credit_pack": 1,
+      "gold_pack": 1,
+      "source_section": "weapons",
+      "status": "documented"
+    }
+  ]
+}

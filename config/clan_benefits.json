@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "source": "Original manual printed pp19,26-27,90-91; native premium XML influenceBonus=0.5",
+  "crest": {
+    "width": 16,
+    "height": 16,
+    "bits": 24,
+    "max_bytes": 824,
+    "credits": 1000
+  },
+  "influence": {
+    "experience_divisor": 20,
+    "gold_shop_per_gold": 1,
+    "premium_kind": 3,
+    "premium_multiplier": "3/2",
+    "daily_decay_ppm": 25000,
+    "level_decay_multipliers": [
+      "1",
+      "3/2",
+      "2"
+    ],
+    "max_decay_hours_per_call": 168
+  },
+  "base": {
+    "max_tax_percent": 10,
+    "capture_influence": 10000,
+    "assault_hours_utc": [
+      12,
+      15,
+      18,
+      21
+    ],
+    "city_by_base": {
+      "6": 2,
+      "11": 5,
+      "12": 8,
+      "7": 4
+    }
+  },
+  "weekly": {
+    "seconds": 604800,
+    "top_clans": 20,
+    "rank_per_kill": [
+      [
+        1,
+        5
+      ],
+      [
+        5,
+        4
+      ],
+      [
+        10,
+        3
+      ],
+      [
+        20,
+        2
+      ]
+    ]
+  },
+  "assault": {
+    "medal_multipliers": [
+      "23/20",
+      "11/10",
+      "21/20"
+    ],
+    "top_players_per_side": 20,
+    "golden_tokens_each": 1,
+    "booster_template": 5003,
+    "booster_count_each": 1,
+    "defense_fund_weights": [
+      5,
+      3,
+      2
+    ]
+  },
+  "emulator_policy": {
+    "decay": "2.5% nominal daily rate divided into 24 hourly charges, fractional charges carry forward. Existing clan levels0/1 correspond to manual capacities10/16 and rates1/1.5; level2 rate2 is explicit policy because manual does not specify the largest clan rate. First observation starts the clock; no retroactive hosted-save decay.",
+    "multipliers": "Multiply city, premium, highest earned achievement influence coefficient and highest permanent assault medal. Repeated medals and multiple achievement coefficients use their maximum, not unbounded stacking; stacking and medal magnitudes are unrecovered policy.",
+    "assault_rewards": "One stored golden range token and one emulator Light Trainer5003 per positive contested top20 player on each side. Counts, booster choice and medal coefficients are policy; the manual only identifies these reward categories.",
+    "defense_fund": "Leader escrows clan credits before the first tour. Positive contested defender clans split50/30/20, normalized if fewer than3; integer remainder goes by rank. No eligible defenders refunds the fund. Percentages and funding currency source are explicit policy.",
+    "weekly": "Monday00:00 UTC calendar weeks; ties resolve by clan ID. Only positive contested finalized scores count. Badges apply to current members, including late joiners, and expire at the following weekly boundary.",
+    "sales": "Tax is included in credit sale gross; floor(gross*rate/100) goes to the controlling clan and remainder to the seller. Premium excluded. Purchase-side charge incidence is explicit policy.",
+    "schedule": "Offer12/15/18/21 UTC on the base's existing weekday. Root scheduler consumes scheduled_start before creating the next event; selection never changes the weekly day or already-created event.",
+    "wire": "No historical upload, medal or schedule opcode is invented. Existing crest-ID fields can project stored IDs; root must integrate native content transport or an explicit emulator command separately."
+  }
+}

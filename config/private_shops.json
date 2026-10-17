@@ -1,0 +1,7 @@
+{
+  "policy": "Original manual pp30-31: shared private sales, purchase requests, packages, signatures and filters. Credits only; native f32 unit prices normalize to hundredths of a credit, total rounds up. Limits and rounding are explicit server policy, not historical prices.",
+  "maximum_rows": 100,
+  "maximum_traders": 100,
+  "maximum_signature_bytes": 100,
+  "maximum_price_cents": 429496729500
+}

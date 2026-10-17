@@ -1,0 +1,467 @@
+{
+  "version": 1,
+  "currency": "credits",
+  "migration": "discard_gold_without_conversion",
+  "se_tempo": "recommended",
+  "premium_day": 1500,
+  "premium_month": 30000,
+  "rename_main_credits": 3000,
+  "rental_credits_per_legacy_unit": 100,
+  "items": [
+    {
+      "item_id": 8,
+      "credits": 180,
+      "pack_count": 1
+    },
+    {
+      "item_id": 9,
+      "credits": 55,
+      "pack_count": 1
+    },
+    {
+      "item_id": 10,
+      "credits": 150,
+      "pack_count": 1
+    },
+    {
+      "item_id": 11,
+      "credits": 300,
+      "pack_count": 1
+    },
+    {
+      "item_id": 14,
+      "credits": 300,
+      "pack_count": 100
+    },
+    {
+      "item_id": 18,
+      "credits": 900,
+      "pack_count": 1
+    },
+    {
+      "item_id": 19,
+      "credits": 2400,
+      "pack_count": 1
+    },
+    {
+      "item_id": 24,
+      "credits": 1500,
+      "pack_count": 1
+    },
+    {
+      "item_id": 30,
+      "credits": 1050,
+      "pack_count": 1
+    },
+    {
+      "item_id": 33,
+      "credits": 140,
+      "pack_count": 1
+    },
+    {
+      "item_id": 34,
+      "credits": 75,
+      "pack_count": 1
+    },
+    {
+      "item_id": 35,
+      "credits": 180,
+      "pack_count": 1
+    },
+    {
+      "item_id": 208,
+      "credits": 50,
+      "pack_count": 1
+    },
+    {
+      "item_id": 222,
+      "credits": 250,
+      "pack_count": 1
+    },
+    {
+      "item_id": 223,
+      "credits": 180,
+      "pack_count": 1
+    },
+    {
+      "item_id": 224,
+      "credits": 120,
+      "pack_count": 1
+    },
+    {
+      "item_id": 227,
+      "credits": 450,
+      "pack_count": 1
+    },
+    {
+      "item_id": 236,
+      "credits": 180,
+      "pack_count": 1
+    },
+    {
+      "item_id": 237,
+      "credits": 450,
+      "pack_count": 1
+    },
+    {
+      "item_id": 238,
+      "credits": 350,
+      "pack_count": 1
+    },
+    {
+      "item_id": 242,
+      "credits": 1350,
+      "pack_count": 1
+    },
+    {
+      "item_id": 243,
+      "credits": 1800,
+      "pack_count": 1
+    },
+    {
+      "item_id": 244,
+      "credits": 1200,
+      "pack_count": 1
+    },
+    {
+      "item_id": 245,
+      "credits": 600,
+      "pack_count": 1
+    },
+    {
+      "item_id": 246,
+      "credits": 1650,
+      "pack_count": 1
+    },
+    {
+      "item_id": 247,
+      "credits": 1050,
+      "pack_count": 1
+    },
+    {
+      "item_id": 248,
+      "credits": 6000,
+      "pack_count": 1
+    },
+    {
+      "item_id": 249,
+      "credits": 2200,
+      "pack_count": 1
+    },
+    {
+      "item_id": 250,
+      "credits": 3800,
+      "pack_count": 1
+    },
+    {
+      "item_id": 251,
+      "credits": 5500,
+      "pack_count": 1
+    },
+    {
+      "item_id": 252,
+      "credits": 7500,
+      "pack_count": 1
+    },
+    {
+      "item_id": 253,
+      "credits": 4800,
+      "pack_count": 1
+    },
+    {
+      "item_id": 256,
+      "credits": 18000,
+      "pack_count": 1
+    },
+    {
+      "item_id": 257,
+      "credits": 300,
+      "pack_count": 1
+    },
+    {
+      "item_id": 258,
+      "credits": 1200,
+      "pack_count": 1
+    },
+    {
+      "item_id": 259,
+      "credits": 1050,
+      "pack_count": 1
+    },
+    {
+      "item_id": 260,
+      "credits": 2550,
+      "pack_count": 1
+    },
+    {
+      "item_id": 261,
+      "credits": 2200,
+      "pack_count": 1
+    },
+    {
+      "item_id": 262,
+      "credits": 1200,
+      "pack_count": 1
+    },
+    {
+      "item_id": 263,
+      "credits": 6000,
+      "pack_count": 1
+    },
+    {
+      "item_id": 264,
+      "credits": 15000,
+      "pack_count": 1
+    },
+    {
+      "item_id": 266,
+      "credits": 6000,
+      "pack_count": 1
+    },
+    {
+      "item_id": 301,
+      "credits": 150,
+      "pack_count": 1
+    },
+    {
+      "item_id": 302,
+      "credits": 600,
+      "pack_count": 1
+    },
+    {
+      "item_id": 303,
+      "credits": 450,
+      "pack_count": 1
+    },
+    {
+      "item_id": 304,
+      "credits": 900,
+      "pack_count": 1
+    },
+    {
+      "item_id": 305,
+      "credits": 300,
+      "pack_count": 1
+    },
+    {
+      "item_id": 306,
+      "credits": 750,
+      "pack_count": 1
+    },
+    {
+      "item_id": 307,
+      "credits": 750,
+      "pack_count": 1
+    },
+    {
+      "item_id": 308,
+      "credits": 750,
+      "pack_count": 1
+    },
+    {
+      "item_id": 309,
+      "credits": 600,
+      "pack_count": 1
+    },
+    {
+      "item_id": 310,
+      "credits": 750,
+      "pack_count": 1
+    },
+    {
+      "item_id": 311,
+      "credits": 1050,
+      "pack_count": 1
+    },
+    {
+      "item_id": 312,
+      "credits": 1200,
+      "pack_count": 1
+    },
+    {
+      "item_id": 313,
+      "credits": 1200,
+      "pack_count": 1
+    },
+    {
+      "item_id": 314,
+      "credits": 5000,
+      "pack_count": 1
+    },
+    {
+      "item_id": 315,
+      "credits": 7500,
+      "pack_count": 1
+    },
+    {
+      "item_id": 316,
+      "credits": 4500,
+      "pack_count": 1
+    },
+    {
+      "item_id": 317,
+      "credits": 300,
+      "pack_count": 1
+    },
+    {
+      "item_id": 318,
+      "credits": 180,
+      "pack_count": 1
+    },
+    {
+      "item_id": 319,
+      "credits": 120,
+      "pack_count": 1
+    },
+    {
+      "item_id": 320,
+      "credits": 150,
+      "pack_count": 1
+    },
+    {
+      "item_id": 321,
+      "credits": 180,
+      "pack_count": 1
+    },
+    {
+      "item_id": 323,
+      "credits": 3200,
+      "pack_count": 1
+    },
+    {
+      "item_id": 324,
+      "credits": 3000,
+      "pack_count": 1
+    },
+    {
+      "item_id": 326,
+      "credits": 200,
+      "pack_count": 1
+    },
+    {
+      "item_id": 327,
+      "credits": 150,
+      "pack_count": 1
+    },
+    {
+      "item_id": 328,
+      "credits": 120,
+      "pack_count": 1
+    },
+    {
+      "item_id": 329,
+      "credits": 150,
+      "pack_count": 1
+    },
+    {
+      "item_id": 330,
+      "credits": 750,
+      "pack_count": 1
+    },
+    {
+      "item_id": 331,
+      "credits": 150,
+      "pack_count": 1
+    },
+    {
+      "item_id": 332,
+      "credits": 300,
+      "pack_count": 1
+    },
+    {
+      "item_id": 334,
+      "credits": 1800,
+      "pack_count": 1
+    },
+    {
+      "item_id": 335,
+      "credits": 1350,
+      "pack_count": 1
+    },
+    {
+      "item_id": 336,
+      "credits": 1050,
+      "pack_count": 1
+    },
+    {
+      "item_id": 338,
+      "credits": 1500,
+      "pack_count": 1
+    },
+    {
+      "item_id": 339,
+      "credits": 1350,
+      "pack_count": 1
+    },
+    {
+      "item_id": 340,
+      "credits": 300,
+      "pack_count": 1
+    },
+    {
+      "item_id": 341,
+      "credits": 1200,
+      "pack_count": 1
+    },
+    {
+      "item_id": 5001,
+      "credits": 60,
+      "pack_count": 1
+    },
+    {
+      "item_id": 5002,
+      "credits": 1800,
+      "pack_count": 1
+    },
+    {
+      "item_id": 5003,
+      "credits": 300,
+      "pack_count": 1
+    },
+    {
+      "item_id": 5004,
+      "credits": 500,
+      "pack_count": 1
+    },
+    {
+      "item_id": 5005,
+      "credits": 900,
+      "pack_count": 1
+    },
+    {
+      "item_id": 5006,
+      "credits": 600,
+      "pack_count": 1
+    },
+    {
+      "item_id": 5007,
+      "credits": 1000,
+      "pack_count": 1
+    },
+    {
+      "item_id": 5008,
+      "credits": 1800,
+      "pack_count": 1
+    },
+    {
+      "item_id": 5009,
+      "credits": 150,
+      "pack_count": 1
+    },
+    {
+      "item_id": 5010,
+      "credits": 250,
+      "pack_count": 1
+    },
+    {
+      "item_id": 5011,
+      "credits": 600,
+      "pack_count": 1
+    },
+    {
+      "item_id": 5012,
+      "credits": 300,
+      "pack_count": 1
+    }
+  ]
+}

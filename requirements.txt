@@ -1,0 +1,3 @@
+# Standalone server: Python >=3.11 (Ubuntu 24.04: Python 3.12).
+# No third-party runtime dependencies. socket/sqlite3/tomllib/zlib are stdlib.
+# Do not install the research extras on the VPS.

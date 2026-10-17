@@ -1,0 +1,12 @@
+# Safe local default. On the VPS set bind_address = "0.0.0.0" and set
+# advertised_address to the VPS public IPv4. See DEPLOY_HETZNER.md.
+bind_address = "127.0.0.1"
+advertised_address = "127.0.0.1"
+game_port = 28512
+# Relative paths are resolved against THIS config file, not the working directory.
+# VPS: use /var/lib/tio-server. Local deployment tests use a separate save.
+data_directory = "../data/standalone"
+log_level = "INFO"
+# Opt-in independent accounts: provision credentials first; see MULTIPLAYER.md.
+# multi_account = true
+# session_port = 28513

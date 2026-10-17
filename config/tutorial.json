@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "source": "Manual printed7/9/42; installed maps/tutorial.s and quest/tut_1000.xml",
+  "events": [
+    "move",
+    "attack",
+    "end_turn",
+    "enemy_killed"
+  ],
+  "turn_seconds": 60,
+  "weapon_template": 301,
+  "ammo_template": 3,
+  "ammo_count": 300,
+  "target_health": 10,
+  "dialogue_steps": [
+    1002,
+    1004,
+    1023,
+    1004,
+    1018
+  ],
+  "emulator_policy": "Four native accepted action facts, temporary Beretta/ammunition, connected original scenery spawn pair, stationary target and 60s player turns are explicit short tutorial policy. Original B8/10 ACK windows, portraits, images and voices supplement the precise short-lesson battle chat. Only compatible original ACKs are selected; crate/grenade/sniper lessons of the longer original scenario are not reproduced. Continue drains client dialogue only and cannot grant tutorial facts. No economic, progression or wound settlement. Fresh creation gets main plus exactly two random human mercenaries; replay never backfills existing saves. Verified kill fact on a closed attempt restores the lesson target dead on continuation."
+}

@@ -1,0 +1,6 @@
+{
+  "schema": 1,
+  "group_wait_seconds": 3.0,
+  "bot_wait_seconds": 60.0,
+  "notes": "Four compatible real players start immediately; two or three wait at most three seconds from the oldest selected ticket. A lone player receives a transient AI opponent after 60 seconds. Compatible real players always take priority."
+}

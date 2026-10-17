@@ -1,0 +1,18 @@
+{
+  "source": "silver.dll AC4FA0, level function 9B336C, NextLvl_Exp A853F8; TIO_manual.pdf pp42-43,55",
+  "level_floors": [0,1400,3779,7355,12305,18777,26900,36790,48553,62285,78076,96013,116174,138637,163472,190750,220537,252897,287890,325578],
+  "native_upper_sentinel": 366017,
+  "hp_per_level": 5,
+  "initial_hp": {"1":85,"2":85,"3":85,"4":85,"5":85,"6":98},
+  "local_damage_policy": {
+    "xp_per_damage_dealt": 4,
+    "xp_per_damage_received": 2,
+    "level_difference_percent": 15,
+    "rank_difference_percent": 2,
+    "equipment_upgrade_difference_percent": 2,
+    "minimum_strength_percent": 10,
+    "maximum_strength_percent": 300,
+    "victim_hp_budgets_per_battle": 1
+  },
+  "limitations": "Damage coefficients and anti-farming budget are local, user-authorized policy, NOT a recovered server formula. No bonus merely for entering/winning. Enemy damage only; each victim has one maximum-HP experience budget per battle. Premium subscription XP rules are in tio/premium.py. Stage4 applies the existing unordered account-pair six-hour factors to positive PvP XP and soldier rank: first three matches full, next three half, subsequent matches quarter. Progression uses the minimum opposing-pair factor for mixed teams; credits retain their average. Pair factors are frozen once per match and shared by both sides. This reduces repeated-player farming but does not prohibit collusion or account rotation. Existing higher base HP is retained; new levels add5 HP. Level gains do not heal or revive."
+}

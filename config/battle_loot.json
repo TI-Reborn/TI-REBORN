@@ -1,0 +1,10 @@
+{
+  "unseal_ap": 4,
+  "reopen_ap": 1,
+  "inventory_slots": 18,
+  "extra_grenade_chance": 0.25,
+  "medical_units": [1, 3],
+  "ammo_packs": [1, 2],
+  "source": "Native settings9DC861..9DC881: unseal4, open1; manual inventory18. Gear is temporary with zero durability. Exact server loot tables were not recovered.",
+  "loot_policy": "Local balanced selection: one supported ordinary non-SE weapon with its source packamount ammo, one ordinary armor piece, Bandages or Candies, optional Frag Grenade. Equipment limited to the highest participating level, minimum1. Each crate rolled once per battle; repeat opening never rerolls."
+}

@@ -1,0 +1,23 @@
+[Unit]
+Description=Tionline private Stripe bank adapter
+After=network.target tio-server.service
+
+[Service]
+User=tio
+Group=tio
+WorkingDirectory=/opt/tio-emulator
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/etc/tio-server/bank-api.env
+ExecStart=/opt/tio-emulator/.venv-web/bin/python -m server.bank_gateway
+Restart=on-failure
+RestartSec=5
+UMask=0027
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/tio-server
+
+[Install]
+WantedBy=multi-user.target

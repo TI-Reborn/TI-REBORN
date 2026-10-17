@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "source": "TIO original manual, printed pages 16-17; native create mapSize 1..4",
+  "policy": "The manual specifies selectable map sizes without dimensions. These scales are explicit server reconstruction on original city map fragments.",
+  "map_scales": {"1": [1, 1], "2": [5, 4], "3": [3, 2], "4": [7, 4]}
+}

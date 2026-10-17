@@ -1,0 +1,583 @@
+{
+  "dimension_source": "https://ggeek.ru/forum/ggeek-forum-12-obshhenie/forum-2438-sozdaj-boevuyu-kartu/",
+  "notes": "38x38 is documented for TrueSkill Survival. Fragment selection, counts and placement are local reconstruction, not recovered server generation tables. towns.cfg size is the global-map town footprint.",
+  "profiles": {
+    "reservation": {
+      "town_id": 3,
+      "enabled": true,
+      "width": 38,
+      "height": 38,
+      "ground_ids": [
+        0,
+        1
+      ],
+      "large_modes": [
+        1,
+        4
+      ],
+      "large_scale": [
+        3,
+        2
+      ],
+      "pools": {
+        "houses": [
+          "m_house01_v1.s",
+          "m_house01_v2.s",
+          "m_house01_v3.s",
+          "m_house01_v4.s",
+          "m_house01_v5.s",
+          "mappack1/house_01_F.s"
+        ],
+        "hangars": [
+          "hangar_v1.s",
+          "hangar_v2.s",
+          "hangar_v3.s",
+          "hangar_v4.s",
+          "mappack1/hangar_01_F.s"
+        ],
+        "warehouses": [
+          "fenced_storage_v1.s",
+          "fenced_storage_v2.s",
+          "fenced_storage_v3.s",
+          "mappack1/fenced_storage_01_F.s",
+          "mappack1/fenced_storage_02_F.s",
+          "mappack1/fenced_storage_03_F.s",
+          "mappack1/fenced_storage_05_F.s",
+          "mappack1/fenced_storage_06_F.s",
+          "mappack1/fenced_storage_07.s",
+          "wiredstore_v1.s",
+          "wiredstore_v2.s",
+          "wiredstore_v3.s"
+        ],
+        "industrial": [
+          "refinery_v1.s",
+          "refinery_v2.s",
+          "refinery_v3.s"
+        ],
+        "posts": [
+          "shed_v1.s",
+          "shed_v2.s",
+          "shed_v3.s",
+          "tent_v1.s",
+          "tent_v2.s"
+        ],
+        "barracks": [
+          "military_barrack.s"
+        ],
+        "cover": [
+          "l_food_01.s",
+          "l_food_02.s",
+          "mappack2/barrel_set_01.s",
+          "mappack2/barrel_set_02.s",
+          "mappack2/barrel_set_03.s",
+          "mappack2/barrel_set_04.s",
+          "mappack2/barrel_set_05.s",
+          "mappack2/barrel_set_06.s",
+          "mappack2/crate_set_01.s",
+          "mappack2/crate_set_02.s",
+          "mappack2/crate_set_03.s",
+          "mappack2/crate_set_04.s",
+          "mappack2/crate_set_05.s",
+          "mappack2/crater_set_01.s",
+          "oiltank_v1.s",
+          "oiltank_v2.s",
+          "oiltank_v3.s",
+          "outpost_v1.s",
+          "outpost_v2.s",
+          "outpost_v3.s",
+          "outpost_v4.s",
+          "outpost_v5.s",
+          "outpost_v6.s",
+          "outpost_v7.s",
+          "water_tower.s"
+        ],
+        "crates": [
+          "item_steel_box_v1.s",
+          "item_steel_box_v2.s"
+        ],
+        "walls": [
+          "mappack1/concrete_wall_05a_F.s",
+          "mappack1/concrete_wall_05c_F.s",
+          "mappack1/concrete_wall_05d_F.s",
+          "mappack1/concrete_wall_06_F.s",
+          "mappack1/concrete_wall_07_F.s",
+          "mappack1/concrete_wall_09b_F.s",
+          "mappack1/concrete_wall_11d_F.s",
+          "mappack1/concrete_wall_11e_F.s",
+          "mappack1/concrete_wall_14_F.s",
+          "mappack1/concrete_wall_15a_F.s",
+          "mappack1/concrete_wall_15b_F.s"
+        ],
+        "large_walls": [
+          "concrete_wall_v1.s",
+          "concrete_wall_v2.s",
+          "concrete_wall_v3.s",
+          "concrete_wall_v4.s",
+          "mappack1/concrete_wall_08_F.s",
+          "mappack1/concrete_wall_09a_F.s",
+          "mappack1/concrete_wall_11a_F.s",
+          "mappack1/concrete_wall_11b_F.s",
+          "mappack1/concrete_wall_11c_F.s",
+          "mappack1/concrete_wall_18_F.s",
+          "mappack1/concrete_wall_19_F.s"
+        ]
+      },
+      "variants": [
+        {
+          "name": "settlement",
+          "counts": {
+            "houses": [
+              1,
+              1
+            ],
+            "hangars": [
+              1,
+              1
+            ],
+            "walls": [
+              2,
+              2
+            ],
+            "cover": [
+              3,
+              4
+            ],
+            "crates": [
+              3,
+              4
+            ]
+          }
+        },
+        {
+          "name": "warehouse",
+          "counts": {
+            "warehouses": [
+              1,
+              1
+            ],
+            "hangars": [
+              1,
+              1
+            ],
+            "walls": [
+              2,
+              2
+            ],
+            "cover": [
+              3,
+              4
+            ],
+            "crates": [
+              3,
+              4
+            ]
+          }
+        },
+        {
+          "name": "industrial",
+          "counts": {
+            "industrial": [
+              1,
+              1
+            ],
+            "walls": [
+              2,
+              3
+            ],
+            "cover": [
+              5,
+              6
+            ],
+            "crates": [
+              4,
+              5
+            ]
+          }
+        },
+        {
+          "name": "outpost",
+          "counts": {
+            "posts": [
+              1,
+              1
+            ],
+            "walls": [
+              2,
+              3
+            ],
+            "cover": [
+              5,
+              6
+            ],
+            "crates": [
+              4,
+              5
+            ]
+          }
+        },
+        {
+          "name": "barracks",
+          "counts": {
+            "barracks": [
+              1,
+              1
+            ],
+            "walls": [
+              2,
+              2
+            ],
+            "cover": [
+              3,
+              4
+            ],
+            "crates": [
+              3,
+              4
+            ]
+          }
+        }
+      ],
+      "notes": "User-authorized military resources in Reservation. No Denver buildings or vegetation. 57x57 for Team and Wall. Original fragments; assembly and variant counts are local server policy.",
+      "excluded": {
+        "mappack1/concrete_wall_05b_F.s": "References four sandbag models absent from the installed client; do not generate invisible cover."
+      }
+    },
+    "denver": {
+      "town_id": 2,
+      "enabled": true,
+      "width": 38,
+      "height": 38,
+      "ground_id": 3,
+      "large_modes": [
+        1,
+        4
+      ],
+      "large_scale": [
+        3,
+        2
+      ],
+      "pools": {
+        "houses": [
+          "forest_summerhouse_v1.s",
+          "forest_house01_v1.s",
+          "forest_house01_v2.s",
+          "forest_house01_v3.s",
+          "forest_house02_v1.s"
+        ],
+        "cover": [
+          "forest_tree_v01.s",
+          "forest_tree_v02.s",
+          "forest_tree_v03.s",
+          "forest_tree_v04.s",
+          "forest_tree_v05.s"
+        ],
+        "crates": [
+          "item_steel_box_v1.s",
+          "item_steel_box_v2.s"
+        ],
+        "large_walls": [
+          "forest_dzot_v1.s"
+        ],
+        "scenery": [
+          "forest_tree_box_v1.s",
+          "forest_tree_box_v2.s",
+          "forest_tree_box_v3.s"
+        ]
+      },
+      "variants": [
+        {
+          "name": "city",
+          "counts": {
+            "houses": [
+              1,
+              2
+            ],
+            "cover": [
+              6,
+              9
+            ],
+            "crates": [
+              3,
+              4
+            ],
+            "scenery": [
+              1,
+              2
+            ]
+          }
+        }
+      ],
+      "notes": "Original client fragments; composition and 38/57 cell dimensions are emulator policy."
+    },
+    "new_york": {
+      "town_id": 5,
+      "enabled": true,
+      "width": 38,
+      "height": 38,
+      "ground_id": 2,
+      "large_modes": [
+        1,
+        4
+      ],
+      "large_scale": [
+        3,
+        2
+      ],
+      "pools": {
+        "houses": [
+          "ny_clinic_v01.s",
+          "ny_parking_v01.s",
+          "ny_parking_v02.s",
+          "ny_residential_area_v05.s",
+          "ny_residential_area_v10.s"
+        ],
+        "cover": [
+          "l_food_01.s",
+          "l_food_02.s",
+          "ny_streetjunk_v01.s",
+          "ny_streetjunk_v02.s",
+          "ny_streetjunk_v03.s",
+          "ny_streetjunk_v04.s"
+        ],
+        "crates": [
+          "item_steel_box_v1.s",
+          "item_steel_box_v2.s"
+        ],
+        "large_walls": [
+          "concrete_wall_v1.s",
+          "concrete_wall_v2.s"
+        ]
+      },
+      "variants": [
+        {
+          "name": "city",
+          "counts": {
+            "houses": [
+              1,
+              1
+            ],
+            "cover": [
+              1,
+              2
+            ],
+            "crates": [
+              3,
+              4
+            ]
+          }
+        }
+      ],
+      "notes": "Original client fragments; composition and 38/57 cell dimensions are emulator policy."
+    },
+    "military_zone": {
+      "town_id": 8,
+      "enabled": true,
+      "width": 38,
+      "height": 38,
+      "ground_id": 1,
+      "large_modes": [
+        1,
+        4
+      ],
+      "large_scale": [
+        3,
+        2
+      ],
+      "pools": {
+        "barracks": [
+          "military_barrack.s"
+        ],
+        "posts": [
+          "shed_v1.s",
+          "shed_v2.s",
+          "shed_v3.s",
+          "tent_v1.s",
+          "tent_v2.s",
+          "outpost_v1.s",
+          "outpost_v2.s",
+          "outpost_v3.s",
+          "outpost_v4.s",
+          "outpost_v5.s",
+          "outpost_v6.s",
+          "outpost_v7.s"
+        ],
+        "walls": [
+          "mappack1/concrete_wall_05a_F.s",
+          "mappack1/concrete_wall_05c_F.s",
+          "mappack1/concrete_wall_05d_F.s"
+        ],
+        "cover": [
+          "l_food_01.s",
+          "l_food_02.s",
+          "mappack2/barrel_set_01.s",
+          "mappack2/container_set_01.s"
+        ],
+        "crates": [
+          "item_steel_box_v1.s",
+          "item_steel_box_v2.s"
+        ],
+        "large_walls": [
+          "concrete_wall_v1.s",
+          "concrete_wall_v2.s"
+        ]
+      },
+      "variants": [
+        {
+          "name": "city",
+          "counts": {
+            "barracks": [
+              1,
+              1
+            ],
+            "posts": [
+              1,
+              2
+            ],
+            "walls": [
+              2,
+              3
+            ],
+            "cover": [
+              2,
+              3
+            ],
+            "crates": [
+              3,
+              4
+            ]
+          }
+        }
+      ],
+      "notes": "Original client fragments; composition and 38/57 cell dimensions are emulator policy."
+    },
+    "encounter_ash": {
+      "enabled": true,
+      "width": 38,
+      "height": 38,
+      "ground_id": 3,
+      "ground_brush_id": 7,
+      "large_modes": [],
+      "pools": {
+        "trees": [
+          "ashfor_tree_v01.s",
+          "ashfor_tree_v02.s",
+          "ashfor_tree_v03.s"
+        ],
+        "ruins": [
+          "ashfor_summerhouse_v1.s"
+        ]
+      },
+      "variants": [
+        {
+          "name": "clearing",
+          "counts": {
+            "trees": [
+              12,
+              16
+            ]
+          }
+        },
+        {
+          "name": "ruins",
+          "counts": {
+            "trees": [
+              14,
+              18
+            ],
+            "ruins": [
+              1,
+              1
+            ]
+          }
+        }
+      ],
+      "notes": "Dedicated post-apocalyptic dog encounter; no crates. Native cell brush 7"
+    },
+    "encounter_autumn": {
+      "enabled": true,
+      "width": 42,
+      "height": 42,
+      "ground_id": 3,
+      "ground_brush_id": 8,
+      "large_modes": [],
+      "pools": {
+        "trees": [
+          "autfor_tree_v01.s",
+          "autfor_tree_v02.s",
+          "autfor_tree_v03.s"
+        ],
+        "ruins": [
+          "autfor_summerhouse_v1.s"
+        ]
+      },
+      "variants": [
+        {
+          "name": "clearing",
+          "counts": {
+            "trees": [
+              12,
+              16
+            ]
+          }
+        },
+        {
+          "name": "ruins",
+          "counts": {
+            "trees": [
+              14,
+              18
+            ],
+            "ruins": [
+              1,
+              1
+            ]
+          }
+        }
+      ],
+      "notes": "Dedicated post-apocalyptic dog encounter; no crates. Native cell brush 8"
+    },
+    "encounter_blight": {
+      "enabled": true,
+      "width": 40,
+      "height": 40,
+      "ground_id": 3,
+      "ground_brush_id": 9,
+      "large_modes": [],
+      "pools": {
+        "trees": [
+          "wetfor_tree_v01.s",
+          "wetfor_tree_v02.s",
+          "wetfor_tree_v03.s"
+        ],
+        "ruins": [
+          "wetfor_summerhouse_v1.s"
+        ]
+      },
+      "variants": [
+        {
+          "name": "clearing",
+          "counts": {
+            "trees": [
+              12,
+              16
+            ]
+          }
+        },
+        {
+          "name": "ruins",
+          "counts": {
+            "trees": [
+              14,
+              18
+            ],
+            "ruins": [
+              1,
+              1
+            ]
+          }
+        }
+      ],
+      "notes": "Dedicated post-apocalyptic dog encounter; no crates. Native cell brush 9"
+    }
+  }
+}

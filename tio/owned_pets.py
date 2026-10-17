@@ -1,0 +1,99 @@
+"""Persist validated owned-pet and inventory snapshots together.
+
+Unknown wire fields are retained until their domain semantics are recovered.
+Purchases update these snapshots atomically with wallets through tio.shop.
+"""
+
+from .db_transaction import connect
+from contextlib import closing
+from dataclasses import replace
+from pathlib import Path
+import sqlite3
+from .protocol.pet_info import decode_pet_info, encode_pet_info
+from .protocol.item_list import decode_item_list
+
+
+class OwnedPetStore:
+    def __init__(self,path):
+        self.path=Path(path)
+        self.path.parent.mkdir(parents=True,exist_ok=True)
+        with closing(connect(self.path)) as db,db:
+            db.execute('CREATE TABLE IF NOT EXISTS owned_pets (account TEXT NOT NULL, pet_id INTEGER NOT NULL, human INTEGER NOT NULL, pet_packet BLOB NOT NULL, inventory_packet BLOB NOT NULL, PRIMARY KEY(account,pet_id))')
+
+    @staticmethod
+    def validate(pet_packet,inventory_packet,human):
+        pet=decode_pet_info(pet_packet,human_equipment=human)
+        owner,items,_=decode_item_list(inventory_packet)
+        if owner!=pet.fields['0x8c43eb']:
+            raise ValueError('Inventory owner differs from pet ID')
+        ids=[item.instance_id for item in items]
+        if len(ids)!=len(set(ids)):
+            raise ValueError('Duplicate inventory instance IDs')
+        return owner
+
+    def ensure(self,account,pet_packet,inventory_packet,*,human):
+        if not isinstance(account,str) or not account:raise ValueError('Account required')
+        owner=self.validate(pet_packet,inventory_packet,human)
+        with closing(connect(self.path)) as db,db:
+            db.execute('BEGIN IMMEDIATE')
+            if owner==1 and human and db.execute("SELECT 1 FROM sqlite_master WHERE name='characters'").fetchone():
+                character=db.execute('SELECT request FROM characters WHERE account=? AND slot=1',(account,)).fetchone()
+                if character:
+                    from .protocol.character_create import decode_character_create
+                    from .appearance import starter
+                    resource=decode_character_create(bytes(character[0])).options[0]
+                    if resource in (1,2):
+                        pet_packet=encode_pet_info(starter(decode_pet_info(pet_packet,human_equipment=True),resource))
+            db.execute('INSERT OR IGNORE INTO owned_pets VALUES (?,?,?,?,?)',
+                       (account,owner,int(human),pet_packet,inventory_packet))
+            # The starter fixture carries a diagnostic name. Bind only that
+            # original human fighter to the account's saved character on login.
+            # Existing equipment/progress and named recruits remain untouched.
+            if owner == 1 and db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='characters'").fetchone():
+                character = db.execute('SELECT name FROM characters WHERE account=? AND slot=1', (account,)).fetchone()
+                saved = db.execute('SELECT human,pet_packet FROM owned_pets WHERE account=? AND pet_id=1', (account,)).fetchone()
+                if character and saved[0]:
+                    current = decode_pet_info(bytes(saved[1]), human_equipment=True)
+                    name = bytes(character[0])
+                    if current.fields['0x8c4489'] == b'ProbeNew' and name != b'ProbeNew':
+                        renamed = encode_pet_info(replace(current, fields={**current.fields, '0x8c4489': name}))
+                        db.execute('UPDATE owned_pets SET pet_packet=? WHERE account=? AND pet_id=1', (renamed, account))
+            from .ranks import sync
+            from .level_progression import sync as sync_levels
+            sync_levels(db,account)
+            sync(db,account)
+            row=db.execute('SELECT human,pet_packet,inventory_packet FROM owned_pets WHERE account=? AND pet_id=?',(account,owner)).fetchone()
+        self.validate(bytes(row[1]),bytes(row[2]),bool(row[0]))
+        return bytes(row[1]),bytes(row[2])
+
+    def list(self, account):
+        """Load one consistent roster snapshot, restricted to the current account."""
+        if not isinstance(account,str) or not account:raise ValueError('Account required')
+        with closing(connect(self.path)) as db,db:
+            db.execute('BEGIN IMMEDIATE')
+            from .ranks import sync
+            from .level_progression import sync as sync_levels
+            sync_levels(db,account)
+            sync(db,account)
+            rows=db.execute('SELECT pet_id,human,pet_packet,inventory_packet FROM owned_pets WHERE account=? ORDER BY pet_id',
+                            (account,)).fetchall()
+            from .passive_stats import project_saved_pet
+            rows=[(owner,human,project_saved_pet(db,account,owner,pet,bool(human)),inventory) for owner,human,pet,inventory in rows]
+        result=[]
+        for owner,human,pet,inventory in rows:
+            pet,inventory=bytes(pet),bytes(inventory)
+            if self.validate(pet,inventory,bool(human))!=owner:
+                raise ValueError('Stored pet key differs from packet ID')
+            result.append((owner,pet,inventory))
+        return tuple(result)
+
+    def inventory(self, account, owner):
+        """Read saved inventory after mutations; never serve another account's pet."""
+        if not isinstance(account,str) or not account:raise ValueError('Account required')
+        with closing(connect(self.path)) as db:
+            row=db.execute('SELECT human,pet_packet,inventory_packet FROM owned_pets WHERE account=? AND pet_id=?',
+                           (account,owner)).fetchone()
+        if row is None:return None
+        if self.validate(row[1],row[2],bool(row[0]))!=owner:
+            raise ValueError('Stored pet key differs from packet ID')
+        return bytes(row[2])

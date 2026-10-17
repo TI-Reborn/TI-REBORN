@@ -1,0 +1,23 @@
+{
+  "enabled": true,
+  "distance_per_roll": 40,
+  "chance_per_roll": 0.35,
+  "cooldown_seconds": 180,
+  "safe_margin": 15,
+  "resource_id": 103,
+  "body_id": 65490,
+  "weapon_id": 65489,
+  "health_base": 35,
+  "health_per_level": 5,
+  "action_points": 17,
+  "sight": 9,
+  "credits_base": 40,
+  "credits_per_level": 15,
+  "credits_per_dog": 10,
+  "biomes": ["ash", "autumn", "blight"],
+  "loot": {
+    "65487": {"name": "Шкура заражённой собаки", "per_dog": 1, "weight": 20, "sell_credits": 30, "image": "infected_hide.png"},
+    "65488": {"name": "Мясо заражённой собаки", "per_dog": 2, "weight": 15, "sell_credits": 10, "image": "infected_meat.png"}
+  },
+  "source": "User-authorized infected dog skin. Encounter frequency, NPC stats and rewards are new emulator balance."
+}

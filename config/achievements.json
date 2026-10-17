@@ -1,0 +1,884 @@
+{
+  "source": "base/russian.lng an/ad; silver.dll 9637BC/963AC8; https://ti.ggeek.ru/files/TIO_manual.pdf pp25-26",
+  "policy": "One award per account/achievement; user-approved temporary credits where prizes are unrecovered. Unique upgraded item IDs. Battle counters settle on result/escape. Local bots count. Level byte 0 (no additional server tier).",
+  "records": [
+    {
+      "id": 1,
+      "name": "Клан Захватчик",
+      "description": "Захватить штурмом базу (необходимо быть в составе клана-победителя)",
+      "metric": "clan_capture",
+      "goal": 1,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 3,
+          "value": 75
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 2,
+      "name": "Клан Защитник",
+      "description": "Защитить базу от штурма (необходимо быть в составе клана-собственника базы)",
+      "metric": "clan_defense",
+      "goal": 1,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 3,
+          "value": 50
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 3,
+      "name": "Штурмовик",
+      "description": "Войти в топ-20 игроков по очкам, в процессе штурма, независимо от результата штурма",
+      "metric": "assault_top20",
+      "goal": 1,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 1,
+          "value": 1.1
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 4,
+      "name": "Первая кровь",
+      "description": "Накопить 10 убийств противника",
+      "metric": "kills",
+      "goal": 10,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 0,
+          "item_id": 317,
+          "count": 3,
+          "enhancement": 0
+        },
+        {
+          "kind": 0,
+          "item_id": 10,
+          "count": 2,
+          "enhancement": 0
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 5,
+      "name": "Последний герой",
+      "description": "Выиграть 30 битв в \"Выживание\"",
+      "metric": "survival_wins",
+      "goal": 30,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 0,
+          "item_id": 239,
+          "count": 1,
+          "enhancement": 1
+        },
+        {
+          "kind": 0,
+          "item_id": 240,
+          "count": 1,
+          "enhancement": 1
+        },
+        {
+          "kind": 0,
+          "item_id": 241,
+          "count": 1,
+          "enhancement": 1
+        },
+        {
+          "kind": 0,
+          "item_id": 306,
+          "count": 1,
+          "enhancement": 1
+        },
+        {
+          "kind": 0,
+          "item_id": 17,
+          "count": 4,
+          "enhancement": 0
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 6,
+      "name": "Командный дух",
+      "description": "Выиграть 30 битв в \"Командный\"",
+      "metric": "team_wins",
+      "goal": 30,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 0,
+          "item_id": 239,
+          "count": 1,
+          "enhancement": 1
+        },
+        {
+          "kind": 0,
+          "item_id": 240,
+          "count": 1,
+          "enhancement": 1
+        },
+        {
+          "kind": 0,
+          "item_id": 241,
+          "count": 1,
+          "enhancement": 1
+        },
+        {
+          "kind": 0,
+          "item_id": 302,
+          "count": 1,
+          "enhancement": 1
+        },
+        {
+          "kind": 0,
+          "item_id": 17,
+          "count": 2,
+          "enhancement": 0
+        },
+        {
+          "kind": 0,
+          "item_id": 30,
+          "count": 1,
+          "enhancement": 0
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 7,
+      "name": "Спина к спине",
+      "description": "Победить в 30 матчах \"Стенка на стенку\"",
+      "metric": "wall_wins",
+      "goal": 30,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 0,
+          "item_id": 239,
+          "count": 1,
+          "enhancement": 1
+        },
+        {
+          "kind": 0,
+          "item_id": 240,
+          "count": 1,
+          "enhancement": 1
+        },
+        {
+          "kind": 0,
+          "item_id": 241,
+          "count": 1,
+          "enhancement": 1
+        },
+        {
+          "kind": 0,
+          "item_id": 312,
+          "count": 1,
+          "enhancement": 1
+        },
+        {
+          "kind": 0,
+          "item_id": 17,
+          "count": 4,
+          "enhancement": 0
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 8,
+      "name": "Миллионер",
+      "description": "Набрать 1 миллион кредитов",
+      "metric": "credits_peak",
+      "goal": 1000000,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 5000
+    },
+    {
+      "id": 9,
+      "name": "Спартанец",
+      "description": "Набрать 300 побед в любом режиме игры",
+      "metric": "wins",
+      "goal": 300,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 0,
+          "item_id": 334,
+          "count": 1,
+          "enhancement": 20
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 10,
+      "name": "Серьезная закалка",
+      "description": "Сыграть 1000 битв",
+      "metric": "battles",
+      "goal": 1000,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 3,
+          "value": 75
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 11,
+      "name": "Мясоруб",
+      "description": "Убить 6 врагов за 1 битву",
+      "metric": "match_kills",
+      "goal": 6,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 0,
+          "item_id": 33,
+          "count": 5,
+          "enhancement": 0
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 12,
+      "name": "Полезный соклан",
+      "description": "Принести клану 7500 влияния",
+      "metric": "clan_influence",
+      "goal": 7500,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 1,
+          "value": 1.05
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 13,
+      "name": "Лучший друг",
+      "description": "В отряде игрока есть собака 5 и выше уровня",
+      "metric": "dog_level",
+      "goal": 5,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 250
+    },
+    {
+      "id": 14,
+      "name": "Как за каменной стеной",
+      "description": "В отряде игрока есть шахтер 6 и выше уровня",
+      "metric": "miner_level",
+      "goal": 6,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 250
+    },
+    {
+      "id": 15,
+      "name": "5 уровень",
+      "description": "В отряде игрока есть наемник 5 и выше уровня",
+      "metric": "merc_level",
+      "goal": 5,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 250
+    },
+    {
+      "id": 16,
+      "name": "10 уровень",
+      "description": "В отряде игрока есть наемник 10 и выше уровня",
+      "metric": "merc_level",
+      "goal": 10,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 500
+    },
+    {
+      "id": 17,
+      "name": "15 уровень",
+      "description": "В отряде игрока есть наемник 15 и выше уровня",
+      "metric": "merc_level",
+      "goal": 15,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 1000
+    },
+    {
+      "id": 18,
+      "name": "20 уровень",
+      "description": "В отряде игрока есть наемник 20 уровня",
+      "metric": "merc_level",
+      "goal": 20,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 2500
+    },
+    {
+      "id": 19,
+      "name": "Взрывотехник",
+      "description": "Убить 2 врагов одним выстрелом",
+      "metric": "attack_kills",
+      "goal": 2,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 0,
+          "item_id": 317,
+          "count": 1,
+          "enhancement": 3
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 20,
+      "name": "Шахид",
+      "description": "Убить 3 врагов одним выстрелом",
+      "metric": "attack_kills",
+      "goal": 3,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 0,
+          "item_id": 334,
+          "count": 1,
+          "enhancement": 3
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 21,
+      "name": "А кто это у нас там?",
+      "description": "Убить врага, находящегося вне зоны видимости",
+      "metric": "unseen_kills",
+      "goal": 1,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 0,
+          "item_id": 33,
+          "count": 1,
+          "enhancement": 0
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 22,
+      "name": "Сталь надежнее",
+      "description": "Убить 10 врагов холодным оружием",
+      "metric": "melee_kills",
+      "goal": 10,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 500
+    },
+    {
+      "id": 23,
+      "name": "Пистолетер",
+      "description": "Убить 10 врагов из пистолета",
+      "metric": "light_kills",
+      "goal": 10,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 500
+    },
+    {
+      "id": 24,
+      "name": "Град свинца",
+      "description": "Убить 10 врагов из автоматического оружия",
+      "metric": "automatic_kills",
+      "goal": 10,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 0,
+          "item_id": 304,
+          "count": 1,
+          "enhancement": 1
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 25,
+      "name": "Издалека",
+      "description": "Убить 10 врагов из дальнобойного оружия",
+      "metric": "distance_kills",
+      "goal": 10,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 0,
+          "item_id": 310,
+          "count": 1,
+          "enhancement": 1
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 26,
+      "name": "Тяжелый аргумент",
+      "description": "Убить 10 врагов из тяжелого оружия",
+      "metric": "heavy_kills",
+      "goal": 10,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 0,
+          "item_id": 307,
+          "count": 1,
+          "enhancement": 1
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 27,
+      "name": "Меткие броски",
+      "description": "Убить 10 врагов метательным оружием",
+      "metric": "throwing_kills",
+      "goal": 10,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 0,
+          "item_id": 320,
+          "count": 3,
+          "enhancement": 0
+        },
+        {
+          "kind": 0,
+          "item_id": 317,
+          "count": 1,
+          "enhancement": 1
+        },
+        {
+          "kind": 0,
+          "item_id": 340,
+          "count": 1,
+          "enhancement": 1
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 28,
+      "name": "Я просто даю фору",
+      "description": "Промахнуться 3 раза подряд",
+      "metric": "miss_streak",
+      "goal": 3,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 0,
+          "item_id": 17,
+          "count": 1,
+          "enhancement": 0
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 29,
+      "name": "Ты меня разозлил",
+      "description": "Нанести 3 критических выстрела подряд",
+      "metric": "critical_streak",
+      "goal": 3,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 250
+    },
+    {
+      "id": 30,
+      "name": "Железобетонная стена",
+      "description": "Выйграть в бою стенка на стенка, не потеряв ни одного наемника в команде",
+      "metric": "wall_clean",
+      "goal": 1,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 250
+    },
+    {
+      "id": 31,
+      "name": "Командос",
+      "description": "Выграть в командном бою, не потеряв ни одного наемника в команде",
+      "metric": "team_clean",
+      "goal": 1,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 250
+    },
+    {
+      "id": 32,
+      "name": "Чрезвычайно опасен",
+      "description": "Убить 3 наемников за один ход",
+      "metric": "turn_kills",
+      "goal": 3,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 250
+    },
+    {
+      "id": 33,
+      "name": "Несущий смерть",
+      "description": "Убить 4 наемников за один ход",
+      "metric": "turn_kills",
+      "goal": 4,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 500
+    },
+    {
+      "id": 34,
+      "name": "Взломщик",
+      "description": "Открыть 500 ящиков на поле боя",
+      "metric": "crates",
+      "goal": 500,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 0,
+          "item_id": 329,
+          "count": 1,
+          "enhancement": 1
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 35,
+      "name": "Опытный взломщик",
+      "description": "Открыть 1000 ящиков на поле боя",
+      "metric": "crates",
+      "goal": 1000,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 0,
+          "item_id": 5003,
+          "count": 1,
+          "enhancement": 0
+        }
+      ],
+      "reward_source": "manual pp25-26; phase3 Light Trainer catalogue binding5003",
+      "temporary_credits": 0
+    },
+    {
+      "id": 36,
+      "name": "Вооруженный до зубов",
+      "description": "Купить вещь в SC-магазине",
+      "metric": "sc_purchase",
+      "goal": 1,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 100
+    },
+    {
+      "id": 37,
+      "name": "Экипировка на вес золота",
+      "description": "Купить вещь в премиум-магазине",
+      "metric": "premium_purchase",
+      "goal": 1,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 100
+    },
+    {
+      "id": 38,
+      "name": "Мне это пригодится",
+      "description": "Купить вещь в обычном магазине",
+      "metric": "shop_purchase",
+      "goal": 1,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 100
+    },
+    {
+      "id": 39,
+      "name": "Новичкам везет",
+      "description": "Улучшить вещь 3 и выше уровня",
+      "metric": "upgraded_items",
+      "goal": 1,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 100
+    },
+    {
+      "id": 40,
+      "name": "IDDQD",
+      "description": "В наемника не попали 3 раза подряд",
+      "metric": "dodge_streak",
+      "goal": 3,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 250
+    },
+    {
+      "id": 41,
+      "name": "На удачной волне",
+      "description": "Улучшить 30 вещей 3 и выше уровня",
+      "metric": "upgraded_items",
+      "goal": 30,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 500
+    },
+    {
+      "id": 42,
+      "name": "Почти механик",
+      "description": "Улучшить 100 вещей 3 и выше уровня",
+      "metric": "upgraded_items",
+      "goal": 100,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 1000
+    },
+    {
+      "id": 43,
+      "name": "Механик",
+      "description": "Улучшить 500 вещей 3 и выше уровня",
+      "metric": "upgraded_items",
+      "goal": 500,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 2500
+    },
+    {
+      "id": 44,
+      "name": "Любимчик фортуны",
+      "description": "Улучшить 1000 вещей 3 и выше уровня",
+      "metric": "upgraded_items",
+      "goal": 1000,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 5000
+    },
+    {
+      "id": 45,
+      "name": "Это мне ещё пригодится",
+      "description": "Отремонтировать вещь",
+      "metric": "repairs",
+      "goal": 1,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 100
+    },
+    {
+      "id": 46,
+      "name": "Бережливый",
+      "description": "Отремонтировать 30 вещей",
+      "metric": "repairs",
+      "goal": 30,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 500
+    },
+    {
+      "id": 47,
+      "name": "Ремонтный цех",
+      "description": "Отремонтировать 100 вещей",
+      "metric": "repairs",
+      "goal": 100,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 1000
+    },
+    {
+      "id": 48,
+      "name": "Ремонтный завод",
+      "description": "Отремонтировать 500 вещей",
+      "metric": "repairs",
+      "goal": 500,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 2500
+    },
+    {
+      "id": 49,
+      "name": "Да и не жалко",
+      "description": "Сломать оружие или броню выше 15 уровня",
+      "metric": "destroyed_above15",
+      "goal": 1,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 2500
+    },
+    {
+      "id": 50,
+      "name": "Мастер Кунг-Фу",
+      "description": "Убить 10 врагов кулаком",
+      "metric": "fist_kills",
+      "goal": 10,
+      "level": 0,
+      "prizes": [
+        {
+          "kind": 0,
+          "item_id": 334,
+          "count": 1,
+          "enhancement": 1
+        }
+      ],
+      "reward_source": "manual pp25-26",
+      "temporary_credits": 0
+    },
+    {
+      "id": 60,
+      "name": "Рекрут",
+      "description": "Одержать первую победу в бронзовой лиге",
+      "metric": "bronze_win",
+      "goal": 1,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 250
+    },
+    {
+      "id": 61,
+      "name": "Солдат",
+      "description": "Войти в серебрянную лигу",
+      "metric": "silver_league",
+      "goal": 1,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 500
+    },
+    {
+      "id": 62,
+      "name": "Ветеран",
+      "description": "Войти в золотую лигу",
+      "metric": "gold_league",
+      "goal": 1,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 1000
+    },
+    {
+      "id": 63,
+      "name": "Элита",
+      "description": "Войти в платиновую лигу",
+      "metric": "platinum_league",
+      "goal": 1,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 2500
+    },
+    {
+      "id": 64,
+      "name": "Везунчик",
+      "description": "Заработать 3 победы подряд в играх лиги",
+      "metric": "league_streak",
+      "goal": 3,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 500
+    },
+    {
+      "id": 65,
+      "name": "Раздражитель",
+      "description": "Заработать 10 побед подряд в играх лиги",
+      "metric": "league_streak",
+      "goal": 10,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 1000
+    },
+    {
+      "id": 66,
+      "name": "Мастер сражений",
+      "description": "Заработать 25 побед подряд в играх лиги",
+      "metric": "league_streak",
+      "goal": 25,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 2500
+    },
+    {
+      "id": 67,
+      "name": "Ночной кошмар",
+      "description": "Заработать 50 побед подряд в играх лиги",
+      "metric": "league_streak",
+      "goal": 50,
+      "level": 0,
+      "prizes": [],
+      "reward_source": "temporary credits",
+      "temporary_credits": 5000
+    }
+  ]
+}

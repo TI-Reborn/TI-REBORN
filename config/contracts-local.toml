@@ -1,0 +1,9 @@
+# Isolated local development: never points at existing or hosted player data.
+bind_address = "127.0.0.1"
+advertised_address = "127.0.0.1"
+game_port = 28512
+session_port = 28513
+data_directory = "../data/contracts-local"
+log_level = "INFO"
+multi_account = true
+contracts_enabled = true

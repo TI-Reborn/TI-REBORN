@@ -1,0 +1,14 @@
+{
+  "source": "TIO_manual.pdf pages 47-48; original ability.cfg, russian.lng and silver.dll CanOpenDoors/CanCloseDoors",
+  "required_levels": {"4": [1, 2, 4, 7], "12": [3, 4, 6, 8], "14": [2], "15": [2, 4, 5, 8], "16": [1, 2, 4, 6], "18": [1, 3, 5, 7], "19": [4], "23": [2, 3, 5, 6], "26": [1, 3, 5, 7]},
+  "cooldowns": {"12": 2, "23": 3, "26": 2},
+  "critical_damage_multiplier": 2,
+  "limitations": [
+    "Cooldowns are explicit only at CFG rank1; applying the same cooldown at higher ranks is provisional.",
+    "Fangs base critical chance5 and perk bonus1/2/3/4 are original; double damage is a local rule, original damage multiplier unknown.",
+    "Existing local learning price of100 credits per rank is retained, not presented as historical.",
+    "Door skills are boolean single-rank abilities. XML table1 represents learned permission, not a numeric stat bonus.",
+    "Legacy Dog finder13 has no confirmed manual entry or complete effect rules and is not offered.",
+    "Scent checks a Euclidean radius, ignores walls and reports presence only; exact server radius metric and near/far split are not recovered. Native Skill12 Attack/Evade animations provide success/failure feedback; full live rendering remains to be tested."
+  ]
+}

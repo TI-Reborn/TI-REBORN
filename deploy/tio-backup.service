@@ -1,0 +1,20 @@
+[Unit]
+Description=Verified TIO SQLite backup with 14-day retention
+
+[Service]
+Type=oneshot
+User=tio
+Group=tio
+WorkingDirectory=/opt/tio-emulator
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/tio-emulator/.venv/bin/python /opt/tio-emulator/deploy/scheduled_backup.py --source /var/lib/tio-server/reservation.sqlite3 --directory /var/backups/tio-server --days 14
+TimeoutStartSec=10min
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/backups/tio-server /var/lib/tio-server
+StandardOutput=journal
+StandardError=journal

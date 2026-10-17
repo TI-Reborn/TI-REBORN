@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "source": "Provisional local contract balance. Models, weapons, armor and fragments use verified client resources; composition and role statistics are new emulator policy.",
+  "roles": {
+    "scout": {"name": "Разведчик", "resource_id": 2, "level": 1, "health": 45, "action_points": 17, "sight_radius": 10, "carry_capacity": 500, "weapon_id": 301, "armor_ids": [223, 226], "ammunition": 120, "weapon_proficiency": 53},
+    "rifleman": {"name": "Стрелок", "resource_id": 1, "level": 2, "health": 65, "action_points": 16, "sight_radius": 9, "carry_capacity": 500, "weapon_id": 303, "armor_ids": [230, 229, 226], "ammunition": 160, "weapon_proficiency": 53},
+    "heavy": {"name": "Тяжёлый боец", "resource_id": 1, "level": 3, "health": 90, "action_points": 15, "sight_radius": 8, "carry_capacity": 500, "weapon_id": 302, "armor_ids": [239, 237, 238], "ammunition": 80, "weapon_proficiency": 53}
+  },
+  "profiles": {
+    "contract_camp": {
+      "enabled": true, "width": 38, "height": 38, "ground_id": 3, "ground_brush_id": 3, "large_modes": [],
+      "pools": {"tents": ["tent_v1.s", "tent_v2.s"], "trees": ["forest_tree_v01.s", "forest_tree_v02.s", "forest_tree_v03.s"], "posts": ["outpost_v1.s", "outpost_v2.s"]},
+      "variants": [{"name": "camp", "counts": {"tents": [2, 2], "trees": [5, 7], "posts": [1, 1]}}]
+    },
+    "contract_depot": {
+      "enabled": true, "width": 42, "height": 42, "ground_id": 1, "ground_brush_id": 1, "large_modes": [],
+      "pools": {"hangars": ["hangar_v1.s", "hangar_v2.s"], "sheds": ["shed_v1.s", "shed_v2.s"], "cover": ["mappack2/barrel_set_01.s", "mappack2/barrel_set_02.s", "mappack2/crate_set_01.s", "mappack2/crate_set_02.s"]},
+      "variants": [{"name": "depot", "counts": {"hangars": [1, 1], "sheds": [1, 1], "cover": [4, 6]}}]
+    },
+    "contract_checkpoint": {
+      "enabled": true, "width": 40, "height": 40, "ground_id": 1, "ground_brush_id": 1, "large_modes": [],
+      "pools": {"posts": ["outpost_v1.s", "outpost_v3.s", "outpost_v5.s"], "sheds": ["shed_v1.s", "shed_v3.s"], "cover": ["mappack2/barrel_set_01.s", "mappack2/barrel_set_04.s", "mappack2/crater_set_01.s"]},
+      "variants": [{"name": "checkpoint", "counts": {"posts": [2, 3], "sheds": [1, 1], "cover": [3, 4]}}]
+    }
+  }
+}

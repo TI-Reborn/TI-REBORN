@@ -1,0 +1,152 @@
+<?xml version='1.0' encoding='utf-8'?>
+<items>
+  <item id="5001" name="Flare">
+    <value key="weaponAttack" val="Grenade" />
+    <value key="weaponType" val="Throwing" />
+    <value key="p_dam" val="0" />
+    <value key="damage_fade" val="50" />
+    <value key="critical" val="5" />
+    <value key="bulletsCount" val="1" />
+    <value key="minRange" val="4" />
+    <value key="maxRange" val="10" />
+    <value key="accuracy" val="60" />
+    <value key="anim_delay" val="1966" />
+    <value key="radius" val="3" />
+    <value key="empty" val="1" />
+    <value key="actionPoints" val="5" />
+    <value key="weight" val="20" />
+    <value key="durability" val="300" />
+    <value key="spread" val="2" />
+    <value key="image" val="itm_flare.png" />
+    <value key="anim_idle" val="empty_idle" />
+    <value key="anim_run" val="empty_run" />
+    <value key="anim_fire" val="grenade_fire" />
+    <value key="anim_random" val="empty_random01" />
+    <value key="anim_random2" val="empty_random02" />
+    <value key="sound" val="throw" />
+    <value key="sound2" val="explosion" />
+    <value key="attackType" val="Grenade" />
+    <for>
+      <consume id="5001" amount="1" />
+      <set stat="patk" val="0" />
+      <add stat="patk" val="0" />
+      <add stat="accuracy" val="0.60" />
+      <add stat="accuracyGain" val="0.00" />
+    </for>
+    <value key="damageFade" val="50" />
+    <value key="power" val="0" />
+    <value key="level_required" val="1" />
+    <value key="cant_buy_in_private_store" val="1" />
+    <value key="rnd_dam" val="0" />
+  </item>
+  <item id="5002" name="Night Vision Goggles">
+    <value key="actionPoints" val="3" />
+    <value key="weight" val="50" />
+    <value key="durability" val="300" />
+    <value key="power" val="0" />
+    <value key="image" val="itm_nightvision.png" />
+    <value key="itype" val="medkit" />
+    <value key="sound" val="medikit" />
+    <value key="cant_buy_in_private_store" val="1" />
+    <value key="level_required" val="4" />
+  </item>
+  <item id="5003" name="Light Trainer">
+    <value key="actionPoints" val="0" />
+    <value key="weight" val="1" />
+    <value key="durability" val="1" />
+    <value key="power" val="0" />
+    <value key="image" val="item_light_trainer.png" />
+    <value key="itype" val="medkit" />
+    <value key="sound" val="medikit" />
+    <value key="cant_buy_in_private_store" val="1" />
+    <value key="level_required" val="1" />
+  </item>
+  <item id="5004" name="Improved Trainer">
+    <value key="actionPoints" val="0" />
+    <value key="weight" val="1" />
+    <value key="durability" val="1" />
+    <value key="power" val="0" />
+    <value key="image" val="item_improved_trainer.png" />
+    <value key="itype" val="medkit" />
+    <value key="sound" val="medikit" />
+    <value key="cant_buy_in_private_store" val="1" />
+    <value key="level_required" val="1" />
+  </item>
+  <item id="5005" name="Ultra Trainer">
+    <value key="actionPoints" val="0" />
+    <value key="weight" val="1" />
+    <value key="durability" val="1" />
+    <value key="power" val="0" />
+    <value key="image" val="item_ultra_trainer.png" />
+    <value key="itype" val="medkit" />
+    <value key="sound" val="medikit" />
+    <value key="cant_buy_in_private_store" val="1" />
+    <value key="level_required" val="1" />
+  </item>
+  <item id="5006" name="Light Tactic Advisor">
+    <value key="actionPoints" val="0" />
+    <value key="weight" val="1" />
+    <value key="durability" val="1" />
+    <value key="power" val="0" />
+    <value key="image" val="item_light_advisor.png" />
+    <value key="itype" val="medkit" />
+    <value key="sound" val="medikit" />
+    <value key="cant_buy_in_private_store" val="1" />
+    <value key="level_required" val="6" />
+  </item>
+  <item id="5007" name="Improved Tactic Advisor">
+    <value key="actionPoints" val="0" />
+    <value key="weight" val="1" />
+    <value key="durability" val="1" />
+    <value key="power" val="0" />
+    <value key="image" val="item_improved_advisor.png" />
+    <value key="itype" val="medkit" />
+    <value key="sound" val="medikit" />
+    <value key="cant_buy_in_private_store" val="1" />
+    <value key="level_required" val="11" />
+  </item>
+  <item id="5008" name="Ultra Tactic Advisor">
+    <value key="actionPoints" val="0" />
+    <value key="weight" val="1" />
+    <value key="durability" val="1" />
+    <value key="power" val="0" />
+    <value key="image" val="item_ultra_advisor.png" />
+    <value key="itype" val="medkit" />
+    <value key="sound" val="medikit" />
+    <value key="cant_buy_in_private_store" val="1" />
+    <value key="level_required" val="16" />
+  </item>
+  <item id="5009" name="Light Blocking Exp">
+    <value key="actionPoints" val="0" />
+    <value key="weight" val="1" />
+    <value key="durability" val="1" />
+    <value key="power" val="0" />
+    <value key="image" val="itm_buff_sight.png" />
+    <value key="itype" val="medkit" />
+    <value key="sound" val="medikit" />
+    <value key="cant_buy_in_private_store" val="1" />
+    <value key="level_required" val="4" />
+  </item>
+  <item id="5010" name="Improved Blocking Exp">
+    <value key="actionPoints" val="0" />
+    <value key="weight" val="1" />
+    <value key="durability" val="1" />
+    <value key="power" val="0" />
+    <value key="image" val="itm_buff_sight.png" />
+    <value key="itype" val="medkit" />
+    <value key="sound" val="medikit" />
+    <value key="cant_buy_in_private_store" val="1" />
+    <value key="level_required" val="4" />
+  </item>
+  <item id="5011" name="Ultra Blocking Exp">
+    <value key="actionPoints" val="0" />
+    <value key="weight" val="1" />
+    <value key="durability" val="1" />
+    <value key="power" val="0" />
+    <value key="image" val="itm_buff_sight.png" />
+    <value key="itype" val="medkit" />
+    <value key="sound" val="medikit" />
+    <value key="cant_buy_in_private_store" val="1" />
+    <value key="level_required" val="4" />
+  </item>
+</items>

@@ -1,0 +1,89 @@
+{
+  "version": 2,
+  "status": "EMULATOR_POLICY_WITH_DOCUMENTED_MANUAL_RULES",
+  "sources": {
+    "manual": "reports/chat-presence/manual.txt",
+    "printed_pages": [
+      23,
+      27,
+      28,
+      29,
+      74
+    ],
+    "base_prices": "config/original_shop_prices.json",
+    "current_SC_policy": "Expected self-upgrade cost with current failure rules plus50/75/100/125 percent ready-item premium; approved SC pricing request2026-10-14"
+  },
+  "historical_rules": [
+    "Shop repurchase deducts 35 percent and depreciation; enhancements are valued separately",
+    "Ordinary armor is normal edition only",
+    "Sections may be infinite, weekly, or replenished below a threshold",
+    "Buying a weapon includes one ammunition box",
+    "SC offers unlimited Gold-only equipment at +10,+15,+20,+25"
+  ],
+  "unrecovered": [
+    "Exact depreciation formula",
+    "Exact enhancement repurchase prices and SC prices",
+    "Historical city assortment and section replenishment quantities/thresholds/delays"
+  ],
+  "sale": {
+    "percent": 65,
+    "depreciation": "current_over_theoretical",
+    "upgrade_kit_id": 30
+  },
+  "town_max_level": {
+    "3": 3,
+    "2": 20,
+    "5": 20,
+    "8": 20,
+    "9": 20,
+    "18": 20
+  },
+  "stock": {
+    "weapon": {
+      "mode": "weekly",
+      "capacity": 50
+    },
+    "armor": {
+      "mode": "weekly",
+      "capacity": 50
+    },
+    "ammo": {
+      "mode": "infinite"
+    },
+    "supply": {
+      "mode": "threshold",
+      "capacity": 100,
+      "threshold": 10,
+      "delay_seconds": 3600
+    },
+    "premium": {
+      "mode": "infinite"
+    }
+  },
+  "sc": {
+    "enhancements": [
+      0,
+      10,
+      15,
+      20,
+      25
+    ],
+    "price": "expected_self_upgrade_with_ready_premium",
+    "quantity_limit": 1000,
+    "wire_unlimited": 65535,
+    "retain_legacy_cart_terms": true,
+    "retain_non_enhanceable_legacy_offers": true,
+    "ready_price": {
+      "model": "expected_self_upgrade_v1",
+      "revision": 3,
+      "total_percent_by_level": {
+        "10": 150,
+        "15": 175,
+        "20": 200,
+        "25": 225
+      },
+      "round_up_credits": 100,
+      "native_max_credits": 2147483647
+    }
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "source": "Original manual printed pp18,23-24,35,84",
+  "gold_to_credits": 100,
+  "stocks": {
+    "initial_credits": 100,
+    "daily_rise_credits": 1,
+    "history_points": 144
+  },
+  "bonds": {
+    "gold_each": 150,
+    "initial_redemption_credits": 150,
+    "monthly_rise_credits": 5,
+    "sale_last_day": 20,
+    "redemption_day": 25,
+    "history_points": 60
+  },
+  "marks": {
+    "credits_per_day": 100,
+    "maximum_days": 365,
+    "pin_digits": [
+      4,
+      12
+    ],
+    "pin_iterations": 120000,
+    "pin_failures": 5,
+    "pin_lock_seconds": 300
+  },
+  "provider": {
+    "enabled": false,
+    "type": "stripe_checkout",
+    "currency": "eur",
+    "minor_units_per_gold": 1,
+    "success_url": "https://ti-reborn.com/ru/bank",
+    "cancel_url": "https://ti-reborn.com/ru/bank",
+    "secret_key_env": "STRIPE_SECRET_KEY",
+    "webhook_secret_env": "STRIPE_WEBHOOK_SECRET",
+    "require_livemode": true,
+    "maximum_gold": 100000,
+    "signature_tolerance_seconds": 300,
+    "minimum_gold": 50
+  },
+  "emulator_policy": {
+    "stocks": "Manual gives no historical prices or formula. Shared quote starts100credits/share on first observation, rises1credit per elapsed UTC day; buy and sell use the same current quote. All quantities are integer. These are server economy rules, not reconstructed historical rates.",
+    "bonds": "Manual specifies Gold purchase, a monthly sale window, a redemption day and carryover if missed. Explicit schedule: sale days1..20 UTC, redemption day25,1Gold/unit, initial150credits/unit rising5 each calendar month after first observation. Unredeemed bonds remain owned for the next month; no forced expiry.",
+    "marks": "Manual fee100credits per day and owner PIN removal/early return. PIN4..12digits and PBKDF2,365daylimit,5failed attempts/300second lock are policy. Dedicated owner-authorized lending bypasses ordinary marked-item market bans. Expiry returns the physical surviving item to owner warehouse, deferred while either account is in battle. Wear remains; destroyed items never respawn. Marks cannot be applied to stacks, currencies, rented/special items or boosters.",
+    "payments": "Gold retired; real-money currency purchases disabled. Donations are independent and award no game assets.",
+    "wire": "Conversion, stocks/bonds and mark actions are server APIs/explicit emulator commands until original request ABI is recovered. ItemList30/WarehouseList6A ownername/remainingseconds projection uses the actual original readers; no new historical opcode is asserted."
+  },
+  "provider_sources": [
+    "https://docs.stripe.com/api/checkout/sessions/create",
+    "https://docs.stripe.com/events/manage-webhook-endpoints",
+    "https://github.com/stripe/stripe-python/blob/master/stripe/_webhook.py"
+  ]
+}

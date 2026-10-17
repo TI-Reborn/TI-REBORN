@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "duration_seconds": 3600,
+  "initial_defense_points": 5,
+  "total_points": 10,
+  "score_per_successful_mission": 1,
+  "notes": "Manual pp99-100: miners/defenders and raiders transfer one of ten points after each round; defense points set the next round's owner tax. Global hourly rounds, one point per successful extraction mission, equal-score/no-extraction rounds keeping the current tax, and initial 5/5 are explicit emulator policy. Existing active missions retain their frozen historical claim. No synthetic wins are created while the server is offline."
+}

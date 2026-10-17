@@ -1,0 +1,970 @@
+{
+  "source": "C:\\Program Files (x86)\\TIOnline\\base\\ability.cfg",
+  "source_sha256": "b88c3bc19c8e935f2f3d931e97c9a89dcd3f2bc2a0e7cabdca0c005deb3ec732",
+  "status": "LEGACY_DEFINITIONS_PARTIAL_RUNTIME_SEE_WEAPON_EFFECTS_MD",
+  "records": [
+    {
+      "id": 0,
+      "level": null,
+      "fields": {
+        "id": "0",
+        "name": "None"
+      }
+    },
+    {
+      "id": 1,
+      "level": 1,
+      "fields": {
+        "id": "1",
+        "name": "Healtly",
+        "levels": "4",
+        "level": "1",
+        "value": "5",
+        "effect_text": "m186"
+      }
+    },
+    {
+      "id": 1,
+      "level": 2,
+      "fields": {
+        "id": "1",
+        "name": "Healtly",
+        "levels": "4",
+        "level": "2",
+        "value": "10",
+        "effect_text": "m186"
+      }
+    },
+    {
+      "id": 1,
+      "level": 3,
+      "fields": {
+        "id": "1",
+        "name": "Healtly",
+        "levels": "4",
+        "level": "3",
+        "value": "15",
+        "effect_text": "m186"
+      }
+    },
+    {
+      "id": 1,
+      "level": 4,
+      "fields": {
+        "id": "1",
+        "name": "Healtly",
+        "levels": "4",
+        "level": "4",
+        "value": "20",
+        "effect_text": "m186"
+      }
+    },
+    {
+      "id": 2,
+      "level": 1,
+      "fields": {
+        "id": "2",
+        "name": "Strong Back",
+        "levels": "4",
+        "level": "1",
+        "value": "80",
+        "effect_text": "m188"
+      }
+    },
+    {
+      "id": 2,
+      "level": 2,
+      "fields": {
+        "id": "2",
+        "name": "Strong Back",
+        "levels": "4",
+        "level": "2",
+        "value": "160",
+        "effect_text": "m188"
+      }
+    },
+    {
+      "id": 2,
+      "level": 3,
+      "fields": {
+        "id": "2",
+        "name": "Strong Back",
+        "levels": "4",
+        "level": "3",
+        "value": "240",
+        "effect_text": "m188"
+      }
+    },
+    {
+      "id": 2,
+      "level": 4,
+      "fields": {
+        "id": "2",
+        "name": "Strong Back",
+        "levels": "4",
+        "level": "4",
+        "value": "320",
+        "effect_text": "m188"
+      }
+    },
+    {
+      "id": 3,
+      "level": null,
+      "fields": {
+        "id": "3",
+        "name": "Master Trader",
+        "levels": "2"
+      }
+    },
+    {
+      "id": 4,
+      "level": 1,
+      "fields": {
+        "id": "4",
+        "name": "More Criticals",
+        "levels": "4",
+        "level": "1",
+        "value": "1",
+        "effect_text": "m187"
+      }
+    },
+    {
+      "id": 4,
+      "level": 2,
+      "fields": {
+        "id": "4",
+        "name": "More Criticals",
+        "levels": "4",
+        "level": "2",
+        "value": "2",
+        "effect_text": "m187"
+      }
+    },
+    {
+      "id": 4,
+      "level": 3,
+      "fields": {
+        "id": "4",
+        "name": "More Criticals",
+        "levels": "4",
+        "level": "3",
+        "value": "3",
+        "effect_text": "m187"
+      }
+    },
+    {
+      "id": 4,
+      "level": 4,
+      "fields": {
+        "id": "4",
+        "name": "More Criticals",
+        "levels": "4",
+        "level": "4",
+        "value": "4",
+        "effect_text": "m187"
+      }
+    },
+    {
+      "id": 5,
+      "level": null,
+      "fields": {
+        "id": "5",
+        "name": "Mr. Fixit",
+        "levels": "2"
+      }
+    },
+    {
+      "id": 6,
+      "level": 1,
+      "fields": {
+        "id": "6",
+        "name": "Stone Skin",
+        "levels": "4",
+        "level": "1",
+        "value": "15",
+        "effect_text": "m189"
+      }
+    },
+    {
+      "id": 6,
+      "level": 2,
+      "fields": {
+        "id": "6",
+        "name": "Stone Skin",
+        "levels": "4",
+        "level": "2",
+        "value": "28",
+        "effect_text": "m189"
+      }
+    },
+    {
+      "id": 6,
+      "level": 3,
+      "fields": {
+        "id": "6",
+        "name": "Stone Skin",
+        "levels": "4",
+        "level": "3",
+        "value": "39",
+        "effect_text": "m189"
+      }
+    },
+    {
+      "id": 6,
+      "level": 4,
+      "fields": {
+        "id": "6",
+        "name": "Stone Skin",
+        "levels": "4",
+        "level": "4",
+        "value": "48",
+        "effect_text": "m189"
+      }
+    },
+    {
+      "id": 7,
+      "level": null,
+      "fields": {
+        "id": "7",
+        "name": "Intuition",
+        "levels": "1"
+      }
+    },
+    {
+      "id": 8,
+      "level": null,
+      "fields": {
+        "id": "8",
+        "name": "Extra Vision",
+        "levels": "1"
+      }
+    },
+    {
+      "id": 9,
+      "level": null,
+      "fields": {
+        "id": "9",
+        "name": "Sniper Sit",
+        "levels": "1",
+        "active": "1"
+      }
+    },
+    {
+      "id": 10,
+      "level": 1,
+      "fields": {
+        "id": "10",
+        "name": "Melee Master (Level 1)",
+        "levels": "2",
+        "level": "1",
+        "value": "5",
+        "effect_text": "nn15"
+      }
+    },
+    {
+      "id": 10,
+      "level": 2,
+      "fields": {
+        "id": "10",
+        "name": "Melee Master (Level 2)",
+        "levels": "2",
+        "level": "2",
+        "value": "10",
+        "effect_text": "nn15"
+      }
+    },
+    {
+      "id": 11,
+      "level": null,
+      "fields": {
+        "id": "11",
+        "name": "Rage",
+        "levels": "1",
+        "active": "1"
+      }
+    },
+    {
+      "id": 12,
+      "level": 1,
+      "fields": {
+        "id": "12",
+        "name": "Dog Barking",
+        "level": "1",
+        "levels": "4",
+        "value": "4",
+        "Cooldown": "2",
+        "effect_text": "m415",
+        "Active": "1",
+        "Target": "self",
+        "nocast": "1",
+        "Range": "4",
+        "AP": "5",
+        "anim_1": "dog_alarm_near",
+        "animdelay_1": "1000",
+        "sound_1": "dog_alarm_near",
+        "anim_2": "dog_alarm_far",
+        "animdelay_2": "1000",
+        "sound_2": "dog_alarm_far",
+        "anim_3": "dog_alarm_fail",
+        "animdelay_3": "1666",
+        "sound_3": "dog_alarm_fail"
+      }
+    },
+    {
+      "id": 12,
+      "level": 2,
+      "fields": {
+        "id": "12",
+        "name": "Dog Barking",
+        "level": "2",
+        "levels": "4",
+        "value": "5",
+        "effect_text": "m415",
+        "Active": "1",
+        "Target": "self",
+        "Range": "5",
+        "AP": "5"
+      }
+    },
+    {
+      "id": 12,
+      "level": 3,
+      "fields": {
+        "id": "12",
+        "name": "Dog Barking",
+        "level": "3",
+        "levels": "4",
+        "value": "6",
+        "effect_text": "m415",
+        "Active": "1",
+        "Target": "self",
+        "Range": "6",
+        "AP": "5"
+      }
+    },
+    {
+      "id": 12,
+      "level": 4,
+      "fields": {
+        "id": "12",
+        "name": "Dog Barking",
+        "level": "4",
+        "levels": "4",
+        "value": "7",
+        "effect_text": "m415",
+        "Active": "1",
+        "Target": "self",
+        "Range": "7",
+        "AP": "5"
+      }
+    },
+    {
+      "id": 13,
+      "level": null,
+      "fields": {
+        "id": "13",
+        "name": "Dog finder",
+        "levels": "1"
+      }
+    },
+    {
+      "id": 14,
+      "level": null,
+      "fields": {
+        "id": "14",
+        "name": "Dog Opener",
+        "levels": "1",
+        "effect_text": "p14n"
+      }
+    },
+    {
+      "id": 15,
+      "level": 1,
+      "fields": {
+        "id": "15",
+        "name": "Dog Defence",
+        "levels": "4",
+        "level": "1",
+        "value": "52",
+        "effect_text": "p15e"
+      }
+    },
+    {
+      "id": 15,
+      "level": 2,
+      "fields": {
+        "id": "15",
+        "name": "Dog Defence",
+        "levels": "4",
+        "level": "2",
+        "value": "67",
+        "effect_text": "p15e"
+      }
+    },
+    {
+      "id": 15,
+      "level": 3,
+      "fields": {
+        "id": "15",
+        "name": "Dog Defence",
+        "levels": "4",
+        "level": "3",
+        "value": "83",
+        "effect_text": "p15e"
+      }
+    },
+    {
+      "id": 15,
+      "level": 4,
+      "fields": {
+        "id": "15",
+        "name": "Dog Defence",
+        "levels": "4",
+        "level": "4",
+        "value": "99",
+        "effect_text": "p15e"
+      }
+    },
+    {
+      "id": 16,
+      "level": 1,
+      "fields": {
+        "id": "16",
+        "name": "Dog Health",
+        "levels": "4",
+        "level": "1",
+        "value": "5",
+        "effect_text": "m186"
+      }
+    },
+    {
+      "id": 16,
+      "level": 2,
+      "fields": {
+        "id": "16",
+        "name": "Dog Health",
+        "levels": "4",
+        "level": "2",
+        "value": "10",
+        "effect_text": "m186"
+      }
+    },
+    {
+      "id": 16,
+      "level": 3,
+      "fields": {
+        "id": "16",
+        "name": "Dog Health",
+        "levels": "4",
+        "level": "3",
+        "value": "15",
+        "effect_text": "m186"
+      }
+    },
+    {
+      "id": 16,
+      "level": 4,
+      "fields": {
+        "id": "16",
+        "name": "Dog Health",
+        "levels": "4",
+        "level": "4",
+        "value": "20",
+        "effect_text": "m186"
+      }
+    },
+    {
+      "id": 17,
+      "level": 1,
+      "fields": {
+        "id": "17",
+        "name": "Light Weapons skill",
+        "levels": "3",
+        "level": "1",
+        "value": "5",
+        "effect_text": "m198"
+      }
+    },
+    {
+      "id": 17,
+      "level": 2,
+      "fields": {
+        "id": "17",
+        "name": "Light Weapons skill",
+        "levels": "3",
+        "level": "2",
+        "value": "10",
+        "effect_text": "m198"
+      }
+    },
+    {
+      "id": 17,
+      "level": 3,
+      "fields": {
+        "id": "17",
+        "name": "Light Weapons skill",
+        "levels": "3",
+        "level": "3",
+        "value": "15",
+        "effect_text": "m198"
+      }
+    },
+    {
+      "id": 18,
+      "level": 1,
+      "fields": {
+        "id": "18",
+        "name": "Dog accuracy",
+        "levels": "4",
+        "level": "1",
+        "value": "2",
+        "effect_text": "m199"
+      }
+    },
+    {
+      "id": 18,
+      "level": 2,
+      "fields": {
+        "id": "18",
+        "name": "Dog accuracy",
+        "levels": "4",
+        "level": "2",
+        "value": "5",
+        "effect_text": "m199"
+      }
+    },
+    {
+      "id": 18,
+      "level": 3,
+      "fields": {
+        "id": "18",
+        "name": "Dog accuracy",
+        "levels": "4",
+        "level": "3",
+        "value": "7",
+        "effect_text": "m199"
+      }
+    },
+    {
+      "id": 18,
+      "level": 4,
+      "fields": {
+        "id": "18",
+        "name": "Dog accuracy",
+        "levels": "4",
+        "level": "4",
+        "value": "10",
+        "effect_text": "m199"
+      }
+    },
+    {
+      "id": 19,
+      "level": null,
+      "fields": {
+        "id": "19",
+        "name": "Dog Closer",
+        "levels": "1",
+        "effect_text": "p19n"
+      }
+    },
+    {
+      "id": 20,
+      "level": 1,
+      "fields": {
+        "id": "20",
+        "name": "Freak Healtly 1",
+        "levels": "4",
+        "level": "1",
+        "value": "20",
+        "effect_text": "m186"
+      }
+    },
+    {
+      "id": 20,
+      "level": 2,
+      "fields": {
+        "id": "20",
+        "name": "Freak Healtly 2",
+        "levels": "4",
+        "level": "2",
+        "value": "28",
+        "effect_text": "m186"
+      }
+    },
+    {
+      "id": 20,
+      "level": 3,
+      "fields": {
+        "id": "20",
+        "name": "Freak Healtly 3",
+        "levels": "4",
+        "level": "3",
+        "value": "36",
+        "effect_text": "m186"
+      }
+    },
+    {
+      "id": 20,
+      "level": 4,
+      "fields": {
+        "id": "20",
+        "name": "Freak Healtly 4",
+        "levels": "4",
+        "level": "4",
+        "value": "44",
+        "effect_text": "m186"
+      }
+    },
+    {
+      "id": 21,
+      "level": 1,
+      "fields": {
+        "id": "21",
+        "name": "Freak Strong Back 1",
+        "levels": "4",
+        "level": "1",
+        "value": "60",
+        "effect_text": "m188"
+      }
+    },
+    {
+      "id": 21,
+      "level": 2,
+      "fields": {
+        "id": "21",
+        "name": "Freak Strong Back 2",
+        "levels": "4",
+        "level": "2",
+        "value": "110",
+        "effect_text": "m188"
+      }
+    },
+    {
+      "id": 21,
+      "level": 3,
+      "fields": {
+        "id": "21",
+        "name": "Freak Strong Back 3",
+        "levels": "4",
+        "level": "3",
+        "value": "160",
+        "effect_text": "m188"
+      }
+    },
+    {
+      "id": 21,
+      "level": 4,
+      "fields": {
+        "id": "21",
+        "name": "Freak Strong Back 4",
+        "levels": "4",
+        "level": "4",
+        "value": "210",
+        "effect_text": "m188"
+      }
+    },
+    {
+      "id": 22,
+      "level": 1,
+      "fields": {
+        "id": "22",
+        "name": "Freak Slash",
+        "levels": "4",
+        "level": "1",
+        "value": "16",
+        "Active": "1",
+        "Target": "enemy",
+        "Range": "1",
+        "AP": "7",
+        "Cooldown": "3",
+        "itemsid": "335",
+        "effect_text": "m394",
+        "anim_1": "freakminer_hammer_perc-attack",
+        "animdelay_1": "920",
+        "sound_1": "miner_roundhit_hit",
+        "sound_2": "miner_roundhit_miss"
+      }
+    },
+    {
+      "id": 22,
+      "level": 2,
+      "fields": {
+        "id": "22",
+        "name": "Freak Slash",
+        "levels": "4",
+        "level": "2",
+        "value": "32",
+        "Active": "1",
+        "Target": "enemy",
+        "Range": "1",
+        "AP": "7",
+        "itemsid": "335",
+        "effect_text": "m394"
+      }
+    },
+    {
+      "id": 22,
+      "level": 3,
+      "fields": {
+        "id": "22",
+        "name": "Freak Slash",
+        "levels": "4",
+        "level": "3",
+        "value": "64",
+        "Active": "1",
+        "Target": "enemy",
+        "Range": "1",
+        "AP": "7",
+        "itemsid": "335",
+        "effect_text": "m394"
+      }
+    },
+    {
+      "id": 22,
+      "level": 4,
+      "fields": {
+        "id": "22",
+        "name": "Freak Slash",
+        "levels": "4",
+        "level": "4",
+        "value": "128",
+        "Active": "1",
+        "Target": "enemy",
+        "Range": "1",
+        "AP": "7",
+        "itemsid": "335",
+        "effect_text": "m394"
+      }
+    },
+    {
+      "id": 23,
+      "level": 1,
+      "fields": {
+        "id": "23",
+        "name": "Dog Cure",
+        "levels": "4",
+        "level": "1",
+        "value": "12",
+        "Active": "1",
+        "Cooldown": "3",
+        "anim_1": "dog_lick",
+        "animdelay_1": "2310",
+        "Target": "self",
+        "Range": "0",
+        "AP": "7",
+        "effect_text": "m395"
+      }
+    },
+    {
+      "id": 23,
+      "level": 2,
+      "fields": {
+        "id": "23",
+        "name": "Dog Cure",
+        "levels": "4",
+        "level": "2",
+        "value": "20",
+        "Active": "1",
+        "Target": "self",
+        "Range": "0",
+        "AP": "7",
+        "effect_text": "m395"
+      }
+    },
+    {
+      "id": 23,
+      "level": 3,
+      "fields": {
+        "id": "23",
+        "name": "Dog Cure",
+        "levels": "4",
+        "level": "3",
+        "value": "27",
+        "Active": "1",
+        "Target": "self",
+        "Range": "0",
+        "AP": "7",
+        "effect_text": "m395"
+      }
+    },
+    {
+      "id": 23,
+      "level": 4,
+      "fields": {
+        "id": "23",
+        "name": "Dog Cure",
+        "levels": "4",
+        "level": "4",
+        "value": "35",
+        "Active": "1",
+        "Target": "self",
+        "Range": "0",
+        "AP": "7",
+        "effect_text": "m395"
+      }
+    },
+    {
+      "id": 24,
+      "level": 1,
+      "fields": {
+        "id": "24",
+        "name": "Freak Base Defence 1",
+        "levels": "4",
+        "level": "1",
+        "value": "52",
+        "effect_text": "m370"
+      }
+    },
+    {
+      "id": 24,
+      "level": 2,
+      "fields": {
+        "id": "24",
+        "name": "Freak Base Defence 2",
+        "levels": "4",
+        "level": "2",
+        "value": "67",
+        "effect_text": "m370"
+      }
+    },
+    {
+      "id": 24,
+      "level": 3,
+      "fields": {
+        "id": "24",
+        "name": "Freak Base Defence 3",
+        "levels": "4",
+        "level": "3",
+        "value": "83",
+        "effect_text": "m370"
+      }
+    },
+    {
+      "id": 24,
+      "level": 4,
+      "fields": {
+        "id": "24",
+        "name": "Freak Base Defence 4",
+        "levels": "4",
+        "level": "4",
+        "value": "99",
+        "effect_text": "m370"
+      }
+    },
+    {
+      "id": 25,
+      "level": 1,
+      "fields": {
+        "id": "25",
+        "name": "Denver Base Owner Skill 1",
+        "levels": "2",
+        "level": "1"
+      }
+    },
+    {
+      "id": 25,
+      "level": 2,
+      "fields": {
+        "id": "25",
+        "name": "Denver Base Owner Skill 2",
+        "levels": "2",
+        "level": "2"
+      }
+    },
+    {
+      "id": 26,
+      "level": 1,
+      "fields": {
+        "id": "26",
+        "name": "Dog Deathbite",
+        "levels": "4",
+        "level": "1",
+        "value": "80",
+        "Active": "1",
+        "Cooldown": "2",
+        "Target": "enemy",
+        "Range": "1",
+        "AP": "8",
+        "effect_text": "m414",
+        "sound_1": "dogattack2"
+      }
+    },
+    {
+      "id": 26,
+      "level": 2,
+      "fields": {
+        "id": "26",
+        "name": "Dog Deathbite",
+        "levels": "4",
+        "level": "2",
+        "value": "100",
+        "Active": "1",
+        "Target": "enemy",
+        "Range": "1",
+        "AP": "8",
+        "effect_text": "m414"
+      }
+    },
+    {
+      "id": 26,
+      "level": 3,
+      "fields": {
+        "id": "26",
+        "name": "Dog Deathbite",
+        "levels": "4",
+        "level": "3",
+        "value": "120",
+        "Active": "1",
+        "Target": "enemy",
+        "Range": "1",
+        "AP": "8",
+        "effect_text": "m414"
+      }
+    },
+    {
+      "id": 26,
+      "level": 4,
+      "fields": {
+        "id": "26",
+        "name": "Dog Deathbite",
+        "levels": "4",
+        "level": "4",
+        "value": "140",
+        "Active": "1",
+        "Target": "enemy",
+        "Range": "1",
+        "AP": "8",
+        "effect_text": "m414"
+      }
+    },
+    {
+      "id": 27,
+      "level": 1,
+      "fields": {
+        "id": "27",
+        "name": "Sub Grenade",
+        "level": "1",
+        "levels": "1",
+        "value": "90",
+        "Cooldown": "0",
+        "effect_text": "p27d",
+        "Active": "1",
+        "Target": "area",
+        "Range": "10",
+        "SplashRange": "2",
+        "MinRange": "4",
+        "AP": "6",
+        "anim_1": "groza_grenadefire",
+        "animdelay_1": "3000",
+        "sound_1": "subgrenade",
+        "soundnodelay": "0",
+        "hide": "1"
+      }
+    }
+  ],
+  "limitations": [
+    "Unspecified fields are unknown, not zero or inherited.",
+    "Names alone do not prove actor eligibility.",
+    "Learning prices, requirements and combat semantics are not inferred."
+  ]
+}

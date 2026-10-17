@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "ruleset": "assault4",
+  "source": "https://ggeek.ru/forum/ggeek-forum-20-blog-administratsii/forum-3430-shturmy-new/",
+  "registration_seconds": 1800,
+  "tour_seconds": 1800,
+  "pause_seconds": 300,
+  "tours": 3,
+  "period_seconds": 604800,
+  "players_per_group": 4,
+  "soldiers_per_player": [
+    1,
+    3
+  ],
+  "kill_ov_units": 6,
+  "death_ov_units": -3,
+  "flag_points_per_turn": [
+    0,
+    4,
+    10,
+    18
+  ],
+  "emulator_policy": {
+    "flag_capture_radius": 2,
+    "flag_neutralize_contested": false,
+    "flag_neutralize_enemy_capture": true,
+    "flag_capture": "Manhattan radius 2, living soldiers only. One present side takes a neutral flag; an enemy-owned flag becomes neutral first and is taken on its next accepted capture update. Both sides or neither side preserve the previous owner. Explicit server policy.",
+    "flag_score_clock": "One 4/10/18 OF award per team at completion of a full round of the living owners among the eight originally admitted accounts; dead/escaped slots are skipped. This clock/radius policy is not recovered from the original announcement.",
+    "battle_max_seconds": 900,
+    "battle_tour_cutoff": true,
+    "schedule": "Weekly UTC windows, three hours apart; published server schedule, not a recovered original timetable.",
+    "ratio_table": "Conservative step lookup in thousandths; missing original table. Anchors: 0%=-2 OV, 44.9%=4 OV, 55.1%=10 OV, 100%=16 OV.",
+    "ratio_to_ov_units": [
+      [
+        0,
+        -4
+      ],
+      [
+        449,
+        8
+      ],
+      [
+        551,
+        20
+      ],
+      [
+        1000,
+        32
+      ]
+    ],
+    "zero_flag_total_ov_units": 0,
+    "capture": "Highest positive event OV among clans in an actual opposing-coalition battle with damage, kills or flag activity. Tie retains current owner if tied, else smallest clan ID; no contested positive score means no capture.",
+    "influence": "One positive net event OV award, floor(half-OV units/2), at finalization; no credit/Gold prize or historical capture bonus is inferred.",
+    "new_owner_tax_percent": 0,
+    "late_matches": "Already bound matches may settle after a tour ends. No new pair after tour end; finalization waits for every bound match. Closed events reject new results."
+  },
+  "territories": [
+    {
+      "id": 6,
+      "name": "Denver Base",
+      "kind": "base",
+      "levels": [
+        11,
+        15
+      ],
+      "max_upgrade": 20,
+      "enabled": true,
+      "first_start_utc": "2026-10-10T15:00:00Z"
+    },
+    {
+      "id": 11,
+      "name": "New York Base",
+      "kind": "base",
+      "levels": [
+        4,
+        6
+      ],
+      "max_upgrade": 10,
+      "enabled": true,
+      "first_start_utc": "2026-10-10T18:00:00Z"
+    },
+    {
+      "id": 12,
+      "name": "Military Zone Base",
+      "kind": "base",
+      "levels": [
+        16,
+        20
+      ],
+      "max_upgrade": 25,
+      "enabled": true,
+      "first_start_utc": "2026-10-10T21:00:00Z"
+    },
+    {
+      "id": 13,
+      "name": "Mine 4-6",
+      "kind": "checkpoint",
+      "levels": [
+        4,
+        6
+      ],
+      "capacity": 1000,
+      "enabled": true,
+      "first_start_utc": "2026-10-11T00:00:00Z"
+    },
+    {
+      "id": 14,
+      "name": "Mine 7-10",
+      "kind": "checkpoint",
+      "levels": [
+        7,
+        10
+      ],
+      "capacity": 1500,
+      "enabled": true,
+      "first_start_utc": "2026-10-11T03:00:00Z"
+    },
+    {
+      "id": 15,
+      "name": "Mine 11-15",
+      "kind": "checkpoint",
+      "levels": [
+        11,
+        15
+      ],
+      "capacity": 2000,
+      "enabled": true,
+      "first_start_utc": "2026-10-11T06:00:00Z"
+    },
+    {
+      "id": 16,
+      "name": "Mine 16-20",
+      "kind": "checkpoint",
+      "levels": [
+        16,
+        20
+      ],
+      "capacity": 3000,
+      "enabled": true,
+      "first_start_utc": "2026-10-11T09:00:00Z"
+    },
+    {
+      "id": 7,
+      "name": "Military Outpost Base",
+      "kind": "base",
+      "levels": [
+        4,
+        20
+      ],
+      "max_upgrade": 3,
+      "enabled": true,
+      "first_start_utc": "2026-10-10T12:00:00Z",
+      "emulator_policy": "Moved to collision-free world policy rectangle315,-410..335,-390; original rectangle retained there as metadata. Saturday12UTC schedule."
+    }
+  ]
+}

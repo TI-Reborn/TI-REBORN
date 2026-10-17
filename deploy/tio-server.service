@@ -1,0 +1,31 @@
+[Unit]
+Description=TIO Emulator (single-account experimental backend)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=tio
+Group=tio
+WorkingDirectory=/opt/tio-emulator
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONUTF8=1
+ExecStart=/opt/tio-emulator/.venv/bin/python -m server --config /etc/tio-server/server.toml
+Restart=on-failure
+RestartSec=5s
+KillSignal=SIGTERM
+TimeoutStopSec=60s
+StateDirectory=tio-server
+StateDirectoryMode=0750
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/tio-server
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

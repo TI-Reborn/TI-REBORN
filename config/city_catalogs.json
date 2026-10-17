@@ -1,0 +1,1804 @@
+{
+  "policy": "Credits-only economy approved2026-10-14; recommended SE prices; historical Gold fields are wire aliases for credit prices.",
+  "warehouse_capacity": 3000,
+  "item_categories": {
+    "0": [
+      {
+        "unknown_u32_01": 1,
+        "unknown_u32_02": 1,
+        "item_id": 301,
+        "unknown_u32_03": 150,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 3,
+        "unknown_u32_02": 50,
+        "item_id": 3,
+        "unknown_u32_03": 50,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 4,
+        "unknown_u32_02": 18,
+        "item_id": 4,
+        "unknown_u32_03": 54,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 5,
+        "unknown_u32_02": 40,
+        "item_id": 5,
+        "unknown_u32_03": 40,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 6,
+        "unknown_u32_02": 9,
+        "item_id": 6,
+        "unknown_u32_03": 36,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 7,
+        "unknown_u32_02": 50,
+        "item_id": 7,
+        "unknown_u32_03": 50,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 8,
+        "unknown_u32_02": 1,
+        "item_id": 9,
+        "unknown_u32_03": 55,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 9,
+        "unknown_u32_02": 1,
+        "item_id": 10,
+        "unknown_u32_03": 150,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 10,
+        "unknown_u32_02": 1,
+        "item_id": 11,
+        "unknown_u32_03": 300,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 11,
+        "unknown_u32_02": 6,
+        "item_id": 12,
+        "unknown_u32_03": 48,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 12,
+        "unknown_u32_02": 30,
+        "item_id": 13,
+        "unknown_u32_03": 60,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 13,
+        "unknown_u32_02": 15,
+        "item_id": 15,
+        "unknown_u32_03": 15,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 14,
+        "unknown_u32_02": 1,
+        "item_id": 17,
+        "unknown_u32_03": 450,
+        "durability": 600,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 18,
+        "unknown_u32_02": 1,
+        "item_id": 30,
+        "unknown_u32_03": 1050,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 20,
+        "unknown_u32_02": 40,
+        "item_id": 36,
+        "unknown_u32_03": 40,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 21,
+        "unknown_u32_02": 30,
+        "item_id": 37,
+        "unknown_u32_03": 60,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 22,
+        "unknown_u32_02": 1,
+        "item_id": 210,
+        "unknown_u32_03": 800,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 23,
+        "unknown_u32_02": 1,
+        "item_id": 211,
+        "unknown_u32_03": 400,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 24,
+        "unknown_u32_02": 1,
+        "item_id": 212,
+        "unknown_u32_03": 750,
+        "durability": 220,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 25,
+        "unknown_u32_02": 1,
+        "item_id": 213,
+        "unknown_u32_03": 450,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 26,
+        "unknown_u32_02": 1,
+        "item_id": 214,
+        "unknown_u32_03": 930,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 27,
+        "unknown_u32_02": 1,
+        "item_id": 215,
+        "unknown_u32_03": 850,
+        "durability": 260,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 28,
+        "unknown_u32_02": 1,
+        "item_id": 216,
+        "unknown_u32_03": 320,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 29,
+        "unknown_u32_02": 1,
+        "item_id": 217,
+        "unknown_u32_03": 700,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 30,
+        "unknown_u32_02": 1,
+        "item_id": 218,
+        "unknown_u32_03": 700,
+        "durability": 220,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 31,
+        "unknown_u32_02": 1,
+        "item_id": 219,
+        "unknown_u32_03": 450,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 32,
+        "unknown_u32_02": 1,
+        "item_id": 220,
+        "unknown_u32_03": 800,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 33,
+        "unknown_u32_02": 1,
+        "item_id": 221,
+        "unknown_u32_03": 800,
+        "durability": 260,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 34,
+        "unknown_u32_02": 1,
+        "item_id": 229,
+        "unknown_u32_03": 500,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 35,
+        "unknown_u32_02": 1,
+        "item_id": 230,
+        "unknown_u32_03": 250,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 36,
+        "unknown_u32_02": 1,
+        "item_id": 231,
+        "unknown_u32_03": 850,
+        "durability": 220,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 37,
+        "unknown_u32_02": 1,
+        "item_id": 232,
+        "unknown_u32_03": 750,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 38,
+        "unknown_u32_02": 1,
+        "item_id": 233,
+        "unknown_u32_03": 360,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 39,
+        "unknown_u32_02": 1,
+        "item_id": 234,
+        "unknown_u32_03": 1070,
+        "durability": 260,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 40,
+        "unknown_u32_02": 1,
+        "item_id": 239,
+        "unknown_u32_03": 450,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 41,
+        "unknown_u32_02": 1,
+        "item_id": 240,
+        "unknown_u32_03": 900,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 42,
+        "unknown_u32_02": 1,
+        "item_id": 241,
+        "unknown_u32_03": 900,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 43,
+        "unknown_u32_02": 1,
+        "item_id": 242,
+        "unknown_u32_03": 1350,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 44,
+        "unknown_u32_02": 1,
+        "item_id": 243,
+        "unknown_u32_03": 1800,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 45,
+        "unknown_u32_02": 1,
+        "item_id": 244,
+        "unknown_u32_03": 1200,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 46,
+        "unknown_u32_02": 1,
+        "item_id": 245,
+        "unknown_u32_03": 600,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 47,
+        "unknown_u32_02": 1,
+        "item_id": 246,
+        "unknown_u32_03": 1650,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 48,
+        "unknown_u32_02": 1,
+        "item_id": 247,
+        "unknown_u32_03": 1050,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 55,
+        "unknown_u32_02": 1,
+        "item_id": 254,
+        "unknown_u32_03": 7500,
+        "durability": 350,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 56,
+        "unknown_u32_02": 1,
+        "item_id": 255,
+        "unknown_u32_03": 1200,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 58,
+        "unknown_u32_02": 1,
+        "item_id": 258,
+        "unknown_u32_03": 1200,
+        "durability": 600,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 59,
+        "unknown_u32_02": 1,
+        "item_id": 259,
+        "unknown_u32_03": 1050,
+        "durability": 600,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60,
+        "unknown_u32_02": 1,
+        "item_id": 260,
+        "unknown_u32_03": 2550,
+        "durability": 600,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 61,
+        "unknown_u32_02": 1,
+        "item_id": 261,
+        "unknown_u32_03": 2200,
+        "durability": 600,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 62,
+        "unknown_u32_02": 1,
+        "item_id": 262,
+        "unknown_u32_03": 1200,
+        "durability": 600,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 63,
+        "unknown_u32_02": 1,
+        "item_id": 263,
+        "unknown_u32_03": 6000,
+        "durability": 325,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 65,
+        "unknown_u32_02": 1,
+        "item_id": 265,
+        "unknown_u32_03": 2100,
+        "durability": 325,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 67,
+        "unknown_u32_02": 1,
+        "item_id": 302,
+        "unknown_u32_03": 600,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 68,
+        "unknown_u32_02": 1,
+        "item_id": 303,
+        "unknown_u32_03": 450,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 69,
+        "unknown_u32_02": 1,
+        "item_id": 304,
+        "unknown_u32_03": 900,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 70,
+        "unknown_u32_02": 1,
+        "item_id": 305,
+        "unknown_u32_03": 300,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 71,
+        "unknown_u32_02": 1,
+        "item_id": 306,
+        "unknown_u32_03": 750,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 72,
+        "unknown_u32_02": 1,
+        "item_id": 307,
+        "unknown_u32_03": 750,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 73,
+        "unknown_u32_02": 1,
+        "item_id": 308,
+        "unknown_u32_03": 750,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 74,
+        "unknown_u32_02": 1,
+        "item_id": 309,
+        "unknown_u32_03": 600,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 75,
+        "unknown_u32_02": 1,
+        "item_id": 310,
+        "unknown_u32_03": 750,
+        "durability": 350,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 76,
+        "unknown_u32_02": 1,
+        "item_id": 311,
+        "unknown_u32_03": 1050,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 77,
+        "unknown_u32_02": 1,
+        "item_id": 312,
+        "unknown_u32_03": 1200,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 78,
+        "unknown_u32_02": 1,
+        "item_id": 313,
+        "unknown_u32_03": 1200,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 79,
+        "unknown_u32_02": 1,
+        "item_id": 317,
+        "unknown_u32_03": 300,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 80,
+        "unknown_u32_02": 1,
+        "item_id": 320,
+        "unknown_u32_03": 150,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 81,
+        "unknown_u32_02": 1,
+        "item_id": 327,
+        "unknown_u32_03": 150,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 82,
+        "unknown_u32_02": 1,
+        "item_id": 329,
+        "unknown_u32_03": 150,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 83,
+        "unknown_u32_02": 1,
+        "item_id": 330,
+        "unknown_u32_03": 750,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 84,
+        "unknown_u32_02": 1,
+        "item_id": 331,
+        "unknown_u32_03": 150,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 85,
+        "unknown_u32_02": 1,
+        "item_id": 332,
+        "unknown_u32_03": 300,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 86,
+        "unknown_u32_02": 1,
+        "item_id": 334,
+        "unknown_u32_03": 1800,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 87,
+        "unknown_u32_02": 1,
+        "item_id": 335,
+        "unknown_u32_03": 1350,
+        "durability": 600,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 88,
+        "unknown_u32_02": 1,
+        "item_id": 336,
+        "unknown_u32_03": 1050,
+        "durability": 600,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 89,
+        "unknown_u32_02": 1,
+        "item_id": 338,
+        "unknown_u32_03": 1500,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 90,
+        "unknown_u32_02": 1,
+        "item_id": 339,
+        "unknown_u32_03": 1350,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 91,
+        "unknown_u32_02": 1,
+        "item_id": 340,
+        "unknown_u32_03": 300,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 92,
+        "unknown_u32_02": 1,
+        "item_id": 341,
+        "unknown_u32_03": 1200,
+        "durability": 600,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 93,
+        "unknown_u32_02": 1,
+        "item_id": 319,
+        "unknown_u32_03": 120,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 94,
+        "unknown_u32_02": 1,
+        "item_id": 321,
+        "unknown_u32_03": 180,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 95,
+        "unknown_u32_02": 1,
+        "item_id": 323,
+        "unknown_u32_03": 3200,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 96,
+        "unknown_u32_02": 1,
+        "item_id": 324,
+        "unknown_u32_03": 3000,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 97,
+        "unknown_u32_02": 1,
+        "item_id": 325,
+        "unknown_u32_03": 180,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 98,
+        "unknown_u32_02": 1,
+        "item_id": 318,
+        "unknown_u32_03": 180,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60008,
+        "unknown_u32_02": 1,
+        "item_id": 8,
+        "unknown_u32_03": 180,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60014,
+        "unknown_u32_02": 100,
+        "item_id": 14,
+        "unknown_u32_03": 300,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60018,
+        "unknown_u32_02": 1,
+        "item_id": 18,
+        "unknown_u32_03": 900,
+        "durability": 1200,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60019,
+        "unknown_u32_02": 1,
+        "item_id": 19,
+        "unknown_u32_03": 2400,
+        "durability": 3600,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60024,
+        "unknown_u32_02": 1,
+        "item_id": 24,
+        "unknown_u32_03": 1500,
+        "durability": 900,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60033,
+        "unknown_u32_02": 1,
+        "item_id": 33,
+        "unknown_u32_03": 140,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60034,
+        "unknown_u32_02": 1,
+        "item_id": 34,
+        "unknown_u32_03": 75,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60035,
+        "unknown_u32_02": 1,
+        "item_id": 35,
+        "unknown_u32_03": 180,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60208,
+        "unknown_u32_02": 1,
+        "item_id": 208,
+        "unknown_u32_03": 50,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60222,
+        "unknown_u32_02": 1,
+        "item_id": 222,
+        "unknown_u32_03": 250,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60223,
+        "unknown_u32_02": 1,
+        "item_id": 223,
+        "unknown_u32_03": 180,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60224,
+        "unknown_u32_02": 1,
+        "item_id": 224,
+        "unknown_u32_03": 120,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60227,
+        "unknown_u32_02": 1,
+        "item_id": 227,
+        "unknown_u32_03": 450,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60236,
+        "unknown_u32_02": 1,
+        "item_id": 236,
+        "unknown_u32_03": 180,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60237,
+        "unknown_u32_02": 1,
+        "item_id": 237,
+        "unknown_u32_03": 450,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60238,
+        "unknown_u32_02": 1,
+        "item_id": 238,
+        "unknown_u32_03": 350,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60248,
+        "unknown_u32_02": 1,
+        "item_id": 248,
+        "unknown_u32_03": 6000,
+        "durability": 350,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60249,
+        "unknown_u32_02": 1,
+        "item_id": 249,
+        "unknown_u32_03": 2200,
+        "durability": 350,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60250,
+        "unknown_u32_02": 1,
+        "item_id": 250,
+        "unknown_u32_03": 3800,
+        "durability": 350,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60251,
+        "unknown_u32_02": 1,
+        "item_id": 251,
+        "unknown_u32_03": 5500,
+        "durability": 400,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60252,
+        "unknown_u32_02": 1,
+        "item_id": 252,
+        "unknown_u32_03": 7500,
+        "durability": 400,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60253,
+        "unknown_u32_02": 1,
+        "item_id": 253,
+        "unknown_u32_03": 4800,
+        "durability": 400,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60256,
+        "unknown_u32_02": 1,
+        "item_id": 256,
+        "unknown_u32_03": 18000,
+        "durability": 500,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60257,
+        "unknown_u32_02": 1,
+        "item_id": 257,
+        "unknown_u32_03": 300,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60264,
+        "unknown_u32_02": 1,
+        "item_id": 264,
+        "unknown_u32_03": 15000,
+        "durability": 500,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60266,
+        "unknown_u32_02": 1,
+        "item_id": 266,
+        "unknown_u32_03": 6000,
+        "durability": 500,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60314,
+        "unknown_u32_02": 1,
+        "item_id": 314,
+        "unknown_u32_03": 5000,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60315,
+        "unknown_u32_02": 1,
+        "item_id": 315,
+        "unknown_u32_03": 7500,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60316,
+        "unknown_u32_02": 1,
+        "item_id": 316,
+        "unknown_u32_03": 4500,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60326,
+        "unknown_u32_02": 1,
+        "item_id": 326,
+        "unknown_u32_03": 200,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60328,
+        "unknown_u32_02": 1,
+        "item_id": 328,
+        "unknown_u32_03": 120,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 65001,
+        "unknown_u32_02": 1,
+        "item_id": 5001,
+        "unknown_u32_03": 60,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 65002,
+        "unknown_u32_02": 1,
+        "item_id": 5002,
+        "unknown_u32_03": 1800,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 65003,
+        "unknown_u32_02": 1,
+        "item_id": 5003,
+        "unknown_u32_03": 300,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 65004,
+        "unknown_u32_02": 1,
+        "item_id": 5004,
+        "unknown_u32_03": 500,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 65005,
+        "unknown_u32_02": 1,
+        "item_id": 5005,
+        "unknown_u32_03": 900,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 65006,
+        "unknown_u32_02": 1,
+        "item_id": 5006,
+        "unknown_u32_03": 600,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 65007,
+        "unknown_u32_02": 1,
+        "item_id": 5007,
+        "unknown_u32_03": 1000,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 65008,
+        "unknown_u32_02": 1,
+        "item_id": 5008,
+        "unknown_u32_03": 1800,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 65009,
+        "unknown_u32_02": 1,
+        "item_id": 5009,
+        "unknown_u32_03": 150,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 65010,
+        "unknown_u32_02": 1,
+        "item_id": 5010,
+        "unknown_u32_03": 250,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 65011,
+        "unknown_u32_02": 1,
+        "item_id": 5011,
+        "unknown_u32_03": 600,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 65012,
+        "unknown_u32_02": 1,
+        "item_id": 5012,
+        "unknown_u32_03": 300,
+        "durability": 1,
+        "unknown_u8": 0
+      }
+    ]
+  },
+  "hire_candidates": [
+    {
+      "unknown_u32_01": 1,
+      "unknown_u32_02": 1,
+      "name": "Recruit 1",
+      "unknown_u8": 1,
+      "optional_bytes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "stat_float_bits": [
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192
+      ],
+      "unknown_u16_01": 85,
+      "unknown_u8_02": 0,
+      "unknown_u8_03": 0,
+      "unknown_u16_02": 0,
+      "unknown_u16_03": 0,
+      "unknown_u32_03": 100
+    },
+    {
+      "unknown_u32_01": 2,
+      "unknown_u32_02": 2,
+      "name": "Recruit 2",
+      "unknown_u8": 2,
+      "optional_bytes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "stat_float_bits": [
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192
+      ],
+      "unknown_u16_01": 90,
+      "unknown_u8_02": 0,
+      "unknown_u8_03": 0,
+      "unknown_u16_02": 0,
+      "unknown_u16_03": 0,
+      "unknown_u32_03": 100
+    },
+    {
+      "unknown_u32_01": 3,
+      "unknown_u32_02": 3,
+      "name": "Doberman",
+      "unknown_u8": 1,
+      "optional_bytes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "stat_float_bits": [
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192
+      ],
+      "unknown_u16_01": 85,
+      "unknown_u8_02": 0,
+      "unknown_u8_03": 0,
+      "unknown_u16_02": 0,
+      "unknown_u16_03": 0,
+      "unknown_u32_03": 100
+    },
+    {
+      "unknown_u32_01": 4,
+      "unknown_u32_02": 4,
+      "name": "Husky",
+      "unknown_u8": 1,
+      "optional_bytes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "stat_float_bits": [
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192
+      ],
+      "unknown_u16_01": 85,
+      "unknown_u8_02": 0,
+      "unknown_u8_03": 0,
+      "unknown_u16_02": 0,
+      "unknown_u16_03": 0,
+      "unknown_u32_03": 100
+    },
+    {
+      "unknown_u32_01": 5,
+      "unknown_u32_02": 5,
+      "name": "Shepherd",
+      "unknown_u8": 1,
+      "optional_bytes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "stat_float_bits": [
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192
+      ],
+      "unknown_u16_01": 85,
+      "unknown_u8_02": 0,
+      "unknown_u8_03": 0,
+      "unknown_u16_02": 0,
+      "unknown_u16_03": 0,
+      "unknown_u32_03": 100
+    },
+    {
+      "unknown_u32_01": 6,
+      "unknown_u32_02": 6,
+      "name": "Shrek",
+      "unknown_u8": 1,
+      "optional_bytes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "stat_float_bits": [
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192,
+        1092616192
+      ],
+      "unknown_u16_01": 98,
+      "unknown_u8_02": 8,
+      "unknown_u8_03": 14,
+      "unknown_u16_02": 0,
+      "unknown_u16_03": 1000,
+      "unknown_u32_03": 3500
+    }
+  ],
+  "service_offers": [],
+  "premium_items": [
+    {
+      "offer_id": 1301,
+      "item_id": 301,
+      "pack_count": 1,
+      "gold": 150,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1326,
+      "item_id": 326,
+      "pack_count": 1,
+      "gold": 200,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1009,
+      "item_id": 9,
+      "pack_count": 1,
+      "gold": 55,
+      "durability": 1,
+      "currency": 1
+    },
+    {
+      "offer_id": 1010,
+      "item_id": 10,
+      "pack_count": 1,
+      "gold": 150,
+      "durability": 1,
+      "currency": 1
+    },
+    {
+      "offer_id": 1011,
+      "item_id": 11,
+      "pack_count": 1,
+      "gold": 300,
+      "durability": 1,
+      "currency": 1
+    },
+    {
+      "offer_id": 1018,
+      "item_id": 18,
+      "pack_count": 1,
+      "gold": 900,
+      "durability": 1200,
+      "currency": 1
+    },
+    {
+      "offer_id": 1019,
+      "item_id": 19,
+      "pack_count": 1,
+      "gold": 2400,
+      "durability": 3600,
+      "currency": 1
+    },
+    {
+      "offer_id": 1024,
+      "item_id": 24,
+      "pack_count": 1,
+      "gold": 1500,
+      "durability": 900,
+      "currency": 1
+    },
+    {
+      "offer_id": 1030,
+      "item_id": 30,
+      "pack_count": 1,
+      "gold": 1050,
+      "durability": 1,
+      "currency": 1
+    },
+    {
+      "offer_id": 1242,
+      "item_id": 242,
+      "pack_count": 1,
+      "gold": 1350,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1243,
+      "item_id": 243,
+      "pack_count": 1,
+      "gold": 1800,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1244,
+      "item_id": 244,
+      "pack_count": 1,
+      "gold": 1200,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1245,
+      "item_id": 245,
+      "pack_count": 1,
+      "gold": 600,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1246,
+      "item_id": 246,
+      "pack_count": 1,
+      "gold": 1650,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1247,
+      "item_id": 247,
+      "pack_count": 1,
+      "gold": 1050,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1248,
+      "item_id": 248,
+      "pack_count": 1,
+      "gold": 6000,
+      "durability": 350,
+      "currency": 1
+    },
+    {
+      "offer_id": 1249,
+      "item_id": 249,
+      "pack_count": 1,
+      "gold": 2200,
+      "durability": 350,
+      "currency": 1
+    },
+    {
+      "offer_id": 1250,
+      "item_id": 250,
+      "pack_count": 1,
+      "gold": 3800,
+      "durability": 350,
+      "currency": 1
+    },
+    {
+      "offer_id": 1251,
+      "item_id": 251,
+      "pack_count": 1,
+      "gold": 5500,
+      "durability": 400,
+      "currency": 1
+    },
+    {
+      "offer_id": 1252,
+      "item_id": 252,
+      "pack_count": 1,
+      "gold": 7500,
+      "durability": 400,
+      "currency": 1
+    },
+    {
+      "offer_id": 1253,
+      "item_id": 253,
+      "pack_count": 1,
+      "gold": 4800,
+      "durability": 400,
+      "currency": 1
+    },
+    {
+      "offer_id": 1256,
+      "item_id": 256,
+      "pack_count": 1,
+      "gold": 18000,
+      "durability": 500,
+      "currency": 1
+    },
+    {
+      "offer_id": 1258,
+      "item_id": 258,
+      "pack_count": 1,
+      "gold": 1200,
+      "durability": 600,
+      "currency": 1
+    },
+    {
+      "offer_id": 1259,
+      "item_id": 259,
+      "pack_count": 1,
+      "gold": 1050,
+      "durability": 600,
+      "currency": 1
+    },
+    {
+      "offer_id": 1260,
+      "item_id": 260,
+      "pack_count": 1,
+      "gold": 2550,
+      "durability": 600,
+      "currency": 1
+    },
+    {
+      "offer_id": 1261,
+      "item_id": 261,
+      "pack_count": 1,
+      "gold": 2200,
+      "durability": 600,
+      "currency": 1
+    },
+    {
+      "offer_id": 1262,
+      "item_id": 262,
+      "pack_count": 1,
+      "gold": 1200,
+      "durability": 600,
+      "currency": 1
+    },
+    {
+      "offer_id": 1264,
+      "item_id": 264,
+      "pack_count": 1,
+      "gold": 15000,
+      "durability": 500,
+      "currency": 1
+    },
+    {
+      "offer_id": 1266,
+      "item_id": 266,
+      "pack_count": 1,
+      "gold": 6000,
+      "durability": 500,
+      "currency": 1
+    },
+    {
+      "offer_id": 1302,
+      "item_id": 302,
+      "pack_count": 1,
+      "gold": 600,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1303,
+      "item_id": 303,
+      "pack_count": 1,
+      "gold": 450,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1304,
+      "item_id": 304,
+      "pack_count": 1,
+      "gold": 900,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1305,
+      "item_id": 305,
+      "pack_count": 1,
+      "gold": 300,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1306,
+      "item_id": 306,
+      "pack_count": 1,
+      "gold": 750,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1307,
+      "item_id": 307,
+      "pack_count": 1,
+      "gold": 750,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1308,
+      "item_id": 308,
+      "pack_count": 1,
+      "gold": 750,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1309,
+      "item_id": 309,
+      "pack_count": 1,
+      "gold": 600,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1310,
+      "item_id": 310,
+      "pack_count": 1,
+      "gold": 750,
+      "durability": 350,
+      "currency": 1
+    },
+    {
+      "offer_id": 1311,
+      "item_id": 311,
+      "pack_count": 1,
+      "gold": 1050,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1312,
+      "item_id": 312,
+      "pack_count": 1,
+      "gold": 1200,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1313,
+      "item_id": 313,
+      "pack_count": 1,
+      "gold": 1200,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1317,
+      "item_id": 317,
+      "pack_count": 1,
+      "gold": 300,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1320,
+      "item_id": 320,
+      "pack_count": 1,
+      "gold": 150,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1327,
+      "item_id": 327,
+      "pack_count": 1,
+      "gold": 150,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1329,
+      "item_id": 329,
+      "pack_count": 1,
+      "gold": 150,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1330,
+      "item_id": 330,
+      "pack_count": 1,
+      "gold": 750,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1331,
+      "item_id": 331,
+      "pack_count": 1,
+      "gold": 150,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1332,
+      "item_id": 332,
+      "pack_count": 1,
+      "gold": 300,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1334,
+      "item_id": 334,
+      "pack_count": 1,
+      "gold": 1800,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1335,
+      "item_id": 335,
+      "pack_count": 1,
+      "gold": 1350,
+      "durability": 600,
+      "currency": 1
+    },
+    {
+      "offer_id": 1336,
+      "item_id": 336,
+      "pack_count": 1,
+      "gold": 1050,
+      "durability": 600,
+      "currency": 1
+    },
+    {
+      "offer_id": 1338,
+      "item_id": 338,
+      "pack_count": 1,
+      "gold": 1500,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1339,
+      "item_id": 339,
+      "pack_count": 1,
+      "gold": 1350,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1340,
+      "item_id": 340,
+      "pack_count": 1,
+      "gold": 300,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 1341,
+      "item_id": 341,
+      "pack_count": 1,
+      "gold": 1200,
+      "durability": 600,
+      "currency": 1
+    },
+    {
+      "offer_id": 1035,
+      "item_id": 35,
+      "pack_count": 1,
+      "gold": 180,
+      "durability": 1,
+      "currency": 1
+    },
+    {
+      "offer_id": 6001,
+      "item_id": 5001,
+      "pack_count": 1,
+      "gold": 60,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 6002,
+      "item_id": 5002,
+      "pack_count": 1,
+      "gold": 1800,
+      "durability": 300,
+      "currency": 1
+    },
+    {
+      "offer_id": 6003,
+      "item_id": 5003,
+      "pack_count": 1,
+      "gold": 300,
+      "durability": 1,
+      "currency": 1
+    },
+    {
+      "offer_id": 6004,
+      "item_id": 5004,
+      "pack_count": 1,
+      "gold": 500,
+      "durability": 1,
+      "currency": 1
+    },
+    {
+      "offer_id": 6005,
+      "item_id": 5005,
+      "pack_count": 1,
+      "gold": 900,
+      "durability": 1,
+      "currency": 1
+    },
+    {
+      "offer_id": 6006,
+      "item_id": 5006,
+      "pack_count": 1,
+      "gold": 600,
+      "durability": 1,
+      "currency": 1
+    },
+    {
+      "offer_id": 6007,
+      "item_id": 5007,
+      "pack_count": 1,
+      "gold": 1000,
+      "durability": 1,
+      "currency": 1
+    },
+    {
+      "offer_id": 6008,
+      "item_id": 5008,
+      "pack_count": 1,
+      "gold": 1800,
+      "durability": 1,
+      "currency": 1
+    },
+    {
+      "offer_id": 6009,
+      "item_id": 5009,
+      "pack_count": 1,
+      "gold": 150,
+      "durability": 1,
+      "currency": 1
+    },
+    {
+      "offer_id": 6010,
+      "item_id": 5010,
+      "pack_count": 1,
+      "gold": 250,
+      "durability": 1,
+      "currency": 1
+    },
+    {
+      "offer_id": 6011,
+      "item_id": 5011,
+      "pack_count": 1,
+      "gold": 600,
+      "durability": 1,
+      "currency": 1
+    },
+    {
+      "offer_id": 6012,
+      "item_id": 5012,
+      "pack_count": 1,
+      "gold": 300,
+      "durability": 1,
+      "currency": 1
+    }
+  ],
+  "price_revision": 20261009,
+  "special_item_prices": "Explicit serverbalance config/special_items.json; classicmanualdoesnotdocumentpricesofexperimental319/321/323/324/325.",
+  "battle_item_prices": "Manual printed64/79-83; smoke318180cr is explicit emulator policy, absent from book. Injection HP5012: manual printed82,100Gold; emulator ID policy."
+}

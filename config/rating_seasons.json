@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "calendar": "UTC calendar month",
+  "team_players": 2,
+  "minimum_level": 4,
+  "maximum_level": 20,
+  "maximum_soldiers": 3,
+  "repeat_window_seconds": 86400,
+  "maximum_rated_opposing_pairs": 3,
+  "rating_model": "Gaussian two-team model; a fixed pair is one rating entity",
+  "draw_policy": "Keep Gaussian rating; count the draw",
+  "qualification": "Two real accounts per side, no AI, both sides cause authoritative opposing damage",
+  "archive_policy": "Close on the first query after month end, after every admitted match is settled or voided",
+  "season_rewards": "None; seasons affect standings only"
+}
