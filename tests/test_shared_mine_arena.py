@@ -586,5 +586,62 @@ class SharedMineArenaTests(unittest.TestCase):
         self.assertEqual(battle['field'].mining.lift_blocked_until,0)
         self.assertNotIn(self.owners[1],self.hub.battles)
 
+    def make_slash_miner(self,index):
+        """Saved miner with an equipped Freak Hammer and learned slash rank1."""
+        from tio.ability_learning import AbilityLearning
+        from tio.protocol.abilities import AbilityEntry
+        from tio.protocol.item_list import ItemRecord
+        session=self.case.sessions[index]
+        identity,raw,_=OwnedPetStore(self.path).list(session.account)[0]
+        pet=decode_pet_info(raw,human_equipment=True)
+        hammer=ItemRecord(9001,335,bytes(2),1,1,16,(600,600,600),bytes(4),None,bytes(3))
+        with closing(sqlite3.connect(self.path)) as db,db:
+            db.execute('UPDATE owned_pets SET pet_packet=?,inventory_packet=? WHERE account=? AND pet_id=?',
+                       (encode_pet_info(replace(pet,fields={**pet.fields,'0x8c446f':6})),
+                        encode_item_list(identity,(hammer,)),session.account,identity))
+        AbilityLearning.from_workspace(self.path,fixtures.ROOT).state.replace(
+            session.account,identity,(AbilityEntry(22,1,0,1),),expected_revision=0)
+
+    def test_skill_bar_request_lists_own_battle_skills_and_slash_is_usable(self):
+        from tio.protocol.abilities import AbilityEntry,decode_abilities,encode_skill_list_request
+        from tio.protocol.ability_cast import AbilityCast,encode_ability_cast
+        self.make_slash_miner(0)
+        battle=self.enter((0,1));field=battle['field']
+        miner,raider=(field.actor_ids(self.owners[i])[0] for i in (0,1))
+        def skills(hub,index,actor):
+            hub.queues[self.owners[index]].clear()
+            self.assertTrue(hub.handle(self.case.sessions[index],encode_skill_list_request(actor)))
+            replies=tuple(hub.queues[self.owners[index]]);hub.queues[self.owners[index]].clear()
+            self.assertEqual([p[:1] for p in replies if p[:1]!=b'\x80'],[])
+            return [decode_abilities(p)[:2] for p in replies]
+        # The native client requests this list on battle entry to draw its bar.
+        # Mine radio28 stays a mine feature and never appears as a bar skill.
+        self.assertEqual(skills(self.hub,0,miner),[(miner,(AbilityEntry(22,1,0,1),))])
+        self.assertEqual(skills(self.hub,1,raider),[(raider,())])
+        # Another account's fighter is neither disclosed nor rejected.
+        self.assertEqual(skills(self.hub,0,raider),[])
+        with self.hub.journal.unit(battle):
+            self.park_mutants(battle)
+            field._actors[raider]=replace(field.actor(raider),x=30,y=30)
+            field._actors[miner]=replace(field.actor(miner),x=10,y=10)
+            mutant=field.actor_ids(next(iter(battle['bots'])))[0]
+            field._actors[mutant]=replace(field.actor(mutant),x=11,y=10)
+            field.combat.rng=random.Random(1)
+            self.hub.snapshot(battle)
+        for queue in self.hub.queues.values():queue.clear()
+        turn=battle['arena']._turns[battle['room'].room_id]
+        self.assertEqual((turn[0],turn[1]),(self.owners[0],frozenset({miner})))
+        points=field.actor(miner).action_points
+        result=self.send(0,encode_ability_cast(AbilityCast(22,miner,0,11,10)))
+        self.assertTrue(any(p[:1]==b'\x4b' and struct.unpack_from('<I',p,23)[0]==22 for p in result),result)
+        self.assertEqual(field.actor(miner).action_points,points-7)
+        self.assertLess(field.actor(mutant).health,field.actor(mutant).max_health)
+        # A crash-restored hub answers while the client is still reloading.
+        clone=self.restore()
+        self.assertTrue(clone.resume(self.case.sessions[0]))
+        self.assertIn(self.owners[0],clone.returning)
+        clone.queues[self.owners[0]].clear()
+        self.assertEqual(skills(clone,0,miner),[(miner,(AbilityEntry(22,1,0,1),))])
+
 
 if __name__=='__main__':unittest.main()

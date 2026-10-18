@@ -236,6 +236,27 @@ class ArenaService:
         return tuple(combat.inventory_packet(i) for i in dict.fromkeys(actor_ids)
                      if i in owned and i in combat.inventories)
 
+    def skill_list_packets(self, character_id, packet):
+        """Answer C8/12 with an own fighter's current battle skills, or None.
+
+        The client requests this list on battle entry and draws its skill bar
+        from the reply. None outside a combat scene lets the city handler
+        answer from saved ranks; opponents and reserves get no list.
+        """
+        from .protocol.abilities import decode_skill_list_request,encode_abilities
+        from .weapon_effects import battle_skills
+        actor_id=decode_skill_list_request(packet)
+        room=next((r for r in self.rooms.snapshot() if character_id in r.members),None)
+        field=None if room is None else self._fields.get(room.room_id)
+        combat=getattr(field,'combat',None)
+        if combat is None:return None
+        if actor_id not in field.actor_ids(character_id) or actor_id not in combat.inventories:return ()
+        # Saved ranks plus Groza27 for the current equipment. Mine radio28 is
+        # a mine feature, not a bar skill: the original skills.xml defines
+        # CallHelpFromBase with hide=1, so it never belongs on this bar.
+        entries=battle_skills(combat.learned.get(actor_id,()),combat.inventories[actor_id],combat.human[actor_id])
+        return (encode_abilities(actor_id,tuple(e for e in entries if e.ability_id!=28)),)
+
     def next_turn_owner(self, room_id):
         """Local round-robin policy; return (recipient, packet) notifications.
 
