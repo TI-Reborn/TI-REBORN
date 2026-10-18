@@ -26,6 +26,17 @@ class AbilityProtocolTests(unittest.TestCase):
                 with self.assertRaises(PacketError):decode_abilities(wire[:n])
             with self.assertRaises(PacketError):decode_abilities(wire+b'\0')
 
+    def test_skill_list_request_native_bytes_and_city_fallback(self):
+        from tio.protocol.abilities import encode_skill_list_request,decode_skill_list_request
+        from tio.arena_service import ArenaService
+        wire=bytes.fromhex('c812 01000040') # Captured from the original client in a mine.
+        self.assertEqual(encode_skill_list_request(0x40000001),wire)
+        self.assertEqual(decode_skill_list_request(wire),0x40000001)
+        for bad in (wire[:-1],wire+b'\0',b'\xc8\x13'+wire[2:]):
+            with self.assertRaises(PacketError):decode_skill_list_request(bad)
+        # Outside a combat scene the saved-rank city handler answers instead.
+        self.assertIsNone(ArenaService(clock=lambda:0).skill_list_packets(7,wire))
+
     def test_profiles_cannot_mix(self):
         with self.assertRaises(PacketError):encode_abilities(1,(AbilityEntry(1,1,0),))
         with self.assertRaises(PacketError):encode_abilities(1,(AbilityEntry(1,1,0,1),),for_learning=True)

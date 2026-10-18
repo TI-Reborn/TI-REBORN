@@ -1011,6 +1011,16 @@ class LoopbackExchange:
                         game.sendall(encode_reply(reply,outbound))
                         self.events.append({'direction':'S2C','stage':'survival_reply','plain_hex':reply.hex()})
                         continue
+                    if self.owned_pet_probe and packet[:2]==b'\xc8\x12':
+                        # In battle the skill bar needs the battle list (scene
+                        # ids, Groza27); malformed requests reach the city handler.
+                        try:battle_skills=self.arena.skill_list_packets(self.probe_character_id,packet)
+                        except ValueError:battle_skills=None
+                        if battle_skills is not None:
+                            for reply in battle_skills:
+                                game.sendall(encode_reply(reply,outbound))
+                                self.events.append({'direction':'S2C','stage':'battle_skill_list','plain_hex':reply.hex()})
+                            continue
                     if self.owned_pet_probe and self.database is not None and (packet[:2]==b'\xc8\x12' or packet[:1] in (b'\x8f',b'\x90',b'\xa9')):
                         from tio.ability_progression import AbilityProgression as AbilityLearning
                         from tio.protocol.system_message import encode_shop_error

@@ -877,6 +877,9 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
             if 'points' in battle:battle['ranked_winner']=1-battle['field'].teams[owner]
             self.settle(battle,owner,0,escaped=True)
             self.remove_from_battle(battle,owner);self.to_city(owner);return
+        # Read-only skill bar request; the client also sends it while reloading.
+        if packet[:2]==b'\xc8\x12':
+            self.put(owner,*(arena.skill_list_packets(owner,packet) or ()));return
         if owner in self.returning:raise ValueError('Дождитесь загрузки боя')
         if battle.get('kind')=='mine' and self.mine_call_help(battle,owner,packet):return
         if self.handle_tactical_mark(owner,packet):return

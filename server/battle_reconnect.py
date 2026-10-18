@@ -218,6 +218,8 @@ class BattleReconnect:
             elif packet[:1]==b'\x2f':
                 from tio.protocol.item_list import decode_item_list_request
                 replies=session.arena.inventory_packets(owner,decode_item_list_request(packet)) or ()
+            elif packet[:2]==b'\xc8\x12':
+                replies=session.arena.skill_list_packets(owner,packet) or ()
             for reply in replies:game.sendall(encode_reply(reply,cipher))
 
     def forget(self,owner):

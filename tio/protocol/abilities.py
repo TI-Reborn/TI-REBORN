@@ -36,6 +36,18 @@ def decode_ability_request(packet):
     return owner,ability,opcode
 
 
+def encode_skill_list_request(owner_id):
+    """C8/12 from writer62fa90: one fighter's learned list80, no other fields."""
+    return Writer().u8(0xc8).u8(0x12).u32(owner_id).build()
+
+
+def decode_skill_list_request(packet):
+    r=Reader(packet)
+    if (r.u8(),r.u8())!=(0xc8,0x12):raise PacketError('Expected skill list request C8/12')
+    owner=r.u32();r.finish()
+    return owner
+
+
 @dataclass(frozen=True)
 class AbilityEntry:
     ability_id: int
