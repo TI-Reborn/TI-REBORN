@@ -9,7 +9,7 @@ from tio.protocol.system_message import encode_shop_error
 from tio.wallets import WalletStore
 from tio.owned_pets import OwnedPetStore
 
-OPERATIONS=(0x52,0x53,0x5b,0x5d,0x5f,0x60,0x98,0x99,0x31)
+OPERATIONS=(0x52,0x53,0x58,0x5b,0x5d,0x5f,0x60,0x98,0x99,0x31)
 
 
 def store(session):
@@ -87,7 +87,10 @@ def handle(presence,session,packet):
         return handle_alliance(presence,session,packet)
     if not packet or packet[0] not in OPERATIONS:return False
     try:
-        op,args=decode_request(packet)
+        if packet[0]==0x58:
+            from tio.protocol.clan_crests import decode_upload
+            op,args=0x58,(decode_upload(packet),)
+        else:op,args=decode_request(packet)
         team=getattr(getattr(session,'router',None),'team_arena',None)
         busy=(bool(team and team.busy(session)) or session.survival.searching(session.probe_character_id) or
               any(session.probe_character_id in room.members for room in session.arena.rooms.snapshot()))
@@ -106,6 +109,14 @@ def handle(presence,session,packet):
         elif op==0x99:current.transfer_leader(session.account,*args)
         elif op==0x31:
             current.upgrade(session.account,*args)
+            enqueue(presence,session,encode_asset_count(WalletStore(session.database).ensure(session.account)))
+        elif op==0x58:
+            from uuid import uuid4
+            from tio.clan_benefits import set_crest
+            from tio.db_transaction import transaction
+            from .economy_runtime import city_idle
+            if not city_idle(session):raise ValueError('Установка значка доступна в городе вне боя и поиска')
+            with transaction(session.database) as db:set_crest(db,session.account,args[0],'native-crest-'+uuid4().hex)
             enqueue(presence,session,encode_asset_count(WalletStore(session.database).ensure(session.account)))
         sync(presence,session)
     except ValueError as exc:enqueue(presence,session,encode_shop_error(str(exc)[:180]))

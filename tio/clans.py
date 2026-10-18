@@ -449,10 +449,11 @@ def settle_influence(db,account,experience,*,identity=None,city_coefficient=1,no
 
 
 def project_assets(db,account,assets):
-    clan=membership(db,account)
-    if clan and (clan['leader']==account or clan['permissions']&VIEW_SAFE):
-        return replace(assets,unknown_u32_08=clan['credits'],unknown_u32_09=clan['gold'])
-    return replace(assets,unknown_u32_08=0,unknown_u32_09=0)
+    # Compatibility for existing reward/wallet callers. Native RTTI identifies
+    # fields8/9 as repair power and upgrade count, never clan treasury money.
+    # Clan balances continue to travel as authorised kind2 WarehouseItem rows.
+    from .warehouse_resources import project_assets as warehouse_assets
+    return warehouse_assets(db,account,assets)
 
 
 def append_money(packet,assets):

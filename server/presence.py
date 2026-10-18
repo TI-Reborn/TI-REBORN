@@ -30,6 +30,8 @@ class Presence:
         from .public_profile import read_profile
         profile=read_profile(session.database,account=session.account,include_history=False)
         level=profile.level if profile else 0
+        crest=getattr(profile,'clan_crest_id',0)
+        alliance=getattr(profile,'alliance_crest_id',0)
         team=getattr(getattr(session,'router',None),'team_arena',None)
         status=int(bool(getattr(getattr(session,'arena',None),'_fields',{})) or bool(team and team.in_battle(session)))
         with self.lock:
@@ -37,12 +39,12 @@ class Presence:
             if old is None:
                 self.online_clock[session]=now
                 self.next_id+=1
-                entry=(town,Player(self.next_id,session.probe_character_name,level,status=status))
+                entry=(town,Player(self.next_id,session.probe_character_name,level,crest=crest,alliance=alliance,status=status))
                 self.players[session]=entry;self.queues[session]=deque();self.messages[session]=deque()
                 LOG.info('presence_join account=%s town=%s id=%d',session.account,town,self.next_id)
                 self.refresh()
-            elif old[0]!=town or old[1].level!=level or old[1].status!=status:
-                self.players[session]=(town,replace(old[1],level=level,status=status));self.refresh()
+            elif old[0]!=town or old[1].level!=level or old[1].status!=status or old[1].crest!=crest or old[1].alliance!=alliance:
+                self.players[session]=(town,replace(old[1],level=level,crest=crest,alliance=alliance,status=status));self.refresh()
                 LOG.info('presence_move account=%s from=%s to=%s',session.account,old[0],town)
         started=self.online_clock.get(session)
         with self.lock:

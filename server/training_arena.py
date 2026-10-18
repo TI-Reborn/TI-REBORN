@@ -51,8 +51,10 @@ class AssaultMapLoader:
 
 
 class TrainingArena:
-    def init_training(self,path,*,wall=time.time):
+    def init_training(self,path,*,wall=time.time,schedule='on_demand'):
+        if schedule not in ('on_demand','scheduled'):raise ValueError('Unknown training schedule')
         self.training_path=path;self.training_wall=wall
+        self.training_schedule=schedule
         self.training_loader=AssaultMapLoader()
         self.training_groups={};self.training_members={};self.training_next_group=0x30000000
         self.training_events={};self.training_update_at=0
@@ -101,6 +103,12 @@ class TrainingArena:
     def _training_event(self,town):
         from tio.territories import TerritoriesStore
         now=self.training_wall();event=self.training_events.get(town)
+        if self.training_schedule=='on_demand':
+            if event is None or not event.get('on_demand'):
+                rules=deepcopy(self.training_loader.rules)
+                event=dict(id=str(uuid4()),town=town,starts=int(now),ends=0,rules=rules,on_demand=True)
+                self.training_events[town]=event
+            return {**event,'phase':'REGISTRATION','tour':1,'phase_ends':0}
         if event is None or now>=event['ends']:
             rules=deepcopy(self.training_loader.rules)
             start=int(now);end=start+rules['registration_seconds']+3*rules['tour_seconds']+2*rules['pause_seconds']
@@ -117,19 +125,56 @@ class TrainingArena:
         zone=ZoneInfo(PHASES[event['phase']],int(self.training_wall()),event['starts'],int(event['phase_ends']),lo,hi,lo,hi,record['max_upgrade'])
         return raw[:-2]+b'\x01'+encode_zone_body(zone)+raw[-1:]
 
-    def training_room_packet(self,group,viewer):
+    def _training_crests(self,owners):
+        from contextlib import closing
+        from tio.db_transaction import connect
+        from tio.clans import available
+        from tio.clan_benefits import crest_id
+        from tio.alliances import alliance_for_clan
+        owners=tuple(set(owners));result={o:(0,0) for o in owners}
+        accounts={self.players[o].account:o for o in owners if o in self.players}
+        if not accounts:return result
+        with closing(connect(self.training_path)) as db:
+            db.execute('BEGIN')
+            if not available(db):return result
+            rows=db.execute('SELECT m.account,m.clan_id FROM clan_members m JOIN clans c ON c.id=m.clan_id WHERE m.account IN ('+','.join('?' for _ in accounts)+')',tuple(accounts)).fetchall()
+            clans={}
+            for account,cid in rows:
+                if cid not in clans:
+                    alliance=alliance_for_clan(db,cid)
+                    clans[cid]=(crest_id(db,cid),alliance['crest_id'] if alliance else 0)
+                result[accounts[account]]=clans[cid]
+        return result
+
+    def training_room_packet(self,group,viewer,*,crests=None):
+        if crests is None:crests=self._training_crests(group['members'])
         cells=tuple(RoomCell(self.players[viewer].probe_character_id if owner==viewer else owner,
-            member['name'],max(member['levels']),0,int(owner==group['leader']),member['pets'],int(member['ready']))
+            member['name'],max(member['levels']),crests[owner][0],int(owner==group['leader']),member['pets'],int(member['ready']))
             for owner,member in group['members'].items())
         return encode_room_info(group['id'],cells,int(group['status']=='ready'))
 
-    def _training_notify(self,group):
+    @staticmethod
+    def _training_crest_signature(group,crests):
+        return tuple((owner,crests[owner]) for owner in sorted(group['members']))
+
+    def _training_notify(self,group,*,crests=None):
+        if crests is None:crests=self._training_crests(group['members'])
+        group['crest_signature']=self._training_crest_signature(group,crests)
         for owner in group['members']:
-            if owner in self.players and owner not in self.offline:self.put(owner,self.training_room_packet(group,owner))
+            if owner in self.players and owner not in self.offline:self.put(owner,self.training_room_packet(group,owner,crests=crests))
 
     def _training_list(self,town):
-        return encode_room_list(RoomListItem(g['id'],g['members'][g['leader']]['name'],None,None,4,len(g['members']),int(g['status']=='ready'))
-            for g in self.training_groups.values() if g['town']==town)
+        # Both original mandatory getters require a present value, even zero.
+        groups=tuple(g for g in self.training_groups.values() if g['town']==town)
+        crests=self._training_crests(g['leader'] for g in groups)
+        return encode_room_list(RoomListItem(g['id'],g['members'][g['leader']]['name'],*crests[g['leader']],4,len(g['members']),int(g['status']=='ready'))
+            for g in groups)
+
+    def _training_broadcast_list(self,town):
+        packet=self._training_list(town)
+        for owner,session in tuple(self.players.items()):
+            if owner in self.offline or owner in self.battles or owner in self.results:continue
+            if session.locations and session.locations.current(session.account)==town:self.put(owner,packet)
 
     def _training_leave(self,owner):
         identity=self.training_members.pop(owner,None)
@@ -143,6 +188,7 @@ class TrainingArena:
             group['members'].pop(owner);group['status']='forming'
             for member in group['members'].values():member['ready']=False
             self.put(owner,encode_room_deleted(identity));self._training_notify(group)
+        self._training_broadcast_list(group['town'])
 
     def handle_assault(self,owner,packet):
         session=self.players[owner]
@@ -188,13 +234,19 @@ class TrainingArena:
                 for o,m in group['members'].items():
                     if o in self.offline or self._training_selection(o,m['pet_ids'])['levels']!=m['levels']:raise ValueError('Состав группы изменился')
                 group['status']='ready'
-        self._training_notify(group);self.put(owner,self._training_list(town));self.tick_training_events(force=True)
+        self._training_notify(group);self._training_broadcast_list(town);self.tick_training_events(force=True)
         return True
 
     def tick_training_events(self,*,force=False):
         if not hasattr(self,'training_path') or not force and self.clock()<self.training_update_at:return
         self.training_update_at=self.clock()+1
         self.recover_training_events()
+        crests=self._training_crests(self.training_members)
+        changed_towns=set()
+        for group in tuple(self.training_groups.values()):
+            if group.get('crest_signature')!=self._training_crest_signature(group,crests):
+                self._training_notify(group,crests=crests);changed_towns.add(group['town'])
+        for town in changed_towns:self._training_broadcast_list(town)
         current_towns={}
         for town in TRAINING_TOWNS:
             event=self._training_event(town)
@@ -206,7 +258,7 @@ class TrainingArena:
                 if current_towns[owner]==town:
                     if getattr(session,'training_zone_signature',None)!=signature:
                         self.put(owner,self.training_town_packet(town));session.training_zone_signature=signature
-            if event['phase'] not in ('TOUR1','TOUR2','TOUR3'):continue
+            if not event.get('on_demand') and event['phase'] not in ('TOUR1','TOUR2','TOUR3'):continue
             ready=[g for g in self.training_groups.values() if g['town']==town and g['status']=='ready']
             while len(ready)>=2:
                 groups=ready[:2];ready=ready[2:]
@@ -226,12 +278,13 @@ class TrainingArena:
                 for group in groups:
                     self.training_groups.pop(group['id'])
                     for owner in group['members']:self.training_members.pop(owner,None)
+                self._training_broadcast_list(town)
 
     def build_training(self,groups,event):
         if getattr(self,'journal',None) is None:raise ValueError('Тренировка требует серверного журнала боёв')
         if len(groups)!=2 or any(len(g['members'])!=4 for g in groups):raise ValueError('Нужны две группы по четыре реальных игрока')
         town=groups[0]['town'];current=self._training_event(town)
-        if event['id']!=current['id'] or event['tour']!=current['tour'] or current['phase'] not in ('TOUR1','TOUR2','TOUR3'):raise ValueError('Тур тренировки изменился')
+        if event['id']!=current['id'] or event['tour']!=current['tour'] or not current.get('on_demand') and current['phase'] not in ('TOUR1','TOUR2','TOUR3'):raise ValueError('Тур тренировки изменился')
         from tio.matchmaking import SearchTicket
         from tio.team_scene import prepare
         from tio.arena_service import ArenaService
@@ -254,7 +307,8 @@ class TrainingArena:
         field,views,ground,_=prepare(seats,0,seed=seed,arena_map=layout.arena,selected_ids=True,profile='assault',town_id=town)
         field.battle_mode=BATTLE_MODE;record=location(town)
         field.scene_metadata.update(town_id=town,original_scene=layout.resource,
-            training_policy=dict(version=1,capture=False,weekly_awards=False,tour=event['tour'],tours=3,
+            training_policy=dict(version=2,capture=False,weekly_awards=False,tour=event['tour'],tours=1 if event.get('on_demand') else 3,
+                schedule='on_demand' if event.get('on_demand') else 'scheduled',
                 max_upgrade=record['max_upgrade'],overview=overview,seed=seed))
         for identity in field._actors:field.combat.enhancement_caps[identity]=min(field.combat.enhancement_caps[identity],record['max_upgrade'])
         order=tuple(o for pair in zip(*teams) for o in pair)
@@ -269,7 +323,8 @@ class TrainingArena:
             result_packets={},reward_roster={o:(a,tuple(t.levels),side) for o,side,p,a,t,b in seats},
             reward_damage=set(),reward_support=set(),reward_started=False,return_towns={o:town for o in views},
             assault_points=AssaultPoints(layout.flags,[None]*3,[0,0]),assault_round_seen=set(),
-            training_event=deepcopy(event),training_ends=min(self.training_wall()+event['rules']['emulator_policy']['battle_max_seconds'],event['phase_ends']))
+            training_event=deepcopy(event),training_ends=self.training_wall()+event['rules']['emulator_policy']['battle_max_seconds'])
+        if not event.get('on_demand'):battle['training_ends']=min(battle['training_ends'],event['phase_ends'])
         for owner in views:
             self.battles[owner]=battle;self.account_owners[self.players[owner].account]=owner
             self.players[owner]._battle_treatment_ids=None;self.send_scene(owner)
@@ -281,6 +336,7 @@ class TrainingArena:
         for battle in (*self.battles.values(),*self.completed.values()):
             if id(battle) in seen or battle.get('kind')!='training':continue
             seen.add(id(battle));event=battle['training_event'];town=event['town']
+            if self.training_schedule=='on_demand':continue
             if self.training_wall()>=event['ends']:continue
             existing=self.training_events.get(town)
             if existing is None or existing['starts']<event['starts']:
@@ -290,7 +346,7 @@ class TrainingArena:
         if battle.get('kind')!='training':return super().assault_packets(battle,owner)
         points=battle['assault_points'];gains=points.increments()
         return (*[encode_flag_status(x,y,0 if points.owners[i] is None else points.owners[i]+1) for i,(x,y) in enumerate(points.positions)],
-            encode_flag_points(tuple(FlagPoints(side+1,points.scores[side],gains[side]) for side in (0,1))),encode_battle_count(1,0))
+            encode_flag_points(tuple(FlagPoints(side+1,points.scores[side],gains[side]) for side in (0,1))),encode_battle_count(1,int(battle['finished'])))
 
     def training_refresh(self,battle):
         for owner in battle['humans']:
@@ -326,7 +382,7 @@ class TrainingArena:
         if arena._loading[room.room_id]!=set(room.members):
             if self.clock()>battle['deadline']:
                 battle['finished']=True
-                for owner in tuple(battle['humans']):self.battles.pop(owner,None);self.to_city(owner)
+                for owner in tuple(battle['humans']):self.battles.pop(owner,None);self.put(owner,encode_battle_count(0,0));self.to_city(owner)
                 battle['humans'].clear()
             return
         for owner,packet in arena.expire_turns():self.put(owner,*arena.finished_turn_packets(owner,packet))
@@ -367,13 +423,21 @@ class TrainingArena:
         for owner,result,_ in requests:
             self.settle(battle,owner,result)
             side=field.teams[owner];final=encode_battle_over(battle['city_id'],rows[side],rows[1-side])
-            battle['result_packets'][owner]=(*battle['result_packets'][owner],final);self.put(owner,final)
+            count=encode_battle_count(1,1)
+            battle['result_packets'][owner]=(*battle['result_packets'][owner],count,final);self.put(owner,count,final)
         battle['finished']=True;arena=battle['arena'];arena._turns.pop(battle['room'].room_id,None)
         for owner in battle['humans']:self.battles.pop(owner,None);self.results.add(owner);self.completed[owner]=battle
 
     def finish(self,battle):
         if battle.get('kind')=='training':return self.finish_training(battle)
         return super().finish(battle)
+
+    def to_city(self,owner):
+        result=super().to_city(owner)
+        session=self.players.get(owner)
+        if session and session.locations and owner not in self.battles and session.locations.current(session.account) in TRAINING_TOWNS:
+            self.put(owner,encode_battle_count(0,0))
+        return result
 
     @timed('hub.tick')
     def tick(self):

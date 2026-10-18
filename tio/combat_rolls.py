@@ -3,7 +3,7 @@
 Integer shares preserve the catalog's full-burst endpoints, rather than
 multiplying a weapon's advertised damage by its ammunition consumption.
 Critical projectiles deal double damage (manual glossary); rounding and the
-centre-line raster for piercing weapons are explicit emulator policy.
+sector boundaries for piercing weapons are explicit emulator policy.
 """
 from .combat_distance import combat_distance
 from .visibility import field_sight
@@ -32,3 +32,27 @@ def line_victims(field, actor, target, maximum):
                    and combat_distance((actor.x,actor.y),(a.x,a.y))<=maximum
                    and field_sight(field,(actor.x,actor.y),(a.x,a.y))),
                   key=lambda a:(combat_distance((actor.x,actor.y),(a.x,a.y)),a.actor_id))
+
+
+def area_victims(field, actor, target, maximum, radius=1):
+    """Heavy burst through the chosen zone, independent of enemy visibility.
+
+    Manual p39/p61 specifies spread and piercing, but no server geometry.
+    Policy: the catalog radius is the half-width at the aimed distance;
+    the sector continues to the catalog range. Integer dot/cross products
+    keep boundaries deterministic for every observer and map orientation.
+    """
+    dx,dy=target[0]-actor.x,target[1]-actor.y
+    length2=dx*dx+dy*dy
+    if not length2:return []
+    radius=max(0,radius)
+    def inside(v):
+        vx,vy=v.x-actor.x,v.y-actor.y
+        dot=vx*dx+vy*dy
+        cross=vx*dy-vy*dx
+        return dot>0 and cross*cross*length2<=radius*radius*dot*dot
+    return sorted((v for v in field._actors.values()
+                   if v.actor_id!=actor.actor_id and v.health and inside(v)
+                   and combat_distance((actor.x,actor.y),(v.x,v.y))<=maximum
+                   and field_sight(field,(actor.x,actor.y),(v.x,v.y))),
+                  key=lambda v:(combat_distance((actor.x,actor.y),(v.x,v.y)),v.actor_id))

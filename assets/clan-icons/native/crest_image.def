@@ -1,0 +1,4 @@
+LIBRARY tio_crest
+EXPORTS
+ NormalizeCrest=_NormalizeCrest@4
+ ReleaseCrest=_ReleaseCrest@0

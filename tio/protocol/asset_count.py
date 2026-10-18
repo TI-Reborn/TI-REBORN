@@ -13,10 +13,18 @@ class AssetCount:
     spectra_crystals: int = 0
     spectra_bonds: int = 0
     spectra_stock: int = 0
-    unknown_u32_08: int = 0
-    unknown_u32_09: int = 0
+    unknown_u32_08: int = 0  # remaining warehouse repair points; native91453c
+    unknown_u32_09: int = 0  # warehouse Upgrade Kit units; native914540
     access_level: int = 0
     optional_raw: tuple[int, int] | None = None
+
+    @property
+    def repair_points(self):
+        return self.unknown_u32_08
+
+    @property
+    def upgrade_kits(self):
+        return self.unknown_u32_09
 
 
 def encode_asset_count(value):

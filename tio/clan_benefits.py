@@ -199,10 +199,15 @@ def validate_crest(bmp):
 
 
 def set_crest(db, account, bmp, identity):
-    write(db);digest=validate_crest(bmp);clan=require(db,account,CREST);request=canonical(dict(clan=clan['id'],digest=digest))
+    write(db);digest=validate_crest(bmp) if bmp is not None else None;clan=require(db,account,CREST);request=canonical(dict(clan=clan['id'],digest=digest))
     old=prior(db,'crest',identity,account,request)
     if old is not None:return old
     current=db.execute('SELECT b.id,b.digest FROM clan_crests c JOIN clan_crest_blobs b ON b.id=c.crest_id WHERE c.clan_id=?',(clan['id'],)).fetchone()
+    if bmp is None:
+        if current:
+            db.execute('DELETE FROM clan_crests WHERE clan_id=?',(clan['id'],))
+            record(db,clan['id'],account,'crest',0)
+        return receipt(db,'crest',identity,account,request,dict(crest_id=0,charged=0))
     if current and current[1]==digest:return receipt(db,'crest',identity,account,request,dict(crest_id=current[0],charged=0))
     if db.execute('UPDATE wallets SET credits=credits-? WHERE account=? AND credits>=?',(1000,account,1000)).rowcount!=1:raise ClanRejected('Недостаточно кредитов для эмблемы')
     db.execute('INSERT OR IGNORE INTO clan_crest_blobs(clan_id,digest,bmp) VALUES (?,?,?)',(clan['id'],digest,bmp))

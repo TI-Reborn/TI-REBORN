@@ -17,7 +17,12 @@ BATTLE_MODE = 21
 def _cstring(w, value):
     if not isinstance(value, bytes) or b'\0' in value or len(value) > 255:
         raise PacketError('Expected bounded encoded string')
-    w.data.extend(value + b'\0')
+    # Saved character/clan names use the legacy CP1251 representation. The
+    # generated Assault4 reader6297ac/writer629abc use u16 byte length + UTF8,
+    # unlike the handwritten CString readers used by older lobby packets.
+    try:raw=value.decode('cp1251').encode('utf-8')
+    except UnicodeError:raise PacketError('Invalid legacy character name') from None
+    w.u16(len(raw));w.data.extend(raw)
 
 
 def decode_request(data: bytes):
