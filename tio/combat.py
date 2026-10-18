@@ -691,15 +691,21 @@ class Combat:
         impact=(request.x,request.y)
         victims=[v for v in f._actors.values() if v.health is not None and v.health>0
                  and (v.x,v.y)==(request.x,request.y)]
-        if not grenade:
+        if source.get('weaponAttack')=='Minigun':
+            # Manual p39/p61: choose a direction on empty ground; everyone
+            # in the burst can be hit, including unseen actors and allies.
+            # Each ray respects static obstacles/doors and dynamic smoke.
+            from .combat_rolls import area_victims
+            from .battle_item_effects import clear_item_sight
+            victims=[v for v in area_victims(f,a,(request.x,request.y),w.max_range,
+                                           int(source.get('radius',1)))
+                     if clear_item_sight(self,(a.x,a.y),(v.x,v.y))]
+        elif not grenade:
             if len(victims)!=1 or f.allied(victims[0].owner_id,owner) or victims[0].actor_id not in known:
                 raise ValueError('Visible enemy required')
             if not field_sight(f,(a.x,a.y),(request.x,request.y)):raise ValueError('Shot is blocked')
             from .battle_item_effects import clear_item_sight
             if not clear_item_sight(self,(a.x,a.y),(request.x,request.y)):raise ValueError('Дым закрывает линию выстрела')
-            if source.get('weaponAttack')=='Minigun':
-                from .combat_rolls import line_victims
-                victims=line_victims(f,a,(request.x,request.y),w.max_range)
         else:
             if (request.x,request.y) in f.blocked:raise ValueError('Grenade landing cell blocked')
             if weapon_id==316 and not field_sight(f,(a.x,a.y),(request.x,request.y)):
@@ -743,6 +749,7 @@ class Combat:
                                   weapons=self.catalog.equipped(inventory,human=self.human[a.actor_id],resource=self.resources[a.actor_id]))}
         hits=[]
         attack_flags=RESULT_NORMAL
+        visible_landed=False
         landed=False
         profile=self.proficiencies.get(a.actor_id)
         skill=None if profile is None else self.proficiency_rules.value(profile,self.human[a.actor_id],w.weapon_type)
@@ -811,8 +818,9 @@ class Combat:
                 achievement_outcomes.append((victim,hit,critical,damage==victim.health,victim.actor_id in seen_before))
             # Ordinary attacks read the global result; a skill can miss one
             # recipient and hit another, so it reads the per-recipient result.
-            if not active_id and not grenade:
-                attack_flags=RESULT_CRITICAL if attack_flags==RESULT_CRITICAL or critical else RESULT_NORMAL if landed else RESULT_MISS
+            if not active_id and not grenade and (view is None or victim.actor_id in view.visible):
+                visible_landed=visible_landed or hit
+                attack_flags=RESULT_CRITICAL if attack_flags==RESULT_CRITICAL or critical else RESULT_NORMAL if visible_landed else RESULT_MISS
             if view is None or victim.actor_id in view.visible:
                 additional=min(damage,bonus_damage)
                 hits.append(AttackHit(victim.actor_id,damage-additional,victim.health-damage,flags=outcome,additional_damage=additional,absorbed_damage=absorbed))

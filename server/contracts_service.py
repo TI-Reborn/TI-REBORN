@@ -60,7 +60,9 @@ class ContractsService:
                 return ()
             values = {value.get('key'): value.get('val') for value in zone}
             from tio.locations import TOWNS, town_packets
-            raw = (town_packets(town, self.path, clock=self.clock)[0] if town in TOWNS else
+            from .training_arena import TRAINING_TOWNS
+            raw = (self.hub.training_town_packet(town) if town in TRAINING_TOWNS else
+                   town_packets(town, self.path, clock=self.clock)[0] if town in TOWNS else
                    encode_town_info(replace(diagnostic_town_info(), town_id=town,
                        unknown_bytes=(int(values.get('minlevel', 1)), int(values.get('maxlevel', 20)), 0, 0))))
             # Enabled is the final native bool, after any territory extension.

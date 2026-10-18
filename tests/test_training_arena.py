@@ -29,7 +29,7 @@ class TrainingArenaTests(unittest.TestCase):
     def setUp(self):
         self.fixture=fixtures.TerritoriesTests();self.fixture.setUp();self.addCleanup(self.fixture.doCleanups)
         self.path=self.fixture.path;self.mono=0
-        self.hub=TrainingHub(clock=lambda:self.mono);self.hub.init_training(self.path,wall=lambda:self.fixture.now)
+        self.hub=TrainingHub(clock=lambda:self.mono);self.hub.init_training(self.path,wall=lambda:self.fixture.now,schedule='scheduled')
         self.hub.journal=BattleJournal(self.hub,self.path,wall=lambda:self.fixture.now)
         self.sessions=[]
         for account in self.fixture.accounts[:8]:
@@ -226,6 +226,10 @@ class TrainingArenaTests(unittest.TestCase):
         self.assertFalse(self.rows('clan_assault_medals'));self.assertEqual(self.rows('territory_claims'),before)
         self.hub.tick();self.assertEqual(len(self.rows('battle_rewards')),8)
         self.assertTrue(all(any(p[:2]==b'\xc8\x32' for p in battle['result_packets'][o]) for o in self.owners))
+        completed=b'\xc8\x38'+struct.pack('<II',1,1)
+        self.assertTrue(all(completed in battle['result_packets'][o] for o in self.owners))
+        self.assertEqual(self.hub.assault_packets(battle,self.owners[0])[-1],completed)
+        self.assertIn(b'\xc8\x38'+bytes(8),self.send(0,b'\x2a\x01'))
 
     def test_native_move_and_confirmed_enemy_kill_settle_actual_xp_and_rank_once(self):
         import random
@@ -260,7 +264,7 @@ class TrainingArenaTests(unittest.TestCase):
         battle=self.loaded();battle['assault_points'].scores[:]=[4,10]
         with self.hub.journal.unit(battle):pass
         for session in self.sessions:self.hub.disconnect(session)
-        clone=TrainingHub(clock=lambda:self.mono);clone.init_training(self.path,wall=lambda:self.fixture.now)
+        clone=TrainingHub(clock=lambda:self.mono);clone.init_training(self.path,wall=lambda:self.fixture.now,schedule='scheduled')
         clone.journal=BattleJournal(clone,self.path,wall=lambda:self.fixture.now)
         self.assertEqual(clone.journal.recover(),[battle['match_id']])
         restored=clone.battles[self.owners[0]]

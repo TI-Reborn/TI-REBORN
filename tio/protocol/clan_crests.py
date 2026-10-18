@@ -15,6 +15,23 @@ ALLIANCE=1
 MAX_BYTES=824
 
 
+def decode_upload(data):
+    """Original Silver6e68e8: 58, u16 size, canonical BMP; zero removes."""
+    r=Reader(data)
+    if r.u8()!=0x58:raise PacketError('Expected clan crest upload')
+    size=r.u16()
+    if size>MAX_BYTES:raise PacketError('Crest bitmap exceeds bounded native policy')
+    raw=r.read(size);r.finish()
+    if size:_bmp(raw)
+    return raw if size else None
+
+
+def encode_upload(bmp):
+    if bmp is not None:_bmp(bmp)
+    raw=bmp or b'';w=Writer().u8(0x58).u16(len(raw));w.data.extend(raw)
+    return w.build()
+
+
 def _kind(value):
     if type(value) is not int or value not in (CLAN,ALLIANCE):raise PacketError('Unknown crest kind')
     return value

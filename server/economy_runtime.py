@@ -111,8 +111,14 @@ def refresh_inventory(session,*,force=False):
     packets=inventory_snapshot(session.database,session.account)
     digest=hashlib.sha256(b''.join(packets)).digest()
     if not force and getattr(session,'_economy_inventory_digest',None)==digest:return ()
+    # The native header reads C8/39, not its filtered/segmented 6A list.
+    # Refresh after committed inventory changes, including another session's
+    # delivery/repair, so moving or spending kits cannot leave stale counters.
+    from tio.wallets import WalletStore
+    from tio.protocol.asset_count import encode_asset_count
+    result=packets+(encode_asset_count(WalletStore(session.database).ensure(session.account)),)
     session._economy_inventory_digest=digest
-    return packets
+    return result
 
 
 def handle_private(session,packet):

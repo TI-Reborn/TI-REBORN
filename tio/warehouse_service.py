@@ -39,4 +39,6 @@ def transfer_private_items(path, account, packet, *, capacity):
         return (inventory,*current.warehouse_packets(account,request.warehouse_type),encode_asset_count(assets))
     inventory,items=WarehouseStore(path,capacity=capacity).exchange(
         account,request.actor_id,deposits=request.first_items,withdrawals=request.second_items)
-    return (inventory,*encode_private_warehouse_snapshot(items))
+    from .wallets import WalletStore
+    from .protocol.asset_count import encode_asset_count
+    return (inventory,*encode_private_warehouse_snapshot(items),encode_asset_count(WalletStore(path).ensure(account)))

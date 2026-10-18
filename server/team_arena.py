@@ -271,7 +271,7 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
                     if self.handle_mining(owner,packet):return True
                 except ValueError as error:
                     self.put(owner,encode_shop_error(str(error)));return True
-            if packet in (b'\xc6\x02',b'\xc6\x20') or packet[:1]==b'\xc6' and owner not in self.battles and owner not in self.results:
+            if packet in (b'\xc6\x02',b'\xc6\x20',b'\xc6\x23') or packet[:1]==b'\xc6' and owner not in self.battles and owner not in self.results:
                 return self.handle_ranked(owner,packet)
             if owner in self.ranked_waiting:
                 self.put(owner,encode_shop_error('Отмените поиск рейтингового боя'));return True

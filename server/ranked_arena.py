@@ -40,8 +40,14 @@ class RankedArena:
                 with closing(connect(s.database)) as db,db:tokens=packets(db,s.account)
                 self.put(owner,*gears,self.ranked_info(owner),*tokens);return True
             if packet==b'\xc6\x23':
-                if owner in self.battles:raise ValueError('Сначала завершите бой')
-                self.ranked_waiting.pop(owner,None);self.put(owner,b'\xc6\x06');return True
+                # A close can race the final matchmaking step. Never turn a
+                # late search cancellation into a forfeit or clear combat UI.
+                if owner in self.battles or owner in self.results:return True
+                # Opening the original selector also sends this request. An
+                # idle C6/06 would erase its just-selected fighters (9537a8).
+                if self.ranked_waiting.pop(owner,None) is not None:
+                    self.put(owner,b'\xc6\x06')
+                return True
             if packet[:2]!=b'\xc6\x21':
                 raise ValueError('Отмените поиск рейтингового боя')
             if any('points' in b and not b['finished'] and s.account in b.get('ranked_forfeits',set()) for b in self.battles.values()):
@@ -91,10 +97,15 @@ class RankedArena:
         first=self.ranked_waiting[owner]
         from tio.character_identity import auth_account
         authenticated=lambda o:auth_account(self.players[o].database,self.players[o].account)
+        from tio.rating_visibility import QA_LOGIN
+        qa_pool=bool(QA_LOGIN.fullmatch(authenticated(owner)))
         candidates=[];roots=set()
         for t in sorted(self.ranked_waiting.values(),key=lambda t:(t.joined_at,t.character_id)):
             if self.players[t.character_id].database!=self.players[owner].database:continue
             root=authenticated(t.character_id)
+            # Reserved disposable QA logins never face ordinary players.
+            # Character aliases cannot cross the authenticated root's pool.
+            if bool(QA_LOGIN.fullmatch(root))!=qa_pool:continue
             if root in roots:continue
             roots.add(root);candidates.append(t)
             if len(candidates)==32:break
