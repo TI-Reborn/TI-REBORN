@@ -74,7 +74,7 @@ def prepare(seats, mode, *, seed=None, ranked=False, profile='reservation',arena
     elif profile=='detroit':
         from .world_completion import require_location
         town_id=18;world=require_location(18,tuple(l for s in seats for l in s[4].levels))
-    deployment_size=max(3,len(seats)//2*size)
+    deployment_size=max(3,*(sum(len(s[4].actors) for s in seats if s[1]==side) for side in {s[1] for s in seats}))
     if arena_map is not None:generated=None
     elif ranked:
         from .contest_maps import generate as generate_contest
@@ -167,6 +167,9 @@ def prepare(seats, mode, *, seed=None, ranked=False, profile='reservation',arena
                 base=bytes(row[0])
             templates[identity],skills[identity]=field.combat.exclude_personal_equipment(
                 identity,catalog,templates[identity],pet_packet=base)
+    if ranked:
+        from .ranked_loadout import apply
+        apply(field,templates,seats)
     from .battle_doors import BattleDoors
     from .battle_loot import BattleLoot
     field.doors=BattleDoors(field,arena_map.doors,permissions)

@@ -86,4 +86,8 @@ def settlement_health(combat, identity):
     """Freeze wounds against the permanent capacity without persisting the buff."""
     actor=combat.field.actor(identity)
     saved=getattr(combat,'item_effects',{}).get('health_capacity',{}).get(identity)
-    return actor.health if saved is None else min(actor.health,saved['base'])
+    health=actor.health if saved is None else min(actor.health,saved['base'])
+    original,battle=getattr(combat,'ranked_health',{}).get(identity,(actor.max_health,actor.max_health))
+    # Preserve the number of wounds when a TrueSkill-only capacity expires;
+    # death remains death, and a full-health fighter returns full-health.
+    return 0 if health==0 else max(1,min(original,original-max(0,battle-health)))

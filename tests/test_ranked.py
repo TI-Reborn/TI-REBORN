@@ -62,7 +62,7 @@ class RatingTests(unittest.TestCase):
         self.assertEqual(ranked.snapshot(self.path,'alice'),before)
         with closing(sqlite3.connect(self.path)) as db:self.assertEqual(db.execute("SELECT streak,draws FROM ranked_players WHERE account='alice'").fetchone(),(0,1))
 
-    def test_league_three_wins_and_losses_boundaries(self):
+    def test_league_promotion_and_four_loss_demotion_boundaries(self):
         self.assertEqual([ranked.league_for(p) for p in (0,100,101,200,201,300,301,400)], [3,3,2,2,1,1,0,0])
         for match in ('one','two'):self.apply(match,self.report())
         with closing(sqlite3.connect(self.path)) as db:self.assertEqual(db.execute("SELECT league FROM ranked_players WHERE account='alice'").fetchone()[0],3)
@@ -71,7 +71,9 @@ class RatingTests(unittest.TestCase):
         for match in ('four','five'):self.apply(match,self.report(1))
         with closing(sqlite3.connect(self.path)) as db:self.assertEqual(db.execute("SELECT league FROM ranked_players WHERE account='alice'").fetchone()[0],2)
         self.apply('six',self.report(1))
-        with closing(sqlite3.connect(self.path)) as db:self.assertEqual(db.execute("SELECT league,loss_streak FROM ranked_players WHERE account='alice'").fetchone(),(3,3))
+        with closing(sqlite3.connect(self.path)) as db:self.assertEqual(db.execute("SELECT league,loss_streak FROM ranked_players WHERE account='alice'").fetchone(),(2,3))
+        self.apply('seven',self.report(1))
+        with closing(sqlite3.connect(self.path)) as db:self.assertEqual(db.execute("SELECT league,loss_streak FROM ranked_players WHERE account='alice'").fetchone(),(3,4))
 
     def test_team_outcome_and_public_place_ties(self):
         self.apply('teams',self.report(0,(('alice','carol'),('bob','dave'))))

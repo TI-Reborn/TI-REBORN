@@ -40,7 +40,9 @@ def decode_join(packet):
     for _ in range(count):
         identity=r.u32();n=r.u32()
         if n>5:raise PacketError('Invalid TrueSkill equipment count')
-        equipment=tuple((r.u32(),r.u32()) for _ in range(n));bonus=r.u8()
+        # silver.dll 952dfa..952efb writes TEMPLATE first, SLOT second.
+        # Internally retain (slot, template), as used by the scene builder.
+        equipment=tuple((slot,item) for item,slot in ((r.u32(),r.u32()) for _ in range(n)));bonus=r.u8()
         if bonus>2 or len({slot for slot,item in equipment})!=n or any(slot not in (0,2,3,4,7) for slot,item in equipment):
             raise PacketError('Invalid TrueSkill equipment')
         pets.append((identity,equipment,bonus))

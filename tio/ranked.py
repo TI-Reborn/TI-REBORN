@@ -34,19 +34,20 @@ def league_for(points):
     return 3 if points<=100 else 2 if points<=200 else 1 if points<=300 else 0
 
 
-def infer(teams,winner):
+def infer(teams,winner,*,average=False):
     """Closed-form EP update for two teams, equal player participation weights."""
     variances=[[s*s+TAU*TAU for m,s in team] for team in teams]
-    c=math.sqrt(sum(v for vs in variances for v in vs)+sum(map(len,teams))*BETA*BETA)
-    difference=sum(m for m,s in teams[winner])-sum(m for m,s in teams[1-winner])
+    weights=[1/len(t) if average else 1 for t in teams]
+    c=math.sqrt(sum(weights[side]**2*(v+BETA*BETA) for side,vs in enumerate(variances) for v in vs))
+    difference=weights[winner]*sum(m for m,s in teams[winner])-weights[1-winner]*sum(m for m,s in teams[1-winner])
     t=difference/c
     density=math.exp(-t*t/2)/math.sqrt(2*math.pi)
     probability=.5*math.erfc(-t/math.sqrt(2))
     # Mills ratio remains finite for very unlikely upsets.
     v=density/probability if probability>1e-280 else -t+1/max(1,-t)
     w=min(1,max(0,v*(v+t)))
-    return tuple(tuple((m+(1 if side==winner else -1)*var/c*v,
-                        math.sqrt(max(1e-9,var*(1-var/(c*c)*w))))
+    return tuple(tuple((m+(1 if side==winner else -1)*var*weights[side]/c*v,
+                        math.sqrt(max(1e-9,var*(1-var*weights[side]**2/(c*c)*w))))
                        for (m,s),var in zip(team,variances[side]))
                  for side,team in enumerate(teams))
 
@@ -78,7 +79,13 @@ def settle(db,match_id,report,*,now=None):
     if prior:
         if prior[0]!=payload:raise ValueError('Conflicting ranked result')
         return
-    updated=infer(tuple(tuple((m,s) for a,m,s in team) for team in teams),winner) if winner is not None else None
+    # Average account participation prevents a side with more account owners
+    # from being treated as stronger merely because its same four fighters
+    # belong to several people. Equal-size historical matches are unchanged.
+    model=tuple(tuple((m,s) for a,m,s in team) for team in teams)
+    updated=infer(model,winner,average=True) if winner is not None else None
+    forfeits=set(report.get('forfeits',()))
+    if not forfeits.issubset(accounts):raise ValueError('Unknown ranked forfeit')
     now=time.time() if now is None else now
     for side,team in enumerate(teams):
         for index,(account,mu,sigma) in enumerate(team):
@@ -87,19 +94,25 @@ def settle(db,match_id,report,*,now=None):
             if not math.isclose(old[0],mu) or not math.isclose(old[1],sigma):raise ValueError('Ranked snapshot changed')
             _,_,points,league,wins,losses,draws,streak,loss_streak=old
             league_before=league
-            if winner is None:
+            outcome=None if winner is None else side==winner
+            if account in forfeits:outcome=False
+            if outcome is None:
                 draws+=1;streak=loss_streak=0
             else:
-                mu,sigma=updated[side][index];points=skill(mu,sigma)
-                if side==winner:wins+=1;streak+=1;loss_streak=0
+                result=updated
+                if account in forfeits and side==winner or winner is None:
+                    result=infer(model,1-side,average=True)
+                mu,sigma=result[side][index];points=skill(mu,sigma)
+                if outcome:wins+=1;streak+=1;loss_streak=0
                 else:losses+=1;loss_streak+=1;streak=0
                 target=league_for(points)
-                if target<league and streak>=3:league-=1
-                elif target>league and loss_streak>=3:league+=1
+                # Administration's May 3 correction supersedes April 28.
+                if target<league and outcome:league=target
+                elif target>league and loss_streak>=4:league+=1
             db.execute('INSERT OR REPLACE INTO ranked_players VALUES (?,?,?,?,?,?,?,?,?,?,?)',
                        (account,mu,sigma,points,league,wins,losses,draws,streak,loss_streak,now))
             from .achievements import ranked_result
-            ranked_result(db,account,match_id,result=2 if winner is None else int(side==winner),
+            ranked_result(db,account,match_id,result=2 if outcome is None else int(outcome),
                           league_before=league_before,league_after=league,streak=streak)
     db.execute('INSERT INTO ranked_matches VALUES (?,?,?)',(match_id,payload,now))
 

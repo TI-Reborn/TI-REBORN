@@ -22,6 +22,9 @@ MODULES = (
     'test_read_projection_performance',
     'test_idle_write_performance',
     'test_ability_protocol',
+    'test_ranked',
+    'test_ranked_squads',
+    'test_ranked_loadout',
     'test_shared_mine_arena.SharedMineArenaTests.test_skill_bar_request_lists_own_battle_skills_and_slash_is_usable',
 )
 
