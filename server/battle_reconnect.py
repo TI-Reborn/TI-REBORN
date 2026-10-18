@@ -255,7 +255,11 @@ class BattleReconnect:
                         self.abort_contract(b, 'reconnect_timeout')
                         self.forget(owner)
                         continue
-                    if 'points' in b:b['ranked_winner']=1-b['field'].teams[owner]
+                    if 'points' in b:
+                        side=b['field'].teams[owner]
+                        allies=[o for o in b['humans'] if o!=owner and b['field'].teams[o]==side and b['field'].living_actor_ids(o)]
+                        if allies:b.setdefault('ranked_forfeits',set()).add(self.players[owner].account)
+                        else:b['ranked_winner']=1-side
                     self.settle(b,owner,0,escaped=True)
                     self.remove_from_battle(b,owner)
                 except Exception as error:

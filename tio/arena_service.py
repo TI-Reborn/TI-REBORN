@@ -560,7 +560,8 @@ class ArenaService:
         if field is not None:
             from .battle_item_effects import end_turn
             combat=getattr(field,'combat',None)
-            self._turn_finish_effects[turn[0]]=() if combat is None else end_turn(combat,turn[0],field.actor_ids(turn[0]))
+            effect_actors=turn[1] if getattr(field,'battle_mode',None)==21 else field.actor_ids(turn[0])
+            self._turn_finish_effects[turn[0]]=() if combat is None else end_turn(combat,turn[0],effect_actors)
             for identity in field.living_actor_ids(turn[0]):
                 field._actors[identity]=replace(field.actor(identity),action_points=0)
 

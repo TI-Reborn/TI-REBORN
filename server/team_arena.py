@@ -539,7 +539,8 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
         field.combat.wager=wagering
         field.scene_metadata['town_id']=town
         field.combat.city_kill_bonus=city.kill_bonus
-        order=tuple(v for pair in zip(*teams) for v in pair)
+        from itertools import zip_longest
+        order=tuple(v for pair in zip_longest(*teams) for v in pair if v is not None)
         arena=ArenaService(clock=self.clock)
         from tio.rating_completion import ranked_turn_seconds
         duration=ranked_turn_seconds(first.soldiers) if first.mode==21 else turn_seconds(first.soldiers)
@@ -569,7 +570,7 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
         battle['reward_started']=False
         if not wagering:self.freeze_team_rating(battle,seats,teams,first)
         if first.mode==21:
-            if bots or len(seats)!=2:raise ValueError('Ranked matches require two real accounts')
+            if bots or len(seats)<2:raise ValueError('Ranked matches require real accounts on both sides')
             from tio.control_points import ControlPoints
             # Find open cells in the same connected component as both spawns.
             free={(x,y) for x in range(field.width) for y in range(field.height) if (x,y) not in field.blocked}
@@ -600,9 +601,21 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
                     *(GroundEntry(b'trueskill_checkpoint_base',x,y) for x,y in battle['points'].positions))))
             battle['ground']=ground
             field.battle_mode=21
+            battle['ranked_side']=1
+            battle['ranked_cursors']=[0,0]
+            for identity,actor in tuple(field._actors.items()):
+                field._actors[identity]=replace(actor,action_points=0)
             from tio import ranked
             battle['ranked_teams']=tuple(tuple((self.players[o].account,*ranked.snapshot(self.players[o].database,self.players[o].account)) for o in team) for team in teams)
         battle['return_towns']={o:(self.players[o].locations.current(self.players[o].account) if self.players[o].locations else 3) for o in views}
+        if first.mode==21:
+            token_accounts=[account for owner,side,path,account,ticket,bot in seats if getattr(ticket,'flags',(0,0))[0]]
+            if token_accounts:
+                from tio.db_transaction import current
+                from tio.ranked_tokens import consume as consume_tokens
+                db=current()
+                if db is None:raise ValueError('Жетонный бой требует надёжного журнала сервера')
+                consume_tokens(db,battle['match_id'],token_accounts)
         consume()
         for owner in views:
             self.battles[owner]=battle
@@ -644,7 +657,7 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
     def announce_turn(self,battle,owner,seconds):
         if 'points' in battle:
             from tio.protocol.ranked import encode_turn
-            actor=battle['field'].living_actor_ids(owner)[0]
+            actor=battle.get('ranked_actor',battle['field'].living_actor_ids(owner)[0])
             for target in battle['humans']:
                 identity=self.players[target].probe_character_id if target==owner else owner
                 self.put(target,encode_turn(battle['field'].teams[owner],identity,actor))
@@ -832,6 +845,10 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
                 if battle.get('kind')=='wager':
                     self.abort_wager(battle,'loading_timeout');return
                 self.cancel_team_rating(battle,'loading_timeout')
+                if points is not None:
+                    from tio.db_transaction import transaction
+                    from tio.ranked_tokens import refund
+                    with transaction(next(self.players[o].database for o in battle['humans'])) as db:refund(db,battle['match_id'])
                 for owner in tuple(battle['humans']):
                     self.battles.pop(owner,None);self.to_city(owner)
                 LOG.warning('team_match_loading_timeout id=%s',battle['match_id'])
@@ -853,7 +870,16 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
             points.advance(field);self.ranked_refresh(battle)
             if points.outcome(field) is not None:self.finish(battle);return
         arena._last_turn.setdefault(room.room_id,room.members[-1])
-        owner=arena.next_turn_owner(room.room_id)
+        active_ids=None
+        if points is not None:
+            side=1-battle.get('ranked_side',1)
+            actors=tuple(i for i,a in field._actors.items() if field.teams[a.owner_id]==side)
+            cursors=battle.setdefault('ranked_cursors',[0,0]);start=cursors[side]%len(actors)
+            index=next((start+n)%len(actors) for n in range(len(actors)) if field.actor(actors[(start+n)%len(actors)]).health)
+            actor=actors[index];cursors[side]=(index+1)%len(actors)
+            owner=field.actor(actor).owner_id
+            battle['ranked_side']=side;battle['ranked_actor']=actor;active_ids=(actor,)
+        else:owner=arena.next_turn_owner(room.room_id)
         if owner in battle['bots']:
             from tio.training_bot import play_turn
             from .battle_events import BotEventArena
@@ -862,12 +888,12 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
         else:
             from tio.rating_completion import ranked_turn_seconds
             seconds=(battle['wager_request'].unknown_u32_01 if battle.get('kind')=='wager'
-                     else ranked_turn_seconds(len(field.living_actor_ids(owner))) if points is not None
+                     else ranked_turn_seconds(1) if points is not None
                      else turn_seconds(len(field.living_actor_ids(owner))))
             battle['full_turn']=(owner,self.clock()+seconds)
             if owner in self.offline:seconds//=2
             self.announce_turn(battle,owner,seconds)
-            self.begin_shared_turn(battle,owner,seconds)
+            self.begin_shared_turn(battle,owner,seconds,actor_ids=active_ids)
             if points is not None:battle['point_turn_pending']=True
             LOG.info('team_turn_started match=%s account=%s owner=%d actors=%s',
                      battle['match_id'],self.players[owner].account,owner,field.living_actor_ids(owner))
@@ -898,7 +924,11 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
                     successful=successful or any(r[0]==miner_name and (mine.extracted_amounts.get(o) or 0)>0
                                                  for o,r in battle['reward_roster'].items())
                 self.complete_mine_owner(battle,owner,int(successful));return
-            if 'points' in battle:battle['ranked_winner']=1-battle['field'].teams[owner]
+            if 'points' in battle:
+                side=battle['field'].teams[owner]
+                allies=[o for o in battle['humans'] if o!=owner and battle['field'].teams[o]==side and battle['field'].living_actor_ids(o)]
+                if allies:battle.setdefault('ranked_forfeits',set()).add(self.players[owner].account)
+                else:battle['ranked_winner']=1-side
             self.settle(battle,owner,0,escaped=True)
             self.remove_from_battle(battle,owner);self.to_city(owner);return
         # Read-only skill bar request; the client also sends it while reloading.

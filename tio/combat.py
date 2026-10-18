@@ -476,9 +476,13 @@ class Combat:
         updated=tuple(replace(i,unknown_u32_01=i.count-1) if i==item else i
                       for i in items if i!=item or i.count>1)
         inventory=encode_item_list(a.actor_id,updated,unknown)
+        from .ranked_loadout import extra
+        remainders=dict(getattr(self,'ranked_remainders',{}))
+        power+=extra(self,a.actor_id,0,power,remainders)
         state=replace(a,health=min(a.max_health,a.health+power),action_points=a.action_points-cost)
         replies=(encode_health(a.actor_id,state.health),encode_action_points(a.actor_id,state.action_points),self.inventory_packet(a.actor_id,inventory))
         self._persist_inventory(a.actor_id,old,inventory)
+        if hasattr(self,'ranked_remainders'):self.ranked_remainders=remainders
         self.inventories[a.actor_id]=inventory
         self.field._actors[a.actor_id]=state
         return replies
@@ -745,6 +749,9 @@ class Combat:
         if skill is not None and w.weapon_type=='Melee':
             from .equipment_bonuses import bonuses
             skill=min(200,skill+bonuses(inventory,self.resources[a.actor_id])['melee'])
+        if skill is not None:skill=min(skill,getattr(self,'ranked_limits',{}).get(a.actor_id,200))
+        from .ranked_loadout import extra
+        ranked_remainders=dict(getattr(self,'ranked_remainders',{}))
         statistics={owner:dict(values) for owner,values in self.statistics.items()}
         rank_kills=[]
         achievement_outcomes=[]
@@ -783,6 +790,10 @@ class Combat:
             if bite_rule:raw=bite_rule[0]*(2 if critical else 1) if hit else 0
             defense=self.defense(victim.actor_id)
             reduced,absorbed=mitigate(raw,defense)
+            bonus_damage=extra(self,a.actor_id,1,reduced,ranked_remainders)
+            bonus_absorbed=extra(self,victim.actor_id,2,reduced,ranked_remainders)
+            reduced=max(0,reduced-bonus_absorbed)+bonus_damage
+            absorbed+=bonus_absorbed
             if victim.actor_id in self.inventories:worn_damage[victim.actor_id]=reduced
             damage=min(victim.health,reduced)
             experience_damage.append((victim,damage))
@@ -803,7 +814,8 @@ class Combat:
             if not active_id and not grenade:
                 attack_flags=RESULT_CRITICAL if attack_flags==RESULT_CRITICAL or critical else RESULT_NORMAL if landed else RESULT_MISS
             if view is None or victim.actor_id in view.visible:
-                hits.append(AttackHit(victim.actor_id,damage,victim.health-damage,flags=outcome,absorbed_damage=absorbed))
+                additional=min(damage,bonus_damage)
+                hits.append(AttackHit(victim.actor_id,damage-additional,victim.health-damage,flags=outcome,additional_damage=additional,absorbed_damage=absorbed))
         from .premium import current as premium_current
         premium_kinds={i:premium_current(*self.persistence[i])[0] if i in self.persistence else 0 for i in {a.actor_id,*worn_damage}}
         wear_remainders=dict(self.premium_wear_remainders)
@@ -839,6 +851,9 @@ class Combat:
             t=view.templates[a.actor_id]
             from .equipment_bonuses import project
             fields={**t.fields,**battle_fields(project(trained,self.human[a.actor_id],inventory),self.human[a.actor_id])}
+            if a.actor_id in getattr(self,'ranked_limits',{}):
+                from .ranked_loadout import limit_display
+                fields=limit_display(fields,self.ranked_limits[a.actor_id])
             if a.actor_id in self.weight_capacities:
                 from .weight import inventory_weight
                 fields.update({'0x8c57e7':min(65535,inventory_weight(inventory)),
@@ -855,6 +870,7 @@ class Combat:
         # concurrent city edits instead of overwriting the player's inventory.
         old_armor={i:self.displayed_armor(i) for i in changes}
         self._persist_batch(changes,trained={a.actor_id:trained})
+        if hasattr(self,'ranked_remainders'):self.ranked_remainders=ranked_remainders
         self.premium_wear_remainders=wear_remainders
         if trained is not None:self.proficiencies[a.actor_id]=trained
         self.inventories.update(changes)
