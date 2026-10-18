@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "rename_main_gold": 30,
+  "rename_recruit_credits": 3000,
+  "dismiss_seconds": 172800,
+  "dog_meat_template": 32,
+  "dog_meat_count": 1,
+  "avatar_offers": [],
+  "sources": {
+    "rename_and_dismiss": "TIO_manual.pdf printed page 24; main name restrictions printed page 104",
+    "dog_meat": "TIO_manual.pdf printed page 79; items_diagnostic.xml item 32",
+    "avatars": "Printed page 24 gives approximate prices only; no exact original offer IDs/assets/prices recovered. Offers disabled."
+  }
+}

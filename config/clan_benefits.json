@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source": "Original manual printed pp19,26-27,90-91; native premium XML influenceBonus=0.5",
+  "source": "Original manual printed pp19,26-27,86,90-91; native premium XML influenceBonus=0.5",
   "crest": {
     "width": 16,
     "height": 16,
@@ -79,7 +79,7 @@
     "decay": "2.5% nominal daily rate divided into 24 hourly charges, fractional charges carry forward. Existing clan levels0/1 correspond to manual capacities10/16 and rates1/1.5; level2 rate2 is explicit policy because manual does not specify the largest clan rate. First observation starts the clock; no retroactive hosted-save decay.",
     "multipliers": "Multiply city, premium, highest earned achievement influence coefficient and highest permanent assault medal. Repeated medals and multiple achievement coefficients use their maximum, not unbounded stacking; stacking and medal magnitudes are unrecovered policy.",
     "assault_rewards": "One stored golden range token and one emulator Light Trainer5003 per positive contested top20 player on each side. Counts, booster choice and medal coefficients are policy; the manual only identifies these reward categories.",
-    "defense_fund": "Leader escrows clan credits before the first tour. Positive contested defender clans split50/30/20, normalized if fewer than3; integer remainder goes by rank. No eligible defenders refunds the fund. Percentages and funding currency source are explicit policy.",
+    "defense_fund": "Manual printed86 confirms personal Credits from any willing player and50/30/20 to top3 defender clans regardless of winner. Server policy: only REGISTRATION before authoritative starts; fewer positive contested defenders normalize weights, integer remainder by rank. No eligible defenders refunds new personal donations to original wallets (overflow remains durable pending) and legacy clan-funded remainder to original clan; refund rule and cutoff are not recovered historical rules.",
     "weekly": "Monday00:00 UTC calendar weeks; ties resolve by clan ID. Only positive contested finalized scores count. Badges apply to current members, including late joiners, and expire at the following weekly boundary.",
     "sales": "Tax is included in credit sale gross; floor(gross*rate/100) goes to the controlling clan and remainder to the seller. Premium excluded. Purchase-side charge incidence is explicit policy.",
     "schedule": "Offer12/15/18/21 UTC on the base's existing weekday. Root scheduler consumes scheduled_start before creating the next event; selection never changes the weekly day or already-created event.",

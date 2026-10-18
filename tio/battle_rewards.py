@@ -154,9 +154,13 @@ def settle(path,account,match_id,result,*,health=None,rental_tax=0,rank_report=N
                 raise ValueError('Ranked reward result mismatch')
             settle_ranked(db,match_id,ranked_report,now=now)
         if team_ranked_report is not None:
-            from .team_ratings import validate_reward,settle as settle_team_ranked
-            validate_reward(account,result,team_ranked_report,escaped=escaped)
-            settle_team_ranked(db,match_id,team_ranked_report,now=now)
+            from . import team_ratings,rating_completion
+            frozen=team_ranked_report.get('frozen',{})
+            if frozen.get('version')==1:implementation=team_ratings
+            elif frozen.get('version')==2 and frozen.get('format')=='wall':implementation=rating_completion
+            else:raise ValueError('Unknown team rating report version')
+            implementation.validate_reward(account,result,team_ranked_report,escaped=escaped)
+            implementation.settle(db,match_id,team_ranked_report,now=now)
         if encounter_report is not None:
             from .encounter_loot import award
             award(db,account,match_id,result,encounter_report,escaped=escaped)

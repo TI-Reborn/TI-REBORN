@@ -92,10 +92,12 @@ class LocationStore:
                 if column not in columns:db.execute('ALTER TABLE character_locations ADD COLUMN '+column+' REAL')
             db.execute('CREATE TABLE IF NOT EXISTS map_journeys (account TEXT PRIMARY KEY,x REAL NOT NULL,y REAL NOT NULL,tx INTEGER NOT NULL,ty INTEGER NOT NULL,started REAL NOT NULL,arrives REAL NOT NULL)')
 
-    def current(self,account):
+    def current(self,account,*,connection=None):
+        if connection is not None:
+            row=connection.execute('SELECT town_id FROM character_locations WHERE account=?',(account,)).fetchone()
+            return 3 if row is None else row[0] if row[0] in TOWNS else None
         with closing(connect(self.path)) as db:
-            row=db.execute('SELECT town_id FROM character_locations WHERE account=?',(account,)).fetchone()
-        return 3 if row is None else row[0] if row[0] in TOWNS else None
+            return self.current(account,connection=db)
 
     @staticmethod
     def _position(db,account,now):
@@ -113,9 +115,11 @@ class LocationStore:
         with closing(connect(self.path)) as db:
             return tuple(round(v) for v in self._position(db,account,self.clock())[0])
 
-    def travelling(self,account):
+    def travelling(self,account,*,connection=None):
+        if connection is not None:
+            return connection.execute('SELECT 1 FROM map_journeys WHERE account=?',(account,)).fetchone() is not None
         with closing(connect(self.path)) as db:
-            return db.execute('SELECT 1 FROM map_journeys WHERE account=?',(account,)).fetchone() is not None
+            return self.travelling(account,connection=db)
 
     @staticmethod
     def _save(db,account,town,x,y):

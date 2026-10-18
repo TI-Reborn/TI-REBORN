@@ -36,11 +36,44 @@ def project_saved_pet(db,account,owner,packet,human):
     if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='ability_states'").fetchone() is None:return project(project_base_weight(packet,human,inventory),human,inventory)
     row=db.execute('SELECT packet FROM ability_states WHERE account=? AND pet_id=?',(account,owner)).fetchone()
     if row is None:return project(project_base_weight(packet,human,inventory),human,inventory)
+    return _project_profile(owner,packet,human,inventory,row,_catalog)
+
+
+def _catalog():
+    source=json.loads((Path(__file__).resolve().parents[1]/'config/abilities.json').read_text())
+    return AbilityCatalog(AbilityLevel(r['id'],r['level'],r['fields']) for r in source['records'])
+
+
+def _project_profile(owner,packet,human,inventory,row,catalog):
+    from .weight import project_base_weight
+    from .equipment_bonuses import project
+    if row is None:return project(project_base_weight(packet,human,inventory),human,inventory)
     actor,learned,learning=decode_abilities(row[0])
     if actor!=owner or learning:raise ValueError('Invalid saved skill profile')
-    source=json.loads((Path(__file__).resolve().parents[1]/'config/abilities.json').read_text())
-    catalog=AbilityCatalog(AbilityLevel(r['id'],r['level'],r['fields']) for r in source['records'])
-    return project_passives(packet,human,learned,catalog,inventory=inventory)
+    return project_passives(packet,human,learned,catalog(),inventory=inventory)
+
+
+def project_saved_roster(db,account,rows):
+    """Project rows already read for this account in the caller's transaction.
+
+    Only rule definitions are shared, and only for this call. Inventories and
+    ability profiles remain tied to their account and saved pet IDs.
+    """
+    if not rows:return []
+    from .weapon_proficiency import ProficiencyRules
+    rules=ProficiencyRules()
+    has_abilities=db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='ability_states'").fetchone() is not None
+    definitions=None
+    def catalog():
+        nonlocal definitions
+        if definitions is None:definitions=_catalog()
+        return definitions
+    result=[]
+    for owner,human,packet,inventory in rows:
+        packet=rules.normalize(packet,bool(human))
+        row=db.execute('SELECT packet FROM ability_states WHERE account=? AND pet_id=?',(account,owner)).fetchone() if has_abilities else None
+        result.append((owner,human,_project_profile(owner,packet,bool(human),inventory,row,catalog),inventory))
+    return result
 
 
 def project_passives(packet,human,learned,catalog,*,inventory=None):

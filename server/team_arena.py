@@ -9,6 +9,7 @@ import logging
 import socket
 import threading
 import time
+from tio.performance import timed,timed_lock
 from uuid import uuid4
 
 from tio.team_lobbies import TeamLobbies
@@ -176,39 +177,53 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
         if band!=room.band:raise ValueError(f'Для команды нужны бойцы уровней {low}–{high}')
         return ticket,band,projected
 
-    def members(self, room, viewer, *, update=False):
+    def member_records(self, room):
+        """Common immutable projection, scoped to one notification under hub.lock."""
         from tio.arena_roster import room_soldiers
         records=[]
         for index,owner in enumerate(room.members):
             session=self.players[owner];ticket=self.tickets[owner]
-            rows=OwnedPetStore(session.database).list(session.account)
-            rows=tuple(r for r in rows if r[0] in ticket.actors)
-            if owner in self.lobby_auto_rosters:rows=self.lobby_roster(owner,room,frozen=True)[2]
-            identity=session.probe_character_id if owner==viewer else owner
-            records.append(BattleMemberRecord(identity,session.probe_character_name,0,
+            if owner in self.lobby_auto_rosters:
+                rows=self.lobby_roster(owner,room,frozen=True)[2]
+            else:
+                rows=OwnedPetStore(session.database).list(session.account)
+                rows=tuple(r for r in rows if r[0] in ticket.actors)
+            records.append(BattleMemberRecord(owner,session.probe_character_name,0,
                 bytes((max(ticket.levels),max(ticket.levels),index,0,int(owner in room.ready),1)),
                 room_soldiers(rows,room.soldiers,path=session.database,account=session.account)))
         for index in range(room.bots):
             records.append(BattleMemberRecord(0x70000000+room.identity*4+index,b'AI bot '+str(index+1).encode(),0,
                 bytes((1,1,len(records),0,1,1))))
-        return encode_battle_members(room.mode,int(update),records)
+        return tuple(records)
 
+    def members(self, room, viewer, *, update=False, records=None):
+        if records is None:records=self.member_records(room)
+        own_id=self.players[viewer].probe_character_id
+        return encode_battle_members(room.mode,int(update),
+            (replace(record,character_id=own_id) if record.character_id==viewer else record
+             for record in records))
+
+    @timed('lobby.notify')
     def notify(self, room, *, entering=()):
         captain=self.players[room.captain]
         settings=BattleSettings(1,room.capacity,room.mode,turn_seconds(room.soldiers),2,
             captain.probe_character_name,bytes((*TEAM_LEVEL_RANGES[room.band],room.soldiers,0,0)),0,0)
+        records=self.member_records(room)
         for owner in room.members:
             if owner in entering:self.put(owner,b'\x6c'+encode_battle_settings_body(settings))
-            self.put(owner,self.members(room,owner,update=owner not in entering))
+            self.put(owner,self.members(room,owner,update=owner not in entering,records=records))
 
-    def list_packet(self, owner):
+    def list_packet(self, owner, *, pool=None):
+        # A supplied pool is an already checked city projection for this tick;
+        # mutation/admission paths continue to resolve the owner's current city.
+        if pool is None:pool=self.city(owner).pool
         records=[]
         for r in self.lobbies.rooms.values():
-            if r.pool!=self.city(owner).pool:continue
+            if r.pool!=pool:continue
             name=self.players[r.captain].probe_character_name
             records.append(ArenaRoom(r.identity,0,r.mode,2 if r.searching else 0,0,
                 len(r.members),r.capacity,name,0,*TEAM_LEVEL_RANGES[r.band],r.soldiers,0))
-        records.extend(self.wager_rooms(owner))
+        records.extend(self.wager_rooms(owner,pool=pool))
         return encode_room_list(records)
 
     def remember_arena_listing(self, owner, packet):
@@ -217,10 +232,11 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
         self.arena_listing_cache[owner]=snapshot
         return snapshot
 
-    def battle_list_packet(self, owner):
+    def battle_list_packet(self, owner, *, pool=None):
         """The main native table receives typed C8/2C, separate from BA/02."""
         from tio.protocol.wagers import WagerRoomRecord
-        pool=self.city(owner).pool;records=[]
+        if pool is None:pool=self.city(owner).pool
+        records=[]
         for room in self.lobbies.rooms.values():
             if room.pool!=pool:continue
             low,high=TEAM_LEVEL_RANGES[room.band]
@@ -229,10 +245,11 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
             records.append(WagerRoomRecord(room.identity,name,
                 middle,room.mode,room.capacity,len(room.members),
                 2 if room.searching else 0,room.soldiers,0,high-middle,0,0))
-        return self.wager_list_packet(owner,extra=records)
+        return self.wager_list_packet(owner,extra=records,pool=pool)
 
+    @timed('hub.handle')
     def handle(self, session, packet):
-        with self.lock:
+        with timed_lock(self.lock,'hub.handle_lock'):
             owner=self.identity(session)
             # A TCP read may contain exit-to-city followed by a keepalive.
             # Answer it even when the preceding packet just cleared busy().
@@ -751,6 +768,7 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
             self.put(turn[0],*arena.finished_turn_packets(turn[0]))
             LOG.info('team_turn_exhausted match=%s owner=%d',battle['match_id'],turn[0])
 
+    @timed('hub.tick_core')
     def tick(self):
         with self.lock:
             self.expire_reconnects()
@@ -759,12 +777,18 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
             # Original main-room window expects server-pushed C82C data.
             # Publish only changed lists to idle city sessions, never to a
             # battle HUD or another city's matchmaking pool.
+            listings={}
             for owner,s in tuple(self.players.items()):
                 if owner in self.offline or self.busy(s):continue
-                try:listing=self.battle_list_packet(owner)
+                try:pool=self.city(owner).pool
                 except ValueError:continue
-                try:arena_listing=self.list_packet(owner)
-                except ValueError:arena_listing=None
+                if pool not in listings:
+                    try:listing=self.battle_list_packet(owner,pool=pool)
+                    except ValueError:continue
+                    try:arena_listing=self.list_packet(owner,pool=pool)
+                    except ValueError:arena_listing=None
+                    listings[pool]=(listing,arena_listing)
+                listing,arena_listing=listings[pool]
                 previous=self.arena_listing_cache.get(owner)
                 if arena_listing is not None and (previous is None or previous[0]!=arena_listing):
                     current_ids=frozenset(r.unknown_u32_00 for r in decode_room_list(arena_listing))

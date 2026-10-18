@@ -42,14 +42,8 @@ def award(db,account,match_id,result,report,*,escaped=False):
         # existing capacity checks still allow withdrawals/reduction.
         destination='warehouse'
         from .warehouse import WarehouseStore
-        warehouse=WarehouseStore._read(db,account)
-        merged=merge_stacks((*warehouse.values(),*materials))
-        remaining={i.instance_id for i in merged}
-        for identity in warehouse.keys()-remaining:
-            db.execute('DELETE FROM warehouse_items WHERE account=? AND instance_id=?',(account,identity))
-        for item in merged:
-            db.execute('INSERT INTO warehouse_items VALUES (?,?,?) ON CONFLICT(account,instance_id) DO UPDATE SET item_packet=excluded.item_packet',
-                       (account,item.instance_id,encode_item_list(0,(item,))))
+        from .warehouse_completion import stash
+        stash(db,account,materials,origin='encounter:'+match_id)
     else:
         db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=?',(encode_item_list(owner,updated,flag),account,recipient[0]))
     db.execute('INSERT INTO item_sequences VALUES (?,?) ON CONFLICT(account) DO UPDATE SET next_id=MAX(next_id,excluded.next_id)',(account,next_id+len(materials)))

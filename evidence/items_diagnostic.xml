@@ -3214,4 +3214,14 @@
     <value key="cant_buy_in_private_store" val="1" />
     <value key="level_required" val="4" />
   </item>
+<item id="5012" name="Injection HP">
+    <value key="actionPoints" val="8" />
+    <value key="weight" val="1" />
+    <value key="durability" val="1" />
+    <value key="power" val="0" />
+    <value key="image" val="itm_healthinjection.png" />
+    <value key="itype" val="medkit" />
+    <value key="sound" val="injection" />
+    <value key="cant_buy_in_private_store" val="1" />
+  </item>
 </items>

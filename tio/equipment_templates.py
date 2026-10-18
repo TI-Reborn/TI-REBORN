@@ -21,6 +21,7 @@ from .protocol.item_list import decode_item_list, encode_item_list
 from .protocol.pet_info import decode_pet_info, encode_pet_info
 from .protocol.warehouse import encode_private_warehouse_snapshot
 from .warehouse import WarehouseStore
+from . import warehouse_completion as completion
 from .weapons import WeaponCatalog
 
 
@@ -210,17 +211,14 @@ class EquipmentTemplateStore:
             e = t.elements[index]
             if e.object_id and not any(i.instance_id == e.object_id and i.equipped and i.client_slot == slot for i in result):
                 raise ValueError('Предметы шаблона занимают пересекающиеся слоты')
-        result, stored = merge_stacks(result), merge_stacks(stored)
+        result = merge_stacks(result)
+        stored, assignments = completion.merge_scope(db, account, stored, warehouse, limit=self.capacity)
         from .inventory_capacity import validate_capacity
         validate_capacity(original,result)
-        from .services import power
-        if len(stored) > max(len(warehouse),self.capacity+power(db,account,1)):
-            raise ValueError('На личном складе недостаточно места')
+        # City capacity and inherited overflow were checked by merge_scope.
         inventory = encode_item_list(owner, result, flag)
         warehouse_packets = encode_private_warehouse_snapshot(stored)
-        db.execute('DELETE FROM warehouse_items WHERE account=?', (account,))
-        db.executemany('INSERT INTO warehouse_items VALUES (?,?,?)',
-                       ((account, i.instance_id, encode_item_list(0, (i,))) for i in stored))
+        completion.persist_scope(db, account, warehouse, stored, assignments)
         db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=?', (inventory, account, owner))
         db.execute('INSERT INTO item_sequences VALUES (?,?) ON CONFLICT(account) DO UPDATE SET next_id=excluded.next_id', (account, next_id))
         pet_packet = self._associate(db, account, owner, pet, identity, t.name)
@@ -253,7 +251,7 @@ class EquipmentTemplateStore:
                 if identity == 0:
                     pet_packet = self._associate(db, account, owner, roster[owner][0], 0)
                     return (encode_off(owner), pet_packet)
-                return self._apply(db, account, owner, identity, templates[identity], roster, warehouse, owned)
+                return self._apply(db, account, owner, identity, templates[identity], roster, completion.read_scope(db, account, warehouse, required=True), owned)
             if action == 2:
                 db.execute('DELETE FROM equipment_templates WHERE id=? AND account=?', (identity, account))
                 del templates[identity]

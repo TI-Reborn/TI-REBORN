@@ -13,6 +13,7 @@ import threading
 import time
 
 from .city_operations import CityError, CityOperations
+from .ratings_public import RatingsPublic
 
 MAX_REQUEST = 4096
 MAX_RESPONSE = 65536
@@ -66,10 +67,11 @@ def decode_json(raw):
 
 
 class CityHTTP:
-    def __init__(self, router, key, *, port=PORT, operations=None):
+    def __init__(self, router, key, *, port=PORT, operations=None, ratings=None):
         if not isinstance(key, str) or not 32<=len(key)<=512:raise ValueError('Private city key requires 32..512 characters')
         if type(port) is not int or not 0<=port<=65535:raise ValueError('Invalid private city port')
         self.router=router;self.operations=operations or CityOperations(router)
+        self.ratings=ratings or RatingsPublic(router)
         self.key=key;self.closed=threading.Event();self.slots=threading.BoundedSemaphore(8)
         self.close_lock=threading.Lock()
         service=self
@@ -94,7 +96,7 @@ class CityHTTP:
                     if len(supplied)>1024 or not hmac.compare_digest(supplied.encode(), ('Bearer '+service.key).encode()):
                         raise CityError('unauthorized', 401)
                     if service.closed.is_set() or service.router.server.stopping.is_set():raise CityError('service_unavailable', 503)
-                    if self.path not in ('/v1/city/status', '/v1/city/action'):raise CityError('invalid_request', 404)
+                    if self.path not in ('/v1/city/status', '/v1/city/action', '/v2/services/status', '/v2/services/action', '/v1/ratings/status'):raise CityError('invalid_request', 404)
                     if self.headers.get('Transfer-Encoding') or self.headers.get_content_type()!='application/json':
                         raise CityError('invalid_request')
                     length=self.headers.get('Content-Length', '')
@@ -106,7 +108,12 @@ class CityHTTP:
                     raw=self.rfile.read(length)
                     if len(raw)!=length:raise CityError('invalid_request')
                     data=decode_json(raw)
-                    result=service.operations.status(data) if self.path=='/v1/city/status' else service.operations.action(data)
+                    if self.path=='/v1/ratings/status':result=service.ratings.status(data)
+                    elif self.path.startswith('/v2/services/'):
+                        from .services_runtime import service as services
+                        manager=services(service.router)
+                        result=manager.status(data) if self.path.endswith('/status') else manager.action(data)
+                    else:result=service.operations.status(data) if self.path=='/v1/city/status' else service.operations.action(data)
                     self.reply(409 if result.get('error')=='pin_rejected' else 200, result)
                 except CityError as error:self.reply(error.status, dict(error=error.code))
                 except (BrokenPipeError, ConnectionResetError):pass

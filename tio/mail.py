@@ -9,6 +9,7 @@ import time
 from .db_transaction import connect
 from .protocol.item_list import encode_item_list,decode_item_list
 from .warehouse import WarehouseStore
+from . import warehouse_completion as completion
 from .wallets import WalletStore
 from .character_identity import owner_for_name
 
@@ -139,6 +140,7 @@ class MailStore:
                 raise ValueError('Почтовый ящик получателя заполнен')
             warehouse=WarehouseStore._read(db,sender)
             seen=set(warehouse)
+            warehouse=completion.read_scope(db,sender,warehouse,required=True)
             for raw, in db.execute('SELECT inventory_packet FROM owned_pets WHERE account=?',(sender,)):
                 for owned in decode_item_list(raw)[1]:
                     if owned.instance_id in seen:raise ValueError('Item ID exists in multiple locations')
@@ -308,9 +310,7 @@ class MailStore:
             if wallet is None or wallet[0]+money>MAX_CREDITS:
                 raise ValueError('Освободите место для кредитов перед получением')
             warehouse=WarehouseStore._read(db,owner);attachments=self._items(db,ident)
-            from .services import power
-            if len(warehouse)+len(attachments)>max(len(warehouse),self.rules['warehouse_capacity']+power(db,owner,1)):
-                raise ValueError('Освободите место на личном складе')
+            # Claimed attachments are durable; full city storage uses overflow.
             seen=set(warehouse)
             for raw, in db.execute('SELECT inventory_packet FROM owned_pets WHERE account=?',(owner,)):
                 for item in decode_item_list(raw)[1]:
@@ -321,7 +321,7 @@ class MailStore:
             for item in attachments:
                 if next_id>MAX_CREDITS:raise ValueError('Item identity space exhausted')
                 delivered=replace(item,instance_id=next_id,unknown_u8_01=0,location_raw=0)
-                db.execute('INSERT INTO warehouse_items VALUES (?,?,?)',(owner,next_id,encode_item_list(0,(delivered,))))
+                completion.stash(db,owner,(delivered,),origin='mail:'+str(ident))
                 next_id+=1
             if attachments:
                 db.execute('INSERT INTO item_sequences VALUES (?,?) ON CONFLICT(account) DO UPDATE SET next_id=excluded.next_id',(owner,next_id))

@@ -84,8 +84,8 @@ class WagerArena:
             if viewer in entering: self.put(viewer,b'\x6c'+encode_battle_settings_body(settings))
             self.put(viewer,encode_battle_members(request.mode,int(viewer not in entering),records))
 
-    def wager_rooms(self, owner):
-        pool = self.city(owner).pool
+    def wager_rooms(self, owner, *, pool=None):
+        if pool is None:pool=self.city(owner).pool
         records=[]
         for r in self.wager_lobbies.rooms.values():
             if r.pool != pool or r.starts_at is not None and r.mode not in (1,4):
@@ -101,8 +101,8 @@ class WagerArena:
                 soldiers,r.request.map_size))
         return tuple(records)
 
-    def wager_list_packet(self, owner, *, extra=()):
-        pool = self.city(owner).pool
+    def wager_list_packet(self, owner, *, extra=(), pool=None):
+        if pool is None:pool=self.city(owner).pool
         records=[]
         for r in self.wager_lobbies.rooms.values():
             if r.pool != pool or r.starts_at is not None and r.mode not in (1,4):

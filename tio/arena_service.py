@@ -163,7 +163,8 @@ class ArenaService:
         self._last_turn.pop(room.room_id,None)
         # Only persistent actors belong to the account; mirrored bots never do.
         persistent=getattr(getattr(field,'combat',None),'persistence',{})
-        health={i:a.health for i,a in field._actors.items() if a.owner_id==character_id and i in persistent}
+        from .combat_completion import settlement_health
+        health={i:settlement_health(field.combat,i) for i,a in field._actors.items() if a.owner_id==character_id and i in persistent}
         from .ranks import battle_report
         combat=getattr(field,'combat',None)
         report=battle_report(combat,character_id) if combat is not None else None
@@ -738,6 +739,7 @@ class ArenaService:
             if db.execute("SELECT 1 FROM sqlite_master WHERE name='battle_rewards'").fetchone() and db.execute(
                     'SELECT 1 FROM battle_rewards WHERE match_id=? AND account=?',(self._match_ids[room.room_id],account)).fetchone():return
         from .player_statistics import battle_report as statistics_report
+        from .combat_completion import settlement_health
         match=self._match_ids[room.room_id]
         cached=self._settlement_inputs.get((match,account))
         if cached is not None:
@@ -747,9 +749,9 @@ class ArenaService:
                statistics_report=statistics_report(combat,character_id),
                experience_report=combat.experience.report(combat,character_id),
                achievement_report=combat.achievements.report(combat.field,character_id,room.request.mode),
-               health={i:combat.field.actor(i).health for i in report})
+               health={i:settlement_health(combat,i) for i in report})
         self.encounter_return(combat.field,character_id,cached[0] if cached else 0,
-                              cached[1].get('health') if cached else {i:combat.field.actor(i).health for i in report})
+                              cached[1].get('health') if cached else {i:settlement_health(combat,i) for i in report})
         # The following town/panel request must reload the changed rank fields,
         # just as after an ordinary result (native scene teardown is asynchronous).
         self._completed.add(character_id)

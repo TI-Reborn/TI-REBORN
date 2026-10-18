@@ -6,6 +6,7 @@ transaction. Frozen mission data and award intents never modify player wallets.
 The catalogue's geometry, combat profiles and rewards are emulator design.
 """
 from copy import deepcopy
+from contextlib import closing, contextmanager
 import json
 import math
 from pathlib import Path
@@ -14,7 +15,7 @@ import re
 import time
 import uuid
 
-from .db_transaction import current, transaction
+from .db_transaction import connect, current, transaction
 
 
 DEFAULT_CATALOG = Path(__file__).resolve().parents[1] / 'config/pve_contracts.json'
@@ -285,20 +286,41 @@ class ContractStore:
             expired.append(self._record(db, identity))
         return expired
 
+    @staticmethod
+    def _expiration_due(db, now, party_id=None):
+        sql="SELECT 1 FROM pve_contract_instances WHERE state IN ('accepted','travelling','arrived') AND expires_at<=?"
+        args=[now]
+        if party_id is not None:
+            sql+=' AND party_id=?';args.append(party_id)
+        return db.execute(sql+' LIMIT 1',args).fetchone() is not None
+
+    @contextmanager
+    def _read_after_expiration(self, party_id=None):
+        # A negative result and the returned record share one read snapshot.
+        # Close it before requesting a writer; never upgrade a read lock.
+        with closing(connect(self.path)) as db, db:
+            db.execute('BEGIN')
+            if not self._expiration_due(db,self._now(),party_id):
+                yield db
+                return
+        with transaction(self.path) as db:
+            self._expire(db,self._now(),party_id)
+            yield db
+
     def expire(self):
+        with closing(connect(self.path)) as db:
+            if not self._expiration_due(db,self._now()):return []
         with transaction(self.path) as db:
             return self._expire(db, self._now())
 
     def get(self, instance_id):
         _text(instance_id, 'contract instance')
-        with transaction(self.path) as db:
-            self._expire(db, self._now())
+        with self._read_after_expiration() as db:
             return self._record(db, instance_id)
 
     def active(self, party_id):
         party_id = _party_id(party_id)
-        with transaction(self.path) as db:
-            self._expire(db, self._now(), party_id)
+        with self._read_after_expiration(party_id) as db:
             row = db.execute("SELECT id FROM pve_contract_instances WHERE party_id=? AND state IN ('accepted','travelling','arrived','active')", (party_id,)).fetchone()
             return self._record(db, row[0]) if row else None
 
@@ -355,8 +377,7 @@ class ContractStore:
 
     def target_for(self, owner):
         _text(owner, 'save owner')
-        with transaction(self.path) as db:
-            self._expire(db, self._now())
+        with self._read_after_expiration() as db:
             row = db.execute('SELECT instance_id FROM pve_contract_locks WHERE owner=?', (owner,)).fetchone()
             if row is None:
                 return None

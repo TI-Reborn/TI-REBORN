@@ -7,6 +7,7 @@ strategic mo/denver overview is separate from the five original combat maps.
 from copy import deepcopy
 import random
 import time
+from tio.performance import timed,timed_lock
 from uuid import uuid4
 
 from tio.protocol.assault import (BATTLE_MODE,CREATE_ROOM,JOIN_ROOM,REQUEST_ROOMS,
@@ -194,12 +195,15 @@ class TrainingArena:
         if not hasattr(self,'training_path') or not force and self.clock()<self.training_update_at:return
         self.training_update_at=self.clock()+1
         self.recover_training_events()
+        current_towns={}
         for town in TRAINING_TOWNS:
             event=self._training_event(town)
             signature=(event['id'],event['phase'],event['phase_ends'])
             for owner,session in tuple(self.players.items()):
                 if owner in self.offline or owner in self.battles or owner in self.results:continue
-                if session.locations and session.locations.current(session.account)==town:
+                if owner not in current_towns:
+                    current_towns[owner]=session.locations.current(session.account) if session.locations else None
+                if current_towns[owner]==town:
                     if getattr(session,'training_zone_signature',None)!=signature:
                         self.put(owner,self.training_town_packet(town));session.training_zone_signature=signature
             if event['phase'] not in ('TOUR1','TOUR2','TOUR3'):continue
@@ -371,8 +375,10 @@ class TrainingArena:
         if battle.get('kind')=='training':return self.finish_training(battle)
         return super().finish(battle)
 
+    @timed('hub.tick')
     def tick(self):
-        with self.lock:self.tick_training_events();return super().tick()
+        with timed_lock(self.lock,'hub.tick_lock'):
+            self.tick_training_events();return super().tick()
 
     def disconnect(self,session):
         with self.lock:

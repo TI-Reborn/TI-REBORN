@@ -107,6 +107,100 @@ def create_app(database,key,*,bank=None):
             if optional:return None
             raise GatewayError('character_required',409) from None
 
+    def forward_city(data, endpoint,*,services=False):
+        from urllib.request import Request,urlopen
+        from urllib.error import HTTPError
+        body=json.dumps(data,separators=(',',':')).encode('utf-8')
+        if len(body)>4096:raise GatewayError('invalid_request',413)
+        message=Request('http://127.0.0.1:8083/'+('v2/services/' if services else 'v1/city/')+endpoint,data=body,
+            headers={'Authorization':'Bearer '+key,'Content-Type':'application/json'},method='POST')
+        try:
+            try:response=urlopen(message,timeout=3)
+            except HTTPError as error:response=error
+            with response:
+                status=response.status;raw=response.read(65537)
+            if len(raw)>65536 or status not in (200,400,404,409,413,429,503):raise ValueError('Invalid core reply')
+            result=json.loads(raw.decode('utf-8'))
+            if not isinstance(result,dict):raise ValueError('Invalid core reply')
+            if status!=200:
+                if set(result)-{'error','retryAfter'} or result.get('error') not in (
+                    'invalid_request','account_not_found','character_required','city_unavailable',
+                    'recipient_unavailable','operation_rejected','pin_rejected','rate_limited','service_unavailable'):
+                    raise ValueError('Invalid core reply')
+            elif endpoint=='status':
+                if result.get('username')!=data['username'] or result.get('slot')!=data['slot'] or not isinstance(result.get('characters'),list):
+                    raise ValueError('Invalid core reply')
+            else:
+                state=result.get('status');receipt=result.get('receipt')
+                if (set(result)!={'status','receipt','replayed'} or not isinstance(state,dict)
+                    or state.get('username')!=data['username'] or state.get('slot')!=data['slot']
+                    or type(result.get('replayed')) is not bool or not isinstance(receipt,dict)
+                    or set(receipt)!={'requestId','action','creditsDelta','goldDelta'}
+                    or receipt['requestId']!=data['requestId'] or receipt['action']!=data['action']
+                    or any(type(receipt[name]) is not int for name in ('creditsDelta','goldDelta'))):
+                    raise ValueError('Invalid core reply')
+            return Response(raw,status=status,mimetype='application/json')
+        except Exception:raise GatewayError('service_unavailable',503) from None
+
+    def city_payload(action=False,*,services=False):
+        from .city_operations import validate_payload,CityError
+        if request.content_length is not None and request.content_length>4096:raise GatewayError('invalid_request',413)
+        raw=request.get_data(cache=True)
+        if len(raw)>4096:raise GatewayError('invalid_request',413)
+        if request.mimetype!='application/json':raise GatewayError('invalid_request',415)
+        from .city_http import decode_json
+        try:
+            if services:
+                from .city_services import validate
+                data=validate(decode_json(raw),action=action)
+            else:data=validate_payload(decode_json(raw),action=action)
+        except CityError as error:raise GatewayError(error.code,error.status) from None
+        with closing(sqlite3.connect(path.as_uri()+'?mode=ro',uri=True)) as db:
+            db.execute('BEGIN');linked(db,data,optional=not action)
+        return data
+
+    @app.post('/v1/city/status')
+    def city_status():return forward_city(city_payload(),'status')
+
+    @app.post('/v1/city/action')
+    def city_action():return forward_city(city_payload(action=True),'action')
+
+    @app.post('/v1/ratings/status')
+    def ratings_status():
+        from .ratings_public import validate_payload,validate_response
+        from .city_operations import CityError
+        from .city_http import decode_json
+        from urllib.request import Request,urlopen
+        from urllib.error import HTTPError
+        if request.content_length is not None and request.content_length>4096:raise GatewayError('invalid_request',413)
+        raw=request.get_data(cache=True)
+        if len(raw)>4096:raise GatewayError('invalid_request',413)
+        if request.mimetype!='application/json':raise GatewayError('invalid_request',415)
+        try:data=validate_payload(decode_json(raw))
+        except CityError as error:raise GatewayError(error.code,error.status) from None
+        with closing(sqlite3.connect(path.as_uri()+'?mode=ro',uri=True)) as db:
+            db.execute('PRAGMA query_only=ON');db.execute('BEGIN')
+            if not db.execute('SELECT 1 FROM accounts WHERE login=?',(data['username'],)).fetchone():
+                raise GatewayError('account_not_found',404)
+        message=Request('http://127.0.0.1:8083/v1/ratings/status',
+            data=json.dumps(data,separators=(',',':')).encode('utf-8'),
+            headers={'Authorization':'Bearer '+key,'Content-Type':'application/json'},method='POST')
+        try:
+            try:response=urlopen(message,timeout=3)
+            except HTTPError as error:response=error
+            with response:
+                status=response.status
+                if response.headers.get_content_type()!='application/json':raise ValueError('Invalid core reply')
+                reply=response.read(65537)
+            if len(reply)>65536 or status not in (200,400,404,413,429,503):raise ValueError('Invalid core reply')
+            result=decode_json(reply)
+            if status==200:validate_response(result,data)
+            elif (not isinstance(result,dict) or set(result)!={'error'}
+                  or result['error'] not in ('invalid_request','account_not_found','rate_limited','service_unavailable')):
+                raise ValueError('Invalid core reply')
+            return Response(reply,status=status,mimetype='application/json')
+        except Exception:raise GatewayError('service_unavailable',503) from None
+
     def order_dto(data,order):
         return dict(username=data['username'],slot=data['slot'],order={k:order[k] for k in ('id','gold','amount_minor','currency','state','url','created')})
 
@@ -126,6 +220,12 @@ def create_app(database,key,*,bank=None):
             alliance=dict(id=alliance['id'],name=alliance['name'].decode('cp1251'),crestId=alliance['crest_id'],
                 canUpload=bool(wallet and clan['id']==alliance['leading_clan'] and clan['leader']==owner)) if alliance else None,
             canUpload=bool(clan and wallet and (clan['leader']==owner or clan['permissions']&CREST)),cost=1000)
+
+    @app.post('/v2/services/status')
+    def services_status():return forward_city(city_payload(services=True),'status',services=True)
+
+    @app.post('/v2/services/action')
+    def services_action():return forward_city(city_payload(action=True,services=True),'action',services=True)
 
     @app.post('/v1/clan/status')
     def clan_status():

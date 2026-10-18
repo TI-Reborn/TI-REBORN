@@ -5,6 +5,7 @@ Purchases update these snapshots atomically with wallets through tio.shop.
 """
 
 from .db_transaction import connect
+from .performance import timed
 from contextlib import closing
 from dataclasses import replace
 from pathlib import Path
@@ -66,6 +67,7 @@ class OwnedPetStore:
         self.validate(bytes(row[1]),bytes(row[2]),bool(row[0]))
         return bytes(row[1]),bytes(row[2])
 
+    @timed('roster.list')
     def list(self, account):
         """Load one consistent roster snapshot, restricted to the current account."""
         if not isinstance(account,str) or not account:raise ValueError('Account required')
@@ -77,8 +79,8 @@ class OwnedPetStore:
             sync(db,account)
             rows=db.execute('SELECT pet_id,human,pet_packet,inventory_packet FROM owned_pets WHERE account=? ORDER BY pet_id',
                             (account,)).fetchall()
-            from .passive_stats import project_saved_pet
-            rows=[(owner,human,project_saved_pet(db,account,owner,pet,bool(human)),inventory) for owner,human,pet,inventory in rows]
+            from .passive_stats import project_saved_roster
+            rows=project_saved_roster(db,account,rows)
         result=[]
         for owner,human,pet,inventory in rows:
             pet,inventory=bytes(pet),bytes(inventory)

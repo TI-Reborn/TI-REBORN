@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "health": {
+    "template": 5012,
+    "name": "Injection HP",
+    "bonus_percent": 10,
+    "ap": 8,
+    "turns": 10,
+    "cooldown": 15,
+    "weight": 1,
+    "gold": 100,
+    "source": "TIO_manual.pdf printed p82: capacity +10%, AP8, duration10, recovery15, weight1, Gold100",
+    "emulator_policy": {
+      "id": "New collision-checked emulator ID after5011; no historical ID claim",
+      "rounding": "floor of authoritative base maxHP *110/100, reject native word overflow",
+      "current_hp": "No healing on activation; clamp currentHP to base capacity on expiry",
+      "consumption": "One owned count per accepted activation, consistent with existing Vision Injection35",
+      "durability": "1 inherited from Vision Injection35; no manual durability claim"
+    }
+  },
+  "mines": {
+    "enabled": false,
+    "devices": [],
+    "reason": "Installed original client supports MineFinder kind35 and MineDefuser kind36, but public item definitions, historical item IDs, prices, AP and search radius are absent. No free or universal detection/defuse entitlement.",
+    "known_native_request": "C8/40 actor,x,y; original95965c->659094",
+    "entitlement_source": "Authoritative owned device class and native metadata AP/radius, never client-supplied fields or guessed passive perks"
+  }
+}

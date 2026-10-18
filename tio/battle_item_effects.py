@@ -377,6 +377,8 @@ def _suicide(combat, actor, request, selected, items, flag, row, view):
 
 
 def handles_use(template):
+    from .combat_completion import handles
+    if handles(template): return True
     row = rules()['items'].get(str(template))
     return row is not None and row['kind'] in ('champagne', 'vision', 'night_vision', 'binocular', 'booster')
 
@@ -389,6 +391,8 @@ def _use(combat, owner, action, now):
     if action.option != 255: raise ValueError('Item use requires unspecified native33 target')
     actor = _actor(combat, owner, action.pet_id)
     selected, items, flag = _selected(combat, actor, action.instance_id)
+    from .combat_completion import handles, use as use_health_capacity
+    if handles(selected.template_id): return use_health_capacity(combat, owner, action)
     row = rules()['items'].get(str(selected.template_id))
     if row is None or not handles_use(selected.template_id): raise ValueError('Unsupported item use')
     state = combat.item_effects; identity = actor.actor_id; generation = combat.field._ability_turns[identity]
@@ -512,7 +516,8 @@ def _end_turn(combat, owner, actor_ids):
         if not combat.field.actor(identity).health:
             for name in ('flash', 'vision', 'night_vision'): state[name].pop(identity, None)
     for identity in identities: state['recon_selection'].pop(identity, None)
-    return refresh_sight(combat)
+    from .combat_completion import end_turn as end_health_capacity
+    return (*end_health_capacity(combat, owner, identities), *refresh_sight(combat))
 
 
 def freeze_experience(combat, before, *, now=None):

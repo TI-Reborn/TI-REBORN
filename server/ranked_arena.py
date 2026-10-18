@@ -1,4 +1,4 @@
-"""Native TrueSkill queue, one selected fighter per real account.
+"""Native TrueSkill queue, one to four selected fighters per real account.
 
 Initial hosted format: 1v1, levels 4..20 within the same classic band.
 No AI seats, wagers, client-reported results or writes to saved selections.
@@ -43,18 +43,23 @@ class RankedArena:
             if not s.locations or s.locations.current(s.account) not in RANKED_TOWNS:
                 raise ValueError('Рейтинговая битва доступна в Denver и New York')
             flags,pets=decode_join(packet)
-            if len(pets)!=1:raise ValueError('Для рейтингового боя выберите одного бойца')
-            identity,equipment,bonus=pets[0]
-            if bonus or equipment:raise ValueError('Рейтинговый бой пока использует сохранённую экипировку без дополнительных бонусов')
             from tio.owned_pets import OwnedPetStore
-            row=next((r for r in OwnedPetStore(s.database).list(s.account) if r[0]==identity),None)
-            if row is None:raise ValueError('Боец не принадлежит вашему аккаунту')
-            resource=int.from_bytes(row[1][5:9],'little');human=resource in (1,2,6)
-            pet=decode_pet_info(row[1],human_equipment=human).fields
-            level=pet['0x8c4aef']
-            if not 4<=level<=20:raise ValueError('Рейтинговый бой: уровни 4–20')
-            if pet['0x8c4ab1']!=pet['0x8c4a07']:raise ValueError('Перед рейтинговым боем полностью вылечите бойца')
-            ticket=SearchTicket(owner,(identity,),(level,),self.clock())
+            from tio.battle_modes import level_band
+            owned={r[0]:r for r in OwnedPetStore(s.database).list(s.account)}
+            actors=[];levels=[]
+            for identity,equipment,bonus in pets:
+                if bonus or equipment:raise ValueError('Рейтинговый бой пока использует сохранённую экипировку без дополнительных бонусов')
+                row=owned.get(identity)
+                if row is None:raise ValueError('Боец не принадлежит вашему аккаунту')
+                resource=int.from_bytes(row[1][5:9],'little');human=resource in (1,2,6)
+                pet=decode_pet_info(row[1],human_equipment=human).fields
+                level=pet['0x8c4aef']
+                if not 4<=level<=20:raise ValueError('Рейтинговый бой: уровни 4–20')
+                if pet['0x8c4ab1']!=pet['0x8c4a07']:raise ValueError('Перед рейтинговым боем полностью вылечите бойца')
+                actors.append(identity);levels.append(level)
+            if len({level_band(level) for level in levels})!=1:
+                raise ValueError('Рейтинговые бойцы должны быть одного диапазона уровней')
+            ticket=SearchTicket(owner,tuple(actors),tuple(levels),self.clock())
             prior=self.ranked_waiting.get(owner)
             if prior and (prior.actors,prior.levels)!=(ticket.actors,ticket.levels):raise ValueError('Сначала отмените прежний поиск')
             self.ranked_waiting.setdefault(owner,ticket)
@@ -68,8 +73,12 @@ class RankedArena:
     def match_ranked(self,owner):
         from tio.battle_modes import level_band
         first=self.ranked_waiting[owner]
+        from tio.character_identity import auth_account
+        authenticated=lambda o:auth_account(self.players[o].database,self.players[o].account)
         candidates=[t for o,t in self.ranked_waiting.items() if o!=owner and level_band(t.levels[0])==level_band(first.levels[0])
+                    and len(t.actors)==len(first.actors)
                     and self.players[o].account!=self.players[owner].account and self.players[o].database==self.players[owner].database]
+        candidates=[t for t in candidates if authenticated(t.character_id)!=authenticated(owner)]
         if not candidates:return
         # Prefer the closest current rating, then queue age.
         score=lambda t:ranked.skill(*ranked.snapshot(self.players[t.character_id].database,self.players[t.character_id].account))
@@ -80,7 +89,7 @@ class RankedArena:
             s=self.players[t.character_id]
             if s.locations.current(s.account) not in RANKED_TOWNS:raise ValueError('Игрок покинул рейтинговый город')
             seats.append((t.character_id,side,s.database,s.account,t,False));teams.append([t.character_id])
-        proposal=SimpleNamespace(mode=21,soldiers=1,band=level_band(tickets[0].levels[0]),captain=tickets[0].character_id)
+        proposal=SimpleNamespace(mode=21,soldiers=len(first.actors),band=level_band(tickets[0].levels[0]),captain=tickets[0].character_id)
         self.start_match(proposal,seats,teams,set(),lambda:[self.ranked_waiting.pop(t.character_id,None) for t in tickets])
 
     def ranked_packets(self,battle,owner,*,scene=False):

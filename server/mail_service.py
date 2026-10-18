@@ -105,7 +105,8 @@ def draft(session,request):
         owner=owner_for_name(db,request.recipient.decode('ascii'))
         if owner is None:raise ValueError('Персонаж получателя не найден')
         if owner==session.account:raise ValueError('Нельзя отправить письмо самому себе')
-        values=WarehouseStore._read(db,session.account);preview=[]
+        from tio.warehouse_completion import read_scope
+        values=read_scope(db,session.account,required=True);preview=[]
         for ident,count in items:
             item=values.get(ident)
             if item is None or count>item.count:raise ValueError('Выберите доступные предметы личного склада')

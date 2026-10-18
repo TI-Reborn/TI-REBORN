@@ -11,6 +11,7 @@ from tio.owned_pets import OwnedPetStore
 from tio.warehouse import WarehouseStore
 from tio.protocol.warehouse import encode_private_warehouse_snapshot
 from .private_market import PrivateMarketSession
+from tio.performance import timed
 
 
 def private_command(packet):
@@ -19,7 +20,7 @@ def private_command(packet):
     try:_,text,_=decode_send(packet)
     except ValueError:return False
     words=text.strip().casefold().split()
-    return bool(words and words[0] in ('!bank','!sc','!base','!assault'))
+    return bool(words and words[0] in ('!bank','!sc','!base','!assault','/changename','!clan'))
 
 
 def city_idle(session):
@@ -81,12 +82,24 @@ class SharedEconomy:
         from .bank_gameplay import BankGameSession
         return BankGameSession(self.path,session.account)
 
+    @timed('economy.tick')
     def tick(self,router):
+        from .city_http import ensure_server
+        ensure_server(self,router)
         if self.clock()<self.next_tick:return
         self.next_tick=self.clock()+.5
         self.auction.tick()
+        from .services_runtime import tick as services_tick
+        services_tick(router)
+        # A read-only negative check avoids acquiring the hub/write locks when
+        # there is no work. Positive results are revalidated by expire_marks
+        # under the original locks/transaction, including offline battle leases.
+        with closing(connect(self.path)) as db:
+            marks_due=db.execute("SELECT 1 FROM bank_item_marks WHERE state='active' AND expires<=? LIMIT 1",
+                                 (int(time.time()),)).fetchone() is not None
+        if not marks_due and self.clock()<self.next_clan_tick:return
         with router.team_arena.lock,transaction(self.path) as db:
-            expire_marks(db,busy=busy_accounts(router,db))
+            if marks_due:expire_marks(db,busy=busy_accounts(router,db))
             if self.clock()>=self.next_clan_tick:
                 from .clan_gameplay import maintenance
                 maintenance(db)
@@ -110,15 +123,27 @@ def handle_private(session,packet):
     _,text,_=decode_send(packet)
     hub=session.router.team_arena
     try:
+        # Personal defender-fund changes commit before canonical wallet projection.
+        if text.split(maxsplit=1)[:1]==['!base']:
+            from .clan_gameplay import command
+            from tio.wallets import WalletStore
+            from tio.protocol.asset_count import encode_asset_count
+            with hub.lock:
+                with transaction(session.database) as db:
+                    replies=command(db,session.account,text,city_idle=city_idle(session))
+                return replies+(encode_asset_count(WalletStore(session.database).ensure(session.account)),)
         with hub.lock,transaction(session.database) as db:
             allowed=city_idle(session)
             blocked=busy_accounts(session.router,db)
+            if text.startswith('/changename '):
+                from .services_runtime import native
+                return native(session,command=text)
+            if text.strip().casefold().split(maxsplit=1)[:1]==['!clan']:
+                from .social_commands import command
+                return command(db,session,text,city_idle=allowed)
             if text.strip().casefold().split(maxsplit=1)[:1]==['!assault']:
                 from .assault_public import command
                 return command(db,session.account,text)
-            if text.split(maxsplit=1)[:1]==['!base']:
-                from .clan_gameplay import command
-                return command(db,session.account,text,city_idle=allowed)
             if text.split(maxsplit=1)[:1]==['!bank']:
                 result=session.bank_session.handle(packet,city_idle=allowed,busy=blocked)
                 # Peers collect canonical SQL snapshots on their own city poll.

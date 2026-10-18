@@ -15,6 +15,7 @@ import time
 from .clans import CREST, ClanRejected, membership, require, record
 
 ROOT = Path(__file__).resolve().parents[1]
+base_fund_completion_installed=True
 MAX = 0xffffffff
 WEEK = 604800
 MONDAY = 345600  # 1970-01-05 UTC.
@@ -36,7 +37,7 @@ def policy():
         raise ValueError('Invalid clan level decay multipliers')
     if a['top_players_per_side'] != 20 or len(a['medal_multipliers']) != 3 or any(Fraction(v) <= 1 for v in a['medal_multipliers']):
         raise ValueError('Invalid assault prize policy')
-    if len(a['defense_fund_weights']) != 3 or any(type(v) is not int or v <= 0 for v in a['defense_fund_weights']):
+    if a['defense_fund_weights'] != [5,3,2] or any(type(v) is not int for v in a['defense_fund_weights']):
         raise ValueError('Invalid defense fund policy')
     if any(type(h) is not int or not 0 <= h <= 23 for h in p['base']['assault_hours_utc']):
         raise ValueError('Invalid base schedule choices')
@@ -299,19 +300,9 @@ def scheduled_start(db, town, default_start):
 def week_start(stamp):return MONDAY+(int(stamp)-MONDAY)//WEEK*WEEK
 
 
-def fund_defense(db, account, event_id, amount, identity):
-    write(db);integer(amount);clan=require(db,account,leader=True)
-    request=canonical(dict(event=event_id,amount=amount));old=prior(db,'fund',identity,account,request)
-    if old is not None:return old
-    event=db.execute('SELECT phase,claim FROM warfare_events WHERE id=?',(event_id,)).fetchone()
-    if event is None or event[0]!='REGISTRATION' or json.loads(event[1])['owner_clan']!=clan['id']:raise ClanRejected('Фонд можно установить владельцу до начала штурма')
-    if not amount:raise ClanRejected('Фонд должен быть положительным')
-    held=db.execute('SELECT clan_id,credits,settled FROM clan_defense_funds WHERE event_id=?',(event_id,)).fetchone()
-    if held and (held[0]!=clan['id'] or held[1]+amount>MAX or held[2]):raise ClanRejected('Фонд закреплён, переполнен или принадлежит другому клану')
-    if db.execute('UPDATE clans SET credits=credits-? WHERE id=? AND credits>=?',(amount,clan['id'],amount)).rowcount!=1:raise ClanRejected('Недостаточно средств кланового сейфа')
-    db.execute('INSERT INTO clan_defense_funds VALUES (?,?,?,0) ON CONFLICT(event_id) DO UPDATE SET credits=credits+excluded.credits',(event_id,clan['id'],amount))
-    record(db,clan['id'],account,'defense_fund',amount)
-    return receipt(db,'fund',identity,account,request,dict(event_id=event_id,escrow=amount))
+def fund_defense(db, account, event_id, amount, identity, *, now=None):
+    from .base_fund_completion import donate
+    return donate(db,account,event_id,amount,identity,now=now)
 
 
 def settle_assault(db, event_id):
@@ -354,18 +345,14 @@ def settle_assault(db, event_id):
             tokens=p['assault']['golden_tokens_each']
             if db.execute('UPDATE range_accounts SET golden=golden+? WHERE account=? AND golden<=?',(tokens,account,MAX-tokens)).rowcount!=1:raise ClanRejected('Переполнение жетонов')
             db.execute('INSERT INTO clan_assault_prizes VALUES (?,?,?,?,0)',(event_id,account,p['assault']['booster_template'],p['assault']['booster_count_each']))
-    fund=db.execute('SELECT clan_id,credits,settled FROM clan_defense_funds WHERE event_id=?',(event_id,)).fetchone();payouts={}
+    fund=db.execute('SELECT clan_id,credits,settled FROM clan_defense_funds WHERE event_id=?',(event_id,)).fetchone();payouts={};refunds={}
     if fund and not fund[2]:
         ranked=sorted(((c,n) for c,n in totals.items() if c in defense and n>0),key=lambda v:(-v[1],v[0]))[:3]
-        if not ranked:payouts={fund[0]:fund[1]}
-        else:
-            weights=p['assault']['defense_fund_weights'][:len(ranked)];total=sum(weights)
-            payouts={c:fund[1]*w//total for (c,_),w in zip(ranked,weights)}
-            for c,_ in ranked[:fund[1]-sum(payouts.values())]:payouts[c]+=1
-        for c,amount in payouts.items():
-            if db.execute('UPDATE clans SET credits=credits+?,revision=revision+1 WHERE id=? AND credits<=?',(amount,c,MAX-amount)).rowcount!=1:raise ClanRejected('Сейф получателя фонда переполнен')
-        db.execute('UPDATE clan_defense_funds SET settled=1 WHERE event_id=?',(event_id,))
-    return receipt(db,'assault',event_id,'',request,dict(event_id=event_id,capture_influence=capture,players=players,medals=medals,defense_fund=payouts))
+        from .base_fund_completion import settle
+        payouts,refunds=settle(db,event_id,fund,ranked)
+    result=dict(event_id=event_id,capture_influence=capture,players=players,medals=medals,defense_fund=payouts)
+    if refunds:result['defense_refunds']=refunds
+    return receipt(db,'assault',event_id,'',request,result)
 
 
 def close_week(db, start, *, now=None):
@@ -412,25 +399,29 @@ def deliver_prizes(db, account, *, capacity=3000):
     import xml.etree.ElementTree as ET
     rows=list(db.execute('SELECT event_id,template,count FROM clan_assault_prizes WHERE account=? AND delivered=0 ORDER BY event_id',(account,)))
     if not rows:return ()
-    items=WarehouseStore._read(db,account);seen=set(items)
+    from . import warehouse_completion as completion
+    all_items=WarehouseStore._read(db,account);seen=set(all_items)
+    items=completion.read_scope(db,account,all_items,required=True)
+    before=dict(items);assignments={}
     for raw, in db.execute('SELECT inventory_packet FROM owned_pets WHERE account=?',(account,)):
         for item in decode_item_list(raw)[1]:
             if item.instance_id in seen:raise ClanRejected('Повтор идентификатора предмета')
             seen.add(item.instance_id)
     seq=db.execute('SELECT next_id FROM item_sequences WHERE account=?',(account,)).fetchone();next_id=max(max(seen,default=0)+1,seq[0] if seq else 1)
-    definitions={int(n.get('id')):{v.get('key'):v.get('val') for v in n.findall('value')} for n in ET.parse(ROOT/'config/battle_item_catalog_extension.xml').getroot().iter('item')}
+    definitions={int(n.get('id')):{v.get('key'):v.get('val') for v in n.findall('value')} for n in ET.parse(ROOT/'evidence/items_diagnostic.xml').getroot().iter('item')}
     completed=[]
     for event,template,count in rows:
         definition=definitions[template];durability=int(definition.get('durability','0'))
         if next_id+count>MAX:raise ClanRejected('Исчерпаны идентификаторы предметов')
         additions=[ItemRecord(next_id+n,template,bytes(2),1,0,0,(durability,)*3,bytes(4),None,bytes((0,0,int(definition.get('special','0')=='1')))) for n in range(count)]
-        merged=merge_stacks((*items.values(),*additions))
-        if len(merged)>capacity:continue
+        try:merged,new_assignments=completion.merge_scope(db,account,(*items.values(),*additions),before,origin='clan-assault:'+str(event),limit=capacity)
+        except ValueError:continue
+        assignments.update(new_assignments)
         items={i.instance_id:i for i in merged};next_id+=count;completed.append(event)
     if not completed:return ()
     packets=encode_private_warehouse_snapshot(items.values())
     encoded=[(account,i.instance_id,encode_item_list(0,(i,))) for i in items.values()]
-    db.execute('DELETE FROM warehouse_items WHERE account=?',(account,));db.executemany('INSERT INTO warehouse_items VALUES (?,?,?)',encoded)
+    completion.persist_scope(db,account,before,items.values(),assignments)
     db.execute('INSERT INTO item_sequences VALUES (?,?) ON CONFLICT(account) DO UPDATE SET next_id=excluded.next_id',(account,next_id))
     db.executemany('UPDATE clan_assault_prizes SET delivered=1 WHERE event_id=? AND account=?',[(e,account) for e in completed])
     return packets
