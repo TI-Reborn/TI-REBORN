@@ -58,15 +58,17 @@ def owners(path, login):
     return tuple(result)
 
 
-def auth_account(path, owner):
+def auth_account(path, owner, *, connection=None):
     """Canonical human identity for one-login and anti-farming decisions."""
     if not isinstance(owner, str) or not owner:
         raise ValueError('Character owner identity required')
     if not owner.startswith(PREFIX):
         return owner
-    with closing(connect(path)) as db:
-        row = db.execute('SELECT login,slot FROM character_identities WHERE owner=?',
-                         (owner,)).fetchone() if has_mappings(db) else None
+    if connection is None:
+        with closing(connect(path)) as db:
+            return auth_account(path,owner,connection=db)
+    row = connection.execute('SELECT login,slot FROM character_identities WHERE owner=?',
+                             (owner,)).fetchone() if has_mappings(connection) else None
     if row is None or alias(row[0], row[1]) != owner:
         raise ValueError('Unknown character owner identity')
     return row[0]

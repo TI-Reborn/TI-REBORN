@@ -147,7 +147,20 @@ def handle(presence,session,packet):
         elif op==9:current.transfer_leading(session.account,value)
         elif op==10:current.leave(session.account)
         elif op==11:current.kick(session.account,value)
-        elif op==12:current.dissolve(session.account)
+        elif op==12:
+            # The native typed prompt sends AF0C for both choices. Retried
+            # packets cannot prove a new intent to cancel; use the explicit
+            # private name-confirmed adapter for cancellation.
+            header=current.info(session.account)
+            if header and header['state']=='dissolving':
+                if header['leader']!=session.account:raise ValueError('Отмена доступна главе ведущего клана альянса')
+                from tio.protocol.chat import encode_message
+                enqueue(presence,session,encode_message(4,b'Clan',f"Для отмены роспуска: !clan alliancecancel {bytes(header['name']).decode('cp1251')}"))
+            else:
+                current.dissolve(session.account)
+                header=current.info(session.account)
+                from tio.protocol.chat import encode_message
+                enqueue(presence,session,encode_message(4,b'Clan',f"Роспуск назначен на срок 3 суток. Отмена: !clan alliancecancel {bytes(header['name']).decode('cp1251')}"))
         notify(presence,session)
     except ValueError as exc:enqueue(presence,session,encode_shop_error(str(exc)[:180]))
     return True

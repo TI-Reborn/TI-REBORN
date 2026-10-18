@@ -9,42 +9,105 @@
       "version": 1,
       "name": "Лагерь мародёров",
       "objective": "Уничтожить всех противников в лагере",
-      "zone_id": 18,
-      "bounds": [-290, -245, -270, -225],
-      "levels": [1, 20],
-      "recommended_party_size": [2, 4],
+      "zone_id": 23,
+      "bounds": [
+        -290,
+        -245,
+        -270,
+        -225
+      ],
+      "levels": [
+        1,
+        20
+      ],
+      "recommended_party_size": [
+        2,
+        4
+      ],
       "map_profile": "contract_camp",
-      "map_size": [38, 38],
-      "enemies": {"scout": 2, "rifleman": 2, "heavy": 1},
-      "reward": {"credits": 150, "experience": 60}
+      "map_size": [
+        38,
+        38
+      ],
+      "enemies": {
+        "scout": 2,
+        "rifleman": 2,
+        "heavy": 1
+      },
+      "reward": {
+        "credits": 150,
+        "experience": 60
+      }
     },
     {
       "id": "depot",
       "version": 1,
       "name": "Захваченный склад",
       "objective": "Зачистить склад и погрузочную площадку",
-      "zone_id": 19,
-      "bounds": [-80, -180, -60, -160],
-      "levels": [1, 20],
-      "recommended_party_size": [2, 4],
+      "zone_id": 24,
+      "bounds": [
+        -80,
+        -180,
+        -60,
+        -160
+      ],
+      "levels": [
+        1,
+        20
+      ],
+      "recommended_party_size": [
+        2,
+        4
+      ],
       "map_profile": "contract_depot",
-      "map_size": [42, 42],
-      "enemies": {"scout": 1, "rifleman": 3, "heavy": 1},
-      "reward": {"credits": 180, "experience": 75}
+      "map_size": [
+        42,
+        42
+      ],
+      "enemies": {
+        "scout": 1,
+        "rifleman": 3,
+        "heavy": 1
+      },
+      "reward": {
+        "credits": 180,
+        "experience": 75
+      }
     },
     {
       "id": "checkpoint",
       "version": 1,
       "name": "Заброшенный КПП",
       "objective": "Уничтожить гарнизон укреплённого КПП",
-      "zone_id": 20,
-      "bounds": [110, -270, 130, -250],
-      "levels": [1, 20],
-      "recommended_party_size": [2, 4],
+      "zone_id": 25,
+      "bounds": [
+        110,
+        -270,
+        130,
+        -250
+      ],
+      "levels": [
+        1,
+        20
+      ],
+      "recommended_party_size": [
+        2,
+        4
+      ],
       "map_profile": "contract_checkpoint",
-      "map_size": [40, 40],
-      "enemies": {"scout": 2, "rifleman": 3, "heavy": 1},
-      "reward": {"credits": 200, "experience": 80}
+      "map_size": [
+        40,
+        40
+      ],
+      "enemies": {
+        "scout": 2,
+        "rifleman": 3,
+        "heavy": 1
+      },
+      "reward": {
+        "credits": 200,
+        "experience": 80
+      }
     }
   ]
 }

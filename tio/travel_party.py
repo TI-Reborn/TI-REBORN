@@ -55,7 +55,7 @@ class PartyStore:
                                (name,)).fetchone())
 
     def _identity(self, db, owner):
-        login = character_identity.auth_account(self.path, owner)
+        login = character_identity.auth_account(self.path, owner, connection=db)
         character_identity.alias(login, 1)
         if not self._has_table(db, 'accounts') or not db.execute(
                 'SELECT 1 FROM accounts WHERE login=?', (login,)).fetchone():
@@ -157,13 +157,15 @@ class PartyStore:
         if row is None:
             return None
         result = dict(zip(('id', 'leader', 'town_id', 'state', 'revision'), row))
-        result['members'] = [dict(owner=owner, login=login, ready=bool(ready), online=bool(online),
-                                  selected=tuple(actor[0] for actor in db.execute(
-                                      'SELECT actor_id FROM travel_party_selected WHERE owner=? ORDER BY position',
-                                      (owner,))))
-                             for owner, login, ready, online in db.execute(
-                                 'SELECT owner,login,ready,online FROM travel_party_members WHERE party_id=? ORDER BY joined_at,owner',
-                                 (party_id,)).fetchall()]
+        result['members'] = []
+        for owner,login,ready,online,actor in db.execute(
+                '''SELECT m.owner,m.login,m.ready,m.online,s.actor_id
+                   FROM travel_party_members m LEFT JOIN travel_party_selected s ON s.owner=m.owner
+                   WHERE m.party_id=? ORDER BY m.joined_at,m.owner,s.position''', (party_id,)):
+            if not result['members'] or result['members'][-1]['owner']!=owner:
+                result['members'].append(dict(owner=owner,login=login,ready=bool(ready),online=bool(online),selected=()))
+            if actor is not None:
+                member=result['members'][-1];member['selected']+= (actor,)
         return result
 
     def snapshot(self, party_id, connection=None):
@@ -174,12 +176,16 @@ class PartyStore:
             db.execute('BEGIN')
             return self._snapshot(db, party_id)
 
-    def info(self, owner):
+    def _info(self, db, owner):
+        self._identity(db, owner)
+        row = self._membership(db, owner)
+        return None if row is None else self._snapshot(db, row[0])
+
+    def info(self, owner, connection=None):
+        if connection is not None:return self._info(connection, owner)
         with closing(connect(self.path)) as db, db:
             db.execute('BEGIN')
-            self._identity(db, owner)
-            row = self._membership(db, owner)
-            return None if row is None else self._snapshot(db, row[0])
+            return self._info(db, owner)
 
     def blocked_login(self, login):
         """A login cannot switch save owners while any of its slots is grouped."""
@@ -370,6 +376,15 @@ class PartyStore:
     def set_online(self, owner, value):
         if type(value) is not bool:
             raise ValueError('Статус подключения должен быть логическим значением')
+        with closing(connect(self.path)) as db, db:
+            db.execute('BEGIN')
+            room=self.info(owner,connection=db)
+            if room is None:return None
+            member=next(member for member in room['members'] if member['owner']==owner)
+            disconnected=db.execute('SELECT 1 FROM travel_party_disconnects WHERE owner=?',(owner,)).fetchone() is not None
+            if member['online']==value and disconnected== (not value):return room
+        # Revalidate membership, online status and disconnect bookkeeping under
+        # the writer lock, including when another session changed them meanwhile.
         with transaction(self.path) as db:
             self._identity(db, owner)
             row = self._membership(db, owner)
@@ -395,18 +410,25 @@ class PartyStore:
             for party_id in groups:
                 self._changed(db, party_id)
 
+    def _replacement_leader(self, db, room, grace_seconds):
+        if room is None or room['state'] in ('loading','battle'):return None
+        leader=next(member for member in room['members'] if member['owner']==room['leader'])
+        row=db.execute('SELECT since FROM travel_party_disconnects WHERE owner=?',(room['leader'],)).fetchone()
+        candidates=[member for member in room['members'] if member['online']]
+        if leader['online'] or row is None or self.clock()-row[0]<grace_seconds or not candidates:return None
+        return candidates[0]['owner']
+
     def recover_leader(self, party_id, *, grace_seconds=60):
         """Allow a connected member to return a stranded group after a grace period."""
+        with closing(connect(self.path)) as db, db:
+            db.execute('BEGIN')
+            room=self._snapshot(db,party_id)
+            if self._replacement_leader(db,room,grace_seconds) is None:return room
         with transaction(self.path) as db:
-            room = self._snapshot(db, party_id)
-            if room is None or room['state'] in ('loading', 'battle'):
-                return room
-            leader = next(member for member in room['members'] if member['owner'] == room['leader'])
-            row = db.execute('SELECT since FROM travel_party_disconnects WHERE owner=?', (room['leader'],)).fetchone()
-            candidates = [member for member in room['members'] if member['online']]
-            if leader['online'] or row is None or self.clock()-row[0] < grace_seconds or not candidates:
-                return room
-            db.execute('UPDATE travel_party_groups SET leader=? WHERE id=?', (candidates[0]['owner'], party_id))
+            room=self._snapshot(db,party_id)
+            replacement=self._replacement_leader(db,room,grace_seconds)
+            if replacement is None:return room
+            db.execute('UPDATE travel_party_groups SET leader=? WHERE id=?', (replacement, party_id))
             db.execute('DELETE FROM travel_party_invitations WHERE party_id=?', (party_id,))
             self._changed(db, party_id, reset_ready=True)
             return self._snapshot(db, party_id)

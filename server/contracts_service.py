@@ -36,7 +36,7 @@ class ContractsService:
         """Answer native79 tooltip polling without admitting a city or battle.
 
         The native map polls a visible town at most every ten seconds. These
-        reads must precede the city-service gate, and contract slots18..20
+        reads must precede the city-service gate, and private contract slots23..25
         must resolve in this session's private scene rather than public IDs.
         """
         if packet[:1] != b'\x79':
@@ -52,11 +52,10 @@ class ContractsService:
                 levels = target['levels'] if enabled else template['levels']
                 return (encode_town_info(replace(diagnostic_town_info(), town_id=town,
                     unknown_bytes=(*levels, 0, 0), final_bool=int(enabled))),)
-            # The contracts scene contains the original public slots1..17.
-            # Preserve its enabled flags; reading a tooltip cannot enable a
-            # hidden public town or expose unrelated extension slots21..22.
+            # Preserve every actual public slot and its enabled flags.
+            # Tooltip reads cannot enable a hidden town or another party target.
             root = ET.fromstring((ROOT/'evidence/zones_diagnostic.xml').read_bytes())
-            zone = next((node for node in root if int(node.get('id')) == town and town < 18), None)
+            zone = next((node for node in root if int(node.get('id')) == town), None)
             if zone is None:
                 return ()
             values = {value.get('key'): value.get('val') for value in zone}
@@ -71,8 +70,8 @@ class ContractsService:
     def zones_xml(self):
         root = ET.fromstring((ROOT/'evidence/zones_diagnostic.xml').read_bytes())
         ids = [int(t.get('id')) for t in root]
-        if ids != list(range(1, 18)):
-            raise ValueError('Contract zones require the original contiguous slots 1..17')
+        if ids != list(range(1, len(ids)+1)):
+            raise ValueError('Contract zones require contiguous public slots')
         backgrounds = {'camp': 'loc_forest', 'depot': 'loc_ny', 'checkpoint': 'loc_outpost'}
         for template in sorted(self.contracts.catalog(), key=lambda t: t['zone_id']):
             if template['zone_id'] != len(root)+1:
@@ -213,7 +212,10 @@ class ContractsService:
                 return
             if command == '!contracts':
                 contract = self.contracts.active(party['id'])
+                target = self.contracts.target_for(owner) if contract else None
                 self.reply(session, f"{contract['template']['name']}: {CONTRACT_STATES[contract['state']]}" if contract else 'Активного контракта нет.')
+                if target is not None:
+                    self.reply(session, f"Цель контракта: {target['name']}. Координаты ({target['x']}, {target['y']}).")
             else:
                 self.reply(session, f"Группа — {PARTY_STATES[party['state']]}; лидер {self.name(party['leader'])}.")
                 for member in party['members']:

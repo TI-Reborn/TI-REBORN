@@ -168,7 +168,7 @@ class LoopbackExchange:
                                     conn.sendall(encode_initial_frame(encode_login_failure(denial.status),outbound))
                                     self.events.append({'event':'login_rejected','category':denial.category})
                                     return
-                                self.router.initialize_character_economy(self, self.account)
+                                self.shooting_range.admission.assets(self.account)
                             elif (login.login_bytes,login.password_bytes)!=(b'probe_user',b'probe_password'):
                                 raise ValueError('Synthetic login validation failed')
                             self.events.append({'event':'synthetic_login_verified'})
@@ -391,16 +391,16 @@ class LoopbackExchange:
         self.events.append({'direction':'S2C','stage':'server_list','entry_count':len(entries),'plain_hex':plain.hex(),'raw_hex':frame.hex()})
 
     def deliver_shared_config(self,conn,reader,outbound,name=b'items'):
-        contracts = getattr(self.router, 'contracts', None)
-        if name == b'zones' and contracts is not None:
-            xml = contracts.zones_xml()
-        elif name==b'services':
+        if name==b'services':
             from tio.services import shared_xml
             xml=shared_xml()
         elif name==b'premiumaccount':
             from tio.premium import shared_xml
             xml=shared_xml()
-        else:xml=(Path(__file__).resolve().parents[1]/('evidence/'+name.decode('ascii')+'_diagnostic.xml')).read_bytes()
+        else:
+            contracts = getattr(self.router, 'contracts', None)
+            xml = (contracts.zones_xml() if name == b'zones' and contracts is not None else
+                   (Path(__file__).resolve().parents[1]/('evidence/'+name.decode('ascii')+'_diagnostic.xml')).read_bytes())
         # Missing local file has comparison value zero; a nonzero diagnostic
         # manifest value requests delivery without claiming a checksum algorithm.
         messages=[('shared_config_set',encode_shared_config_set((SharedConfigEntry(name,1),))),
@@ -577,6 +577,9 @@ class LoopbackExchange:
         return character not in self.arena._completed or self._achievement_city_confirmed
 
     def observe_game(self,game,reader,outbound):
+        from server import warehouse_capacity
+        warehouse_capacity.reset(self)
+        from tio.protocol.item_list import decode_item_list
         def encode_reply(packet, cipher):
             weight_update=None
             armor_update=None
@@ -620,6 +623,8 @@ class LoopbackExchange:
             if self.database is not None:
                 from server.economy_runtime import project_packet
                 packet=project_packet(self.database,self.account,packet)
+            capacity_frame=warehouse_capacity.frames(self,packet,cipher)
+            if capacity_frame is not None:return capacity_frame
             frame=encode_initial_frame(packet,cipher)
             if weight_update is not None:
                 frame+=encode_initial_frame(weight_update,cipher)
@@ -680,6 +685,8 @@ class LoopbackExchange:
         achievement_tick=0
         for reply in getattr(self,'private_resume_packets',()):game.sendall(encode_reply(reply,outbound))
         while not self.stopping.is_set():
+            for capacity_reply in warehouse_capacity.poll(self):
+                game.sendall(encode_initial_frame(capacity_reply,outbound))
             character=getattr(self,'probe_character_id',None)
             achievement_ready=self.achievement_delivery_ready(character)
             if self.router is not None:
@@ -832,6 +839,10 @@ class LoopbackExchange:
             self.events.append({'direction':'C2S','stage':'after_auth2','raw_hex':None if sensitive else data.hex(),'packets_hex':['<private economy command>' if private_command(p) else p.hex() for p in packets]})
             if self.open_town_probe:
                 for packet in packets:
+                    capacity_replies=warehouse_capacity.opt_in(self,packet)
+                    if capacity_replies is not None:
+                        for reply in capacity_replies:game.sendall(encode_initial_frame(reply,outbound))
+                        continue
                     # A single TCP read can start a scene and then contain an
                     # action/exit. Observe every transition before processing
                     # the next packet so an older city acknowledgement cannot
@@ -905,6 +916,9 @@ class LoopbackExchange:
                         continue
                     if self.router is not None and self.router.presence.handle(self,packet):
                         self.router.presence.drain(self,game,outbound)
+                        if getattr(self.router, "contracts", None) is not None:
+                            # Private command replies use the hub queue, before a same-read70/9E.
+                            self.router.team_arena.drain(self,game,outbound)
                         continue
                     contracts = getattr(self.router, 'contracts', None)
                     if contracts is not None and contracts.guard(self, packet):
@@ -979,8 +993,7 @@ class LoopbackExchange:
                     if contracts is not None:
                         replies = contracts.map_query(self, packet)
                         if replies is not None:
-                            for reply in replies:
-                                game.sendall(encode_reply(reply, outbound))
+                            for reply in replies:game.sendall(encode_reply(reply, outbound))
                             continue
                     map_battle=any(character in r.members for r in self.arena.rooms.snapshot())
                     map_battle_request=(map_battle and (packet[0] in (0x2a,0x2f,0x33,0x36,0x3a,0x3c,0x3e,0x40,0x46,0x49,0x4a,0x50,0x6d,0x6e,0x7c,0x7e,0x81,0xc2) or packet[:2]==b'\xc8\x3d')) or (character in self.arena._completed and packet[0] in (0x2a,0x2f,0x4a,0x50,0x7c))
@@ -1359,13 +1372,13 @@ class LoopbackExchange:
                         continue
                     if self.hiring is not None and packet[:1]==b'\x64':
                         try:
-                            reply=self.hiring.dismiss(self.account,decode_dismiss_request(packet))
+                            from server.services_runtime import native
+                            replies=native(self,pet_id=decode_dismiss_request(packet))
                         except ValueError as error:
                             replies=(shop_error_reply(error),)
                             self.events.append({'event':'dismiss_rejected','reason':str(error)})
                         else:
-                            replies=(reply,)+tuple(r[2] for r in OwnedPetStore(self.database).list(self.account))
-                            self.events.append({'event':'dismiss_committed','request_hex':packet.hex()})
+                            self.events.append({'event':'dismiss_scheduled','request_hex':packet.hex()})
                         for reply in replies:
                             game.sendall(encode_reply(reply,outbound))
                             self.events.append({'direction':'S2C','stage':'dismiss_reply','plain_hex':reply.hex()})
@@ -1391,14 +1404,14 @@ class LoopbackExchange:
                     if self.owned_pet_probe and self.database is not None and packet[:1]==b'\x6b':
                         from tio.warehouse_service import transfer_private_items, warehouse_error_reply
                         try:
-                            replies=transfer_private_items(self.database,self.account,packet,capacity=self.catalogs.warehouse_capacity)
+                            replies=warehouse_capacity.transfer(self,packet,capacity=self.catalogs.warehouse_capacity)
                         except ValueError as error:
                             self.events.append({'event':'warehouse_transfer_rejected','request_hex':packet.hex(),'reason':str(error)})
                             replies=(warehouse_error_reply(error),)
                         else:
                             self.events.append({'event':'warehouse_transfer_saved','request_hex':packet.hex()})
                         for reply in replies:
-                            game.sendall(encode_reply(reply,outbound))
+                            game.sendall(encode_initial_frame(reply,outbound) if reply[:1] in (b'\xfa',b'\x6a') else encode_reply(reply,outbound))
                             self.events.append({'direction':'S2C','stage':'warehouse_transfer_reply','plain_hex':reply.hex()})
                         continue
                     if self.database is not None and packet[:2]==b'\xc8\x2a':
@@ -1508,7 +1521,13 @@ class LoopbackExchange:
                             self.events.append({'direction':'S2C','stage':'shop_error','plain_hex':reply.hex()})
                         else:
                             self.owned_inventory=result.inventory
-                            for reply in (result.inventory,encode_asset_count(result.assets)):
+                            from tio.premium import current
+                            from tio.protocol.premium_shop import decode_premium_purchase
+                            category=(decode_premium_purchase(packet)[1] if packet[:1]==b'\x78'
+                                      else decode_shop_purchase(packet).category)
+                            refreshed=store.catalog(self.account,category,gold=packet[:1]==b'\x78',
+                                                    discounted=bool(current(self.database,self.account)[0]))
+                            for reply in (result.inventory,encode_asset_count(result.assets),refreshed):
                                 game.sendall(encode_reply(reply,outbound))
                                 self.events.append({'direction':'S2C','stage':'shop_purchase_update','plain_hex':reply.hex()})
                             self.events.append({'event':'shop_purchase_committed','charged_credits':result.charged_credits,
@@ -1547,12 +1566,13 @@ class LoopbackExchange:
                     if warehouse_query(packet) and self.database is not None:
                         from tio.warehouse_service import warehouse_error_reply
                         try:
-                            replies=warehouse_query_reply(self.database,self.account,packet)
+                            replies=warehouse_capacity.query(self,packet)
+                            if replies is None:replies=warehouse_query_reply(self.database,self.account,packet)
                         except ValueError as error:
                             self.events.append({'event':'warehouse_query_rejected','request_hex':packet.hex(),'reason':str(error)})
                             replies=(warehouse_error_reply(error),)
                         for reply in replies:
-                            game.sendall(encode_reply(reply,outbound))
+                            game.sendall(encode_initial_frame(reply,outbound) if reply[:1] in (b'\xfa',b'\x6a') else encode_reply(reply,outbound))
                             self.events.append({'direction':'S2C','stage':'warehouse_query','request_hex':packet.hex(),'plain_hex':reply.hex()})
                         continue
                     if packet[:1]==b'\xb4' and self.database is not None and self.catalogs is not None:
@@ -1609,10 +1629,10 @@ class LoopbackExchange:
                         if reply is not None and packet[:1] in (b'\x73',b'\x76') and self.database is not None:
                             from tio.premium import current
                             discounted=bool(current(self.database,self.account)[0])
-                            if packet[:1]==b'\x73':reply=self.catalogs.item_shop(packet[1],discounted=discounted)
+                            if packet[:1]==b'\x73':reply=ShopStore(self.database,self.catalogs).catalog(self.account,packet[1],discounted=discounted)
                             else:
                                 from tio.protocol.premium_shop import decode_premium_request
-                                reply=self.catalogs.premium_shop(decode_premium_request(packet),discounted=discounted)
+                                reply=ShopStore(self.database,self.catalogs).catalog(self.account,decode_premium_request(packet),gold=True,discounted=discounted)
                     except ValueError as error:
                         if packet[:1] not in (b'\x73',b'\x76'):raise
                         self.events.append({'event':'shop_catalog_rejected','reason':str(error),'request_hex':packet.hex()})

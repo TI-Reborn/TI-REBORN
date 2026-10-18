@@ -219,34 +219,42 @@ class BattleField:
             raise ValueError('Movement requires a destination')
         occupied = {(a.x,a.y) for a in self._actors.values()
                     if a.actor_id != actor.actor_id and a.health != 0}
-        unavailable = self.blocked | occupied
         x,y = actor.x,actor.y
         for nx,ny in path:
-            if not self.inside(nx,ny) or (nx,ny) in unavailable:
+            if not self.inside(nx,ny) or (nx,ny) in self.blocked:
                 raise ValueError('Destination is blocked or outside grid')
             if max(abs(nx-x),abs(ny-y)) != 1:
                 raise ValueError('Path contains a nonadjacent step')
-            if nx != x and ny != y and ((nx,y) in unavailable or (x,ny) in unavailable):
+            if nx != x and ny != y and ((nx,y) in self.blocked or (x,ny) in self.blocked):
                 raise ValueError('Diagonal path cuts a blocked corner')
             x,y = nx,ny
         cost = len(path)*self.step_cost
         if cost > actor.action_points:
             raise ValueError('Insufficient action points')
-        # Validate the entire request before simulating visibility. Commit only
-        # the prefix up to first contact; the rest needs a new player command.
+        # Validate geometry and budget for the entire request, but resolve live
+        # occupancy only along the part actually travelled. A hidden enemy in
+        # the unused tail must not reject a move that stops at first contact.
         from .visibility import visible_actors, field_sight
         known = visible_actors(self, owner_id)
         hidden_enemies = tuple(a for a in self._actors.values()
                           if a.health != 0 and not self.allied(a.owner_id, owner_id)
                           and a.actor_id not in known)
-        if hidden_enemies:
-            # Other observers do not move, so only this actor can reveal a
-            # previously hidden enemy. Use the same radius and ray as the view.
-            for index, (nx, ny) in enumerate(path):
-                if any((nx-a.x)**2+(ny-a.y)**2 <= actor.sight_radius**2 and
-                       field_sight(self, (nx, ny), (a.x, a.y)) for a in hidden_enemies):
-                    path = path[:index+1]
-                    break
+        x,y = actor.x,actor.y
+        for index, (nx, ny) in enumerate(path):
+            blocked = (nx,ny) in occupied
+            corner = nx != x and ny != y and ((nx,y) in occupied or (x,ny) in occupied)
+            if blocked or corner:
+                if not index:
+                    raise ValueError('Destination is occupied' if blocked else 'Diagonal path cuts an occupied corner')
+                path = path[:index]
+                break
+            # Other observers stay put. Only the moving actor can reveal a
+            # previously hidden enemy; use the same radius and ray as the view.
+            if any((nx-a.x)**2+(ny-a.y)**2 <= actor.sight_radius**2 and
+                   field_sight(self, (nx, ny), (a.x, a.y)) for a in hidden_enemies):
+                path = path[:index+1]
+                break
+            x,y = nx,ny
         combat=getattr(self,'combat',None)
         if combat is not None:
             from .battle_hazards import stop_path

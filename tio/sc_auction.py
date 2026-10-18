@@ -2,7 +2,7 @@
 
 Manual pp32-33 establishes the mechanics, not the historic numerical tariffs.
 Config explicitly identifies the server catalogue, charges and clock policy.
-Every action (including a timer tick) owns one SQLite transaction. Bots operate
+Every mutation (including a due timer tick) owns one SQLite transaction. Bots operate
 on the authoritative server even when their player is offline. A missed clock
 window during downtime closes the lot; no retroactive phantom bids are made.
 """
@@ -11,7 +11,8 @@ import json
 from pathlib import Path
 import secrets
 import time
-from .db_transaction import transaction
+from contextlib import closing
+from .db_transaction import connect, transaction
 from .warehouse import WarehouseStore
 from .wallets import WalletStore
 from .protocol.item_list import ItemRecord,encode_item_list,decode_item_list
@@ -130,8 +131,25 @@ class SCAuctionStore:
             self._event(db,lot['id'],lot['bidder'],'expired',0,now);changed+=1
         return changed
 
+    def _tick_due(self, db, now, replenish):
+        # Conservative hint: automatic lots enter the writer even if no bot is
+        # eligible. Eligibility/random choice stays exclusively in _tick.
+        if db.execute("""SELECT 1 FROM sc_auction_lots WHERE
+                (state='active' AND (ends<=? OR (automatic!=0 AND ends-1<=?)))
+                OR (state='won' AND expires_at<=?) LIMIT 1""",(now,now,now)).fetchone():return True
+        if not replenish:return False
+        live=db.execute("SELECT offer_key,state FROM sc_auction_lots WHERE state IN ('active','won')").fetchall()
+        if len(live)>=self.rules.get('maximum_live_lots',200):return False
+        active={key for key,state in live if state=='active'}
+        return any(offer['key'] not in active for offer in self.rules['offers'])
+
     def tick(self,*,now=None,replenish=True):
         now=int(time.time() if now is None else now)
+        with closing(connect(self.path)) as db, db:
+            db.execute('BEGIN')
+            if not self._tick_due(db,now,replenish):return 0
+        # Both timer actions and replenishment are evaluated again under the
+        # original writer lock; no eligibility, result or deadline is cached.
         with transaction(self.path) as db:
             changed=self._tick(db,now)
             if replenish:

@@ -130,22 +130,6 @@ class MultiServer:
                 raise ValueError('Game account is no longer active')
             exchange.game_authenticated=True
 
-    def initialize_character_economy(self, exchange, owner):
-        """Authentication is allowed before creation; money is not initialized then.
-
-        Native creation grants its wallet in the character transaction. For an
-        existing character a missing wallet is an integrity failure, never a
-        reason to give another starting balance during login or selection.
-        """
-        from tio.db_transaction import transaction
-        from tio.bank_economy import owner as bank_owner
-        with transaction(self.config.database) as db:
-            if not db.execute('SELECT 1 FROM characters WHERE account=?', (owner,)).fetchone():
-                return False
-            bank_owner(db, owner)
-            exchange.shooting_range.admission.assets(owner)
-        return True
-
     def authorize(self, exchange, login):
         with self.login_guard.hash_slot(exchange.login_peer_address,login.login_bytes):
             account = self.accounts.verify(login.login_bytes, login.password_bytes)
@@ -193,7 +177,6 @@ class MultiServer:
                 raise ValueError('Сначала завершите бой другим персонажем этого аккаунта')
             if blocked(self.config.database,owner) or battle_settlement.blocked(self.config.database,owner):
                 raise ValueError('Результат предыдущего боя ещё сохраняется')
-            self.initialize_character_economy(exchange, owner)
             manager=getattr(exchange.arena,'_durable',None)
             if manager is not None and manager.account!=owner:
                 if manager.known or exchange.arena._fields:

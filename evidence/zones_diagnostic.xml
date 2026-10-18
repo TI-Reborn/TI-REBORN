@@ -37,18 +37,23 @@
     <value key="drop" val="false" />
   </town>
   <town id="4" name="Military Outpost">
-    <value key="enabled" val="0" />
+    <value key="enabled" val="1" />
     <value key="type" val="town" />
     <value key="x1" val="225" />
     <value key="y1" val="-437" />
     <value key="x2" val="305" />
     <value key="y2" val="-357" />
     <value key="size" val="80" />
-    <value key="minlevel" val="1" />
+    <value key="minlevel" val="4" />
     <value key="maxlevel" val="20" />
     <value key="drop" val="false" />
     <value key="background" val="loc_outpost" />
-    <value key="privateStore" val="true" />
+    <value key="privateStore" val="false" />
+    <value key="arena" val="true" />
+    <value key="dragin" val="false" />
+    <value key="dragInMaxEnhance" val="0" />
+    <value key="IsTraining" val="false" />
+    <value key="rankBonus" val="0" />
   </town>
   <town id="5" name="New York">
     <value key="enabled" val="1" />
@@ -81,22 +86,28 @@
     <value key="market" val="false" />
     <value key="shop" val="false" />
   </town>
-  <town id="7" name="MO Base">
-    <value key="enabled" val="0" />
+  <town id="7" name="Military Outpost Base">
+    <value key="enabled" val="1" />
     <value key="type" val="base" />
-    <value key="x1" val="175" />
-    <value key="y1" val="-346" />
-    <value key="x2" val="195" />
-    <value key="y2" val="-326" />
+    <value key="x1" val="315" />
+    <value key="y1" val="-410" />
+    <value key="x2" val="335" />
+    <value key="y2" val="-390" />
     <value key="size" val="20" />
-    <value key="minlevel" val="1" />
+    <value key="minlevel" val="4" />
     <value key="maxlevel" val="20" />
     <value key="drop" val="false" />
     <value key="background" val="loc_outpost" />
     <value key="assaultMap" val="assault\mo.xml" />
-    <value key="privateStore" val="true" />
+    <value key="privateStore" val="false" />
     <value key="market" val="false" />
     <value key="shop" val="false" />
+    <value key="arena" val="false" />
+    <value key="dragin" val="false" />
+    <value key="dragInMaxEnhance" val="3" />
+    <value key="IsTraining" val="false" />
+    <value key="rankBonus" val="0" />
+    <value key="mercShop" val="false" />
   </town>
   <town id="8" name="Military Zone">
     <value key="enabled" val="1" />
@@ -128,7 +139,7 @@
     <value key="privateStore" val="false" />
   </town>
   <town id="10" name="Prison">
-    <value key="enabled" val="0" />
+    <value key="enabled" val="1" />
     <value key="type" val="town" />
     <value key="background" val="loc_prison" />
     <value key="x1" val="-330" />
@@ -144,6 +155,10 @@
     <value key="shop" val="false" />
     <value key="market" val="false" />
     <value key="mercShop" val="false" />
+    <value key="dragin" val="false" />
+    <value key="dragInMaxEnhance" val="0" />
+    <value key="IsTraining" val="false" />
+    <value key="rankBonus" val="0" />
   </town>
   <town id="11" name="NY Base">
     <value key="enabled" val="1" />
@@ -267,6 +282,117 @@
     <value key="privateStore" val="false" />
     <value key="market" val="false" />
     <value key="shop" val="false" />
+    <value key="mercShop" val="false" />
+  </town>
+  <town id="18" name="Detroit">
+    <value key="enabled" val="1" />
+    <value key="type" val="town" />
+    <value key="x1" val="-150" />
+    <value key="x2" val="-90" />
+    <value key="y1" val="50" />
+    <value key="y2" val="110" />
+    <value key="size" val="60" />
+    <value key="minlevel" val="4" />
+    <value key="maxlevel" val="20" />
+    <value key="drop" val="false" />
+    <value key="background" val="loc_detroit" />
+    <value key="privateStore" val="false" />
+    <value key="arena" val="true" />
+    <value key="dragin" val="true" />
+    <value key="dragInMaxEnhance" val="25" />
+    <value key="IsTraining" val="false" />
+    <value key="rankBonus" val="10" />
+  </town>
+  <town id="19" name="Training Base 4-6">
+    <value key="enabled" val="1" />
+    <value key="type" val="base4" />
+    <value key="background" val="loc_outpost" />
+    <value key="x1" val="-240" />
+    <value key="y1" val="-320" />
+    <value key="x2" val="-220" />
+    <value key="y2" val="-300" />
+    <value key="size" val="20" />
+    <value key="minlevel" val="4" />
+    <value key="maxlevel" val="6" />
+    <value key="drop" val="false" />
+    <value key="assaultMap" val="assault\mo.xml" />
+    <value key="privateStore" val="false" />
+    <value key="market" val="false" />
+    <value key="shop" val="false" />
+    <value key="arena" val="false" />
+    <value key="dragin" val="true" />
+    <value key="dragInMaxEnhance" val="10" />
+    <value key="IsTraining" val="true" />
+    <value key="rankBonus" val="0" />
+    <value key="mercShop" val="false" />
+  </town>
+  <town id="20" name="Training Base 7-10">
+    <value key="enabled" val="1" />
+    <value key="type" val="base4" />
+    <value key="background" val="loc_outpost" />
+    <value key="x1" val="-240" />
+    <value key="y1" val="-420" />
+    <value key="x2" val="-220" />
+    <value key="y2" val="-400" />
+    <value key="size" val="20" />
+    <value key="minlevel" val="7" />
+    <value key="maxlevel" val="10" />
+    <value key="drop" val="false" />
+    <value key="assaultMap" val="assault\mo.xml" />
+    <value key="privateStore" val="false" />
+    <value key="market" val="false" />
+    <value key="shop" val="false" />
+    <value key="arena" val="false" />
+    <value key="dragin" val="true" />
+    <value key="dragInMaxEnhance" val="15" />
+    <value key="IsTraining" val="true" />
+    <value key="rankBonus" val="0" />
+    <value key="mercShop" val="false" />
+  </town>
+  <town id="21" name="Training Base 11-15">
+    <value key="enabled" val="1" />
+    <value key="type" val="base4" />
+    <value key="x1" val="-245" />
+    <value key="y1" val="-370" />
+    <value key="x2" val="-225" />
+    <value key="y2" val="-350" />
+    <value key="size" val="20" />
+    <value key="minlevel" val="11" />
+    <value key="maxlevel" val="15" />
+    <value key="drop" val="false" />
+    <value key="background" val="loc_forest" />
+    <value key="assaultMap" val="assault\denver.xml" />
+    <value key="privateStore" val="false" />
+    <value key="market" val="false" />
+    <value key="shop" val="false" />
+    <value key="arena" val="false" />
+    <value key="dragin" val="true" />
+    <value key="dragInMaxEnhance" val="20" />
+    <value key="IsTraining" val="true" />
+    <value key="rankBonus" val="0" />
+    <value key="mercShop" val="false" />
+  </town>
+  <town id="22" name="Training Base 16-20">
+    <value key="enabled" val="1" />
+    <value key="type" val="base4" />
+    <value key="background" val="loc_outpost" />
+    <value key="x1" val="110" />
+    <value key="y1" val="-320" />
+    <value key="x2" val="130" />
+    <value key="y2" val="-300" />
+    <value key="size" val="20" />
+    <value key="minlevel" val="16" />
+    <value key="maxlevel" val="20" />
+    <value key="drop" val="false" />
+    <value key="assaultMap" val="assault\mo.xml" />
+    <value key="privateStore" val="false" />
+    <value key="market" val="false" />
+    <value key="shop" val="false" />
+    <value key="arena" val="false" />
+    <value key="dragin" val="true" />
+    <value key="dragInMaxEnhance" val="25" />
+    <value key="IsTraining" val="true" />
+    <value key="rankBonus" val="0" />
     <value key="mercShop" val="false" />
   </town>
 </towns>

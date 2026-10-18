@@ -38,18 +38,23 @@ def command(db,account,text,*,city_idle,now=None):
     if not tokens or tokens[0]!='!base':return None
     now=int(time.time() if now is None else now)
     clan=membership(db,account)
-    if clan is None:raise ClanRejected('Для управления базами нужен клан')
     if not city_idle:raise ClanRejected('Управление базами доступно в городе вне боя и заявок')
     if len(tokens)<=2 and (len(tokens)==1 or tokens[1]=='help'):
         lines=['!base tax BASE PERCENT REVISION; !base time BASE HOUR; !base fund EVENT CREDITS ID',
-            'Часы штурма: 12, 15, 18, 21 UTC. Фонд обороны списывается из сейфа клана.']
-        if benefits.exists(db,'territory_claims'):
+            'Часы штурма: 12, 15, 18, 21 UTC. Взнос в фонд обороны списывается из ваших личных кредитов.',
+            '!base refunds — получить ожидающий возврат неразыгранного фонда.']
+        if clan and benefits.exists(db,'territory_claims'):
             for town,tax,revision in db.execute('SELECT location,tax_percent,revision FROM territory_claims WHERE owner_clan=? ORDER BY location',(clan['id'],)):
                 try:
                     default,options=schedule(db,town,now)
                     date=datetime.fromtimestamp(default,timezone.utc).strftime('%Y-%m-%d')
                     lines.append(f'База {town}: налог {tax}%, ревизия {revision}; следующий день штурма {date} UTC.')
                 except ClanRejected:continue
+        if benefits.exists(db,'warfare_events'):
+            from tio.base_fund_completion import eligible_event
+            for event, in db.execute("SELECT id FROM warfare_events WHERE finalized=0 AND phase='REGISTRATION' ORDER BY starts,town LIMIT 32"):
+                eligible=eligible_event(db,event,now=now)
+                if eligible:lines.append(f"Фонд базы {eligible['town']}: {eligible['held']} кредитов; взнос: !base fund {event} КРЕДИТЫ ID.")
         return tuple(encode_system_message(4,b'Base',line) for line in lines)
     if tokens[1]=='tax' and len(tokens)==5:
         town,tax,revision=number(tokens[2]),number(tokens[3],10),number(tokens[4])
@@ -62,8 +67,13 @@ def command(db,account,text,*,city_idle,now=None):
         line='Штурм назначен на '+datetime.fromtimestamp(result,timezone.utc).strftime('%Y-%m-%d %H:%M UTC')+'.'
     elif tokens[1]=='fund' and len(tokens)==5:
         if REQUEST.fullmatch(tokens[4]) is None:raise ClanRejected('ID операции: 16–64 латинских букв, цифр, _ или -')
-        result=benefits.fund_defense(db,account,tokens[2],number(tokens[3]),tokens[4])
-        line=f"Фонд обороны: {result['escrow']} кредитов."
+        result=benefits.fund_defense(db,account,tokens[2],number(tokens[3]),tokens[4],now=now)
+        source='из личных кредитов' if result.get('payer')=='player_credits' else 'из кланового сейфа по прежней квитанции'
+        line=f"Взнос в фонд обороны: {result['escrow']} кредитов {source}."
+    elif tokens[1]=='refunds' and len(tokens)==2:
+        from tio.base_fund_completion import claim_refunds
+        result=claim_refunds(db,account)
+        line=f"Возврат личных взносов: {result['credited']} кредитов. Ожидает места в кошельке: {result['pending']} кредитов."
     else:raise ClanRejected('Неверная команда управления базой; !base help')
     return (encode_system_message(4,b'Base',line),)
 

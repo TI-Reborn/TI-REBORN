@@ -232,7 +232,10 @@ class Presence:
             packets=tuple(self.queues.get(session,()))+tuple(self.messages.get(session,()))
             if session in self.queues:self.queues[session].clear()
             if session in self.messages:self.messages[session].clear()
-        for packet in packets:connection.sendall(encode_initial_frame(packet,cipher))
+        from .warehouse_capacity import frames as capacity_frames
+        for packet in packets:
+            frame=capacity_frames(session,packet,cipher)
+            connection.sendall(encode_initial_frame(packet,cipher) if frame is None else frame)
 
     def disconnect(self,session):
         from .world_runtime import heartbeat

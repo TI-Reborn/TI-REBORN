@@ -9,6 +9,8 @@ from contextvars import ContextVar
 from pathlib import Path
 import itertools
 import sqlite3
+import time
+from .performance import observe
 
 _current=ContextVar('tio_gameplay_transaction',default=None)
 _numbers=itertools.count()
@@ -55,9 +57,12 @@ def transaction(path):
         yield active[1];return
     db=sqlite3.connect(path)
     token=None
+    started=time.perf_counter()
     try:
         db.execute('PRAGMA synchronous=FULL')
+        waiting=time.perf_counter()
         db.execute('BEGIN IMMEDIATE')
+        observe('sql.begin_wait',time.perf_counter()-waiting)
         token=_current.set((identity,db))
         yield db
         db.commit()
@@ -66,6 +71,7 @@ def transaction(path):
     finally:
         if token is not None:_current.reset(token)
         db.close()
+        observe('sql.transaction',time.perf_counter()-started)
 
 
 def current():

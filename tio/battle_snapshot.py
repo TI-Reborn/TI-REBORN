@@ -17,6 +17,7 @@ import random
 import threading
 import time
 from types import MappingProxyType
+from .performance import timed
 
 VERSION=1
 MAX_BYTES=8*1024*1024
@@ -56,13 +57,23 @@ def rules_digest():
     return h.hexdigest()
 
 
+@timed('checkpoint.encode')
 def dumps(value,*,clock=time.monotonic,wall=time.time):
     nodes=[];seen={};allowed=registry()
     def encode(v):
-        if v is None or type(v) in (bool,int,str):return v
-        if type(v) is float:
+        kind=type(v)
+        if v is None or kind in (bool,int,str):return v
+        if kind is float:
             if not math.isfinite(v):raise ValueError('Nonfinite battle state')
             return v
+        # Most graph entries are plain containers. Avoid ABC instance checks
+        # for each of their elements; retain the original path for subclasses.
+        if kind is bytes:return {'b':v.hex()}
+        if kind is dict:return {'d':[[encode(k),encode(x)] for k,x in v.items()]}
+        if kind is tuple:return {'t':[encode(x) for x in v]}
+        if kind is list:return {'l':[encode(x) for x in v]}
+        if kind in (set,frozenset):return {'s' if kind is set else 'z':[encode(x) for x in sorted(v,key=repr)]}
+        if kind is deque:return {'q':[encode(x) for x in v]}
         if isinstance(v,bytes):return {'b':v.hex()}
         if isinstance(v,Path):return {'p':str(v)}
         if isinstance(v,Fraction):return {'f':[v.numerator,v.denominator]}

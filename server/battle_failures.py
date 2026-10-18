@@ -62,8 +62,7 @@ class BattleFailures:
 
     def retry_quarantined(self,battle):
         if battle.get('kind') == 'contract':
-            # Retain the committed checkpoint and recovery fence. Ordinary
-            # PvP fallback must not invent a terminal contract receipt.
+            # A generic PvP recovery must not invent a terminal contract receipt.
             return
         if self.clock()<battle.get('fault_retry',0):return
         battle['fault_retry']=self.clock()+5

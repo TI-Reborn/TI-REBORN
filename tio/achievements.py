@@ -6,6 +6,7 @@ pending; it never drops them or prevents credit/other prize delivery.
 """
 
 from .db_transaction import connect
+from . import warehouse_completion as completion
 from contextlib import closing
 from functools import lru_cache
 from pathlib import Path
@@ -158,10 +159,15 @@ class AchievementStore:
     def handle(self,account,packet,character_name):
         mode,name=decode_request(packet)
         if isinstance(character_name,bytes):character_name=character_name.decode('cp1251')
-        if mode!=0 or name!=character_name:
-            raise ValueError('Достижения этого персонажа недоступны')
+        if mode!=0:raise ValueError('Недоступный раздел достижений')
         with closing(connect(self.path)) as db,db:
             db.execute('BEGIN IMMEDIATE')
+            own=db.execute('SELECT name FROM characters WHERE account=? ORDER BY slot LIMIT 1',(account,)).fetchone() if completion.exists(db,'characters') else None
+            canonical_name=own[0].decode('cp1251') if own else character_name
+            if name.casefold()!=canonical_name.casefold():
+                from .social_completion import public_achievements
+                target,rows=public_achievements(db,name,account,catalog=catalog())
+                return encode_list(mode,target,rows,private=False)
             snapshots(db,account)
             counters=dict(db.execute('SELECT metric,value FROM achievement_counters WHERE account=?',(account,)))
             earned={i:json.loads(body) for i,body in db.execute('SELECT id,body FROM achievement_awards WHERE account=?',(account,))}
@@ -169,7 +175,7 @@ class AchievementStore:
             for current in catalog():
                 r=earned.get(current['id'],current)
                 rows.append({**r,'earned':int(r['id'] in earned),'counter':min(counters.get(r['metric'],0),r['goal'])})
-            return encode_list(mode,name,rows)
+            return encode_list(mode,canonical_name,rows)
 
     def flush(self,account):
         """Only called out of battle. Serialize before committing delivery flags."""
@@ -181,16 +187,20 @@ class AchievementStore:
         replies=[]
         with closing(connect(self.path)) as db,db:
             db.execute('BEGIN IMMEDIATE')
-            from .warehouse_completion import current_town
-            # Reconnect and map polling must leave awards pending outside cities.
-            if current_town(db, account, required=False) is None:
+            # Automatic delivery also runs after reconnect and map arrivals.
+            # Non-city locations have no warehouse; keep every receipt pending
+            # until the owner reaches a city, on this same authoritative unit.
+            if completion.current_town(db, account, required=False) is None:
                 return ()
             snapshots(db,account)
             awards=[(json.loads(body),notified) for body,notified in db.execute(
                 'SELECT body,notified FROM achievement_awards WHERE account=? ORDER BY id',(account,))]
             pending={(i,p) for i,p in db.execute('SELECT id,position FROM achievement_prizes WHERE account=? AND delivered=0',(account,))}
             if not awards or (not pending and all(notified for _,notified in awards)):return ()
-            warehouse=WarehouseStore._read(db,account);seen=set(warehouse)
+            warehouse_all=WarehouseStore._read(db,account);seen=set(warehouse_all)
+            warehouse=completion.read_scope(db,account,warehouse_all,required=True)
+            warehouse_before=dict(warehouse)
+            assignments={}
             for inv, in db.execute('SELECT inventory_packet FROM owned_pets WHERE account=?',(account,)):
                 for item in decode_item_list(inv)[1]:
                     if item.instance_id in seen:raise ValueError('Duplicate item identity')
@@ -214,9 +224,9 @@ class AchievementStore:
                                               bytes((level,0,0,0)),None,bytes((level,0,int(definition.get('special','0')=='1'))))
                                    for j in range(p['count'])]
                         if next_id+p['count']>0xffffffff:continue
-                        merged=merge_stacks((*warehouse.values(),*additions))
-                        from .services import power
-                        if len(merged)>self.capacity+power(db,account,1):continue
+                        try:merged,new_assignments=completion.merge_scope(db,account,(*warehouse.values(),*additions),warehouse_before,origin='achievement:'+str(row['id']),limit=self.capacity)
+                        except ValueError:continue
+                        assignments.update(new_assignments)
                         warehouse={i.instance_id:i for i in merged};next_id+=p['count'];changed=True
                     elif type(p['kind']) is int and p['kind'] in (1,3):
                         # Earned snapshot already drives read-only bonus APIs.
@@ -233,8 +243,7 @@ class AchievementStore:
                 db.executemany('UPDATE achievement_awards SET notified=1 WHERE account=? AND id=?',[(account,r['id']) for r in notifications])
             if changed:
                 replies.extend(encode_private_warehouse_snapshot(warehouse.values()))
-                db.execute('DELETE FROM warehouse_items WHERE account=?',(account,))
-                db.executemany('INSERT INTO warehouse_items VALUES (?,?,?)',[(account,i.instance_id,encode_item_list(0,(i,))) for i in warehouse.values()])
+                completion.persist_scope(db,account,warehouse_before,warehouse.values(),assignments)
                 db.execute('INSERT INTO item_sequences VALUES (?,?) ON CONFLICT(account) DO UPDATE SET next_id=excluded.next_id',(account,next_id))
             if credits:
                 db.execute('UPDATE wallets SET credits=credits+? WHERE account=?',(credits,account))

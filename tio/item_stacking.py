@@ -82,7 +82,8 @@ def compact_saved_items(path, account):
             merged = merge_stacks(items)
             if merged != items:
                 updates.append((owner, packet, encode_item_list(owner, merged, flag)))
-        merged_warehouse = merge_stacks(warehouse.values())
+        from .warehouse_completion import compact_all
+        merged_warehouse = compact_all(db, account, warehouse.values())
         changed_warehouse = merged_warehouse != tuple(warehouse.values())
         if not updates and not changed_warehouse:
             return {'inventories': 0, 'warehouse': False}
@@ -100,9 +101,8 @@ def compact_saved_items(path, account):
             for identity, item in warehouse.items():
                 db.execute('INSERT INTO item_stack_backups(account,location,owner_id,packet) VALUES (?,?,?,?)',
                            (account, 'warehouse', identity, encode_item_list(0, (item,))))
-            db.execute('DELETE FROM warehouse_items WHERE account=?', (account,))
-            db.executemany('INSERT INTO warehouse_items VALUES (?,?,?)',
-                           ((account, i.instance_id, encode_item_list(0, (i,))) for i in merged_warehouse))
+            from .warehouse_completion import persist_scope
+            persist_scope(db,account,warehouse,merged_warehouse,{})
         db.execute('INSERT INTO item_sequences VALUES (?,?) ON CONFLICT(account) '
                    'DO UPDATE SET next_id=MAX(next_id,excluded.next_id)', (account, max(seen, default=0)+1))
         return {'inventories': len(updates), 'warehouse': changed_warehouse}

@@ -23,19 +23,26 @@ class PartyTravel:
                 arrives REAL NOT NULL, nonce TEXT NOT NULL,
                 town_id INTEGER, instance_id TEXT)''')
 
-    def route(self, party_id):
+    def route(self, party_id, connection=None):
+        if connection is not None:
+            return connection.execute('SELECT x,y,tx,ty,started,arrives,nonce,town_id,instance_id '
+                                      'FROM travel_party_journeys WHERE party_id=?', (party_id,)).fetchone()
         with closing(connect(self.path)) as db:
-            return db.execute('SELECT x,y,tx,ty,started,arrives,nonce,town_id,instance_id '
-                              'FROM travel_party_journeys WHERE party_id=?', (party_id,)).fetchone()
+            return self.route(party_id, connection=db)
 
-    def point(self, owner):
-        party = self.parties.info(owner)
-        route = self.route(party['id']) if party else None
+    def _point(self, db, owner, party):
+        route = self.route(party['id'], connection=db) if party else None
         if not route:
-            return self.locations.position(owner), None
+            point,_ = LocationStore._position(db,owner,self.clock())
+            return tuple(round(v) for v in point), None
         x, y, tx, ty, started, arrives = route[:6]
         fraction = min(1, max(0, (self.clock()-started)/(arrives-started)))
         return (x+(tx-x)*fraction, y+(ty-y)*fraction), route
+
+    def point(self, owner):
+        with closing(connect(self.path)) as db, db:
+            db.execute('BEGIN')
+            return self._point(db,owner,self.parties.info(owner,connection=db))
 
     def travel(self, owner, packet, *, busy=False):
         if len(packet) != 9 or packet[0] != 0x1b:
@@ -44,7 +51,7 @@ class PartyTravel:
         if not (-512 <= x <= 511 and -512 <= y <= 511):
             raise ValueError('Цель находится за пределами карты')
         with transaction(self.path) as db:
-            party = self.parties.info(owner)
+            party = self.parties.info(owner, connection=db)
             if not party or party['leader'] != owner:
                 raise ValueError('Маршрутом группы управляет лидер')
             if busy or party['state'] not in ('city', 'travelling', 'at_target'):
@@ -63,7 +70,7 @@ class PartyTravel:
                 x, y = (bounds[0]+bounds[2])//2, (bounds[1]+bounds[3])//2
             elif town is not None:
                 x, y = center(town)
-            (sx, sy), _ = self.point(owner)
+            (sx, sy), _ = self._point(db,owner,party)
             now = self.clock(); duration = math.hypot(x-sx, y-sy)/MAP_SPEED
             # No independently writable map_journeys projection: group route
             # is the sole source of truth, including on process restart.
@@ -80,8 +87,8 @@ class PartyTravel:
 
     def arrive(self, owner):
         with transaction(self.path) as db:
-            party = self.parties.info(owner)
-            route = self.route(party['id']) if party else None
+            party = self.parties.info(owner, connection=db)
+            route = self.route(party['id'], connection=db) if party else None
             if not route or self.clock() < route[5]:
                 return False
             x, y, town, instance = route[2], route[3], route[7], route[8]
@@ -109,24 +116,37 @@ class PartyLocations:
     _save = staticmethod(LocationStore._save)
 
     def current(self, owner):
-        party = self.travel_service.parties.info(owner)
-        return None if party and party['state'] != 'city' else self.base.current(owner)
+        with closing(connect(self.path)) as db, db:
+            db.execute('BEGIN')
+            party = self.travel_service.parties.info(owner,connection=db)
+            return None if party and party['state'] != 'city' else self.base.current(owner,connection=db)
 
     def position(self, owner):
         return tuple(round(v) for v in self.travel_service.point(owner)[0])
 
     def travelling(self, owner):
-        party = self.travel_service.parties.info(owner)
-        return bool(self.travel_service.route(party['id'])) if party else self.base.travelling(owner)
+        with closing(connect(self.path)) as db, db:
+            db.execute('BEGIN')
+            party = self.travel_service.parties.info(owner,connection=db)
+            return bool(self.travel_service.route(party['id'],connection=db)) if party else self.base.travelling(owner,connection=db)
+
+    def _view(self, owner):
+        """One read snapshot for a single response; never retained between calls."""
+        with closing(connect(self.path)) as db, db:
+            db.execute('BEGIN')
+            party = self.travel_service.parties.info(owner,connection=db)
+            if not party:return None,None,None,None
+            point,route = self.travel_service._point(db,owner,party)
+            town = self.base.current(owner,connection=db) if party['state']=='city' else None
+            return party,point,route,town
 
     def resume(self, owner, character_id):
-        if not self.travel_service.parties.info(owner):
+        party,point,route,town = self._view(owner)
+        if not party:
             return self.base.resume(owner, character_id)
-        if self.current(owner) is not None:
+        if town is not None:
             return ()
-        point, route = self.travel_service.point(owner)
         x, y = map(round, point)
-        party = self.travel_service.parties.info(owner)
         self._sent[owner] = (x, y, party['state'], route[6] if route else None)
         return (leave_town_packet(), encode_open_map_view(),
                 movement_packet(character_id, x, y, destination=route[2:4])
@@ -139,13 +159,15 @@ class PartyLocations:
         return self.refresh(owner, character_id)
 
     def refresh(self, owner, character_id):
-        party = self.travel_service.parties.info(owner)
+        party,point,route,town = self._view(owner)
+        # The read is only a due hint. Arrival rechecks the route and members
+        # inside its writer transaction, then the response reads fresh state.
+        if route and self.clock()>=route[5]:
+            self.travel_service.arrive(owner)
+            party,point,route,town = self._view(owner)
         if not party:
             self._sent.pop(owner, None)
             return self.base.refresh(owner, character_id)
-        self.travel_service.arrive(owner)
-        party = self.travel_service.parties.info(owner)
-        point, route = self.travel_service.point(owner)
         x, y = map(round, point)
         signature = (x, y, party['state'], route[6] if route else None)
         previous = self._sent.get(owner); self._sent[owner] = signature
@@ -155,7 +177,6 @@ class PartyLocations:
             leaving = previous is None or previous[2] == 'city'
             return (*((leave_town_packet(), encode_open_map_view()) if leaving else ()),
                     movement_packet(character_id, x, y, destination=route[2:4]))
-        town = self.current(owner)
         arrival = town_packets(town, self.path, clock=self.clock) if town is not None else ()
         if arrival:
             # Restore the native character/chat state before the original
