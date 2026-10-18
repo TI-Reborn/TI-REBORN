@@ -14,7 +14,7 @@ from tio.visibility import VisibilityView
 from tools.survival_scene import prepare_survival, PreparedSurvival
 
 
-def prepare_range(path, account, ticket, catalog, *, clock):
+def prepare_range(path, account, ticket, catalog):
     layout=json.loads((Path(__file__).resolve().parents[1]/'config/shooting_range_map.json').read_text())
     w,h=layout['width'],layout['height']
     blocked=frozenset((i%w,i//w) for i,t in enumerate(layout['tiles']) if t in (2,3,4))
@@ -60,7 +60,7 @@ def prepare_range(path, account, ticket, catalog, *, clock):
     from tio.battle_loot import BattleLoot
     field.doors=BattleDoors(field,(),{})
     field.loot=BattleLoot(combat,(),level=max(ticket.levels))
-    field.practice=Practice(field,owner,target_ids,clock)
+    field.practice=Practice(field,owner,target_ids)
     field.scene_metadata=dict(profile='shooting_range',resource='shootingrange',width=w,height=h,targets=len(targets),mode=16)
     view=VisibilityView(field,owner,templates)
     skills=tuple(p for p in base.packets if p[:1]==b'\x80')

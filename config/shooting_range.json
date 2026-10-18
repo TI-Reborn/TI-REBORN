@@ -1,11 +1,9 @@
 {
   "source": "Original silver.dll mode16, m593/m596-m599, mobs.udf target10 and shootingrange.s; manual pp10,13",
-  "policy_note": "Local provisional tariffs/session length/target HP; historical server balance not recovered. Skill gain uses existing configurable weapon_proficiency.json. UTC daily reset is local policy.",
+  "policy_note": "Local provisional tariffs/target HP; practice lasts until every target is destroyed or the player leaves; historical server balance not recovered. Skill gain uses existing configurable weapon_proficiency.json. UTC daily reset is local policy.",
   "credits_price": 1000,
   "gold_price": 10,
   "credit_visits_per_day": 4,
-  "max_turns": 20,
-  "session_seconds": 1800,
   "target_health": 200,
   "player_spawns": [[21,31],[23,31],[25,31]],
   "targets": [[20,25],[23,25],[26,25],[20,21],[23,21],[26,21],[20,16],[23,16],[26,16]]

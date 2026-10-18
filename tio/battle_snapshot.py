@@ -135,7 +135,6 @@ def loads(text,*,clock=time.monotonic,wall=time.time,rebase=True):
         elif name=='ArenaService':
             value._clock=clock
             if rebase:value._turns={i:(o,ids,end+shift) for i,(o,ids,end) in value._turns.items()}
-        elif name=='Practice':value.clock=wall
         elif name=='BattleField':
             if not 1<=value.width<=255 or not 1<=value.height<=255:raise ValueError('Invalid restored battlefield')
             if any(i!=a.actor_id or not value.inside(a.x,a.y) for i,a in value._actors.items()):raise ValueError('Invalid restored actors')

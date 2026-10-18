@@ -179,15 +179,16 @@ class PrivateCrashRecoveryTests(unittest.TestCase):
         with closing(sqlite3.connect(c.path)) as db:self.assertEqual(db.execute('SELECT count(*) FROM range_visits').fetchone()[0],0)
         self.assertFalse(c.arena._fields);self.assertFalse(checkpoints.read(c.path))
 
-    def test_range_restarts_with_paid_visit_and_original_timer(self):
+    def test_range_restarts_with_paid_visit_and_live_targets(self):
         c=range_fixture.RangeTests();c.setUp();self.addCleanup(c.doCleanups)
         s=SimpleNamespace(probe_character_id=42,probe_character_name=b'Alice')
         PrivateJournal(c.arena,c.path,'alice',session=s,wall=lambda:c.now[0]);c.start(payment=1)
-        deadline=c.field.practice.deadline;balance=c.service.admission.assets('alice').credits
+        balance=c.service.admission.assets('alice').credits
         c.now[0]+=5;hub=TeamArena(clock=lambda:c.now[0]);hub.journal=BattleJournal(hub,c.path,wall=lambda:c.now[0]);hub.journal.recover()
         restored=hub.private['alice'][0].arena._fields[c.room.room_id]
-        self.assertEqual(restored.practice.deadline,deadline);self.assertEqual(c.service.admission.assets('alice').credits,balance)
+        self.assertEqual(c.service.admission.assets('alice').credits,balance)
         self.assertEqual(restored.practice.targets,c.field.practice.targets)
+        self.assertIs(restored.practice.field,restored);self.assertFalse(restored.practice.complete())
 
     def test_mining_layout_deposits_temporary_items_and_monsters_restore(self):
         c=mine_fixture.MiningTests();c.setUp();self.addCleanup(c.doCleanups)

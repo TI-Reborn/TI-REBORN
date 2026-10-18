@@ -152,7 +152,9 @@ class RangeTests(unittest.TestCase):
         self.assertFalse(combat.rank_kills)
         self.assertLess(self.field.actor(target.actor_id).health,target.health)
         money=WalletStore(self.path).ensure('alice')
-        self.now[0]+=POLICY['session_seconds']+1
+        self.assertEqual(self.arena.finish_training(42,self.path,'alice'),())
+        for identity in self.field.practice.targets:
+            self.field._actors[identity]=replace(self.field.actor(identity),health=0)
         result=self.arena.finish_training(42,self.path,'alice')
         self.assertEqual(result[-1][0],0x4c)
         self.assertEqual(WalletStore(self.path).ensure('alice').credits,money.credits)
@@ -160,6 +162,32 @@ class RangeTests(unittest.TestCase):
         with closing(sqlite3.connect(self.path)) as db:
             self.assertIsNone(db.execute("SELECT name FROM sqlite_master WHERE name='battle_rewards'").fetchone())
         self.assertIn(SHOOTING_RANGE.to_bytes(4,'little'),self.arena.finish_results(42,b'\x2a\1')[1])
+
+    def test_practice_lasts_until_last_target_is_destroyed(self):
+        self.start();combat=self.field.combat
+        class Fixed:
+            def randrange(self,n):return 0
+            def randint(self,a,b):return a
+        combat.rng=Fixed()
+        # Many quick turns and hours of wall time must not end the practice.
+        for _ in range(40):
+            self.arena.end_turn(42,b'\x3a'+self.identity.to_bytes(4,'little'))
+            self.assertEqual(self.arena.finish_training(42,self.path,'alice'),())
+            self.arena.advance_turn(self.room.room_id,60)
+        self.now[0]+=2*3600
+        self.assertTrue(self.arena.expire_turns())
+        self.assertEqual(self.arena.finish_training(42,self.path,'alice'),())
+        self.arena.advance_turn(self.room.room_id,60)
+        last=self.field.actor(min(self.field.practice.targets))
+        for identity in self.field.practice.targets-{last.actor_id}:
+            self.field._actors[identity]=replace(self.field.actor(identity),health=0)
+        self.field._actors[last.actor_id]=replace(last,health=1)
+        self.assertEqual(self.arena.finish_training(42,self.path,'alice'),())
+        self.field._actors[self.identity]=replace(self.field.actor(self.identity),x=20,y=26)
+        self.scene.visibility.refresh()
+        self.arena.attack(42,encode_attack_request(AttackRequest(self.identity,last.x,last.y)),view=self.scene.visibility)
+        self.assertEqual(self.field.actor(last.actor_id).health,0)
+        self.assertEqual(self.arena.finish_training(42,self.path,'alice')[-1][0],0x4c)
 
     def test_targets_never_take_turns_and_exit_has_no_penalty(self):
         self.start()

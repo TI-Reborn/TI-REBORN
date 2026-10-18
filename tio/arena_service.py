@@ -120,10 +120,7 @@ class ArenaService:
         field=self._fields[room.room_id]
         practice=getattr(field,'practice',None)
         if practice is not None:
-            from .shooting_range import POLICY
-            last_round=(room.room_id in self._last_turn and room.room_id not in self._turns and
-                        max(field._ability_turns[i] for i in field.actor_ids(character_id))>=POLICY['max_turns'])
-            if not practice.complete() and not last_round:return ()
+            if not practice.complete():return ()
             from .protocol.battle_over import SoldierExperience,encode_battle_over
             from .protocol.pet_info import decode_pet_info
             from .weapon_proficiency import SAVED,BASE

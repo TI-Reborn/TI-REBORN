@@ -93,17 +93,16 @@ class AdmissionStore:
 
 
 class Practice:
-    def __init__(self, field, owner, targets, clock):
-        self.owner, self.targets, self.clock = owner, frozenset(targets), clock
-        self.deadline = clock()+POLICY['session_seconds']
+    def __init__(self, field, owner, targets):
+        self.owner, self.targets = owner, frozenset(targets)
         self.field = field
 
     def complete(self):
+        # No turn or time cap: practice runs until every target is destroyed.
+        # The player can leave at any moment without a penalty.
         field = self.field
-        return (self.clock() >= self.deadline or
-                not any(field.actor(i).health>0 for i in self.targets) or
-                not field.living_actor_ids(self.owner) or
-                max((field._ability_turns[i] for i in field.actor_ids(self.owner)), default=0)>POLICY['max_turns'])
+        return (not any(field.actor(i).health>0 for i in self.targets) or
+                not field.living_actor_ids(self.owner))
 
     def validate_attack(self, victims):
         if self.complete():raise ValueError('Practice is over')
@@ -158,7 +157,7 @@ class ShootingRangeService:
         from tools.shooting_range_scene import prepare_range
         source = json.loads((Path(__file__).resolve().parents[1]/'config/abilities.json').read_text())
         catalog = AbilityCatalog(AbilityLevel(r['id'],r['level'],r['fields']) for r in source['records'])
-        prepared = prepare_range(self.path,account,ticket,catalog,clock=self.clock)
+        prepared = prepare_range(self.path,account,ticket,catalog)
         visit = str(uuid4())
         # Preparation/serialization precedes payment. No fallible scene work follows payment.
         self.admission.pay(account,selection,visit)
