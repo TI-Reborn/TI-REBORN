@@ -40,6 +40,14 @@ class RankedArena:
                 with closing(connect(s.database)) as db,db:tokens=packets(db,s.account)
                 self.put(owner,*gears,self.ranked_info(owner),*tokens);return True
             if packet==b'\xc6\x23':
+                from .ranked_party import party,cancel,notify
+                group=party(self,owner)
+                if group is not None and owner not in self.battles and owner not in self.results:
+                    if any(o in self.ranked_waiting for o in group.members):
+                        cancel(self,group);notify(self,group)
+                    elif owner in group.tickets:
+                        group.tickets.pop(owner,None);notify(self,group)
+                    return True
                 # A close can race the final matchmaking step. Never turn a
                 # late search cancellation into a forfeit or clear combat UI.
                 if owner in self.battles or owner in self.results:return True
@@ -82,13 +90,18 @@ class RankedArena:
                 if pet['0x8c4ab1']!=pet['0x8c4a07']:raise ValueError('Перед рейтинговым боем полностью вылечите бойца')
                 actors.append(identity);levels.append(level)
             ticket=RankedTicket(owner,tuple(actors),tuple(levels),self.clock(),selections=pets,flags=flags)
+            from .ranked_party import submit
+            if submit(self,owner,ticket):return True
             prior=self.ranked_waiting.get(owner)
             if prior and (prior.actors,prior.levels,prior.selections,prior.flags)!=(ticket.actors,ticket.levels,ticket.selections,ticket.flags):raise ValueError('Сначала отмените прежний поиск')
             self.ranked_waiting.setdefault(owner,ticket)
             self.put(owner,self.ranked_info(owner))
             self.match_ranked(owner)
         except ValueError as error:
-            self.ranked_waiting.pop(owner,None)
+            from .ranked_party import party,cancel,notify
+            group=party(self,owner)
+            if group is not None:cancel(self,group);notify(self,group)
+            else:self.ranked_waiting.pop(owner,None)
             self.put(owner,encode_shop_error(str(error)[:180]),b'\xc6\x06')
         return True
 
@@ -109,8 +122,15 @@ class RankedArena:
             if root in roots:continue
             roots.add(root);candidates.append(t)
             if len(candidates)==32:break
+        from .ranked_party import units
+        candidates=units(self,candidates)
         # Prefer the closest current rating, then queue age.
-        score=lambda t:ranked.skill(*ranked.snapshot(self.players[t.character_id].database,self.players[t.character_id].account))
+        scores={}
+        def score(t):
+            if t.character_id not in scores:
+                s=self.players[t.character_id]
+                scores[t.character_id]=ranked.skill(*ranked.snapshot(s.database,s.account))
+            return scores[t.character_id]
         # Bounded subset DP: complete 4+4 groups may contain different numbers
         # of real accounts (4 vs 2+2, 3+1 vs 1+1+2, etc.). Never split a squad.
         states={(0,0):((),())}
@@ -123,11 +143,10 @@ class RankedArena:
                     states.setdefault(key,new)
         groups=states.get((4,4))
         if groups is None:
-            # Explicit low-population policy: retain balanced smaller duels.
-            peers=[t for t in candidates if t.character_id!=owner and authenticated(t.character_id)!=authenticated(owner) and len(t.actors)==len(first.actors)]
-            if not peers:return
-            other=min(peers,key=lambda t:(abs(score(t)-score(first)),t.joined_at,t.character_id))
-            pair=sorted((first,other),key=lambda t:(t.joined_at,t.character_id));groups=((pair[0],),(pair[1],))
+            from .ranked_bots import incomplete_groups
+            groups=incomplete_groups(states,score)
+            if groups is None:return
+        groups=tuple(tuple(t for unit in group for t in getattr(unit,'members',(unit,))) for group in groups)
         tickets=tuple(t for group in groups for t in group)
         seats=[];teams=[]
         for side,group in enumerate(groups):
@@ -136,8 +155,11 @@ class RankedArena:
                 s=self.players[t.character_id]
                 if s.locations.current(s.account) not in RANKED_TOWNS:raise ValueError('Игрок покинул рейтинговый город')
                 seats.append((t.character_id,side,s.database,s.account,t,False));teams[-1].append(t.character_id)
-        proposal=SimpleNamespace(mode=21,soldiers=sum(len(t.actors) for t in groups[0]),band=min(level_band(l) for t in tickets for l in t.levels),captain=tickets[0].character_id)
-        self.start_match(proposal,seats,teams,set(),lambda:[self.ranked_waiting.pop(t.character_id,None) for t in tickets])
+        from .ranked_bots import fill_seats
+        bots=fill_seats(self,seats,teams)
+        proposal=SimpleNamespace(mode=21,soldiers=4 if bots else sum(len(t.actors) for t in groups[0]),band=min(level_band(l) for t in tickets for l in t.levels),captain=tickets[0].character_id)
+        from .ranked_party import consumed
+        self.start_match(proposal,seats,teams,bots,lambda:consumed(self,tickets))
 
     def ranked_packets(self,battle,owner,*,scene=False):
         points=battle.get('points')
@@ -150,7 +172,7 @@ class RankedArena:
         for owner in battle['humans']:self.put(owner,*self.ranked_packets(battle,owner))
 
     def ranked_report(self,battle):
-        if 'ranked_winner' not in battle:return None
+        if battle.get('bots') or 'ranked_winner' not in battle:return None
         result=dict(winner=None if battle['ranked_winner']==2 else battle['ranked_winner'],teams=battle['ranked_teams'])
         if battle.get('ranked_forfeits'):result['forfeits']=sorted(battle['ranked_forfeits'])
         return result

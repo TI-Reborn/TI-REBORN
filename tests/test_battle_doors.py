@@ -55,7 +55,7 @@ class DoorTests(unittest.TestCase):
             with self.assertRaises(ValueError):self.doors.change(owner,req)
             self.assertEqual(self.field.actor(1),before)
             self.assertFalse(self.doors.states[(3,3)])
-        for change in ({'action_points':0},{'health':0},{'x':0},{'x':2,'y':2}):
+        for change in ({'action_points':0},{'health':0},{'x':0},{'x':1,'y':2}):
             self.field._actors[1]=replace(before,**change)
             with self.assertRaises(ValueError):self.doors.change(7,self.open)
             self.assertFalse(self.doors.states[(3,3)])
@@ -69,6 +69,56 @@ class DoorTests(unittest.TestCase):
         with self.assertRaises(ValueError):self.doors.change(7,replace(self.open,opened=False))
         self.assertEqual(self.field.actor(1),before)
         self.assertTrue(self.doors.states[(3,3)])
+
+    def test_all_eight_neighbors_operate_door_despite_wall_corners(self):
+        for dx,dy in ((x,y) for x in (-1,0,1) for y in (-1,0,1) if x or y):
+            for corners in ((),((3+dx,3),),((3,3+dy),),((3+dx,3),(3,3+dy))):
+                with self.subTest(offset=(dx,dy),corners=corners):
+                    walls=set(corners)-{(3,3),(3+dx,3+dy)}
+                    field=BattleField(8,8,[BattleActor(1,7,3+dx,3+dy,10,100,100)],blocked=walls,step_cost=1)
+                    doors=BattleDoors(field,((3,3,False),),{1:{True,False}})
+                    for opened in (True,True,False):
+                        replies=doors.change(7,replace(self.open,opened=opened))
+                        self.assertEqual(replies[0],encode_door_state(replace(self.open,opened=opened)))
+                        self.assertEqual(doors.states[(3,3)],opened)
+                        self.assertEqual(field.blocked,frozenset(walls)|({(3,3)} if not opened else set()))
+                    self.assertEqual(field.actor(1).action_points,8)
+
+    def test_diagonal_surface_updates_do_not_reveal_enemy_or_allow_corner_movement(self):
+        self.field._actors[1]=replace(self.field.actor(1),x=2,y=2)
+        self.field._actors[2]=replace(self.field.actor(2),x=4,y=2)
+        self.assertNotIn(2,visible_actors(self.field,7))
+        self.assertEqual(self.doors.visible_updates(7,{}),
+                         (encode_door_state(replace(self.open,actor_id=0,opened=False)),))
+        self.doors.change(7,self.open)
+        self.assertNotIn(2,visible_actors(self.field,7))
+        before=self.field.actor(1)
+        with self.assertRaises(ValueError):self.field.move(7,BattleMove(1,((3,3),)))
+        self.assertEqual(self.field.actor(1),before)
+        self.doors.change(7,replace(self.open,opened=False))
+
+    def test_generated_combat_profiles_use_same_diagonal_door_rule(self):
+        import json
+        from pathlib import Path
+        from tio.map_generation import generate_map
+        profiles=json.loads((Path(__file__).resolve().parents[1]/'config/battle_map_profiles.json').read_text())['profiles']
+        checked=0
+        for profile,policy in profiles.items():
+            for variant in policy['variants']:
+                for mode in (0,1,4,7):
+                    arena=generate_map(profile,mode=mode,variant=variant['name'],seed=19).arena
+                    for x,y,initial_opened in arena.doors:
+                        for dx,dy in ((-1,-1),(-1,1),(1,-1),(1,1)):
+                            p=x+dx,y+dy
+                            if p in arena.blocked or not (0<=p[0]<arena.ground.width and 0<=p[1]<arena.ground.height):continue
+                            with self.subTest(profile=profile,variant=variant['name'],mode=mode,door=(x,y),actor=p):
+                                field=BattleField(arena.ground.width,arena.ground.height,
+                                    [BattleActor(1,7,*p,10,100,100)],blocked=arena.blocked,step_cost=1)
+                                doors=BattleDoors(field,arena.doors,{1:{True,False}})
+                                for opened in (True,False):doors.change(7,DoorRequest(1,opened,x,y))
+                                self.assertEqual(field.actor(1).action_points,9 if initial_opened else 8)
+                                checked+=1
+        self.assertGreater(checked,0)
 
     def test_hidden_changes_are_sent_when_seen_without_actor_identity(self):
         remembered=dict(self.doors.states)

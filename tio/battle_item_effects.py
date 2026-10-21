@@ -243,7 +243,8 @@ def can_observe(combat, observer, target, *, field=None):
         source = field._actors.get(recon['source'])
         if source is None or not source.health or not field.allied(source.owner_id, observer.owner_id): continue
         x, y = recon['center']
-        if ((target.x-x)**2 + (target.y-y)**2 <= recon['radius']**2
+        from .recon_geometry import contains
+        if (contains(recon, target.x, target.y)
             and clear_item_sight(combat, (x, y), end) and field_sight(field, (x, y), end)):
             return True
     return False

@@ -13,12 +13,23 @@ from tio.abilities import AbilityCatalog
 MAPPING={'effect_text':'effectText','Range':'castRange','AP':'apConsume',
          'Cooldown':'reuseTurns','MinRange':'MinRange','SplashRange':'SplashRange',
          'hide':'hide','nocast':'nocast','soundnodelay':'soundnodelay'}
-TARGETS={'self':'target_self','enemy':'target_one','area':'target_area'}
+TARGETS={'self':'target_self','enemy':'target_one','area':'target_grenade'}
 
 def build(catalog):
     root=ET.Element('skills');included=[];excluded=[]
     for ability_id in sorted({r.ability_id for r in catalog.records}-{0}):
         rows=sorted((r for r in catalog.records if r.ability_id==ability_id),key=lambda r:r.level or 0)
+        if ability_id==9:
+            # Incomplete legacy table; manual/native weapon skill, not learned.
+            from tio.sniper_scope import AP,RADIUS
+            node=ET.SubElement(root,'skill',id='9',name=rows[0].name)
+            ET.SubElement(node,'table').text='1'
+            mapped={'operateType':'OP_ACTIVE','target':'target_riflescope',
+                    'apConsume':str(AP),'SplashRange':str(RADIUS),'reuseTurns':'0'}
+            for key,val in mapped.items():ET.SubElement(node,'value',key=key,val=val)
+            included.append({'id':9,'levels':1,'values':[1],'mapped':mapped,
+                             'source':'Manual p40; native selector8b6335; illustrated 2011 optics guide'})
+            continue
         maximum=rows[0].number('levels')
         if [r.level for r in rows]!=list(range(1,(maximum or 0)+1)) or any(r.number('value') is None for r in rows):
             excluded.append({'id':ability_id,'reason':'Incomplete explicit level/value table'});continue
@@ -34,6 +45,9 @@ def build(catalog):
         elif any(v=='1' for v in active):raise ValueError('Inconsistent active profile')
         target=[r.fields.get('Target') for r in rows]
         if target[0] is not None and len(set(target))==1:mapped['target']=TARGETS[target[0]]
+        # Native target_area is an actor target (enum 1). Groza's ground
+        # selector needs target_grenade (enum 4) and its projectile metadata.
+        if ability_id==27:mapped['itemConsumeId']='340'
         for key,val in mapped.items():ET.SubElement(node,'value',key=key,val=val)
         included.append({'id':ability_id,'levels':len(rows),'values':[r.number('value') for r in rows],
                          'mapped':mapped,'unresolved_per_level':unresolved})

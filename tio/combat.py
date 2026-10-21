@@ -344,7 +344,7 @@ class Combat:
         entries=battle_skills(self.learned.get(actor_id,()),self.inventories[actor_id],self.human[actor_id])
         previous=self.skill_lists.get(actor_id,())
         self.skill_lists[actor_id]=entries
-        if entries==previous or not any(e.ability_id==27 for e in (*entries,*previous)):return ()
+        if entries==previous or not any(e.ability_id in (9,27) for e in (*entries,*previous)):return ()
         return (encode_abilities(actor_id,entries),)
 
     def inventory_packet(self, actor_id, packet=None):

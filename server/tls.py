@@ -7,6 +7,9 @@ import ssl
 import struct
 import threading
 import time
+import hashlib
+import json
+import hmac
 from pathlib import Path
 
 BRIDGE_MAGIC = b'TIOT'
@@ -20,7 +23,7 @@ def bridge_preface(port):
     return struct.pack('!4sBBH', BRIDGE_MAGIC, BRIDGE_VERSION, 0, port)
 
 
-def read_bridge_preface(connection, deadline):
+def read_bridge_preface(connection, deadline, launch_manifests=None):
     data = bytearray()
     while len(data) < BRIDGE_PREFACE_SIZE:
         remaining = deadline-time.monotonic()
@@ -30,12 +33,41 @@ def read_bridge_preface(connection, deadline):
         if not chunk:raise EOFError('TLS bridge bootstrap disconnected')
         data.extend(chunk)
     magic, version, flags, port = struct.unpack('!4sBBH', data)
-    if (magic, version) != (BRIDGE_MAGIC, BRIDGE_VERSION) or flags not in (0,1):
+    if magic != BRIDGE_MAGIC or version not in (1,2) or flags not in (0,1):
         raise ValueError('Invalid TLS bridge preface')
+    if launch_manifests is not None and version!=2:
+        raise ValueError('Current launcher update verification is required')
+    if version==2:
+        identity=bytearray()
+        while len(identity)<38:
+            remaining=deadline-time.monotonic()
+            if remaining<=0:raise TimeoutError('Launcher admission timed out')
+            connection.settimeout(remaining)
+            chunk=connection.recv(38-len(identity))
+            if not chunk:raise EOFError('Launcher admission disconnected')
+            identity.extend(chunk)
+        if launch_manifests is not None:
+            validate_launch_identity(identity,launch_manifests)
     bridge_preface(port)
     result=BridgePort(port)
     result.language='english' if flags==1 else 'russian'
     return result
+
+
+def validate_launch_identity(identity,root):
+    """Compare with live publication pointers, including later releases.
+
+    This is version admission for the official launcher, not remote attestation
+    against a deliberately modified executable or a custom protocol client.
+    """
+    root=Path(root)
+    current=(root/'updates/manifest.json').read_bytes()
+    launcher=json.loads((root/'downloads/launcher-manifest.json').read_bytes())
+    version=tuple(map(int,launcher['version'].split('.')))
+    if (len(identity)!=38 or len(version)!=3 or
+            not hmac.compare_digest(identity[:32],hashlib.sha256(current).digest()) or
+            struct.unpack('!HHH',identity[32:])!=version):
+        raise ValueError('Client or launcher release is obsolete; update through TIO Launcher')
 
 
 class BridgePort(int):

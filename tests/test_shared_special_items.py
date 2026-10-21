@@ -116,8 +116,10 @@ class SharedSpecialItemsTests(unittest.TestCase):
         self.case.send(0,encode_end_turn());self.clear();self.case.hub.tick()
         self.assertEqual(self.battle['field'].actor(self.ids[1]).health,hp-10)
         for owner in self.owners:
-            replies=tuple(self.case.hub.queues[owner]);pulse=decode_attack_result(next(p for p in replies if p[0]==0x4b))
-            self.assertEqual((pulse.actor_id,pulse.weapon_id,pulse.hits[0].damage),(self.ids[0],324,10))
+            from tio.protocol.health import encode_health
+            replies=tuple(self.case.hub.queues[owner])
+            self.assertEqual(replies.count(encode_health(self.ids[1],hp-10)),1)
+            self.assertFalse(any(p[0]==0x4b for p in replies))
         self.assertEqual(combat.burns[self.ids[1]].remaining,1)
         self.restore()
         for index in (0,1):self.case.send(index,b'\x36')
@@ -143,7 +145,11 @@ class SharedSpecialItemsTests(unittest.TestCase):
         self.assertEqual((ack.template_id,ack.state),(321,4))
         self.assertFalse(self.battle['field'].combat.mines)
         self.assertEqual(self.battle['field'].actor(self.ids[0]).action_points,ap)
-        self.assertEqual(self.rows(),before)
+        # The request journal may advance its checkpoint revision on rejection;
+        # the invariant here is that durable account assets do not change.
+        after=self.rows()
+        self.assertEqual({k:v for k,v in after.items() if k!='battle_checkpoints'},
+                         {k:v for k,v in before.items() if k!='battle_checkpoints'})
 
     def test_mine_armor_break_refreshes_equipment_for_both_with_private_bag(self):
         from test_durability import gear

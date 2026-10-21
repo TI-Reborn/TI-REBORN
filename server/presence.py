@@ -47,6 +47,8 @@ class Presence:
                 self.players[session]=(town,replace(old[1],level=level,crest=crest,alliance=alliance,status=status));self.refresh()
                 LOG.info('presence_move account=%s from=%s to=%s',session.account,old[0],town)
         started=self.online_clock.get(session)
+        from .friends_service import sync as sync_friends
+        with self.lock:sync_friends(self,session)
         with self.lock:
             if session in self.messages:self.messages[session].extend(prison_replies[:max(0,128-len(self.messages[session]))])
         if session.database is not None and getattr(session,'owned_pet_probe',False):
@@ -81,6 +83,8 @@ class Presence:
             self.queues[session].clear();self.queues[session].extend(self.snapshot(session))
 
     def handle(self,session,packet):
+        from .friends_service import handle as handle_friends
+        if handle_friends(self,session,packet):return True
         if packet[:1]==b"\xac":
             from .avatar_service import handle as handle_avatars
             return handle_avatars(self,session,packet)
@@ -247,6 +251,8 @@ class Presence:
             from tio.player_statistics import save_online
             save_online(session.database,session.account,max(0,time.monotonic()-started))
         with self.lock:
+            from .friends_service import disconnect as disconnect_friends
+            disconnect_friends(self,session)
             old=self.players.pop(session,None);self.queues.pop(session,None)
             self.messages.pop(session,None);self.rate.pop(session,None)
             if old:

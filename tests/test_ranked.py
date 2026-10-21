@@ -71,6 +71,7 @@ class RatingTests(unittest.TestCase):
         for match in ('four','five'):self.apply(match,self.report(1))
         with closing(sqlite3.connect(self.path)) as db:self.assertEqual(db.execute("SELECT league FROM ranked_players WHERE account='alice'").fetchone()[0],2)
         self.apply('six',self.report(1))
+        # The hosted May3 rules require four losses for demotion.
         with closing(sqlite3.connect(self.path)) as db:self.assertEqual(db.execute("SELECT league,loss_streak FROM ranked_players WHERE account='alice'").fetchone(),(2,3))
         self.apply('seven',self.report(1))
         with closing(sqlite3.connect(self.path)) as db:self.assertEqual(db.execute("SELECT league,loss_streak FROM ranked_players WHERE account='alice'").fetchone(),(3,4))
@@ -135,12 +136,21 @@ class RankedServerTests(unittest.TestCase):
                 s.locations._save(db,s.account,2,*(-367,-424))
 
     def start(self,journal=False):
+        # Rated cases require two full human squads; smaller sides now gain
+        # transient bots and follow the Team/Wall unrated policy.
+        from tio.owned_pets import OwnedPetStore
+        from tio.protocol.item_list import encode_item_list
+        from test_ranked_squads import join
+        for session in self.case.sessions[:2]:
+            store=OwnedPetStore(self.path);pet=decode_pet_info(store.list(session.account)[0][1],human_equipment=True)
+            for identity in (2,3,4):
+                store.ensure(session.account,encode_pet_info(replace(pet,fields={**pet.fields,'0x8c43eb':identity,'0x8c44a6':0})),encode_item_list(identity,()),human=True)
         if journal:self.hub.journal=BattleJournal(self.hub,self.path,wall=lambda:1000)
-        self.case.send(0,join_packet());self.assertFalse(self.hub.battles)
+        self.case.send(0,join((1,2,3,4)));self.assertFalse(self.hub.battles)
         self.assertTrue(self.hub.busy(self.case.sessions[0]))
-        replies=self.case.send(1,join_packet())
+        replies=self.case.send(1,join((1,2,3,4)))
         owners=tuple(self.hub.identities[s] for s in self.case.sessions[:2]);b=self.hub.battles[owners[0]]
-        self.assertFalse(b['bots']);self.assertEqual(len(b['field']._actors),2)
+        self.assertFalse(b['bots']);self.assertEqual(len(b['field']._actors),8)
         self.assertTrue(any(p[:2]==b'\xc6\x16' for p in replies))
         for index in (0,1):self.case.send(index,b'\x36')
         self.hub.tick()
@@ -177,7 +187,7 @@ class RankedServerTests(unittest.TestCase):
 
     def test_elimination_precedes_point_draw(self):
         owners,b=self.start();b['points'].scores=[1000,1000]
-        i=b['field'].actor_ids(owners[1])[0];b['field']._actors[i]=replace(b['field'].actor(i),health=0)
+        for i in b['field'].actor_ids(owners[1]):b['field']._actors[i]=replace(b['field'].actor(i),health=0)
         self.hub.tick();self.assertEqual(b['ranked_winner'],0)
 
     def test_server_point_draw_is_unrated_and_shared_place(self):

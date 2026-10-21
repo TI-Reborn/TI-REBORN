@@ -24,8 +24,11 @@ class BattleDoors:
         replies=[]
         for p,opened in self.states.items():
             if remembered.get(p)==opened:continue
+            # Adjacent door surfaces are interactive even across a wall corner.
+            # This exposes only the door state; actor/terrain sight is unchanged.
             if any((a.x-p[0])**2+(a.y-p[1])**2<=a.sight_radius**2 and
-                   clear_sight((a.x,a.y),p,self.field.blocked-{p}) for a in observers):
+                   (max(abs(a.x-p[0]),abs(a.y-p[1]))<=1 or
+                    clear_sight((a.x,a.y),p,self.field.blocked-{p})) for a in observers):
                 replies.append(encode_door_state(DoorRequest(0,opened,*p)))
                 remembered[p]=opened
         return tuple(replies)
@@ -38,8 +41,8 @@ class BattleDoors:
         if request.opened not in self.permissions.get(actor.actor_id,()):raise ValueError('Actor cannot operate this door')
         if max(abs(actor.x-p[0]),abs(actor.y-p[1]))>1:
             raise ValueError('Move next to the door')
-        if not clear_sight((actor.x,actor.y),p,self.field.blocked-{p}):
-            raise ValueError('Door is behind an obstacle')
+        # All eight neighboring cells can operate a door. Corner collision
+        # still applies to movement and sight, not this adjacent interaction.
         if self.states[p]==request.opened:
             return (encode_door_state(request),encode_action_points(actor.actor_id,actor.action_points))
         if not request.opened and any((a.x,a.y)==p and a.health!=0 for a in self.field._actors.values()):

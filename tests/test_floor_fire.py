@@ -40,3 +40,16 @@ class FloorFireTests(unittest.TestCase):
         hp=self.field.actor(2).health
         self.combat.after_move(2,((8,5),))
         self.assertEqual(self.field.actor(2).health,hp-10)
+
+    def test_periodic_area_damage_never_replays_throw_or_spends_source_items(self):
+        from tio.protocol.health import encode_health
+        from tio.protocol.battle_attack import AttackRequest
+        self.combat.attack(7,AttackRequest(1,6,2))
+        inventory=self.combat.inventories[1];source=self.field.actor(1)
+        self.field.prepare_turn(8,(2,));hp=self.field.actor(2).health
+        replies=self.combat.turn_effects(8,(2,))
+        self.assertEqual(self.field.actor(2).health,hp-10)
+        self.assertIn(encode_health(2,hp-10),replies)
+        self.assertFalse(any(p[0]==0x4b for p in replies))
+        self.assertEqual(self.combat.inventories[1],inventory)
+        self.assertEqual(self.field.actor(1),source)

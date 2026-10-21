@@ -20,6 +20,8 @@ def main():
             if '=' in line:
                 key,value=line.strip().split('=',1);fields[key]=value
         source_records[fields['item_id']]=dict(fields)
+        # Match the hosted M60 range requested by the user on 2026-10-19.
+        if fields['item_id']=='314':fields['maxRange']='12'
         # Legacy CFG infers clothing from bodypart; XML loader defaults missing
         # itype to weapon1. Its explicit armor branch sets type9 at a715da.
         if 'itype' not in fields and fields.get('bodypart') in {'head','chest','legs','complexarmor'}:
@@ -61,6 +63,8 @@ def main():
                        'changed':{k:{'source':original.get(k),'local':v} for k,v in fields.items() if original.get(k)!=v}})
     from mining_item_fixture import append_records
     append_records(root)
+    from tio.sniper_rifles import append_item
+    append_item(root)
     ET.indent(root)
     (ROOT/'evidence/items_diagnostic.xml').write_bytes(ET.tostring(root,encoding='utf-8',xml_declaration=True))
     (ROOT/'evidence/items_diagnostic_provenance.json').write_text(json.dumps({'source':str(SOURCE),'source_sha256':hashlib.sha256(raw).hexdigest(),'status':'LOCAL_CFG_CATALOG_WITH_XML_ARMOR_NORMALIZATION','normalization':'Missing itype becomes armor for bodypart head/chest/legs/complexarmor; p_def also emitted as for/add stat=pdef val=source value; six default human body records use verified existing chr_man/chr_woman meshes and textures in place of missing legacy files; armor meshes/textures normalized to installed man_armor/woman_armor assets, female XML w_model/w_texture bindings added, dog originals retained; generic208/222 use local fallback models; per-record changes listed.','records':report},indent=2)+'\n')
@@ -74,6 +78,8 @@ def main():
     config['item_categories']={'0':[dict(unknown_u32_01=n,unknown_u32_02=int(r.get('packamount','1')),
         item_id=int(r['item_id']),unknown_u32_03=100,durability=int(r['durability']),unknown_u8=0)
         for n,r in enumerate(eligible,1)]}
+    from tio.sniper_rifles import append_offer
+    append_offer(config)
     config_path.write_text(json.dumps(config,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     (ROOT/'evidence/shop_catalog_provenance.json').write_text(json.dumps(dict(
         source=str(SOURCE),source_sha256=hashlib.sha256(raw).hexdigest(),

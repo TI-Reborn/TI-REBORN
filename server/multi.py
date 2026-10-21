@@ -471,7 +471,8 @@ class MultiServer:
                 connection=self.tls.current().wrap_socket(connection,server_side=True,do_handshake_on_connect=False)
                 self.tls_connections[token]=connection
             connection.do_handshake()
-            bridge_port=read_bridge_preface(connection,deadline) if kind=='login' else None
+            policy=self.config.tls.launch_manifests
+            bridge_port=read_bridge_preface(connection,deadline,policy) if kind=='login' or policy is not None else None
             connection.settimeout(5)
             with self.lock:
                 if self.server.stopping.is_set():raise InterruptedError('Server stopping')
@@ -524,8 +525,9 @@ class MultiServer:
         self.accounts.check()
         self.recover_settlements(force=True)
         with ExitStack() as stack:
-            login_listener = stack.enter_context(self.bind(self.config.bind_address,self.config.game_port))
-            game_listener = stack.enter_context(self.bind(self.config.bind_address,self.config.session_port))
+            direct_bind='127.0.0.1' if self.config.tls.launch_manifests is not None else self.config.bind_address
+            login_listener = stack.enter_context(self.bind(direct_bind,self.config.game_port))
+            game_listener = stack.enter_context(self.bind(direct_bind,self.config.session_port))
             game_listeners=[game_listener]
             selector = stack.enter_context(selectors.DefaultSelector())
             selector.register(login_listener,selectors.EVENT_READ,'login')

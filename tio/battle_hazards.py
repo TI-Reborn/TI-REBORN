@@ -109,12 +109,12 @@ def stop_path(combat,path):
     return path
 
 
-def apply_damage(combat,source,template,target,victims,raw):
+def apply_damage(combat,source,template,target,victims,raw,*,periodic=False):
     from .battle_item_effects import _atomic
-    return _atomic(combat,lambda:_apply_damage(combat,source,template,target,victims,raw))
+    return _atomic(combat,lambda:_apply_damage(combat,source,template,target,victims,raw,periodic=periodic))
 
 
-def _apply_damage(combat,source,template,target,victims,raw):
+def _apply_damage(combat,source,template,target,victims,raw,*,periodic=False):
     """One atomic armor/loot/inventory update before authoritative HP changes."""
     field=combat.field;states={};changes={};hits=[];damaged=[]
     statistics={o:dict(v) for o,v in combat.statistics.items()};kills=[]
@@ -156,8 +156,12 @@ def _apply_damage(combat,source,template,target,victims,raw):
             weapons=combat.catalog.equipped(inventory,human=combat.human[identity],resource=combat.resources[identity]),
             sight_radius=previous.sight_radius+sight_delta)
     sight_awards,sight_changed=combat.stage_kill_sight(states,kills)
-    replies=(encode_attack_result(AttackResult(source.actor_id,(source.x,source.y),target,template,tuple(hits),mine_state=1 if template in (321,325) else None)),
-        *(combat.inventory_packet(i,p) for i,p in changes.items()))
+    # 4B replays the source weapon animation (including a new grenade throw).
+    # Existing fire changes only victim HP; keep kill credit on the server.
+    from .protocol.health import encode_health
+    replies=(tuple(encode_health(h.actor_id,h.left_hp) for h in hits) if periodic else
+        (encode_attack_result(AttackResult(source.actor_id,(source.x,source.y),target,template,tuple(hits),mine_state=1 if template in (321,325) else None)),))
+    replies+=tuple(combat.inventory_packet(i,p) for i,p in changes.items())
     combat._persist_batch(changes)
     combat.inventories.update(changes);field._actors.update(states)
     combat.sight_kill_victims=sight_awards
@@ -242,7 +246,7 @@ def fire_damage(combat,identity,*,path=()):
     areas=[a for a in fire_areas(combat).values() if route & fire_cells(combat,a)]
     if not areas:return ()
     area=max(areas,key=lambda a:a['damage'])
-    replies=apply_damage(combat,area['source'],319,(actor.x,actor.y),(actor,),lambda victim:area['damage'])
+    replies=apply_damage(combat,area['source'],319,(actor.x,actor.y),(actor,),lambda victim:area['damage'],periodic=True)
     ticks[identity]=generation
     return replies
 
@@ -271,7 +275,7 @@ def turn_effects(combat,owner,actor_ids):
         if not actor.health:combat.burns.pop(identity,None);continue
         generation=field._ability_turns[identity]
         if generation<=burn.last_generation:continue
-        replies.extend(apply_damage(combat,burn.source,burn.template_id,(actor.x,actor.y),(actor,),lambda victim:burn.damage))
+        replies.extend(apply_damage(combat,burn.source,burn.template_id,(actor.x,actor.y),(actor,),lambda victim:burn.damage,periodic=True))
         if burn.remaining<=1 or not field.actor(identity).health:combat.burns.pop(identity,None)
         else:combat.burns[identity]=replace(burn,remaining=burn.remaining-1,last_generation=generation)
     return tuple(replies)

@@ -14,6 +14,7 @@ class TLSConfig:
     private_key: Path | None = None
     handshake_timeout_seconds: float = 5
     max_handshakes: int = 4
+    launch_manifests: Path | None = None
 
     @classmethod
     def load(cls, data, root):
@@ -21,7 +22,7 @@ class TLSConfig:
         if not isinstance(data, dict) or set(data)-allowed:
             raise ValueError('Invalid TLS configuration keys')
         values = dict(data)
-        for key in ('certificate', 'private_key'):
+        for key in ('certificate', 'private_key', 'launch_manifests'):
             value = values.get(key)
             if value is not None:
                 if not isinstance(value, str) or not value.strip():
@@ -49,6 +50,8 @@ class TLSConfig:
             raise ValueError('TLS max_handshakes must be an integer between 1 and 8')
         if self.enabled and (self.certificate is None or self.private_key is None):
             raise ValueError('Enabled TLS requires certificate and private_key')
+        if self.launch_manifests is not None and (not self.enabled or not isinstance(self.launch_manifests,Path)):
+            raise ValueError('Launcher admission requires TLS and a manifest directory')
 
 
 @dataclass(frozen=True)
