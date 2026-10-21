@@ -4,6 +4,27 @@ from tio.abilities import AbilityCatalog,AbilityLevel
 from tools.build_skills_fixture import build
 
 class SkillsFixtureTests(unittest.TestCase):
+    def test_scope_uses_native_weapon_range_selector(self):
+        xml,included,excluded=build(AbilityCatalog([AbilityLevel(9,None,
+            dict(id='9',name='Sniper Sit',levels='1',active='1'))]))
+        skill=ET.fromstring(xml).find('skill')
+        values={n.get('key'):n.get('val') for n in skill.findall('value')}
+        self.assertEqual((values['target'],values['apConsume'],values['SplashRange']),
+                         ('target_riflescope','3','1'))
+        self.assertFalse(excluded)
+
+    def test_groza_uses_native_ground_target_and_subgrenade_metadata(self):
+        from pathlib import Path
+        import json
+        data=json.loads((Path(__file__).resolve().parents[1]/'config/abilities.json').read_text())
+        row=next(r for r in data['records'] if r['id']==27)
+        xml,_,_=build(AbilityCatalog([AbilityLevel(27,row['level'],row['fields'])]))
+        skill=ET.fromstring(xml).find('skill')
+        values={n.get('key'):n.get('val') for n in skill.findall('value')}
+        self.assertEqual(values['target'],'target_grenade')
+        self.assertEqual(values['itemConsumeId'],'340')
+        self.assertEqual((values['castRange'],values['MinRange'],values['SplashRange'],values['apConsume']),('10','4','2','6'))
+
     def test_level_tables_and_unknowns(self):
         rows=[]
         for level,value in [(1,80),(2,100)]:

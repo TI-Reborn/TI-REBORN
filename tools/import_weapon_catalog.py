@@ -2,9 +2,11 @@
 import hashlib
 import json
 import re
+import sys
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT))
 SOURCE=Path(r'C:\Program Files (x86)\TIOnline\base\items.cfg')
 
 
@@ -14,6 +16,8 @@ def build(raw):
         fields=dict(re.findall(r'^\s*(\w+)=(.*)$',match[2],re.M))
         fields={k:v.strip() for k,v in fields.items()}
         item=int(fields['item_id'])
+        # User's gameplay rule, 2026-10-19: M60 reaches twelve cells.
+        if item==314:fields['maxRange']='12'
         if item in records:raise ValueError('Duplicate item')
         records[item]=fields
     ammo={str(i):{'name':r['name'],'pack_amount':int(r.get('packamount',1)),
@@ -29,6 +33,8 @@ def build(raw):
             'bullets_count':int(r.get('bulletsCount',1)),
             'min_range':int(r.get('minRange',0)),'max_range':int(r.get('maxRange',0)),
             'source_fields':r}
+    from tio.sniper_rifles import SVD,weapon
+    weapons[str(SVD)]=weapon(weapons['312'])
     return {'source':str(SOURCE),'sha256':hashlib.sha256(raw).hexdigest(),
         'status':'Original legacy CFG values; not confirmed final server balance',
         'unknowns':['reload_ap absent','random damage distribution not recovered',

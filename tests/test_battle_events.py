@@ -16,6 +16,20 @@ class MinimalView(VisibilityView):
 
 
 class BattleEventsTests(unittest.TestCase):
+    def test_scope_use_animation_is_visible_but_cooldown_and_hidden_actor_are_private(self):
+        from tio.protocol.ability_status import AbilityStatus,encode_ability_status,decode_ability_status
+        field=BattleField(32,32,[BattleActor(1,10,5,5,20,100,100),BattleActor(2,20,6,5,20,100,100)],step_cost=1)
+        view=MinimalView(field,10,{})
+        view.refresh();before=dict(field._actors)
+        used=AbilityStatus(9,1,0,0);cooldown=AbilityStatus(23,1,3,2)
+        packet=encode_ability_status(2,(used,cooldown))
+        result=project_action(view,20,before,frozenset((1,2)),(packet,))
+        self.assertEqual([decode_ability_status(p) for p in result if p[:2]==b'\x7f\x01'],[(2,(used,))])
+        result=project_action(view,20,before,frozenset((1,)),(packet,))
+        self.assertFalse(any(p[:2]==b'\x7f\x01' for p in result))
+        own=encode_ability_status(1,(used,cooldown))
+        self.assertIn(own,project_action(view,10,before,frozenset((1,2)),(own,)))
+
     def test_movement_projection_preserves_corpse_without_resending_death(self):
         field=BattleField(32,32,[BattleActor(1,10,5,5,20,100,100,2),
                                BattleActor(2,20,20,20,20,100,100,2),

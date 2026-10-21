@@ -53,6 +53,18 @@ def decode_room_list(packet):
     r.finish(); return tuple(rooms)
 
 
+def encode_room_removed(identity):
+    """26/u32 -> native A09468 ->873094, removes one main-table row."""
+    if type(identity) is not int or not 1<=identity<0xffffffff:
+        raise PacketError('Invalid battle-list room identity')
+    return Writer().u8(0x26).u32(identity).build()
+
+
+def encode_room_list_clear():
+    """28 -> native A09480 ->873134, clears even unknown stale rows."""
+    return b'\x28'
+
+
 def _identity(packet, opcode):
     r = Reader(packet)
     if r.u8() != opcode: raise PacketError('Unexpected wager-room request')

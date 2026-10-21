@@ -34,19 +34,20 @@ def visible_cells(field, owner):
             if any((a.x-x)**2+(a.y-y)**2 <= a.sight_radius**2
                    and field_sight(field,(a.x,a.y),(x,y)) for a in observers):
                 if cells.get((x,y)) not in (SMOKE,FLARE):cells[x,y]=FIRE
+    recon_cells = set()
+    from .recon_geometry import cells as footprint
     for effect in state['recon'].values():
         source = field._actors.get(effect['source'])
         if source is None or not source.health or not field.allied(source.owner_id, owner): continue
-        cx, cy = effect['center']; radius = effect['radius']
-        for y in range(max(0, cy-radius), min(field.height, cy+radius+1)):
-            for x in range(max(0, cx-radius), min(field.width, cx+radius+1)):
-                if ((x-cx)**2+(y-cy)**2 <= radius**2 and (x, y) not in field.blocked
-                    and field_sight(field, (cx, cy), (x, y))):
-                    cells.setdefault((x, y), RECON)
+        recon_cells.update(footprint(field, effect))
     # The fixed native extension buffer is bounded. Prefer nearest visible
     # cells, then stable coordinates; no truncation changes server mechanics.
-    order = sorted(cells, key=lambda p: (min(((a.x-p[0])**2+(a.y-p[1])**2 for a in observers), default=0), p[1], p[0]))
-    return tuple((x, y, cells[x, y]) for x, y in order[:MAX_CELLS])
+    rows = {(x,y,kind) for (x,y),kind in cells.items()} | {(x,y,RECON) for x,y in recon_cells}
+    # Recon is independent of smoke/light/fire at the same coordinates; a
+    # visual effect must not replace a revealed cell in the native fog grid.
+    order = sorted(rows, key=lambda p: (p[2]!=RECON,
+        min(((a.x-p[0])**2+(a.y-p[1])**2 for a in observers), default=0), p[1], p[0], p[2]))
+    return tuple(order[:MAX_CELLS])
 
 
 def packets(field, owner):

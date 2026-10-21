@@ -1,5 +1,52 @@
 # Closed-door path and reopen correction
 
+## Diagonal interaction, 19 October 2026
+
+Door interaction now accepts all eight neighboring cells, including diagonals
+beside blocked wall corners. The server uses the existing Chebyshev distance
+limit without a movement/sight ray for this adjacent action. Door-state updates
+include an adjacent surface within the observer's sight radius even when a wall
+corner blocks the ray. Movement, shooting and enemy visibility keep their
+existing geometry. Opening/closing still costs one AP; repeated state requests
+are free, and ownership, turn, permissions and occupied-door checks remain.
+
+Both the diagnostic JS adapter and the launcher's assembled x86 adapter expose
+only that adjacent closed door surface for all eight neighbors. No terrain or
+enemy cells beyond it are revealed. Launcher 0.1.14 is published through the
+existing self-update channel; restart the launcher and game to apply it.
+
+Evidence: `reports/diagonal-doors-20261019/`. Thirty tests pass locally and in an
+isolated copy of the freshly inspected hosting runtime. They include generated
+combat profiles/variants in modes0/1/4/7, AP, corner collision, sight, permissions
+and encrypted transport. The exact compiled launcher payload passes32 neighbor
+and wall-layout cases, eight original native click-distance cases, observer
+limits, receiver normalization and stack/register preservation. The diagnostic
+JS adapter also passes. These are automated/native checks, not graphical-client
+acceptance. The attempted loader probes are recorded separately: the minimal
+fixture lacks runtime dependencies; the existing full QA fixture has a silver
+image outside the launcher's English image list. Both reached adapter install
+where applicable; they are not counted as successful game-client tests.
+
+Publication and trusted HTTPS verification are saved in `publication/`.
+Fresh SQLite/code/config and verified PostgreSQL backup:
+`/root/tio-before-launcher-sg0nidkz`. Launcher publication preserves all services,
+21 game accounts,17 web accounts, configuration and the client resource manifest.
+After the user's instruction to restart after battles, the live state showed
+zero battle checkpoints, members and pending settlements. The scoped deployment
+then backed up current code/config/SQLite at
+`/root/tio-before-game-operations-diagonal-doors-20261019`, installed only
+`tio/battle_doors.py` and restarted the service. All171 tables were unchanged
+during replacement; all22 existing accounts and4 clans were preserved.
+
+`hosted-two-account.json` confirms two real QA accounts over public TLS, without
+bots: each moved using ordinary packets to a diagonal cell beside a wall corner,
+opened and closed a real map door, received3F, spent1AP per change, and retained
+the shared state through checkpoint decoding. Duplicate opening was free;
+another owner's request was rejected. These are protocol clients, not graphical
+gameplay validation. `fixture-cleanup.json` confirms exact-fixture removal,
+unchanged unrelated rows/schema and SQLite integrity. No hosted player data was
+uploaded or restored. `final-health.json` records the active installed service.
+
 ## Recovered causes
 
 * `ti.exe6dc9be` calls the real ownership predicate `723fa4`, which compares
@@ -28,7 +75,8 @@ The launcher's `tools/battle_door_grid.js` adapter runs around the original
 visibility refresh. Stable closed/open door states synchronize collision3/0
 before path/visibility recalculation. After recalculation, only the surface
 cell of a closed door next to a living owned actor is made visible. Diagonal
-access through blocked corners remains forbidden. Cells beyond the door and
+access through blocked corners was originally forbidden; this interaction
+restriction is superseded by the 19 October fix above. Cells beyond the door and
 enemy positions are not exposed. Native door permissions, AP and server-side
 validation remain unchanged. Deferred door states are now completed through the native stable-state path (see the hangar follow-up below).
 

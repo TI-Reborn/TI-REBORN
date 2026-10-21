@@ -15,7 +15,9 @@ class MiningService:
 
     def quote(self):
         rate,history=self.market.quote_history()
-        return (wire.price(rate),wire.price_history(history))
+        # B0/1F reader 834d0c reverses its array at 834d8c (6f9200).
+        # Send newest first so the graph's right edge is the current quote.
+        return (wire.price(rate),wire.price_history(tuple(reversed(history))))
 
     def handle(self,account,character,name,packet):
         if len(packet)<2 or packet[0]!=0xb0:return None

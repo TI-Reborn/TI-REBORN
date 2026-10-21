@@ -42,7 +42,7 @@ class AreaFireTests(unittest.TestCase):
             self.assertEqual((items[0].unknown_words[0], items[1].count), (300-ap, 100-ammo))
 
     def test_sector_excludes_behind_outside_and_dead_actors(self):
-        for position, hp in (((1, 4), 500), ((7, 6), 500), ((12, 4), 500), ((7, 4), 0)):
+        for position, hp in (((1, 4), 500), ((7, 6), 500), ((15, 4), 500), ((7, 4), 0)):
             f, c = self.prepare()
             f._actors[2] = replace(f.actor(2), x=position[0], y=position[1], health=hp)
             result = decode_attack_result(c.attack(7, AttackRequest(1, 7, 4))[0])
@@ -50,12 +50,23 @@ class AreaFireTests(unittest.TestCase):
             self.assertEqual(f.actor(1).health, 100)
 
     def test_piercing_continues_past_aim_cell_but_respects_each_weapon_range(self):
-        for weapon, maximum in ((314, 9), (315, 8)):
+        for weapon, maximum in ((314, 12), (315, 8)):
             for distance, hit in ((maximum, True), (maximum+1, False)):
                 f, c = self.prepare(weapon)
                 f._actors[2] = replace(f.actor(2), x=2+distance, y=4)
                 result = decode_attack_result(c.attack(7, AttackRequest(1, 5, 4))[0])
                 self.assertEqual(2 in [h.actor_id for h in result.hits], hit)
+
+    def test_m60_aim_at_twelve_and_thirteen_cell_boundary(self):
+        f,c=self.prepare(314,40)
+        f._actors[2]=replace(f.actor(2),x=14,y=4)
+        result=decode_attack_result(c.attack(7,AttackRequest(1,14,4))[0])
+        self.assertIn(2,[h.actor_id for h in result.hits])
+        self.assertEqual(f.actor(1).action_points,31)
+        self.assertEqual(next(i.count for i in decode_item_list(c.inventories[1])[1] if i.template_id==14),20)
+        before=dict(f._actors),dict(c.inventories)
+        with self.assertRaisesRegex(ValueError,'range'):c.attack(7,AttackRequest(1,15,4))
+        self.assertEqual((f._actors,c.inventories),before)
 
     def test_walls_block_individual_rays_not_the_whole_sector(self):
         f, c = self.prepare()

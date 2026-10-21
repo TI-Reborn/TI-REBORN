@@ -70,7 +70,7 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
     def busy(self, session):
         with self.lock:
             owner=self.identities.get(session)
-            return self.mine_waiting(owner) or owner in self.ranked_waiting or owner in self.survival_waiting or owner in self.battles or owner in self.results or self.lobbies.room(owner) is not None or self.wager_busy(owner) or self.assault_group(session) is not None
+            return owner in getattr(self,'ranked_parties',{}) or self.mine_waiting(owner) or owner in self.ranked_waiting or owner in self.survival_waiting or owner in self.battles or owner in self.results or self.lobbies.room(owner) is not None or self.wager_busy(owner) or self.assault_group(session) is not None
 
     def in_battle(self, session):
         with self.lock:
@@ -257,6 +257,10 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
             contracts = getattr(self, 'contracts_service', None)
             if contracts and owner not in self.battles and owner not in self.results and contracts.guard(session, packet):
                 return True
+            from .ranked_party import handle as handle_party,party
+            if handle_party(self,owner,packet):return True
+            if party(self,owner) is not None and (packet[:1] in (b'\xba',b'\x29') or packet[:2]==b'\xc8\x2b'):
+                self.put(owner,encode_shop_error('Сначала выйдите из группы TrueSkill'));return True
             if self.handle_wager(owner,packet):
                 if packet==b'\xba\x01':
                     try:self.remember_arena_listing(owner,self.list_packet(owner))
@@ -303,7 +307,8 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
                     return True
                 if packet==b'\xba\x01':
                     listing=self.list_packet(owner)
-                    self.put(owner,listing,self.battle_list_packet(owner))
+                    self.put(owner,listing)
+                    self.push_battle_listing(owner,self.battle_list_packet(owner),reset=True)
                     self.remember_arena_listing(owner,listing)
                     return True
                 if is_create or is_ba_create or is_join:
@@ -564,13 +569,14 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
         # and must never enter human repeat-pair or ranking rosters.
         battle['reward_bot_roster']={owner:(tuple(ticket.levels),side)
                                     for owner,side,path,account,ticket,bot in seats
-                                    if bot and first.mode in (0,1,4) and not wagering}
+                                    if bot and first.mode in (0,1,4,21) and not wagering}
         battle['reward_damage']=set()
         battle['reward_support']=set()
         battle['reward_started']=False
         if not wagering:self.freeze_team_rating(battle,seats,teams,first)
         if first.mode==21:
-            if bots or len(seats)<2:raise ValueError('Ranked matches require real accounts on both sides')
+            if any(not any(s[1]==side and not s[5] for s in seats) for side in (0,1)):
+                raise ValueError('Ranked matches require real accounts on both sides')
             from tio.control_points import ControlPoints
             # Find open cells in the same connected component as both spawns.
             free={(x,y) for x in range(field.width) for y in range(field.height) if (x,y) not in field.blocked}
@@ -606,7 +612,10 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
             for identity,actor in tuple(field._actors.items()):
                 field._actors[identity]=replace(actor,action_points=0)
             from tio import ranked
-            battle['ranked_teams']=tuple(tuple((self.players[o].account,*ranked.snapshot(self.players[o].database,self.players[o].account)) for o in team) for team in teams)
+            battle['ranked_teams']=tuple(tuple((self.players[o].account,*ranked.snapshot(self.players[o].database,self.players[o].account)) for o in team if o not in bots) for team in teams)
+        if first.mode==21 and bots:
+            from .ranked_bots import patrol
+            patrol(field,battle['points'])
         battle['return_towns']={o:(self.players[o].locations.current(self.players[o].account) if self.players[o].locations else 3) for o in views}
         if first.mode==21:
             token_accounts=[account for owner,side,path,account,ticket,bot in seats if getattr(ticket,'flags',(0,0))[0]]
@@ -634,12 +643,16 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
                 from tio.protocol.pet_info import decode_pet_info
                 from tio.ranked import skill
                 lineup=[[(o,tuple((int.from_bytes(field.combat.proficiencies[i][5:9],'little'),decode_pet_info(field.combat.proficiencies[i],human_equipment=field.combat.human[i]).fields['0x8c4bbc']) for i in field.actor_ids(o))) for o in team] for team in teams]
-                ratings={o:skill(*ranked.snapshot(self.players[o].database,self.players[o].account)) for o in order}
+                ratings={o:skill(*ranked.snapshot(self.players[o].database,self.players[o].account)) for o in order if o not in bots}
+                ratings.update((o,0) for o in bots)
                 self.put(owner,encode_accepted(room.room_id,lineup,battle['names'],ratings),b'\xc6\x05')
             self.put(owner,b'\x6c'+encode_battle_settings_body(settings),encode_battle_members(first.mode,0,records),
                 self.battle_order_packet(battle,owner),ground)
             self.put(owner,*view.refresh(),*(skills[i] for i in field.actor_ids(owner) if i in skills),
                      *(field.combat.inventory_packet(i) for i in field.actor_ids(owner)),*field.combat.hazard_packets(owner),*self.ranked_packets(battle,owner,scene=True),b'\x41')
+            if first.mode==21 and bots:
+                from tio.protocol.chat import encode_system_message
+                self.put(owner,encode_system_message(0,b'TIO','Свободные места заполнены ботами. Этот бой не изменяет TrueSkill.'))
             self.put(owner,*self.team_rating_announcements(battle,owner))
         LOG.info('team_match_created id=%s humans=%d bots=%d',battle['match_id'],len(views),len(bots))
 
@@ -808,8 +821,7 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
                     deleted=() if previous is None else sorted(previous[1]-current_ids)
                     self.put(owner,*(b'\xba\x06'+identity.to_bytes(4,'little') for identity in deleted),arena_listing)
                     self.remember_arena_listing(owner,arena_listing)
-                if self.wager_listing_cache.get(owner)!=listing:
-                    self.put(owner,listing);self.wager_listing_cache[owner]=listing
+                self.push_battle_listing(owner,listing)
             for owner in tuple(self.survival_queue.tickets):
                 if owner not in self.survival_queue.tickets:continue
                 try:self.match_survival(owner)
@@ -836,7 +848,7 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
         if len(field.living_sides())<=1:
             self.finish(battle);return
         points=battle.get('points')
-        if points is not None and points.outcome(field) is not None:
+        if points is not None and (battle.get('ranked_winner') is not None or points.outcome(field) is not None):
             self.finish(battle);return
         if arena._loading[room.room_id]!=set(room.members):
             if self.clock()>battle['deadline']:
@@ -884,6 +896,7 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
             from tio.training_bot import play_turn
             from .battle_events import BotEventArena
             self.announce_turn(battle,owner,40)
+            if points is not None:battle['point_turn_pending']=True
             play_turn(BotEventArena(self,battle),room.room_id,owner)
         else:
             from tio.rating_completion import ranked_turn_seconds
@@ -1044,7 +1057,7 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
                 refund_reason=None if alive and battle.get('wager_active') else 'draw' if not alive else 'ended_before_loading')
             if not battle.get('wager_active'):battle['wager_report']['winner_side']=None
         if 'points' in battle:
-            winner=battle['points'].outcome(battle['field'])
+            winner=battle.get('ranked_winner',battle['points'].outcome(battle['field']))
             if winner is None:raise ValueError('Ranked battle is still in progress')
             battle['ranked_winner']=winner
         else:winner=None
@@ -1158,7 +1171,10 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
     def disconnect(self,session):
         with self.lock:
             owner=self.identities.get(session)
-            if owner is not None:self.arena_listing_cache.pop(owner,None)
+            if owner is not None:
+                from .ranked_party import leave as leave_party
+                leave_party(self,owner)
+                self.arena_listing_cache.pop(owner,None)
             if owner is not None and self.detach(session,owner):return True
             if getattr(self,'assault_store',None) and getattr(session,'account',None):
                 group=self.assault_group(session)

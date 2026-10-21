@@ -29,7 +29,7 @@ class WeaponEffectsTests(unittest.TestCase):
             result=decode_attack_result(combat.attack(7,AttackRequest(1,6,1))[0])
             self.assertEqual(result.hits[0].damage,combat.catalog.distance_damage(weapon,5)[0])
             self.assertEqual(field.actor(1).action_points,40-ap)
-            self.assertEqual(field.actor(3).health,500)
+            self.assertLess(field.actor(3).health,500)
             items=decode_item_list(combat.inventories[1])[1]
             self.assertEqual([i.template_id for i in items],[weapon])
             self.assertEqual(items[0].unknown_words[0],300-ap)

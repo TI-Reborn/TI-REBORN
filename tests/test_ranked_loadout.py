@@ -95,12 +95,17 @@ class RankedLoadoutTests(unittest.TestCase):
         self.clone(0,2,4);self.clone(1,2,4)
         self.clone(0,1,20)
         b=self.start(join((1,2)),join((1,2)))
-        self.assertEqual(len(b['field']._actors),4)
+        self.assertEqual(len(b['field']._actors),8)
+        self.assertEqual(len(b['bots']),4)
         self.assertEqual(set(b['field'].combat.ranked_limits.values()),{106})
 
     def test_four_vs_two_plus_two_alternates_single_actor_and_all_receipts(self):
         for index,count in ((0,4),(1,2),(2,2)):self.clone(index,count)
-        self.case.send(0,join((1,2,3,4)));self.case.send(1,join((1,2)));self.assertFalse(self.hub.battles)
+        # Queue the complete human population in one matchmaking cycle.
+        # A partial population now starts immediately with transient bots.
+        with patch.object(self.hub,'match_ranked'):
+            self.case.send(0,join((1,2,3,4)));self.case.send(1,join((1,2)))
+        self.assertFalse(self.hub.battles)
         self.case.send(2,join((1,2)));b=next(iter(self.hub.battles.values()));f=b['field']
         self.assertEqual(len(b['humans']),3);self.assertEqual(len(b['room'].members),3)
         for i in (0,1,2):self.case.send(i,b'\x36')

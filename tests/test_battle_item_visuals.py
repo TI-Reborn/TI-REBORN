@@ -12,6 +12,16 @@ from tio.protocol.binary import PacketError
 
 
 class ItemVisualTests(BattleItemFixture):
+    def test_recon_survives_overlapping_effect_without_replacing_its_sprite(self):
+        self.throw(318,(5,3))
+        state=effects.initialize(self.combat)
+        state['recon'][1]=dict(source=1,center=(5,3),radius=1,shape='square',expiry=0)
+        cells=visuals.visible_cells(self.field,7)
+        self.assertEqual({(x,y) for x,y,k in cells if k==3},
+                         {(x,y) for x in range(4,7) for y in range(2,5)})
+        self.assertIn((5,3,1),cells)
+        self.assertEqual(decode_item_visuals(encode_item_visuals(cells)),cells)
+
     def test_snapshot_codec_strict_version_lengths_coordinates_kinds_and_duplicates(self):
         cells=((2,3,1),(4,5,2),(6,7,3),(8,9,4),(10,11,5))
         self.assertEqual(decode_item_visuals(encode_item_visuals(cells)),cells)

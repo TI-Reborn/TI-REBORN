@@ -16,6 +16,14 @@
     <table>15 28 39 48</table>
     <value key="effectText" val="m189" />
   </skill>
+  <skill id="9" name="Sniper Sit">
+    <table>1</table>
+    <value key="operateType" val="OP_ACTIVE" />
+    <value key="target" val="target_riflescope" />
+    <value key="apConsume" val="3" />
+    <value key="SplashRange" val="1" />
+    <value key="reuseTurns" val="0" />
+  </skill>
   <skill id="10" name="Melee Master (Level 1)">
     <table>5 10</table>
     <value key="effectText" val="nn15" />
@@ -103,7 +111,8 @@
     <value key="hide" val="1" />
     <value key="soundnodelay" val="0" />
     <value key="operateType" val="OP_ACTIVE" />
-    <value key="target" val="target_area" />
+    <value key="target" val="target_grenade" />
+    <value key="itemConsumeId" val="340" />
   </skill>
   <skill id="28" name="Radio Help">
     <table>1</table>

@@ -13,8 +13,13 @@ MAX_CELLS = 4096
 
 def encode_item_visuals(cells):
     cells = tuple(cells)
-    if len(cells) > MAX_CELLS or len(set((x, y) for x, y, _ in cells)) != len(cells):
-        raise PacketError('Invalid item visual cell count or duplicate cell')
+    if len(cells) > MAX_CELLS or len(set(cells)) != len(cells):
+        raise PacketError('Invalid item visual cell count or duplicate effect')
+    effects = set()
+    for x,y,kind in cells:
+        if kind != RECON:
+            if (x,y) in effects: raise PacketError('Duplicate terrain effect')
+            effects.add((x,y))
     writer = Writer().u8(OPCODE).u8(VERSION).u16(len(cells))
     for x, y, kind in cells:
         if type(x) is not int or type(y) is not int or not 0 <= x < 255 or not 0 <= y < 255 or type(kind) is not int or kind not in (SMOKE, FLARE, RECON, FIRE, LIGHT):

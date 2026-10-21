@@ -70,7 +70,9 @@ def project_action(view, owner, before, visible_before, packets, *, visuals=True
                     and identity in visible_actors(view.field,view.owner)):
                 replies.extend(view.snapshot_packets(identity))
         elif opcode==0x4e:
-            if identity in visible_before:replies.append(packet)
+            if identity in visible_before:
+                replies.append(packet)
+                if packet[5:13]==b'\x01\x00\x00\x00\x04\x00\x00\x00':hit_updates.add(identity)
         elif opcode==0x3f:
             if view.owner==owner:
                 replies.append(packet)
@@ -81,6 +83,15 @@ def project_action(view, owner, before, visible_before, packets, *, visuals=True
         elif opcode==0x30:
             actor=view.field._actors.get(identity)
             if actor is not None and actor.owner_id==view.owner:replies.append(packet)
+        elif packet[:2]==b'\x7f\x01':
+            # Skill use is a visible animation (scope kneeling); availability
+            # and cooldown remain private. Never animate hidden enemy actors.
+            from tio.protocol.ability_status import decode_ability_status,encode_ability_status
+            actor_id,entries=decode_ability_status(packet)
+            if view.owner==owner:replies.append(packet)
+            elif actor_id in visible_before:
+                used=tuple(e for e in entries if e.state==0)
+                if used:replies.append(encode_ability_status(actor_id,used))
         elif view.owner==owner:
             # Inventory, cooldowns, loot and turn control remain owner-private.
             replies.append(packet)

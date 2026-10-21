@@ -39,11 +39,11 @@ class RankedSquadTests(unittest.TestCase):
         owners=tuple(self.hub.identities[s] for s in self.case.sessions[:2])
         self.assertIn(owners[0],self.hub.battles,[p[13:-2].decode('utf-16-le',errors='replace') for p in replies if p[:5]==b'\xf0\x8a\x01\x00\x00'])
         battle=self.hub.battles[owners[0]]
-        self.assertFalse(battle['bots']);self.assertEqual(len(battle['humans']),2)
+        self.assertEqual(len(battle['bots']),8-2*count);self.assertEqual(len(battle['humans']),2)
         self.assertEqual(battle['field'].scene_metadata['profile'],'trueskill_contest')
         self.assertEqual(battle['points'].positions,tuple(battle['field'].scene_metadata['control_points']))
-        self.assertEqual(len(battle['field']._actors),2*count)
-        self.assertEqual(battle['room'].request.soldiers_count_01,count)
+        self.assertEqual(len(battle['field']._actors),8)
+        self.assertEqual(battle['room'].request.soldiers_count_01,4)
         self.assertTrue(any(p[:2]==b'\xc6\x04' for p in replies))
         self.assertEqual(before,{s.account:OwnedPetStore(self.path).list(s.account) for s in self.case.sessions[:2]})
         for index in (0,1):self.case.send(index,b'\x36')
@@ -65,12 +65,12 @@ class RankedSquadTests(unittest.TestCase):
     def test_three_selected_native_fighters_are_supported_as_well(self):
         self.start(count=3)
 
-    def test_mismatched_counts_wait_without_trimming_and_cancel_preserves_save(self):
+    def test_mismatched_counts_start_without_trimming_and_late_cancel_preserves_match(self):
         self.case.send(0,join((1,2,3,4)))
         self.case.send(1,join((1,2,3)))
-        self.assertFalse(self.hub.battles);self.assertEqual(len(self.hub.ranked_waiting),2)
-        self.case.send(1,b'\xc6\x23');self.case.send(1,join((1,2,3,4)))
         battle=next(iter(self.hub.battles.values()));self.assertEqual(len(battle['field']._actors),8)
+        self.assertEqual(len(battle['bots']),1);self.assertFalse(self.hub.ranked_waiting)
+        self.case.send(1,b'\xc6\x23');self.assertFalse(battle['finished'])
 
     def test_two_character_slots_of_same_login_cannot_be_ranked_opponents(self):
         from tio.character_identity import alias,initialise
@@ -85,11 +85,11 @@ class RankedSquadTests(unittest.TestCase):
         self.case.send(0,join((1,2,3,4)));self.case.send(1,join((1,2,3,4)))
         self.assertFalse(self.hub.battles);self.assertEqual(len(self.hub.ranked_waiting),2)
 
-    def test_foreign_wounded_mixed_band_or_changed_fourth_pet_cannot_enter(self):
+    def test_foreign_wounded_out_of_range_or_changed_fourth_pet_cannot_enter(self):
         self.assertTrue(any(p[0]==0xf0 for p in self.case.send(0,join((1,2,3,999)))))
         store=OwnedPetStore(self.path);raw=store.list('alice')[3][1]
         parsed=decode_pet_info(raw,human_equipment=True)
-        for fields in ({'0x8c4ab1':1},{'0x8c4aef':7}):
+        for fields in ({'0x8c4ab1':1},{'0x8c4aef':21}):
             with closing(sqlite3.connect(self.path)) as db,db:
                 db.execute("UPDATE owned_pets SET pet_packet=? WHERE account='alice' AND pet_id=4",
                            (encode_pet_info(replace(parsed,fields={**parsed.fields,**fields})),))

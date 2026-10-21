@@ -1449,7 +1449,8 @@ class LoopbackExchange:
                         except (ValueError,sqlite3.Error) as error:
                             self.events.append({'event':'repair_rejected','reason':str(error)})
                             replies=(encode_shop_error('ремонта: '+str(error)[:150]),)
-                        for reply in replies:game.sendall(encode_reply(reply,outbound))
+                        for reply in replies:
+                            game.sendall(encode_initial_frame(reply,outbound) if reply[:1]==b'\x6a' else encode_reply(reply,outbound))
                         continue
                     if self.owned_pet_probe and self.database is not None and packet[:1]==b'\x33':
                         try:

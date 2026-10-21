@@ -313,14 +313,17 @@ class ArenaService:
     def cast_ability(self,character_id,packet,*,view=None):
         from .protocol.ability_cast import decode_ability_cast
         request=decode_ability_cast(packet)
-        if request.ability_id not in (12,22,26,27):return self.cast_healing(character_id,packet,with_packets=True)
+        if request.ability_id not in (9,12,22,26,27):return self.cast_healing(character_id,packet,with_packets=True)
         room=next((r for r in self.rooms.snapshot() if character_id in r.members),None)
         turn=None if room is None else self._turns.get(room.room_id)
         if turn is None or turn[0]!=character_id or self._clock()>=turn[2]:raise ValueError('Character does not own an active turn')
         if request.actor_id not in turn[1]:raise ValueError('Actor not selected for turn')
         field=self._fields.get(room.room_id)
         if field is None or not hasattr(field,'combat'):raise ValueError('Combat not prepared')
-        if request.ability_id==12:
+        if request.ability_id==9:
+            from .sniper_scope import cast
+            replies=cast(field.combat,character_id,request,view=view)
+        elif request.ability_id==12:
             from .dog_abilities import cast_scent
             replies=cast_scent(field,character_id,request)
         elif request.ability_id==26:replies=field.combat.cast_deathbite(character_id,request,view=view)

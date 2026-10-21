@@ -123,6 +123,18 @@ class WagerArena:
                 from tio.wallets import WalletStore
                 self.put(owner,encode_asset_count(WalletStore(s.database).ensure(s.account)))
 
+    def push_battle_listing(self, owner, packet, *, reset=False):
+        """C82C merges rows; remove vanished IDs before sending current rows."""
+        from tio.protocol.wagers import decode_room_list,encode_room_removed,encode_room_list_clear
+        previous=self.wager_listing_cache.get(owner)
+        if reset or previous is None:
+            self.put(owner,encode_room_list_clear(),packet)
+        elif previous!=packet:
+            current={r.identity for r in decode_room_list(packet)}
+            deleted=sorted({r.identity for r in decode_room_list(previous)}-current)
+            self.put(owner,*(encode_room_removed(identity) for identity in deleted),packet)
+        self.wager_listing_cache[owner]=packet
+
     def cancel_wager_start(self, room, reason):
         if room.match_id is None: return
         path = self.players[room.captain].database
@@ -221,7 +233,9 @@ class WagerArena:
                 target, side = decode_transfer(packet)
                 if target == session.probe_character_id: target = owner
                 self.wager_lobbies.transfer(owner,target,side); self.wager_notify(room)
-            elif packet == b'\xba\x01': self.put(owner,self.list_packet(owner),self.wager_list_packet(owner))
+            elif packet == b'\xba\x01':
+                self.put(owner,self.list_packet(owner))
+                self.push_battle_listing(owner,self.battle_list_packet(owner),reset=True)
             else: raise ValueError('Действие недоступно в заявке со ставкой')
         except ValueError as error:
             self.put(owner,encode_shop_error(str(error)))

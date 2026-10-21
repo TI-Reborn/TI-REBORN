@@ -1,5 +1,6 @@
 """7F/01 skill state, original serializer62f038 and consumer8c0790.
 
+State0 acknowledges use (target_riflescope -> ChangeState(Sit), 8c084b).
 State3 draws cooldown progress (8ba31f); state4 passes the UI activation
 gate (8bba8e). Remaining cooldown is an absolute value, not a decrement.
 """
@@ -22,8 +23,8 @@ def encode_ability_status(actor_id, entries):
         raise PacketError('Too many skill states for native consumer')
     w = Writer().u8(0x7f).u8(1).u32(actor_id).u32(len(entries))
     for e in entries:
-        if e.state not in (3, 4):
-            raise PacketError('Only recovered cooldown/available states supported')
+        if e.state not in (0, 3, 4):
+            raise PacketError('Only recovered use/cooldown/available states supported')
         w.u32(e.ability_id).u8(e.level).u32(e.state).u32(e.remaining)
     return w.build()
 
@@ -37,6 +38,6 @@ def decode_ability_status(packet):
         raise PacketError('Too many skill states for native consumer')
     entries = tuple(AbilityStatus(r.u32(), r.u8(), r.u32(), r.u32()) for _ in range(count))
     r.finish()
-    if any(e.state not in (3, 4) for e in entries):
+    if any(e.state not in (0, 3, 4) for e in entries):
         raise PacketError('Unsupported skill state')
     return actor_id, entries

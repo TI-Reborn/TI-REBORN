@@ -1018,6 +1018,14 @@
         "unknown_u32_03": 300,
         "durability": 1,
         "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 65013,
+        "unknown_u32_02": 1,
+        "item_id": 5013,
+        "unknown_u32_03": 1650,
+        "durability": 300,
+        "unknown_u8": 0
       }
     ]
   },

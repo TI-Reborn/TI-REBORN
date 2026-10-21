@@ -48,7 +48,7 @@
     <value key="empty" val="1" />
     <value key="actionPoints" val="4" />
     <value key="durability" val="300" />
-    <value key="image" val="melee.tga" />
+    <value key="image" val="tio_wi_300.png" />
     <value key="anim_idle" val="empty_idle" />
     <value key="anim_run" val="empty_run" />
     <value key="anim_fire" val="empty_fire01" />
@@ -85,7 +85,7 @@
     <value key="actionPoints" val="3" />
     <value key="weight" val="50" />
     <value key="durability" val="300" />
-    <value key="image" val="berreta.tga" />
+    <value key="image" val="tio_wi_301.png" />
     <value key="model_1" val="weapon_beretta" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="gun_idle" />
@@ -121,7 +121,7 @@
     <value key="actionPoints" val="5" />
     <value key="weight" val="100" />
     <value key="durability" val="300" />
-    <value key="image" val="shotgun.tga" />
+    <value key="image" val="tio_wi_302.png" />
     <value key="model_1" val="weapon_shotgun" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="heavy_idle" />
@@ -157,7 +157,7 @@
     <value key="actionPoints" val="4" />
     <value key="weight" val="100" />
     <value key="durability" val="300" />
-    <value key="image" val="mp5.tga" />
+    <value key="image" val="tio_wi_303.png" />
     <value key="model_1" val="weapon_mp5" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="mp5_idle" />
@@ -195,7 +195,7 @@
     <value key="actionPoints" val="5" />
     <value key="weight" val="150" />
     <value key="durability" val="300" />
-    <value key="image" val="ak47.tga" />
+    <value key="image" val="tio_wi_304.png" />
     <value key="model_1" val="weapon_ak47" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="famas_idle" />
@@ -231,7 +231,7 @@
     <value key="actionPoints" val="3" />
     <value key="weight" val="75" />
     <value key="durability" val="300" />
-    <value key="image" val="itm_uzi.png" />
+    <value key="image" val="tio_wi_305.png" />
     <value key="model_1" val="weapon_uzi" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="gun_idle" />
@@ -267,7 +267,7 @@
     <value key="actionPoints" val="5" />
     <value key="weight" val="80" />
     <value key="durability" val="300" />
-    <value key="image" val="itm_p90.png" />
+    <value key="image" val="tio_wi_306.png" />
     <value key="model_1" val="weapon_p90" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="gun_idle" />
@@ -305,7 +305,7 @@
     <value key="actionPoints" val="6" />
     <value key="weight" val="150" />
     <value key="durability" val="300" />
-    <value key="image" val="itm_spas.png" />
+    <value key="image" val="tio_wi_307.png" />
     <value key="model_1" val="weapon_spas" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="heavy_idle" />
@@ -343,7 +343,7 @@
     <value key="actionPoints" val="8" />
     <value key="weight" val="125" />
     <value key="durability" val="300" />
-    <value key="image" val="itm_pancor.png" />
+    <value key="image" val="tio_wi_308.png" />
     <value key="model_1" val="weapon_JackHammer" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="famas_idle" />
@@ -381,7 +381,7 @@
     <value key="actionPoints" val="5" />
     <value key="weight" val="80" />
     <value key="durability" val="300" />
-    <value key="image" val="itm_famas.png" />
+    <value key="image" val="tio_wi_309.png" />
     <value key="model_1" val="weapon_famas" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="famas_idle" />
@@ -417,7 +417,7 @@
     <value key="actionPoints" val="7" />
     <value key="weight" val="80" />
     <value key="durability" val="350" />
-    <value key="image" val="itm_sks.png" />
+    <value key="image" val="tio_wi_310.png" />
     <value key="model_1" val="weapon_sks" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="sniper_idle" />
@@ -453,7 +453,7 @@
     <value key="actionPoints" val="6" />
     <value key="weight" val="150" />
     <value key="durability" val="300" />
-    <value key="image" val="aug.tga" />
+    <value key="image" val="tio_wi_311.png" />
     <value key="model_1" val="weapon_aug" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="famas_idle" />
@@ -489,7 +489,7 @@
     <value key="actionPoints" val="9" />
     <value key="weight" val="200" />
     <value key="durability" val="300" />
-    <value key="image" val="awp.tga" />
+    <value key="image" val="tio_wi_312.png" />
     <value key="model_1" val="weapon_awp" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="sniper_idle" />
@@ -525,7 +525,7 @@
     <value key="actionPoints" val="10" />
     <value key="weight" val="200" />
     <value key="durability" val="300" />
-    <value key="image" val="itm_hkg3.png" />
+    <value key="image" val="tio_wi_313.png" />
     <value key="model_1" val="weapon_HKG3SG1" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="sniper_idle" />
@@ -552,7 +552,7 @@
     <value key="critical" val="5" />
     <value key="bulletsCount" val="20" />
     <value key="minRange" val="1" />
-    <value key="maxRange" val="9" />
+    <value key="maxRange" val="12" />
     <value key="accuracy" val="80" />
     <value key="ammo_id" val="14" />
     <value key="anim_delay" val="1100" />
@@ -561,7 +561,7 @@
     <value key="actionPoints" val="9" />
     <value key="weight" val="200" />
     <value key="durability" val="300" />
-    <value key="image" val="itm_m60.png" />
+    <value key="image" val="tio_wi_314.png" />
     <value key="model_1" val="weapon_m60" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="heavy_idle" />
@@ -597,7 +597,7 @@
     <value key="actionPoints" val="10" />
     <value key="weight" val="250" />
     <value key="durability" val="300" />
-    <value key="image" val="itm_minigun.png" />
+    <value key="image" val="tio_wi_315.png" />
     <value key="model_1" val="weapon_minigun" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="minigun_idle" />
@@ -634,7 +634,7 @@
     <value key="weight" val="150" />
     <value key="durability" val="300" />
     <value key="spread" val="3" />
-    <value key="image" val="rpg.tga" />
+    <value key="image" val="tio_wi_316.png" />
     <value key="model_1" val="weapon_rpg" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="rpg_idle" />
@@ -670,7 +670,7 @@
     <value key="weight" val="40" />
     <value key="durability" val="300" />
     <value key="spread" val="2" />
-    <value key="image" val="grenade.tga" />
+    <value key="image" val="tio_wi_317.png" />
     <value key="anim_idle" val="empty_idle" />
     <value key="anim_run" val="empty_run" />
     <value key="anim_fire" val="grenade_fire" />
@@ -704,7 +704,7 @@
     <value key="weight" val="30" />
     <value key="durability" val="300" />
     <value key="spread" val="3" />
-    <value key="image" val="itm_stungrenade.png" />
+    <value key="image" val="tio_wi_318.png" />
     <value key="anim_idle" val="empty_idle" />
     <value key="anim_run" val="empty_run" />
     <value key="anim_fire" val="grenade_fire" />
@@ -732,7 +732,7 @@
     <value key="weight" val="40" />
     <value key="durability" val="300" />
     <value key="spread" val="3" />
-    <value key="image" val="itm_shampagne.png" />
+    <value key="image" val="tio_wi_319.png" />
     <value key="anim_idle" val="empty_idle" />
     <value key="anim_run" val="empty_run" />
     <value key="anim_fire" val="grenade_fire" />
@@ -764,7 +764,7 @@
     <value key="weight" val="30" />
     <value key="durability" val="300" />
     <value key="spread" val="2" />
-    <value key="image" val="itm_flashbang.png" />
+    <value key="image" val="tio_wi_320.png" />
     <value key="anim_idle" val="empty_idle" />
     <value key="anim_run" val="empty_run" />
     <value key="anim_fire" val="grenade_fire" />
@@ -791,7 +791,7 @@
     <value key="weight" val="20" />
     <value key="durability" val="300" />
     <value key="spread" val="1" />
-    <value key="image" val="itm_mine_green.png" />
+    <value key="image" val="tio_wi_321.png" />
     <value key="anim_idle" val="empty_idle" />
     <value key="anim_run" val="empty_run" />
     <value key="anim_fire" val="grenade_fire" />
@@ -838,6 +838,7 @@
       <add stat="accuracyGain" val="0.00" />
     </for>
     <value key="damageFade" val="100" />
+    <value key="image" val="tio_wi_322.png" />
   </item>
   <item id="323" name="Grenade Launcher">
     <value key="weaponAttack" val="Grenade" />
@@ -857,7 +858,7 @@
     <value key="durability" val="300" />
     <value key="spread" val="2" />
     <value key="texture_1" val="weapons_pak2.jpg" />
-    <value key="image" val="item_rg6.png" />
+    <value key="image" val="tio_wi_323.png" />
     <value key="model_1" val="weapon_rg6" />
     <value key="anim_idle" val="heavy_idle" />
     <value key="anim_run" val="heavy_run" />
@@ -893,7 +894,7 @@
     <value key="durability" val="300" />
     <value key="cant_buy_in_private_store" val="1" />
     <value key="texture_1" val="weapons_pak2.jpg" />
-    <value key="image" val="item_flamethrower.png" />
+    <value key="image" val="tio_wi_324.png" />
     <value key="model_1" val="weapon_flametrower" />
     <value key="attackType" val="Bullet" />
     <for>
@@ -929,6 +930,7 @@
       <add stat="accuracyGain" val="0.00" />
     </for>
     <value key="damageFade" val="100" />
+    <value key="image" val="tio_wi_325.png" />
   </item>
   <item id="326" name="Knife">
     <value key="weaponAttack" val="None" />
@@ -947,7 +949,7 @@
     <value key="actionPoints" val="4" />
     <value key="weight" val="5" />
     <value key="durability" val="300" />
-    <value key="image" val="knife.tga" />
+    <value key="image" val="tio_wi_326.png" />
     <value key="model_1" val="weapon_knife" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="empty_idle" />
@@ -984,7 +986,7 @@
     <value key="actionPoints" val="5" />
     <value key="weight" val="6" />
     <value key="durability" val="300" />
-    <value key="image" val="itm_machete.png" />
+    <value key="image" val="tio_wi_327.png" />
     <value key="model_1" val="weapon_machete" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="empty_idle" />
@@ -1021,7 +1023,7 @@
     <value key="actionPoints" val="5" />
     <value key="weight" val="8" />
     <value key="durability" val="300" />
-    <value key="image" val="itm_pipe.png" />
+    <value key="image" val="tio_wi_328.png" />
     <value key="model_1" val="weapon_pipe" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="empty_idle" />
@@ -1059,7 +1061,7 @@
     <value key="actionPoints" val="6" />
     <value key="weight" val="15" />
     <value key="durability" val="300" />
-    <value key="image" val="itm_wrench.png" />
+    <value key="image" val="tio_wi_329.png" />
     <value key="model_1" val="weapon_wrench" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="empty_idle" />
@@ -1099,7 +1101,7 @@
     <value key="actionPoints" val="5" />
     <value key="weight" val="150" />
     <value key="durability" val="300" />
-    <value key="image" val="colt.tga" />
+    <value key="image" val="tio_wi_330.png" />
     <value key="model_1" val="weapon_m4" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="mp5_idle" />
@@ -1135,7 +1137,7 @@
     <value key="actionPoints" val="4" />
     <value key="weight" val="50" />
     <value key="durability" val="300" />
-    <value key="image" val="itm_usp.png" />
+    <value key="image" val="tio_wi_331.png" />
     <value key="model_1" val="weapon_usp" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="gun_idle" />
@@ -1171,7 +1173,7 @@
     <value key="actionPoints" val="5" />
     <value key="weight" val="50" />
     <value key="durability" val="300" />
-    <value key="image" val="itm_magnum.png" />
+    <value key="image" val="tio_wi_332.png" />
     <value key="model_1" val="weapon_magnum" />
     <value key="texture_1" val="weapons_pak1.jpg" />
     <value key="anim_idle" val="gun_idle" />
@@ -1205,7 +1207,7 @@
     <value key="actionPoints" val="5" />
     <value key="weight" val="15" />
     <value key="durability" val="300" />
-    <value key="image" val="ti_ico_claws_002.png" />
+    <value key="image" val="tio_wi_333.png" />
     <value key="anim_fire" val="dog_attack" />
     <value key="sound" val="dogattack1" />
     <value key="sound2" val="dogattack2" />
@@ -1364,7 +1366,7 @@
     <value key="durability" val="300" />
     <value key="p_def" val="5" />
     <value key="image" val="helmet.tga" />
-    <value key="showface" val="0" />
+    <value key="showface" val="1" />
     <value key="cant_buy_in_private_store" val="1" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_combat_light_head" />
@@ -1383,26 +1385,26 @@
     <value key="showface" val="1" />
     <value key="cant_buy_in_private_store" val="1" />
     <value key="itype" val="armor" />
-    <value key="model_1" val="chr_man_head" />
-    <value key="texture_1" val="chr_man_head.jpg" />
+    <value key="model_1" val="tio_vet_head" />
+    <value key="texture_1" val="tio_vet_head.jpg" />
     <value key="type" val="armor" />
   </item>
   <item id="65501" name="male body">
     <value key="bodypart" val="chest" />
     <value key="cant_buy_in_private_store" val="1" />
     <value key="itype" val="armor" />
-    <value key="model_1" val="chr_man_body" />
-    <value key="texture_1" val="chr_man_body.jpg" />
-    <value key="model_2" val="chr_man_hands" />
-    <value key="texture_2" val="chr_man_body.jpg" />
+    <value key="model_1" val="tio_vet_torso" />
+    <value key="texture_1" val="tio_vet_body.jpg" />
+    <value key="model_2" val="tio_vet_hands" />
+    <value key="texture_2" val="tio_vet_body.jpg" />
     <value key="type" val="armor" />
   </item>
   <item id="65502" name="male legs">
     <value key="bodypart" val="legs" />
     <value key="cant_buy_in_private_store" val="1" />
     <value key="itype" val="armor" />
-    <value key="model_1" val="chr_man_legs" />
-    <value key="texture_1" val="chr_man_body.jpg" />
+    <value key="model_1" val="tio_vet_legs" />
+    <value key="texture_1" val="tio_vet_body.jpg" />
     <value key="type" val="armor" />
   </item>
   <item id="65504" name="target body">
@@ -1554,6 +1556,10 @@
       <add stat="pdef" val="60" />
     </for>
     <value key="type" val="armor" />
+    <value key="model_2" val="chr_man_hands" />
+    <value key="texture_2" val="chr_man_body.jpg" />
+    <value key="w_model_2" val="chr_woman_hands" />
+    <value key="w_texture_2" val="chr_woman_body.jpg" />
   </item>
   <item id="211" name="Light Combat Helmet">
     <value key="bodypart" val="head" />
@@ -1628,6 +1634,10 @@
       <add stat="pdef" val="70" />
     </for>
     <value key="type" val="armor" />
+    <value key="model_2" val="chr_man_hands" />
+    <value key="texture_2" val="chr_man_body.jpg" />
+    <value key="w_model_2" val="chr_woman_hands" />
+    <value key="w_texture_2" val="chr_woman_body.jpg" />
   </item>
   <item id="215" name="Medium Combat Longies">
     <value key="bodypart" val="legs" />
@@ -1683,6 +1693,10 @@
       <add stat="pdef" val="50" />
     </for>
     <value key="type" val="armor" />
+    <value key="model_2" val="chr_man_hands" />
+    <value key="texture_2" val="chr_man_body.jpg" />
+    <value key="w_model_2" val="chr_woman_hands" />
+    <value key="w_texture_2" val="chr_woman_body.jpg" />
   </item>
   <item id="218" name="Light Military Longies">
     <value key="bodypart" val="legs" />
@@ -1738,6 +1752,10 @@
       <add stat="pdef" val="60" />
     </for>
     <value key="type" val="armor" />
+    <value key="model_2" val="chr_man_hands" />
+    <value key="texture_2" val="chr_man_body.jpg" />
+    <value key="w_model_2" val="chr_woman_hands" />
+    <value key="w_texture_2" val="chr_woman_body.jpg" />
   </item>
   <item id="221" name="Medium Military Longies">
     <value key="bodypart" val="legs" />
@@ -1775,6 +1793,10 @@
       <add stat="pdef" val="20" />
     </for>
     <value key="type" val="armor" />
+    <value key="model_2" val="chr_man_hands" />
+    <value key="texture_2" val="chr_man_body.jpg" />
+    <value key="w_model_2" val="chr_woman_hands" />
+    <value key="w_texture_2" val="chr_woman_body.jpg" />
   </item>
   <item id="223" name="Rags">
     <value key="bodypart" val="chest" />
@@ -1794,6 +1816,10 @@
       <add stat="pdef" val="15" />
     </for>
     <value key="type" val="armor" />
+    <value key="model_2" val="chr_man_hands" />
+    <value key="texture_2" val="chr_man_body.jpg" />
+    <value key="w_model_2" val="chr_woman_hands" />
+    <value key="w_texture_2" val="chr_woman_body.jpg" />
   </item>
   <item id="224" name="Rags Longines">
     <value key="bodypart" val="legs" />
@@ -1869,6 +1895,10 @@
       <add stat="pdef" val="30" />
     </for>
     <value key="type" val="armor" />
+    <value key="model_2" val="chr_man_hands" />
+    <value key="texture_2" val="chr_man_body.jpg" />
+    <value key="w_model_2" val="chr_woman_hands" />
+    <value key="w_texture_2" val="chr_woman_body.jpg" />
   </item>
   <item id="230" name="Light Battle Helmet">
     <value key="bodypart" val="head" />
@@ -1924,6 +1954,10 @@
       <add stat="pdef" val="55" />
     </for>
     <value key="type" val="armor" />
+    <value key="model_2" val="chr_man_hands" />
+    <value key="texture_2" val="chr_man_body.jpg" />
+    <value key="w_model_2" val="chr_woman_hands" />
+    <value key="w_texture_2" val="chr_woman_body.jpg" />
   </item>
   <item id="233" name="Medium Battle Helmet">
     <value key="bodypart" val="head" />
@@ -2010,6 +2044,10 @@
       <add stat="pdef" val="40" />
     </for>
     <value key="type" val="armor" />
+    <value key="model_2" val="chr_man_hands" />
+    <value key="texture_2" val="chr_man_body.jpg" />
+    <value key="w_model_2" val="chr_woman_hands" />
+    <value key="w_texture_2" val="chr_woman_body.jpg" />
   </item>
   <item id="238" name="Raider Longies">
     <value key="bodypart" val="legs" />
@@ -2078,6 +2116,10 @@
       <add stat="pdef" val="69" />
     </for>
     <value key="type" val="armor" />
+    <value key="model_2" val="chr_man_hands" />
+    <value key="texture_2" val="chr_man_body.jpg" />
+    <value key="w_model_2" val="chr_woman_hands" />
+    <value key="w_texture_2" val="chr_woman_body.jpg" />
   </item>
   <item id="241" name="Heavy Military Longies">
     <value key="bodypart" val="legs" />
@@ -2133,6 +2175,10 @@
       <add stat="pdef" val="85" />
     </for>
     <value key="type" val="armor" />
+    <value key="model_2" val="chr_man_hands" />
+    <value key="texture_2" val="chr_man_body.jpg" />
+    <value key="w_model_2" val="chr_woman_hands" />
+    <value key="w_texture_2" val="chr_woman_body.jpg" />
   </item>
   <item id="244" name="Heavy Battle Longies">
     <value key="bodypart" val="legs" />
@@ -2188,6 +2234,10 @@
       <add stat="pdef" val="80" />
     </for>
     <value key="type" val="armor" />
+    <value key="model_2" val="chr_man_hands" />
+    <value key="texture_2" val="chr_man_body.jpg" />
+    <value key="w_model_2" val="chr_woman_hands" />
+    <value key="w_texture_2" val="chr_woman_body.jpg" />
   </item>
   <item id="247" name="Heavy Combat Longies">
     <value key="bodypart" val="legs" />
@@ -2225,6 +2275,10 @@
       <add stat="pdef" val="80" />
     </for>
     <value key="type" val="armor" />
+    <value key="model_2" val="chr_man_hands" />
+    <value key="texture_2" val="chr_man_body.jpg" />
+    <value key="w_model_2" val="chr_woman_hands" />
+    <value key="w_texture_2" val="chr_woman_body.jpg" />
   </item>
   <item id="249" name="Heavy Combat Helmet SE">
     <value key="bodypart" val="head" />
@@ -2303,6 +2357,10 @@
       <add stat="pdef" val="85" />
     </for>
     <value key="type" val="armor" />
+    <value key="model_2" val="chr_man_hands" />
+    <value key="texture_2" val="chr_man_body.jpg" />
+    <value key="w_model_2" val="chr_woman_hands" />
+    <value key="w_texture_2" val="chr_woman_body.jpg" />
   </item>
   <item id="253" name="Heavy Battle Longies SE">
     <value key="bodypart" val="legs" />
@@ -2394,6 +2452,10 @@
     <value key="texture_1" val="chr_man_body.jpg" />
     <value key="w_model_1" val="woman_armor_pantsukudasai" />
     <value key="w_texture_1" val="chr_man_body.jpg" />
+    <value key="model_2" val="tio_vet_legs" />
+    <value key="texture_2" val="tio_vet_body.jpg" />
+    <value key="w_model_2" val="chr_woman_legs" />
+    <value key="w_texture_2" val="chr_woman_body.jpg" />
     <for>
       <add stat="pdef" val="5" />
     </for>
@@ -2460,7 +2522,7 @@
     <value key="radius" val="4" />
     <value key="actionPoints" val="4" />
     <value key="sound2" val="explosion" />
-    <value key="image" val="itm_suicide_jacket.png" />
+    <value key="image" val="tio_wi_334.png" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_suicidjack" />
     <value key="texture_1" val="armor_suicidjack.jpg" />
@@ -2476,6 +2538,10 @@
     <value key="attackType" val="Suicide" />
     <value key="damageFade" val="80" />
     <value key="type" val="armor" />
+    <value key="model_2" val="chr_man_hands" />
+    <value key="texture_2" val="chr_man_body.jpg" />
+    <value key="w_model_2" val="chr_woman_hands" />
+    <value key="w_texture_2" val="chr_woman_body.jpg" />
   </item>
   <item id="35" name="Vision Injection">
     <value key="actionPoints" val="10" />
@@ -2629,7 +2695,7 @@
     <value key="actionPoints" val="6" />
     <value key="weight" val="200" />
     <value key="durability" val="600" />
-    <value key="image" val="ti_miner_png_06.png" />
+    <value key="image" val="tio_wi_335.png" />
     <value key="model_1" val="hammer_tx800p" />
     <value key="texture_1" val="hammer_tx800p.jpg" />
     <value key="anim_idle" val="freakminer_hammer_idle" />
@@ -2665,7 +2731,7 @@
     <value key="weight" val="150" />
     <value key="ammo_id" val="37" />
     <value key="durability" val="600" />
-    <value key="image" val="ti_miner_png_07.png" />
+    <value key="image" val="tio_wi_336.png" />
     <value key="model_1" val="weapon_nailgun" />
     <value key="texture_1" val="weapons_diffuse2.jpg" />
     <value key="anim_idle" val="freakminer_nailgun_idle" />
@@ -2695,7 +2761,7 @@
     <value key="durability" val="0" />
     <value key="minRange" val="1" />
     <value key="maxRange" val="1" />
-    <value key="image" val="ti_miner_png_09.png" />
+    <value key="image" val="tio_wi_337.png" />
     <value key="anim_idle" val="freakminer_empty_idle" />
     <value key="anim_run" val="freakminer_empty_walk" />
     <value key="anim_fire" val="freakminer_empty_attack_v01" />
@@ -2734,7 +2800,7 @@
     <value key="actionPoints" val="7" />
     <value key="weight" val="150" />
     <value key="durability" val="300" />
-    <value key="image" val="qui_ico_vintorez_004.png" />
+    <value key="image" val="tio_wi_338.png" />
     <value key="model_1" val="weapon_vintorez" />
     <value key="texture_1" val="weapons_diffuse2.jpg" />
     <value key="anim_idle" val="famas_idle" />
@@ -2772,7 +2838,7 @@
     <value key="actionPoints" val="6" />
     <value key="weight" val="150" />
     <value key="durability" val="300" />
-    <value key="image" val="qui_ico_grom_003.png" />
+    <value key="image" val="tio_wi_339.png" />
     <value key="model_1" val="weapon_groza" />
     <value key="texture_1" val="weapons_diffuse2.jpg" />
     <value key="anim_idle" val="famas_idle" />
@@ -2808,7 +2874,7 @@
     <value key="weight" val="40" />
     <value key="durability" val="300" />
     <value key="spread" val="1" />
-    <value key="image" val="qui_ico_vog25_004.png" />
+    <value key="image" val="tio_wi_340.png" />
     <value key="model_1" val="weapon_groza" />
     <value key="texture_1" val="weapons_diffuse2.jpg" />
     <value key="anim_idle" val="famas_idle" />
@@ -2849,6 +2915,10 @@
       <add stat="pdef" val="208" />
     </for>
     <value key="type" val="armor" />
+    <value key="model_2" val="chr_woman_hands" />
+    <value key="texture_2" val="chr_woman_body.jpg" />
+    <value key="w_model_2" val="chr_woman_hands" />
+    <value key="w_texture_2" val="chr_woman_body.jpg" />
   </item>
   <item id="264" name="Female Exo Armor SE">
     <value key="weight" val="325" />
@@ -2872,6 +2942,10 @@
       <add stat="maxload" val="200" />
     </for>
     <value key="type" val="armor" />
+    <value key="model_2" val="chr_woman_hands" />
+    <value key="texture_2" val="chr_woman_body.jpg" />
+    <value key="w_model_2" val="chr_woman_hands" />
+    <value key="w_texture_2" val="chr_woman_body.jpg" />
   </item>
   <item id="265" name="Dog Solid Armor">
     <value key="level_required" val="5" />
@@ -2922,7 +2996,7 @@
     <value key="actionPoints" val="4" />
     <value key="weight" val="300" />
     <value key="durability" val="600" />
-    <value key="image" val="ti_miner_png_10.png" />
+    <value key="image" val="tio_wi_341.png" />
     <value key="model_1" val="shield_minedoor" />
     <value key="texture_1" val="shield_minedoor.jpg" />
     <value key="mask_1" val="shield_minedoor_mask.png" />
@@ -3037,7 +3111,7 @@
     <value key="actionPoints" val="4" />
     <value key="weight" val="0" />
     <value key="durability" val="0" />
-    <value key="image" val="ti_ico_claws_002.png" />
+    <value key="image" val="tio_wi_65489.png" />
     <value key="anim_fire" val="dog_attack" />
     <value key="sound" val="dogattack1" />
     <value key="sound2" val="dogattack2" />
@@ -3082,7 +3156,7 @@
     <value key="weight" val="20" />
     <value key="durability" val="300" />
     <value key="spread" val="2" />
-    <value key="image" val="itm_flare.png" />
+    <value key="image" val="tio_wi_5001.png" />
     <value key="anim_idle" val="empty_idle" />
     <value key="anim_run" val="empty_run" />
     <value key="anim_fire" val="grenade_fire" />
@@ -3214,7 +3288,7 @@
     <value key="cant_buy_in_private_store" val="1" />
     <value key="level_required" val="4" />
   </item>
-<item id="5012" name="Injection HP">
+  <item id="5012" name="Injection HP">
     <value key="actionPoints" val="8" />
     <value key="weight" val="1" />
     <value key="durability" val="1" />
@@ -3223,5 +3297,42 @@
     <value key="itype" val="medkit" />
     <value key="sound" val="injection" />
     <value key="cant_buy_in_private_store" val="1" />
+  </item>
+  <item id="5013" name="SVD">
+    <value key="weaponAttack" val="Bullet" />
+    <value key="weaponType" val="Distance" />
+    <value key="p_dam" val="55" />
+    <value key="rnd_dam" val="20" />
+    <value key="damage_fade" val="120" />
+    <value key="critical" val="5" />
+    <value key="bulletsCount" val="1" />
+    <value key="minRange" val="7" />
+    <value key="maxRange" val="15" />
+    <value key="accuracy" val="90" />
+    <value key="ammo_id" val="6" />
+    <value key="anim_delay" val="1500" />
+    <value key="spark_delay" val="100" />
+    <value key="radius" val="1" />
+    <value key="actionPoints" val="9" />
+    <value key="weight" val="200" />
+    <value key="durability" val="300" />
+    <value key="image" val="tio_wi_5013.png" />
+    <value key="model_1" val="weapon_svd" />
+    <value key="texture_1" val="weapons_pak1.jpg" />
+    <value key="anim_idle" val="sniper_idle" />
+    <value key="anim_run" val="sniper_run" />
+    <value key="anim_fire" val="sniper_fire" />
+    <value key="anim_random" val="sniper_random" />
+    <value key="sound" val="svd" />
+    <value key="attackType" val="Bullet" />
+    <for>
+      <consume id="6" amount="1" />
+      <set stat="patk" val="55" />
+      <add stat="patk" val="20" />
+      <add stat="accuracy" val="0.90" />
+      <add stat="accuracyGain" val="0.00" />
+    </for>
+    <value key="damageFade" val="120" />
+    <value key="level_required" val="5" />
   </item>
 </items>
