@@ -1,49 +1,38 @@
-# Local state and credentials
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+# Locally captured proprietary runtime memory; keep on disk as evidence, not in git.
+evidence/*.bin
+evidence/**/*.bin
+
+# Local emulator save data.
+data/
+
+# Local service credentials.
 .secrets/
-.env
-.env.*
-!.env.example
-!*.example.env
+
+# Source handoffs are built from an allowlist; never commit the whole workspace.
+output/
+reports/
+work/
+.next*/
+**/node_modules/
+**/.next*/
+.venv*/
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.production.example
 *.local.toml
-*.pem
-*.key
-*.pfx
-*.p12
 *.sqlite
 *.sqlite3
 *.sqlite3-*
 *.db
 *.db-*
+*.pem
+*.key
+*.pfx
+*.p12
 *.dump
-data/
-reports/
-work/
-output/
-backups/
-# Runtime/build outputs
-__pycache__/
-*.py[cod]
-*.egg-info/
-.venv*/
-venv/
-.pytest_cache/
-.coverage
-htmlcov/
-node_modules/
-.next*/
-dist/
-build/
 *.log
-*.zip
-*.tar
-*.gz
-*.exe
-*.dll
-*.bin
-# Only reviewed runtime fixtures belong in evidence.
-evidence/*
-!evidence/items_diagnostic.xml
-!evidence/skills_diagnostic.xml
-!evidence/zones_diagnostic.xml
-!evidence/customization_diagnostic.xml
-!evidence/owned_pet_trial.json

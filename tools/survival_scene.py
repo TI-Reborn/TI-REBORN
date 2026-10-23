@@ -35,7 +35,8 @@ def prepare_survival(path, account, ticket, catalog, *, arena_map=None, seed=Non
     policy = BattleMode(0,2,4) if ranked else mode_rules(mode)
     policy.validate(len(ticket.actors))
     if ranked and (len(ticket.actors)!=len(ticket.levels) or len(set(ticket.actors))!=len(ticket.actors)
-                   or any(type(level) is not int or not 4<=level<=20 for level in ticket.levels)):
+                   or any(type(level) is not int or not 4<=level<=20 for level in ticket.levels)
+                   or len({level_band(level) for level in ticket.levels})!=1):
         raise ValueError('Invalid ranked squad')
     if mode and not allow_mixed_levels and len({level_band(level) for level in ticket.levels}) != 1:
         raise ValueError('Team fighters must belong to the same level range')

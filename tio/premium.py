@@ -17,6 +17,9 @@ if any(type(v) is not int or v<=0 for v in POLICY.values() if not isinstance(v,s
 
 
 def state(db,account,now=None):
+    # Benefits follow the authenticated login; save owners remain character-local.
+    from .character_identity import auth_account
+    account=auth_account(None,account,connection=db)
     stamp=int(time.time() if now is None else now)
     if not db.execute("SELECT 1 FROM sqlite_master WHERE name='premium_accounts'").fetchone():return 0,0
     row=db.execute('SELECT kind,expires FROM premium_accounts WHERE account=?',(account,)).fetchone()
@@ -58,13 +61,16 @@ def purchase(path,account,packet,*,now=None):
     stamp=int(time.time() if now is None else now);kind=1 if offer<=2 else 3
     with closing(connect(path)) as db,db:
         db.execute('BEGIN IMMEDIATE')
+        from .character_identity import auth_account
+        subscription=auth_account(None,account,connection=db)
+        # Charge the selected character, extend the one account subscription.
         db.execute('CREATE TABLE IF NOT EXISTS premium_accounts (account TEXT PRIMARY KEY,kind INTEGER NOT NULL CHECK(kind IN (1,3)),expires INTEGER NOT NULL,last_offer INTEGER NOT NULL,last_purchase INTEGER NOT NULL)')
         db.execute('CREATE TABLE IF NOT EXISTS premium_purchases (id INTEGER PRIMARY KEY,account TEXT NOT NULL,offer INTEGER NOT NULL,gold INTEGER NOT NULL,purchased INTEGER NOT NULL,expires INTEGER NOT NULL)')
         if 'credits' not in {r[1] for r in db.execute('PRAGMA table_info(premium_purchases)')}:
             db.execute('ALTER TABLE premium_purchases ADD COLUMN credits INTEGER NOT NULL DEFAULT 0')
         wallet=db.execute('SELECT credits,gold FROM wallets WHERE account=?',(account,)).fetchone()
         if wallet is None:raise ValueError('Кошелёк аккаунта отсутствует')
-        prior=db.execute('SELECT kind,expires,last_offer,last_purchase FROM premium_accounts WHERE account=?',(account,)).fetchone()
+        prior=db.execute('SELECT kind,expires,last_offer,last_purchase FROM premium_accounts WHERE account=?',(subscription,)).fetchone()
         # C8/3A has no nonce. Suppress immediate duplicate clicks/retransmission.
         duplicate=prior and prior[2]==offer and 0<=stamp-prior[3]<5
         if not duplicate:
@@ -72,7 +78,7 @@ def purchase(path,account,packet,*,now=None):
             expires=max(stamp,prior[1] if prior else stamp)+hours*3600
             db.execute('UPDATE wallets SET credits=credits-? WHERE account=?',(cost,account))
             db.execute('INSERT INTO premium_accounts VALUES (?,?,?,?,?) ON CONFLICT(account) DO UPDATE SET kind=excluded.kind,expires=excluded.expires,last_offer=excluded.last_offer,last_purchase=excluded.last_purchase',
-                (account,kind,expires,offer,stamp))
+                (subscription,kind,expires,offer,stamp))
             db.execute('INSERT INTO premium_purchases(account,offer,gold,purchased,expires,credits) VALUES (?,?,?,?,?,?)',(account,offer,0,stamp,expires,cost))
     from .wallets import WalletStore
     return WalletStore(path).ensure(account)
@@ -98,5 +104,5 @@ def experience_multiplier(db,account,now=None):
     if kind==1:return 3,2
     if kind==3:
         row=db.execute('SELECT town_id FROM character_locations WHERE account=?',(account,)).fetchone() if db.execute("SELECT 1 FROM sqlite_master WHERE name='character_locations'").fetchone() else None
-        if row and row[0]!=3:return 0,1
+        if row is None or row[0]!=3:return 0,1
     return 1,1

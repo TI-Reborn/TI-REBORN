@@ -43,7 +43,7 @@ class ScopeTests(unittest.TestCase):
         node=ET.parse(root/'evidence/items_diagnostic.xml').getroot().find(f"item[@id='{SVD}']")
         values={v.get('key'):v.get('val') for v in node.findall('value')}
         self.assertEqual((values['maxRange'],values['minRange'],values['actionPoints'],values['level_required']),('15','7','9','5'))
-        self.assertEqual((values['image'],values['model_1']),('tio_wi_5013.png','weapon_svd'))
+        self.assertEqual((values['image'],values['model_1']),('item_svd.png','weapon_svd'))
         self.assertEqual(required_level(item(1,SVD)),5)
         for template in (SVD,313):
             for slot in (16,128):

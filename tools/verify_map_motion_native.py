@@ -29,7 +29,7 @@ def main():
     put32(u,char+8,MAP_SPEED);put32(u,char+0x228,1000);put32(u,DATA+0x5000,1500)
     run(0x9edd18)
     stepped=struct.unpack('<ii',u.mem_read(char+0xc,8))
-    assert 0<math.dist(old,stepped)<4 and stepped!=(-77,-447)
+    assert abs(math.dist(old,stepped)-MAP_SPEED*.5)<1.5 and stepped!=(-77,-447)
     # Execute just the native interpolation arithmetic; renderer setup supplied.
     u.reg_write(UC_X86_REG_EAX,30);u.reg_write(UC_X86_REG_EBP,STACK+0x7000)
     run(0x9edf92,0x9edff0)

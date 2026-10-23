@@ -138,11 +138,13 @@ def xml_loader(xml):
             levels=list(u.mem_read(record+0x248,2)),drop=u.mem_read(record+0x24d,1)[0],
             equipment=u.mem_read(record+0x24e,1)[0],arena=u.mem_read(record+0x237,1)[0],
             max_upgrade=u.mem_read(record+0x24c,1)[0],training=u.mem_read(record+0x23e,1)[0],
-            rank_bonus=u.mem_read(record+0x23d,1)[0],assault_map=short(record,0x257))
+            rank_bonus=u.mem_read(record+0x23d,1)[0],assault_map=short(record,0x257),
+            assault_v4=u.mem_read(record+0x255,1)[0])
         # Name strings are stored at record+0xd, starting with length byte.
         assert native['id']==identity and native['name']==expected_node.get('name'),native
         assert native['background']==properties['background'] and native['enabled']==int(properties['enabled']),native
-        assert native['kind']=={'town':0,'base':1,'checkpoint':2,'shootingrange':3}.get(properties.get('type','town'),0),native
+        assert native['kind']=={'town':0,'base':1,'base4':1,'checkpoint':2,'shootingrange':3}.get(properties.get('type','town'),0),native
+        assert native['assault_v4']==int(properties.get('type','town')=='base4'),native
         assert native['levels']==[int(properties['minlevel']),int(properties['maxlevel'])],native
         assert native['drop']==int(properties.get('drop','false')=='true'),native
         assert native['equipment']==int(properties.get('dragin','false')=='true'),native

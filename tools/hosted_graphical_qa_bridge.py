@@ -171,7 +171,7 @@ def static_guards(game_root: Path) -> list[dict]:
 class HostedGraphicalQaBridge:
     """Own PID returned by the unchanged guarded loader; explicit native RPCs."""
 
-    def __init__(self, game_root: Path, credentials: dict, *, auto_select=False, helper=None, launcher=None, on_event=None):
+    def __init__(self, game_root: Path, credentials: dict, *, auto_select=False, helper=None, launcher=None, launcher_sha256=None, on_event=None):
         import frida
         self.root = Path(game_root).resolve()
         guards = static_guards(self.root)
@@ -191,8 +191,9 @@ class HostedGraphicalQaBridge:
         # Retail renderer/authentication and all on-disk binary bytes stay intact.
         if launcher is not None:
             launcher = Path(launcher).resolve()
-            if hashlib.sha256(launcher.read_bytes()).hexdigest() != 'd135224ae3803dfcaaaa3602cc2a1cfabe042a03a3c30238b81ddf4a1996dda8':
-                raise ValueError('The exact public launcher 0.1.6 is required')
+            expected_launcher = launcher_sha256 or 'd135224ae3803dfcaaaa3602cc2a1cfabe042a03a3c30238b81ddf4a1996dda8'
+            if not re.fullmatch('[0-9a-f]{64}', expected_launcher) or hashlib.sha256(launcher.read_bytes()).hexdigest() != expected_launcher:
+                raise ValueError('The exact reviewed launcher SHA256 is required')
             import uuid
             receipt = self.root.parent / ('tls-start-' + uuid.uuid4().hex + '.json')
             # The long-lived TLS child can inherit standard handles. Waiting

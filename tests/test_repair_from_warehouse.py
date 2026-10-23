@@ -1,7 +1,6 @@
 """Quick repair debits real personal-city kits atomically, without transfers."""
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
-from contextlib import closing
 import sqlite3,struct,unittest
 from unittest.mock import patch
 from test_warehouse_resources import WarehouseResourcesTests,item
@@ -25,7 +24,7 @@ class WarehouseRepairTests(unittest.TestCase):
         return repair(self.path,owner,b'\xc2\x03'+struct.pack('<II',1,target))
 
     def snapshot(self):
-        with closing(sqlite3.connect(self.path)) as db:return tuple(db.iterdump())
+        with sqlite3.connect(self.path) as db:return tuple(db.iterdump())
 
     def test_quick_repair_without_bag_kit_debits_warehouse_and_sends_counter(self):
         self.bag();self.stash((item(1,17,resource=328,capacity=600),),town=3)
@@ -43,7 +42,7 @@ class WarehouseRepairTests(unittest.TestCase):
         self.run_repair()
         self.assertEqual([(i.instance_id,i.unknown_words[0]) for i in self.store.items('alice')],[(2,421)])
         self.assertEqual(self.assets().repair_points,421)
-        with closing(sqlite3.connect(self.path)) as db:
+        with sqlite3.connect(self.path) as db:
             self.assertEqual(db.execute('SELECT kit_id,spent FROM item_repairs ORDER BY id').fetchall(),[(1,100),(2,191)])
 
     def test_insufficient_pool_repairs_partially_and_empties_stock(self):
@@ -58,19 +57,19 @@ class WarehouseRepairTests(unittest.TestCase):
         self.run_repair();stock=self.store.items('alice')
         self.assertEqual(self.assets().repair_points,1800-291)
         self.assertEqual([(i.instance_id,i.count,i.unknown_words[0]) for i in stock],[(1,2,600),(9002,1,309)])
-        with closing(sqlite3.connect(self.path)) as db:
+        with sqlite3.connect(self.path) as db:
             self.assertEqual(db.execute('SELECT bucket,town FROM warehouse_places WHERE instance_id=9002').fetchone(),('city',3))
 
-    def test_untagged_and_overflow_match_counter_other_city_and_account_untouched(self):
+    def test_all_town_stocks_and_overflow_supply_repair_but_other_account_is_untouched(self):
         self.bag();self.bag('bob')
         self.stash((item(1,17,resource=100,capacity=600),))
         self.stash((item(2,18,resource=100,capacity=1200),),town=2,bucket='overflow')
         self.stash((item(3,19,resource=3600),),town=2)
         self.stash((item(1,19,resource=3600),),'bob',town=3)
         self.run_repair()
-        self.assertEqual(self.assets().repair_points,0)
+        self.assertEqual(self.assets().repair_points,3509)
         self.assertEqual(self.assets('bob').repair_points,3600)
-        with closing(sqlite3.connect(self.path)) as db:
+        with sqlite3.connect(self.path) as db:
             self.assertEqual(db.execute('SELECT instance_id FROM warehouse_items WHERE account=?',('alice',)).fetchall(),[(3,)])
 
     def test_missing_stock_falls_back_to_existing_bag_repair(self):

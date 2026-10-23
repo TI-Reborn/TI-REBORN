@@ -1,9 +1,10 @@
-"""City warehouses without altering or reseeding any legacy item row.
+"""One personal warehouse across all eligible cities and mine checkpoints.
 
 The original warehouse_items triplet and WarehouseStore._read remain global
 authority for IDs and lifecycle work. A sidecar names only new accepted item
-locations. Untagged old rows remain accessible legacy overflow in every city.
-Durable awards/refunds get explicit overflow when 32 city slots cannot fit them.
+provenance. Its town records where an item arrived, not a separate store.
+Untagged old rows and durable overflow remain accessible without reseeding.
+Durable awards/refunds get explicit overflow when the shared slots cannot fit.
 No automatic migration, triggers, FK cascades, destructive list rewrite, or
 global SQL filter is used. Clan prices and powers +8/+16: manual printed page22;
 IDs/target=selfclan: original services.cfg. Clan base32 and personal payer are
@@ -49,11 +50,12 @@ def exists(db, table):
 
 def current_town(db, account, *, required=True):
     from .cities import CITIES
+    from .locations import MINE_LOCATIONS
     row = db.execute('SELECT town_id FROM character_locations WHERE account=?', (account,)).fetchone() if exists(db, 'character_locations') else None
     town = row[0] if row else 3
     travelling = exists(db, 'map_journeys') and db.execute('SELECT 1 FROM map_journeys WHERE account=?', (account,)).fetchone()
-    if type(town) is not int or town not in (*CITIES, 9) or travelling:
-        if required: raise ValueError('Склад доступен только в городе')
+    if type(town) is not int or town not in (*CITIES, 9, *MINE_LOCATIONS) or travelling:
+        if required: raise ValueError('Склад доступен только в городе или у входа в шахту')
         return None
     return town
 
@@ -70,14 +72,13 @@ def places(db, account):
 
 
 def read_scope(db, account, all_items=None, *, required=False):
-    """Current city + legacy/overflow; never use for global ID allocation."""
+    """All of this character's stock; mutations still require an eligible town."""
     write(db)
     from .warehouse import WarehouseStore
     WarehouseStore._account(account)
     if all_items is None: all_items = WarehouseStore._read(db, account)
-    town, tagged = current_town(db, account, required=required), places(db, account)
-    return {key: item for key, item in all_items.items()
-            if key not in tagged or tagged[key][0] == 'overflow' or tagged[key][1] == town}
+    current_town(db, account, required=required)
+    return dict(all_items)
 
 
 def capacity(db, account):
@@ -86,30 +87,33 @@ def capacity(db, account):
 
 
 def city_count(db, account, items=None, *, town=None):
+    """Shared ordinary slots; retain the historical name/argument for callers.
+
+    Legacy and durable overflow never consume ordinary paid-capacity slots.
+    """
     from .warehouse import WarehouseStore
-    town = current_town(db, account) if town is None else town
     items = WarehouseStore._read(db, account) if items is None else items
     tagged = places(db, account)
-    return sum(key in tagged and tagged[key][:2] == ('city', town) for key in items)
+    return sum(key in tagged and tagged[key][0] == 'city' for key in items)
 
 
 def merge_scope(db, account, items, before, *, origin='player-deposit', limit=None):
-    """Keep city/overflow/legacy stacks apart and old legacy rows uncombined."""
+    """Merge ordinary stacks across towns, retaining each surviving ID's origin."""
     town = current_town(db, account)
     tagged, groups = places(db, account), {}
     for item in items:
         group = tagged.get(item.instance_id, ('legacy', 0, 'legacy')) if item.instance_id in before else ('city', town, origin)
         # Origin is receipt provenance, not a separate playable warehouse.
-        groups.setdefault(group[:2], []).append((item, group))
+        groups.setdefault(group[0], []).append((item, group))
     merged, assignments = [], {}
-    for (bucket, place), entries in groups.items():
+    for bucket, entries in groups.items():
         members = tuple(item for item, _ in entries)
         output = members if bucket == 'legacy' else merge_stacks(members)
         lookup = dict((i.instance_id, group) for i, group in entries)
         merged.extend(output)
         for item in output:
             if bucket != 'legacy': assignments[item.instance_id] = lookup[item.instance_id]
-    used = sum(group[0] == 'city' and group[1] == town for group in assignments.values())
+    used = sum(group[0] == 'city' for group in assignments.values())
     ceiling = capacity(db, account)
     if limit is not None:
         if type(limit) is not int or limit < 0: raise ValueError('Invalid delivery capacity limit')
@@ -120,7 +124,7 @@ def merge_scope(db, account, items, before, *, origin='player-deposit', limit=No
 
 
 def persist_scope(db, account, before, after, assignments):
-    """Update only touched visible rows; other cities and legacy packets persist."""
+    """Update only touched rows; unchanged packets and origin metadata persist."""
     write(db)
     after = {i.instance_id: i for i in after}
     for key in before.keys() - after.keys():
@@ -174,14 +178,14 @@ def restore_escrow(db, account, item):
 
 
 def compact_all(db, account, items):
-    """Login compaction cannot merge another city's stacks or rewrite legacy IDs."""
+    """Compact shared stock without combining ordinary/overflow/legacy buckets."""
     tagged, groups = places(db, account), {}
     for item in items:
-        group = tagged.get(item.instance_id, ('legacy', 0, 'legacy'))[:2]
+        group = tagged.get(item.instance_id, ('legacy', 0, 'legacy'))[0]
         groups.setdefault(group, []).append(item)
     result = []
     for group, members in groups.items():
-        result.extend(members if group[0] == 'legacy' else merge_stacks(members))
+        result.extend(members if group == 'legacy' else merge_stacks(members))
     return tuple(sorted(result, key=lambda i: i.instance_id))
 
 
@@ -191,10 +195,10 @@ def status(db, account):
     all_items = WarehouseStore._read(db, account)
     tagged, town = places(db, account), current_town(db, account, required=False)
     visible = read_scope(db, account, all_items)
-    return dict(version=1, town=town, capacity=capacity(db, account), used=city_count(db, account, all_items, town=town) if town else 0,
+    return dict(version=1, town=town, capacity=capacity(db, account), used=city_count(db, account, all_items),
                 legacy=sum(k not in tagged for k in all_items), overflow=sum(k in tagged and tagged[k][0] == 'overflow' for k in all_items),
                 accessible=len(visible), stored_total=len(all_items), city_capacities={str(t): capacity(db, account) for t in sorted({p[1] for p in tagged.values() if p[0] == 'city'})},
-                policy='legacy_and_durable_overflow_preserved')
+                scope='character', policy='shared_warehouse_legacy_and_durable_overflow_preserved')
 
 
 def exchange(db, account, pet_id, *, deposits=(), withdrawals=()):

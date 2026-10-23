@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>TIO Launcher</AssemblyName>
+    <Version>0.1.33</Version>
+    <ApplicationIcon>Assets\tio-launcher.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(SteamDistribution)' == 'true'">
+    <DefineConstants>$(DefineConstants);STEAM_DISTRIBUTION</DefineConstants>
+    <AssemblyName>TIO Steam</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(SteamDistribution)' == 'true'">
+    <EmbeddedResource Include="$(SteamManifestPath)" LogicalName="TioLauncher.steam-manifest.json" />
+  </ItemGroup>
+  <Target Name="RequireSteamManifest" BeforeTargets="BeforeBuild" Condition="'$(SteamDistribution)' == 'true'">
+    <Error Condition="'$(SteamManifestPath)' == '' Or !Exists('$(SteamManifestPath)')" Text="A reviewed SteamManifestPath is required for a Steam distribution build." />
+  </Target>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\native-contracts-windows.json" LogicalName="TioLauncher.native-contracts-windows.json" />
+    <EmbeddedResource Include="Assets\tio-launcher.ico" LogicalName="TioLauncher.icon.ico" />
+    <EmbeddedResource Include="Assets\wasteland.png" LogicalName="TioLauncher.wasteland.png" />
+    <EmbeddedResource Include="Assets\english.json" LogicalName="TioLauncher.english.json" />
+    <EmbeddedResource Include="Assets\native-english.json" LogicalName="TioLauncher.native-english.json" />
+    <EmbeddedResource Include="Assets\native-door-grid.json" LogicalName="TioLauncher.native-door-grid.json" />
+    <EmbeddedResource Include="Assets\native-battle-turn.json" LogicalName="TioLauncher.native-battle-turn.json" />
+    <EmbeddedResource Include="Assets\native-throwable-effects.json" LogicalName="TioLauncher.native-throwable-effects.json" />
+    <EmbeddedResource Include="Assets\native-flame-stream.json" LogicalName="TioLauncher.native-flame-stream.json" />
+  </ItemGroup>
+</Project>

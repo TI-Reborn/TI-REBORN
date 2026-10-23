@@ -94,6 +94,8 @@ class PartyTravelTests(unittest.TestCase):
                 self.assertIsNotNone(route)
                 self.assertEqual(route[:2], center(3))
                 self.assertEqual(route[2:4], (-220, -280))
+                import math
+                self.assertAlmostEqual(route[5]-route[4],math.dist(center(3),route[2:4])/12)
                 self.now = (route[4] + route[5]) / 2
                 expected = tuple((start + end) / 2 for start, end in zip(center(3), route[2:4]))
                 for owner in members:

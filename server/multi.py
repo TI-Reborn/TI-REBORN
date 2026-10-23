@@ -1,3 +1,4 @@
+import json
 """Concurrent sessions and shared authoritative matches on legacy wire fields.
 
 Login and game listeners are separate because both protocols are server-first.
@@ -382,6 +383,7 @@ class MultiServer:
                     exchange.login_peer_address = address[0]
                     exchange.login_tls = secure
                     exchange.language = getattr(bridge_port,'language','russian')
+                    exchange.contracts_ui_token = getattr(bridge_port,'control_token',None)
                     exchange.port = int(bridge_port) if secure else self.config.session_port
                     exchange.completion_token = secrets.randbits(32)
                     exchange.initial_challenge = InitialChallenge(0,secrets.randbits(32),0,secrets.randbits(32))
@@ -458,7 +460,7 @@ class MultiServer:
             thread.start()
 
     def tls_handshake(self, token, connection, address, kind):
-        from .tls import read_bridge_preface
+        from .tls import read_bridge_preface, ContractsControl
         queued=False
         try:
             deadline=time.monotonic()+self.config.tls.handshake_timeout_seconds
@@ -473,6 +475,16 @@ class MultiServer:
             connection.do_handshake()
             policy=self.config.tls.launch_manifests
             bridge_port=read_bridge_preface(connection,deadline,policy) if kind=='login' or policy is not None else None
+            if isinstance(bridge_port, ContractsControl):
+                # Same authoritative hub lock as native actions. Network writes
+                # remain in this bounded worker, outside the selector.
+                from .contracts_ui import handle
+                reply=handle(self,bridge_port.token,bridge_port.request)
+                raw=json.dumps(reply,ensure_ascii=False,separators=(',',':')).encode('utf-8')
+                if len(raw)>65536: raise ValueError('Control reply exceeds bound')
+                connection.settimeout(2)
+                connection.sendall(len(raw).to_bytes(4,'big')+raw)
+                return
             connection.settimeout(5)
             with self.lock:
                 if self.server.stopping.is_set():raise InterruptedError('Server stopping')

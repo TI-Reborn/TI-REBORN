@@ -25,6 +25,7 @@ call 0x20000040
 pushfd
 pushad
 call 0x20000400
+call 0x20000600
 popad
 popfd
 ret
@@ -236,18 +237,6 @@ cmp edi,1
 je aligned
 cmp edx,1
 je reveal
-mov edx,dword ptr [ebx+12]
-mov edi,dword ptr [edx+eax*4]
-mov edx,dword ptr [ebp-40]
-imul edx,edx,14
-cmp byte ptr [edi+edx],2
-jae skipactor
-mov edx,dword ptr [ebx+12]
-mov edi,dword ptr [ebp-36]
-mov edx,dword ptr [edx+edi*4]
-imul ecx,ecx,14
-cmp byte ptr [edx+ecx],2
-jae skipactor
 jmp reveal
 aligned:
 cmp edx,1
@@ -273,6 +262,86 @@ done:
 mov esp,ebp
 pop ebp
 ret
+''',
+# Authoritative F7 recon cells; pointers are bound only after the pinned Silver
+# loads. Run AFTER stock fog reset and door surfaces, never extend LOS/range.
+0x600: '''
+call here
+here:
+pop edi
+sub edi,0x605
+mov esi,dword ptr [edi+0xf00]
+test esi,esi
+jz done
+mov ebp,dword ptr [esi]
+test ebp,ebp
+jz done
+cmp ebp,4096
+ja done
+mov esi,dword ptr [edi+0xf04]
+test esi,esi
+jz done
+mov ebx,dword ptr [0x76e5f4]
+test ebx,ebx
+jz done
+mov ebx,dword ptr [ebx]
+test ebx,ebx
+jz done
+cmp word ptr [ebx+0x24],0
+je done
+cmp word ptr [ebx+0x24],128
+ja done
+cmp word ptr [ebx+0x26],0
+je done
+cmp word ptr [ebx+0x26],128
+ja done
+mov edi,dword ptr [ebx+28]
+test edi,edi
+jz done
+next:
+cmp byte ptr [esi+2],3
+jne skip
+movzx eax,byte ptr [esi]
+movzx ecx,byte ptr [esi+1]
+movzx edx,word ptr [ebx+0x24]
+cmp eax,edx
+jae skip
+movzx edx,word ptr [ebx+0x26]
+cmp ecx,edx
+jae skip
+mov eax,dword ptr [edi+eax*4]
+test eax,eax
+jz skip
+imul ecx,ecx,6
+mov byte ptr [eax+ecx],1
+skip:
+add esi,3
+dec ebp
+jnz next
+done:
+ret
+''',
+# Replaces the exact F7 reader tail. Both valid/empty and malformed snapshots
+# trigger a fresh native fog calculation, so expired cells do not linger.
+0x800: '''
+mov dword ptr [esp+28],1
+popad
+popfd
+pushfd
+pushad
+mov eax,dword ptr [0x76e5f4]
+test eax,eax
+jz done
+mov eax,dword ptr [eax]
+test eax,eax
+jz done
+cmp dword ptr [eax+28],0
+je done
+call 0x6e40a4
+done:
+popad
+popfd
+ret
 '''
 }
 
@@ -286,15 +355,18 @@ add al,byte ptr [edx+0x411]
 dec al
 mov byte ptr [edx+0x28],al
 pop eax''')
-    ks=Ks(KS_ARCH_X86,KS_MODE_32);blob=bytearray(2048);relocations=[]
+    ks=Ks(KS_ARCH_X86,KS_MODE_32);blob=bytearray(4096);relocations=[]
     for offset,source in PARTS.items():
         raw=bytes(ks.asm(source,BASE+offset)[0])
-        assert offset+len(raw)<=min((x for x in PARTS if x>offset),default=2048)
+        assert offset+len(raw)<=min((x for x in PARTS if x>offset),default=0xf00)
         blob[offset:offset+len(raw)]=raw
         for target in (0x6e40aa,0x72dc96):
             marker=b'\xe9'+struct.pack('<i',target-(BASE+offset+len(raw)))
             if raw.endswith(marker):relocations.append(dict(offset=offset+len(raw)-4,target=target))
-    assert len(relocations)==2
+        if offset==0x800:
+            marker=b'\xe8'+struct.pack('<i',0x6e40a4-(BASE+offset+raw.index(b'\xe8')+5))
+            at=raw.index(marker);relocations.append(dict(offset=offset+at+1,target=0x6e40a4))
+    assert len(relocations)==3
     return dict(schema=1,base=BASE,code=blob.hex(),fogEntry=0,doorEntry=128,
                 relocations=relocations,scope='Pinned ti.exe door collision and adjacent closed surface only')
 

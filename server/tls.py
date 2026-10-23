@@ -23,6 +23,23 @@ def bridge_preface(port):
     return struct.pack('!4sBBH', BRIDGE_MAGIC, BRIDGE_VERSION, 0, port)
 
 
+class ContractsControl:
+    def __init__(self, token, request):
+        self.token, self.request = token, request
+
+
+def _exact(connection, size, deadline):
+    data = bytearray()
+    while len(data) < size:
+        remaining = deadline-time.monotonic()
+        if remaining <= 0: raise TimeoutError('Control bootstrap timed out')
+        connection.settimeout(remaining)
+        part=connection.recv(size-len(data))
+        if not part: raise EOFError('Control bootstrap disconnected')
+        data.extend(part)
+    return bytes(data)
+
+
 def read_bridge_preface(connection, deadline, launch_manifests=None):
     data = bytearray()
     while len(data) < BRIDGE_PREFACE_SIZE:
@@ -33,11 +50,28 @@ def read_bridge_preface(connection, deadline, launch_manifests=None):
         if not chunk:raise EOFError('TLS bridge bootstrap disconnected')
         data.extend(chunk)
     magic, version, flags, port = struct.unpack('!4sBBH', data)
-    if magic != BRIDGE_MAGIC or version not in (1,2) or flags not in (0,1):
+    if magic == b'TIOC':
+        if version != 1 or flags != 0 or not 2 <= port <= 4096:
+            raise ValueError('Invalid contract control header')
+        identity=_exact(connection,38,deadline)
+        if launch_manifests is not None: validate_launch_identity(identity,launch_manifests)
+        token=_exact(connection,32,deadline)
+        raw=_exact(connection,port,deadline)
+        def pairs(items):
+            result={}
+            for key,value in items:
+                if key in result: raise ValueError('Duplicate control field')
+                result[key]=value
+            return result
+        request=json.loads(raw.decode('utf-8'),object_pairs_hook=pairs,
+            parse_constant=lambda _: (_ for _ in ()).throw(ValueError('Invalid number')))
+        if not isinstance(request,dict): raise ValueError('Invalid control body')
+        return ContractsControl(token,request)
+    if magic != BRIDGE_MAGIC or version not in (1,2,3) or flags not in (0,1):
         raise ValueError('Invalid TLS bridge preface')
-    if launch_manifests is not None and version!=2:
+    if launch_manifests is not None and version not in (2,3):
         raise ValueError('Current launcher update verification is required')
-    if version==2:
+    if version in (2,3):
         identity=bytearray()
         while len(identity)<38:
             remaining=deadline-time.monotonic()
@@ -51,6 +85,7 @@ def read_bridge_preface(connection, deadline, launch_manifests=None):
     bridge_preface(port)
     result=BridgePort(port)
     result.language='english' if flags==1 else 'russian'
+    result.control_token=_exact(connection,32,deadline) if version==3 else None
     return result
 
 

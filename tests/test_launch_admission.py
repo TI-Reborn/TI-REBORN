@@ -49,10 +49,6 @@ class LaunchAdmissionTests(unittest.TestCase):
 
     def test_actual_tls_two_accounts_and_both_routes_require_current_release(self):
         import test_game_tls as fixture
-        from tls_test_certificates import create
-        from unittest.mock import patch
-        certificates=self.enterContext(tempfile.TemporaryDirectory())
-        self.enterContext(patch.object(fixture,'FIXTURES',create(certificates)))
         tls=fixture.GameTLSTests();tls.setUp();self.addCleanup(tls.doCleanups)
         tls.case.config=replace(tls.case.config,bind_address='0.0.0.0',tls=replace(tls.case.config.tls,launch_manifests=self.root))
         original=tls.connect

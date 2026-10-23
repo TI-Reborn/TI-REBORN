@@ -1,4 +1,4 @@
-"""Actual city-scoped warehouse resources, private accounts and native counters."""
+"""Shared personal warehouse resources, private owners and native counters."""
 from contextlib import closing
 from dataclasses import replace
 import json
@@ -58,15 +58,15 @@ class WarehouseResourcesTests(unittest.TestCase):
         self.assertEqual((a.upgrade_kits,a.repair_points),(5,4540))
         self.assertEqual(decode_asset_count(encode_asset_count(a)),a)
 
-    def test_city_scope_matches_the_actual_list_and_preserves_legacy_overflow(self):
+    def test_shared_scope_matches_list_from_all_towns_and_preserves_legacy_overflow(self):
         self.stash((item(1,30,2),))
         self.stash((item(2,17,resource=600),),town=3)
         self.stash((item(3,18,resource=1200),item(4,30,7)),town=2)
         self.stash((item(5,19,resource=3600),),town=2,bucket='overflow')
-        self.assertEqual((self.assets().upgrade_kits,self.assets().repair_points),(2,4200))
+        self.assertEqual((self.assets().upgrade_kits,self.assets().repair_points),(9,5400))
         with transaction(self.path) as db:db.execute('UPDATE character_locations SET town_id=2 WHERE account=?',('alice',))
-        self.assertEqual((self.assets().upgrade_kits,self.assets().repair_points),(9,4800))
-        self.assertEqual({i.instance_id for i in self.store.items('alice')},{1,3,4,5})
+        self.assertEqual((self.assets().upgrade_kits,self.assets().repair_points),(9,5400))
+        self.assertEqual({i.instance_id for i in self.store.items('alice')},{1,2,3,4,5})
 
     def test_other_accounts_bags_and_clan_treasury_never_contribute(self):
         self.stash((item(1,30,2),))
