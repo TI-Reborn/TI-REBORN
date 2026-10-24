@@ -772,6 +772,10 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
         hazard_damage=dict(field.combat.hazard_damage)
         actors=field.living_actor_ids(owner) if actor_ids is None else actor_ids
         packets=arena.begin_turn_packets(owner,actors,seconds)
+        # Start the duplicate-UI tail when the next human turn begins. Bot
+        # processing and other players can outlast the original finish fence.
+        if owner in battle.get('end_turn_fences', {}):
+            self.fence_finished_turn(battle, owner)
         from tio.durability import refresh_template
         changed={int.from_bytes(p[1:5],'little') for p in packets if p[0]==0x30}
         snapshots=[]

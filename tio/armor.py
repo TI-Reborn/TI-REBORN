@@ -14,6 +14,7 @@ class ArmorCatalog:
         self.enhancement = EnhancementRules()
         from .equipment import armor_rules
         rules=armor_rules()
+        self.slot_rules = rules
         self.items={}
         for item in ET.parse(Path(__file__).resolve().parents[1]/'evidence/items_diagnostic.xml').getroot().iter('item'):
             v={x.get('key'):x.get('val') for x in item.findall('value')}
@@ -27,14 +28,23 @@ class ArmorCatalog:
 
     def defense(self,inventory,*,human):
         if inventory is None:return 0
-        total=0;occupied=set()
-        for item in decode_item_list(inventory)[1]:
+        total=0;occupied=set();slots=set()
+        from .equipment import armor_coverage
+        # Older saves can contain the previously permitted Exo+helmet pair.
+        # Full suits take precedence without deleting/moving saved items.
+        ordered = sorted(decode_item_list(inventory)[1],
+                         key=lambda item: -len(armor_coverage(item.template_id, item.client_slot, self.slot_rules)))
+        for item in ordered:
             rule=self.items.get(item.template_id)
             if not item.equipped or rule is None:continue
             slot,dog,value=rule
             if dog==human or item.client_slot!=slot:continue
-            if slot in occupied:raise ValueError('Multiple armor pieces in one slot')
-            occupied.add(slot)
+            if slot in slots:raise ValueError('Multiple armor pieces in one slot')
+            slots.add(slot)
+            coverage = armor_coverage(item.template_id, slot, self.slot_rules)
+            if occupied & coverage:
+                continue
+            occupied.update(coverage)
             total += value + self.enhancement.bonus(item.unknown_bytes_02[0], armor=True)
         # Freak Shield only protects while selected as the active weapon.
         from .equipment_bonuses import bonuses

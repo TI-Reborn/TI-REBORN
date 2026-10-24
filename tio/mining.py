@@ -131,10 +131,10 @@ class MiningBattle:
         if not d.carried<=amount<=d.extracted:raise ValueError('Invalid crystal pickup amount')
         _,items,flag=decode_item_list(self.field.combat.inventories[a.actor_id])
         from .weight import inventory_weight
-        capacity=self.field.combat.weight_capacities.get(a.actor_id,0)
-        if 100+amount+inventory_weight(self.field.combat.inventories[a.actor_id])>capacity:
-            raise ValueError('Not enough carrying capacity for the drill and crystals')
+        capacity=self.field.combat.weight_capacity(a.actor_id)
         drill=replace(d.drill,unknown_u32_01=amount)
+        if inventory_weight(encode_item_list(a.actor_id, (*items, drill), flag)) > capacity:
+            raise ValueError('Not enough carrying capacity for the drill and crystals')
         from .inventory_capacity import validate_capacity
         validate_capacity(items,(*items,drill),limit=self.field.loot.policy['inventory_slots'])
         snapshot=(d.drill,d.extracted,d.carried)
