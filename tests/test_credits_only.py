@@ -99,7 +99,7 @@ class CreditsOnlyTests(unittest.TestCase):
         rental.handle('alice',packet)
         self.assertEqual(self.wallet(),(100000-o.credits,0));self.assertEqual(self.wallet('bob'),(100000,0))
         with self.assertRaises(ValueError):rental.handle('alice',b'\xb4\x10'+struct.pack('<IHIB',o.lot_id,o.hours,1,2))
-    def test_se_failure_minus_one_level_and_100_durability(self):
+    def test_se_failure_resets_level_and_original_durability(self):
         self.buy(248);item=decode_item_list(self.inventory())[1][0]
         kit_result=self.buy(30)
         items=list(decode_item_list(self.inventory())[1]);items[0]=replace(item,unknown_words=(805,805,805),unknown_bytes_02=bytes((7,0,0,0)),unknown_bytes_03=bytes((7,0,1)))
@@ -107,16 +107,22 @@ class CreditsOnlyTests(unittest.TestCase):
         packet=b'\xc8\x2a'+struct.pack('<IBI',items[0].instance_id,1,items[1].instance_id)
         result=EnhancementStore(self.path,randbelow=lambda _:99).handle('alice',packet)
         saved=decode_item_list(self.inventory())[1][0]
-        self.assertEqual(result.outcome,'weakened');self.assertEqual(result.level,6)
-        self.assertEqual(saved.unknown_words,(705,705,740));self.assertEqual(saved.instance_id,item.instance_id)
-        self.assertEqual(saved.unknown_bytes_03[0],6);self.assertEqual(len(decode_item_list(self.inventory())[1]),1)
-    def test_se_failed_low_durability_keeps_broken_item(self):
+        self.assertEqual((result.outcome, result.level), ('reset', 0))
+        durability = self.sc.completion.enhancement.items[248]['durability']
+        self.assertEqual(saved.unknown_words, (durability,) * 3)
+        self.assertEqual(saved.instance_id, item.instance_id)
+        self.assertEqual(saved.unknown_bytes_03[0], 0)
+        self.assertEqual(len(decode_item_list(self.inventory())[1]), 1)
+    def test_se_failed_low_durability_restores_item(self):
         self.buy(248);self.buy(30);items=list(decode_item_list(self.inventory())[1])
         items[0]=replace(items[0],unknown_words=(20,80,545),unknown_bytes_02=bytes((3,0,0,0)),unknown_bytes_03=bytes((3,0,1)))
         with closing(sqlite3.connect(self.path)) as db,db:db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=1',(encode_item_list(1,items),'alice'))
         packet=b'\xc8\x2a'+struct.pack('<IBI',items[0].instance_id,1,items[1].instance_id)
         EnhancementStore(self.path,randbelow=lambda _:99).handle('alice',packet)
-        saved=decode_item_list(self.inventory())[1][0];self.assertEqual(saved.unknown_words,(0,1,480))
+        saved = decode_item_list(self.inventory())[1][0]
+        durability = self.sc.completion.enhancement.items[248]['durability']
+        self.assertEqual(saved.unknown_words, (durability,) * 3)
+        self.assertEqual(saved.unknown_bytes_03[0], 0)
     def test_retired_conversion_and_gold_transfers_reject(self):
         self.assertNotIn(GOLD_ID,CURRENCIES)
         with closing(sqlite3.connect(self.path)) as db,db:

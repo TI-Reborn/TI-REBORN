@@ -57,9 +57,20 @@ def leave_town_packet():
     return struct.pack('<BII',0xf0,97,0)
 
 
+def location_levels(town: int) -> tuple[int, int]:
+    """Share the advertised world level band with location-based services."""
+    if town in MINE_LOCATIONS:
+        band = MINING_POLICY['bands'][MINE_LOCATIONS[town]['band']]
+        return band[0], band[1]
+    if town in CITIES:
+        return CITIES[town].levels
+    world = world_location(town)
+    return tuple(world['levels']) if world is not None else (1, 20)
+
+
 def town_packets(town,path=None,*,clock=time.time):
     world=world_location(town)
-    levels=MINING_POLICY['bands'][MINE_LOCATIONS[town]['band']][:2] if town in MINE_LOCATIONS else (CITIES[town].levels if town in CITIES else tuple(world['levels']) if world is not None else (1,20))
+    levels = location_levels(town)
     from .world_completion import city_coefficients
     factors=city_coefficients(town,now=clock())
     # Original consumer labels: Influence, Experience, Profit; IEEE754 f32.
