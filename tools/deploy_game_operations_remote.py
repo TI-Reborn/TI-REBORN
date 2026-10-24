@@ -41,6 +41,7 @@ SCOPES['ranked-party-refactor'] = frozenset((
     'server/ranked_arena.py', 'server/team_arena.py', 'tio/ranked_party.py',
     'tio/protocol/ranked_party.py', 'tio/protocol/ranked.py', 'tio/ranked_loadout.py',
     'tio/matchmaking.py', 'tools/survival_scene.py',
+    'tio/world_completion.py',
 ))
 SCOPES['crystal-quotes']=frozenset(('tio/mining_service.py',))
 SCOPES['area-fire']=frozenset(('tio/combat.py','tio/combat_rolls.py'))

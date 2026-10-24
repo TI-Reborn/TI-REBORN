@@ -96,3 +96,15 @@ class RankedPartyRefactorTests(unittest.TestCase):
         self.assertNotIn(self.owners[2], self.hub.ranked_invitations)
         self.case.now = 3
         self.request(0, 2)
+
+    def test_party_admission_keeps_existing_city_fences(self):
+        with patch.object(self.hub, 'city', side_effect=ValueError('city admission bug')):
+            with self.assertRaisesRegex(ValueError, 'city admission bug'):
+                ranked_party.handle(self.hub, self.owners[0], b'\xc6\x38')
+
+    def test_known_prison_restriction_is_a_player_refusal(self):
+        from tio.world_completion import TravelRestriction
+        with patch.object(self.hub, 'city', side_effect=TravelRestriction('Prison')):
+            replies = self.send(0, b'\xc6\x38')
+        self.assertTrue(any(packet[:1] == b'\xf0' for packet in replies))
+        self.assertFalse(self.hub.ranked_parties)

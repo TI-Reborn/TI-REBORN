@@ -66,7 +66,7 @@ class ArenaPartyAccess:
 
     def eligible(self, owner: int, *, group: bool) -> Participant:
         from .ranked_arena import RANKED_TOWNS
-        from tio.world_completion import prison_state
+        from tio.world_completion import TravelRestriction
 
         hub = self.hub
         session = hub.players.get(owner)
@@ -84,10 +84,10 @@ class ArenaPartyAccess:
             raise RankedRejection('Сначала отмените поиск TrueSkill')
         if not session.locations or session.locations.current(session.account) not in RANKED_TOWNS:
             raise RankedRejection('Группа TrueSkill доступна в городах с вносом вещей')
-        with closing(connect(session.database)) as database:
-            prison = prison_state(database, session.account)
-        if prison and prison['remaining'] > 0:
-            raise RankedRejection('Наказание отбывается онлайн в Prison')
+        try:
+            hub.city(owner)
+        except TravelRestriction as error:
+            raise RankedRejection(str(error)) from error
         return self.member(owner)
 
     def invitee(self, sender: Participant, name: bytes) -> int:
