@@ -78,15 +78,15 @@ class ArmorTests(unittest.TestCase):
             for instance,option in ((1001,0),(1002,2),(1003,3),(1005,4)):
                 self.wear(instance,option)
             bag=self.wear(1004,2)  # Exact screenshot option: chest.
-            self.assertEqual([i.equipped for i in decode_item_list(bag)[1]],[1,0,0,1,1])
+            self.assertEqual([i.equipped for i in decode_item_list(bag)[1]],[0,0,0,1,1])
             self.assertEqual(self.pets.inventory('alice',1),bag)
             actor=decode_battle_soldier(actor_packet(pet,7,bag),human_equipment=True)
             self.assertEqual(actor.equipment_templates[4],template)
             self.assertEqual(actor.equipment_templates[8],0)
             self.assertEqual(ArmorCatalog().defense(encode_item_list(1,(decode_item_list(bag)[1][3],)),human=True),208)
-            # Ordinary trousers replace the full suit, preserving helmet/weapon.
+            # Ordinary trousers replace the full suit, preserving the weapon.
             bag=self.wear(1003,3)
-            self.assertEqual([i.equipped for i in decode_item_list(bag)[1]],[1,0,1,0,1])
+            self.assertEqual([i.equipped for i in decode_item_list(bag)[1]],[0,0,1,0,1])
             self.wear(1004)
             bag=self.wear(1004)
             self.assertEqual(decode_item_list(bag)[1][3].equipped,0)

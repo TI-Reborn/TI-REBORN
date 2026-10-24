@@ -362,6 +362,7 @@ class MineArena(MineRequests):
                 self.settle(battle, owner, 0, escaped=True)
                 self.remove_from_battle(battle, owner); self.to_city(owner)
         for owner, packet in arena.expire_turns():
+            self.fence_finished_turn(battle, owner)
             self.put(owner, *arena.finished_turn_packets(owner, packet))
         self.finish_exhausted_turn(battle)
         if room.room_id in arena._turns or not battle['mine_active']:

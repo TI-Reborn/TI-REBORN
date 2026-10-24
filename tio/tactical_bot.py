@@ -184,9 +184,8 @@ def fits(field, identity, items):
     combat=field.combat
     if len(items)>field.loot.policy['inventory_slots']:return False
     if identity not in combat.weight_capacities:return True
-    from .equipment_bonuses import bonuses
     packet=encode_item_list(identity,items)
-    capacity=combat.weight_capacities[identity]+bonuses(packet,combat.resources[identity])['carry']
+    capacity=combat.weight_capacity(identity, packet)
     return overload_penalty(inventory_weight(packet),capacity)==0
 
 

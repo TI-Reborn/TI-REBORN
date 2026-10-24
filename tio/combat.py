@@ -357,16 +357,16 @@ class Combat:
         if actor_id not in self.weight_capacities:return maximum
         return turn_ap(maximum,inventory_weight(self.inventories[actor_id]),self.weight_capacity(actor_id))
 
-    def weight_capacity(self,actor_id):
+    def weight_capacity(self, actor_id: int, inventory: bytes | None = None) -> int:
         from .equipment_bonuses import bonuses
-        return self.weight_capacities[actor_id]+bonuses(self.inventories[actor_id],self.resources[actor_id])['carry']
+        packet = self.inventories[actor_id] if inventory is None else inventory
+        return self.weight_capacities[actor_id]+bonuses(packet,self.resources[actor_id])['carry']
 
     def weight_packet(self, actor_id, packet=None):
         from .weight import inventory_weight, encode_weight
         if actor_id not in self.weight_capacities:return None
-        from .equipment_bonuses import bonuses
         inventory=self.inventories[actor_id] if packet is None else packet
-        capacity=self.weight_capacities[actor_id]+bonuses(inventory,self.resources[actor_id])['carry']
+        capacity=self.weight_capacity(actor_id, inventory)
         return encode_weight(actor_id,min(0xffffffff,inventory_weight(inventory)),capacity)
 
     def equip(self,owner,action,*,view=None):
