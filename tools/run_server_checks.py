@@ -26,6 +26,8 @@ MODULES = (
     'test_ranked_squads',
     'test_ranked_bots',
     'test_ranked_party',
+    'test_ranked_party_rules',
+    'test_ranked_party_refactor',
     'test_ranked_cancel',
     'test_training_arena',
     'test_training_group_list',

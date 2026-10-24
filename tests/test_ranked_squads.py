@@ -91,7 +91,7 @@ class RankedSquadTests(unittest.TestCase):
         self.assertTrue(any(p[0]==0xf0 for p in self.case.send(0,join((1,2,3,999)))))
         store=OwnedPetStore(self.path);raw=store.list('alice')[3][1]
         parsed=decode_pet_info(raw,human_equipment=True)
-        for fields in ({'0x8c4ab1':1},{'0x8c4aef':21}):
+        for fields in ({'0x8c4ab1':1},{'0x8c4aef':3}):
             with closing(sqlite3.connect(self.path)) as db,db:
                 db.execute("UPDATE owned_pets SET pet_packet=? WHERE account='alice' AND pet_id=4",
                            (encode_pet_info(replace(parsed,fields={**parsed.fields,**fields})),))

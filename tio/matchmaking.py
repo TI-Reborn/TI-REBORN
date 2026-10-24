@@ -13,6 +13,10 @@ import time
 from .protocol.pet_info import decode_pet_info
 
 
+class SquadAdmissionError(ValueError):
+    """An owned squad changed or became unavailable before battle admission."""
+
+
 @dataclass(frozen=True)
 class SearchTicket:
     character_id: int

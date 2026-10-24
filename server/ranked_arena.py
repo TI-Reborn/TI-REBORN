@@ -8,10 +8,13 @@ from dataclasses import dataclass,replace
 from types import SimpleNamespace
 import struct
 from tio.db_transaction import connect
-from tio.matchmaking import SearchTicket
+from tio.matchmaking import SearchTicket, SquadAdmissionError
+from tio.ranked_party import (MAX_FIGHTERS, HUMAN_RESOURCES, MINER_RESOURCE,
+    RankedRejection, is_ranked_level, validate_miner_count)
+from tio.protocol.binary import PacketError
 from tio.protocol.system_message import encode_shop_error
 from tio.protocol.pet_info import decode_pet_info
-from tio.protocol.ranked import decode_join,encode_info,encode_flags,encode_scores,encode_roster,encode_accepted
+from tio.protocol.ranked import SEARCH_CANCELLED_PACKET, decode_join,encode_info,encode_flags,encode_scores,encode_roster,encode_accepted
 from tio import ranked
 
 RANKED_TOWNS=(2,5,8,18)
@@ -54,23 +57,23 @@ class RankedArena:
                 # Opening the original selector also sends this request. An
                 # idle C6/06 would erase its just-selected fighters (9537a8).
                 if self.ranked_waiting.pop(owner,None) is not None:
-                    self.put(owner,b'\xc6\x06')
+                    self.put(owner,SEARCH_CANCELLED_PACKET)
                 return True
             if packet[:2]!=b'\xc6\x21':
-                raise ValueError('Отмените поиск рейтингового боя')
+                raise RankedRejection('Отмените поиск рейтингового боя')
             if any('points' in b and not b['finished'] and s.account in b.get('ranked_forfeits',set()) for b in self.battles.values()):
-                raise ValueError('Дождитесь окончания предыдущего рейтингового боя')
+                raise RankedRejection('Дождитесь окончания предыдущего рейтингового боя')
             if owner in self.battles or owner in self.results or owner in self.survival_waiting or self.lobbies.room(owner):
-                raise ValueError('Сначала завершите бой или отмените поиск')
+                raise RankedRejection('Сначала завершите бой или отмените поиск')
             if any(s.probe_character_id in r.members for r in s.arena.rooms.snapshot()):
-                raise ValueError('Сначала выйдите из текущего боя')
+                raise RankedRejection('Сначала выйдите из текущего боя')
             if not s.locations or s.locations.current(s.account) not in RANKED_TOWNS:
-                raise ValueError('Рейтинговая битва доступна в городах с вносом вещей')
+                raise RankedRejection('Рейтинговая битва доступна в городах с вносом вещей')
             flags,pets=decode_join(packet)
             if flags[0]:
                 from tio.ranked_tokens import status
                 with closing(connect(s.database)) as db,db:_,balance=status(db,s.account)
-                if not balance:raise ValueError('Нет жетонов для бонусного набора TrueSkill')
+                if not balance:raise RankedRejection('Нет жетонов для бонусного набора TrueSkill')
             from tio.owned_pets import OwnedPetStore
             from tio.battle_modes import level_band
             owned={r[0]:r for r in OwnedPetStore(s.database).list(s.account)}
@@ -78,31 +81,31 @@ class RankedArena:
             miners=0
             for identity,equipment,bonus in pets:
                 row=owned.get(identity)
-                if row is None:raise ValueError('Боец не принадлежит вашему аккаунту')
-                resource=int.from_bytes(row[1][5:9],'little');human=resource in (1,2,6)
+                if row is None:raise RankedRejection('Боец не принадлежит вашему аккаунту')
+                resource=int.from_bytes(row[1][5:9],'little');human=resource in HUMAN_RESOURCES
                 pet=decode_pet_info(row[1],human_equipment=human).fields
-                miners+=int(resource==6)
-                if miners>1:raise ValueError('В бой TrueSkill можно взять только одного шахтёра')
+                miners+=int(resource==MINER_RESOURCE)
+                validate_miner_count(miners)
                 from tio.ranked_loadout import validate
                 validate(row[1],row[2],human,equipment)
                 level=pet['0x8c4aef']
-                if not 4<=level<=20:raise ValueError('Рейтинговый бой: уровни 4–20')
-                if pet['0x8c4ab1']!=pet['0x8c4a07']:raise ValueError('Перед рейтинговым боем полностью вылечите бойца')
+                if not is_ranked_level(level):raise RankedRejection('Рейтинговый бой: уровни 4–20')
+                if pet['0x8c4ab1']!=pet['0x8c4a07']:raise RankedRejection('Перед рейтинговым боем полностью вылечите бойца')
                 actors.append(identity);levels.append(level)
             ticket=RankedTicket(owner,tuple(actors),tuple(levels),self.clock(),selections=pets,flags=flags)
             from .ranked_party import submit
             if submit(self,owner,ticket):return True
             prior=self.ranked_waiting.get(owner)
-            if prior and (prior.actors,prior.levels,prior.selections,prior.flags)!=(ticket.actors,ticket.levels,ticket.selections,ticket.flags):raise ValueError('Сначала отмените прежний поиск')
+            if prior and (prior.actors,prior.levels,prior.selections,prior.flags)!=(ticket.actors,ticket.levels,ticket.selections,ticket.flags):raise RankedRejection('Сначала отмените прежний поиск')
             self.ranked_waiting.setdefault(owner,ticket)
             self.put(owner,self.ranked_info(owner))
             self.match_ranked(owner)
-        except ValueError as error:
+        except (PacketError, RankedRejection, SquadAdmissionError) as error:
             from .ranked_party import party,cancel,notify
             group=party(self,owner)
             if group is not None:cancel(self,group);notify(self,group)
             else:self.ranked_waiting.pop(owner,None)
-            self.put(owner,encode_shop_error(str(error)[:180]),b'\xc6\x06')
+            self.put(owner,encode_shop_error(str(error)[:180]),SEARCH_CANCELLED_PACKET)
         return True
 
     def match_ranked(self,owner):
@@ -137,11 +140,11 @@ class RankedArena:
         for t in candidates:
             for (a,b),groups in tuple(states.items()):
                 for side,total in enumerate((a,b)):
-                    if total+len(t.actors)>4:continue
+                    if total+len(t.actors)>MAX_FIGHTERS:continue
                     key=(a+len(t.actors),b) if side==0 else (a,b+len(t.actors))
                     new=(groups[0]+(t,),groups[1]) if side==0 else (groups[0],groups[1]+(t,))
                     states.setdefault(key,new)
-        groups=states.get((4,4))
+        groups=states.get((MAX_FIGHTERS,MAX_FIGHTERS))
         if groups is None:
             from .ranked_bots import incomplete_groups
             groups=incomplete_groups(states,score)
@@ -153,11 +156,11 @@ class RankedArena:
             teams.append([])
             for t in group:
                 s=self.players[t.character_id]
-                if s.locations.current(s.account) not in RANKED_TOWNS:raise ValueError('Игрок покинул рейтинговый город')
+                if s.locations.current(s.account) not in RANKED_TOWNS:raise RankedRejection('Игрок покинул рейтинговый город')
                 seats.append((t.character_id,side,s.database,s.account,t,False));teams[-1].append(t.character_id)
         from .ranked_bots import fill_seats
         bots=fill_seats(self,seats,teams)
-        proposal=SimpleNamespace(mode=21,soldiers=4 if bots else sum(len(t.actors) for t in groups[0]),band=min(level_band(l) for t in tickets for l in t.levels),captain=tickets[0].character_id)
+        proposal=SimpleNamespace(mode=21,soldiers=MAX_FIGHTERS if bots else sum(len(t.actors) for t in groups[0]),band=min(level_band(l) for t in tickets for l in t.levels),captain=tickets[0].character_id)
         from .ranked_party import consumed
         self.start_match(proposal,seats,teams,bots,lambda:consumed(self,tickets))
 
