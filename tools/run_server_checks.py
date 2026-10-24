@@ -30,6 +30,7 @@ MODULES = (
     'test_ranked_party_rules',
     'test_ranked_party_refactor',
     'test_ranked_cancel',
+    'test_ranked_requeue',
     'test_training_arena',
     'test_training_group_list',
     'test_training_on_demand',

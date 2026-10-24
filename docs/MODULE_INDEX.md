@@ -1381,6 +1381,7 @@
 | [tests/test_quest_ack.py](../tests/test_quest_ack.py) | См. код и вызывающие модули. |
 | [tests/test_ranked.py](../tests/test_ranked.py) | См. код и вызывающие модули. |
 | [tests/test_ranked_achievements.py](../tests/test_ranked_achievements.py) | Achievements use the actual accepted rating transaction, never previews. |
+| [tests/test_ranked_requeue.py](../tests/test_ranked_requeue.py) | A repeated TrueSkill Continue updates the queued squad instead of dropping it. |
 | [tests/test_ranked_squads.py](../tests/test_ranked_squads.py) | Original C6 packets with two independent human accounts and saved squads. |
 | [tests/test_ranks.py](../tests/test_ranks.py) | См. код и вызывающие модули. |
 | [tests/test_rating_completion.py](../tests/test_rating_completion.py) | Eight authoritative save owners; independent Wall values and UTC archive. |

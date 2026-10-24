@@ -4,6 +4,7 @@ Complete four-fighter teams take priority; balanced smaller duels retain
 the existing low-population policy. Selections never rewrite barracks slots.
 """
 from contextlib import closing
+import logging
 from dataclasses import dataclass,replace
 from types import SimpleNamespace
 import struct
@@ -18,6 +19,7 @@ from tio.protocol.ranked import SEARCH_CANCELLED_PACKET, decode_join,encode_info
 from tio import ranked
 
 RANKED_TOWNS=(2,5,8,18)
+LOG=logging.getLogger('tio.server')
 
 
 @dataclass(frozen=True)
@@ -96,8 +98,14 @@ class RankedArena:
             from .ranked_party import submit
             if submit(self,owner,ticket):return True
             prior=self.ranked_waiting.get(owner)
-            if prior and (prior.actors,prior.levels,prior.selections,prior.flags)!=(ticket.actors,ticket.levels,ticket.selections,ticket.flags):raise RankedRejection('Сначала отмените прежний поиск')
-            self.ranked_waiting.setdefault(owner,ticket)
+            if prior is None:
+                self.ranked_waiting[owner]=ticket
+            elif (prior.actors,prior.levels,prior.selections,prior.flags)!=(ticket.actors,ticket.levels,ticket.selections,ticket.flags):
+                # The native selector stays open while searching, so a repeated
+                # Continue edits the search. The latest valid choice wins and the
+                # queue age is kept; rejecting it used to drop the player silently.
+                self.ranked_waiting[owner]=replace(ticket,joined_at=prior.joined_at)
+                LOG.info('ranked_search_updated owner=%s fighters=%d',owner,len(ticket.actors))
             self.put(owner,self.ranked_info(owner))
             self.match_ranked(owner)
         except (PacketError, RankedRejection, SquadAdmissionError) as error:
@@ -115,14 +123,14 @@ class RankedArena:
         authenticated=lambda o:auth_account(self.players[o].database,self.players[o].account)
         from tio.rating_visibility import QA_LOGIN
         qa_pool=bool(QA_LOGIN.fullmatch(authenticated(owner)))
-        candidates=[];roots=set()
+        candidates=[];roots=set();skipped={'database':0,'qa_pool':0,'same_login':0}
         for t in sorted(self.ranked_waiting.values(),key=lambda t:(t.joined_at,t.character_id)):
-            if self.players[t.character_id].database!=self.players[owner].database:continue
+            if self.players[t.character_id].database!=self.players[owner].database:skipped['database']+=1;continue
             root=authenticated(t.character_id)
             # Reserved disposable QA logins never face ordinary players.
             # Character aliases cannot cross the authenticated root's pool.
-            if bool(QA_LOGIN.fullmatch(root))!=qa_pool:continue
-            if root in roots:continue
+            if bool(QA_LOGIN.fullmatch(root))!=qa_pool:skipped['qa_pool']+=1;continue
+            if root in roots:skipped['same_login']+=1;continue
             roots.add(root);candidates.append(t)
             if len(candidates)==32:break
         from .ranked_party import units
@@ -148,7 +156,12 @@ class RankedArena:
         if groups is None:
             from .ranked_bots import incomplete_groups
             groups=incomplete_groups(states,score)
-            if groups is None:return
+            if groups is None:
+                # Operators need the reason a visible search keeps waiting.
+                LOG.info('ranked_search_waiting owner=%s queued=%d candidates=%d skipped=%s',
+                         owner,len(self.ranked_waiting),len(candidates),
+                         ','.join(f'{k}:{v}' for k,v in skipped.items()))
+                return
         groups=tuple(tuple(t for unit in group for t in getattr(unit,'members',(unit,))) for group in groups)
         tickets=tuple(t for group in groups for t in group)
         seats=[];teams=[]
