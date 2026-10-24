@@ -55,7 +55,7 @@ SCOPES['gameplay-audit'] = frozenset((
 SCOPES['warehouse-counter-refresh']=frozenset(('server/economy_runtime.py',))
 SCOPES['shooting-range-turns'] = frozenset((
     'server/team_arena.py', 'tio/arena_service.py',
-    'tio/battle_snapshot.py', 'tio/turn_repeats.py',
+    'tio/battle_snapshot.py', 'tio/turn_repeats.py', 'tools/loopback_exchange.py',
 ))
 SCOPES['warehouse-latency'] = frozenset((
     'server/economy_runtime.py', 'server/warehouse_capacity.py',

@@ -549,7 +549,8 @@ class ArenaService:
         extraction=() if mining is None or getattr(mining,'shared',False) or character_id!=mining.owner else mining.advance(max(field._ability_turns[i] for i in actors))
         return (*effects,*updates,*weights,*skills,*extraction,reply)
 
-    def end_turn(self, character_id: int, packet: bytes) -> bytes | None:
+    def end_turn(self, character_id: int, packet: bytes, *,
+                 received_at: float | None = None) -> bytes | None:
         """Finish an owned turn, or ignore a recent range skip repeat."""
         from .protocol.battle_turn import decode_end_turn,encode_your_turn_finished
         actor=decode_end_turn(packet)
@@ -559,7 +560,15 @@ class ArenaService:
         if getattr(field, 'practice', None) is not None:
             if actor and actor not in field.actor_ids(character_id):
                 raise ValueError('Actor does not belong to the turn owner')
-            if within_end_turn_repeat(self._end_turn_fences.get(room.room_id, 0), self._clock()):
+            fence = self._end_turn_fences.get(room.room_id)
+            # The transport timestamps recv(), before expensive journal work.
+            # All frames received together belong to the same bounded tail,
+            # even when dispatch of the third frame happens after its expiry.
+            if received_at is None:
+                repeat = within_end_turn_repeat(fence or 0, self._clock())
+            else:
+                repeat = fence is not None and received_at < fence
+            if repeat:
                 return None
         if turn is None or turn[0]!=character_id:raise ValueError('Character does not own the current turn')
         if self._clock()>=turn[2]:raise ValueError('Turn deadline has expired')

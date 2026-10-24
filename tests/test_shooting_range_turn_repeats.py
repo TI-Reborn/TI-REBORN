@@ -69,7 +69,8 @@ class RangeTurnRepeatTests(unittest.TestCase):
         self.skip()
         self.advance()
         self.case.now[0] += 1.01
-        self.assertIn(b'\x39', self.skip(self.case.identity))
+        reply = self.arena.end_turn(42, encode_end_turn(self.case.identity), received_at=self.case.now[0])
+        self.assertIn(b'\x39', self.arena.finished_turn_packets(42, reply))
         self.assertNotIn(self.room_id, self.arena._turns)
 
     def test_forged_actor_is_rejected_inside_repeat_window(self):
@@ -88,6 +89,27 @@ class RangeTurnRepeatTests(unittest.TestCase):
             self.assertEqual(self.skip(), ())
         self.case.now[0] += .21
         self.assertIn(b'\x39', self.skip())
+
+    def test_one_received_batch_stays_protected_while_checkpoint_work_is_slow(self):
+        self.skip()
+        self.advance()
+        received_at = self.case.now[0] + .2
+        turn = self.arena._turns[self.room_id]
+        actor = self.case.field.actor(self.case.identity)
+        for _ in range(3):
+            # Journal/SQLite work can delay dispatch after recv() returned.
+            self.case.now[0] += .6
+            reply = self.arena.end_turn(42, encode_end_turn(), received_at=received_at)
+            self.assertEqual(self.arena.finished_turn_packets(42, reply), ())
+            self.assertEqual(self.arena._turns.get(self.room_id), turn)
+            self.assertEqual(self.case.field.actor(self.case.identity), actor)
+
+    def test_batched_repeat_received_before_completion_is_ignored(self):
+        received_at = self.case.now[0]
+        self.case.now[0] += .5
+        self.skip()
+        reply = self.arena.end_turn(42, encode_end_turn(), received_at=received_at)
+        self.assertEqual(self.arena.finished_turn_packets(42, reply), ())
 
     def test_twenty_real_turns_survive_triple_repeats(self):
         for number in range(1, 21):
