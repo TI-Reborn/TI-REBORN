@@ -15,6 +15,31 @@ from .inventory_capacity import validate_capacity
 ROOT=Path(__file__).resolve().parents[1]
 
 
+def match_id_floor(combat):
+    """First free match-unique item ID for battle-created items.
+
+    Native wire IDs are globally unique within the match: the client keeps the
+    saved items of every mercenary it knows, so a battle item that reuses a
+    reserve/warehouse ID resolves to the wrong owner. Reserve the selected
+    squad, excluded personal gear, every saved pet, the account sequence and
+    the warehouse; battle items start no lower than 0x60000000.
+    """
+    from contextlib import closing
+    floor=max(0x60000000,1+max((i.instance_id for p in (*combat.inventories.values(),
+                                *getattr(combat,'personal_inventories',{}).values())
+                                for i in decode_item_list(p)[1]),default=0))
+    for path,account in set(combat.persistence.values()):
+        with closing(connect(path)) as db:
+            for packet, in db.execute('SELECT inventory_packet FROM owned_pets WHERE account=?',(account,)):
+                floor=max(floor,1+max((i.instance_id for i in decode_item_list(packet)[1]),default=0))
+            if db.execute("SELECT 1 FROM sqlite_master WHERE name='item_sequences'").fetchone():
+                row=db.execute('SELECT next_id FROM item_sequences WHERE account=?',(account,)).fetchone()
+                if row:floor=max(floor,row[0])
+            if db.execute("SELECT 1 FROM sqlite_master WHERE name='warehouse_items'").fetchone():
+                highest=db.execute('SELECT MAX(instance_id) FROM warehouse_items WHERE account=?',(account,)).fetchone()[0]
+                floor=max(floor,1+(highest or 0))
+    return floor
+
 class BattleLoot:
     def __init__(self,combat,positions,*,level=1,rng=None):
         self.combat=combat
@@ -25,22 +50,7 @@ class BattleLoot:
         self.opened=set()
         self.ground=set()
         self.sessions={}
-        self.next_id=max(0x60000000,1+max((i.instance_id for p in combat.inventories.values()
-                                         for i in decode_item_list(p)[1]),default=0))
-        # Include reserves/warehouse and retired persistent IDs, not just the
-        # selected squad. Native wire IDs are globally unique within the match.
-        import sqlite3
-        from contextlib import closing
-        for path,account in set(combat.persistence.values()):
-            with closing(connect(path)) as db:
-                for packet, in db.execute('SELECT inventory_packet FROM owned_pets WHERE account=?',(account,)):
-                    self.next_id=max(self.next_id,1+max((i.instance_id for i in decode_item_list(packet)[1]),default=0))
-                if db.execute("SELECT 1 FROM sqlite_master WHERE name='item_sequences'").fetchone():
-                    row=db.execute('SELECT next_id FROM item_sequences WHERE account=?',(account,)).fetchone()
-                    if row:self.next_id=max(self.next_id,row[0])
-                if db.execute("SELECT 1 FROM sqlite_master WHERE name='warehouse_items'").fetchone():
-                    highest=db.execute('SELECT MAX(instance_id) FROM warehouse_items WHERE account=?',(account,)).fetchone()[0]
-                    self.next_id=max(self.next_id,1+(highest or 0))
+        self.next_id=match_id_floor(combat)
         self.metadata={int(n.get('id')):{'name':n.get('name'),**{v.get('key'):v.get('val') for v in n.findall('value')}}
                        for n in ET.parse(ROOT/'evidence/items_diagnostic.xml').getroot()}
         from .equipment import armor_rules

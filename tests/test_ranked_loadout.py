@@ -77,6 +77,30 @@ class RankedLoadoutTests(unittest.TestCase):
         self.case.send(0,b'\x2a\1');self.hub.tick()
         for s in self.case.sessions[:2]:self.assertEqual(decode_item_list(OwnedPetStore(self.path).list(s.account)[0][2])[1],())
 
+    def test_loan_ids_never_collide_with_reserve_or_warehouse_items(self):
+        # Live bug: the token Beretta was dim in the active slot. Its wire ID
+        # duplicated a saved item of the same account (here: a reserve
+        # mercenary's weapon), so the client resolved the ID to the other
+        # owner. Loans must use the match-unique battle namespace.
+        self.clone(0,2,4)
+        store=OwnedPetStore(self.path)
+        reserve=ItemRecord(1,301,bytes(2),1,1,16,(300,)*3,bytes(4),None,bytes(3))
+        with closing(sqlite3.connect(self.path)) as db,db:
+            db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=2',(encode_item_list(2,(reserve,)),'alice'))
+        b=self.start(join(equipment=((4,301),),token=True),join(),journal=True)
+        f=b['field'];combat=f.combat;a=f.actor_ids(self.hub.identities[self.case.sessions[0]])[0]
+        saved={i.instance_id for s in self.case.sessions[:2] for _,_,p,*_ in store.list(s.account) for i in decode_item_list(p)[1]}
+        loans=[i for i in decode_item_list(combat.inventories[a])[1] if i.instance_id in combat.temporary_items]
+        self.assertEqual(sorted(i.template_id for i in loans),[3,301])
+        self.assertEqual([i.instance_id for i in loans if i.instance_id<0x60000000 or i.instance_id in saved],[])
+        everything=[i.instance_id for p in combat.inventories.values() for i in decode_item_list(p)[1]]
+        self.assertEqual(len(everything),len(set(everything)))
+        self.assertGreater(f.loot.next_id,max(i.instance_id for i in loans))
+        weapon=next(i for i in loans if i.template_id==301)
+        self.assertEqual((weapon.equipped,weapon.client_slot,weapon.unknown_bytes_03[0]),(1,16,25))
+        self.assertEqual(weapon.unknown_words,(300+25*65,)*3)  # Native durability of a +25 piece.
+        self.assertEqual(f.actor(a).weapons[0].template_id,301)
+
     def test_cross_band_scaling_wounds_and_saved_proficiency(self):
         self.clone(0,1,20);self.clone(1,1,4)
         b=self.start(join(equipment=((4,301),),bonus=2),join())
