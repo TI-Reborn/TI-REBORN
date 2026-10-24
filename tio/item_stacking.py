@@ -15,7 +15,9 @@ from .protocol.item_list import decode_item_list, encode_item_list
 AMMUNITION = frozenset((3, 4, 5, 6, 7, 12, 13, 14, 15, 36, 37))
 MEDICAL = frozenset((9, 34))  # Bandages, Candies only.
 ENCOUNTER_MATERIALS = frozenset((65487,65488))
-STACKABLE = AMMUNITION | MEDICAL | ENCOUNTER_MATERIALS
+# Ordinary Upgrade Kit: one cell per location, count shown by the client.
+UPGRADE_KITS = frozenset((30,))
+STACKABLE = AMMUNITION | MEDICAL | ENCOUNTER_MATERIALS | UPGRADE_KITS
 # Native UI calculations use signed Delphi integers. Leave another stack when
 # combining would exceed their positive range; never truncate quantities.
 MAX_STACK = 0x7fffffff

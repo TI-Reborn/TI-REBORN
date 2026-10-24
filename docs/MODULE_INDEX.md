@@ -1457,6 +1457,7 @@
 | [tests/test_training_bot.py](../tests/test_training_bot.py) | См. код и вызывающие модули. |
 | [tests/test_transport.py](../tests/test_transport.py) | См. код и вызывающие модули. |
 | [tests/test_travel_party.py](../tests/test_travel_party.py) | См. код и вызывающие модули. |
+| [tests/test_upgrade_kit_stacking.py](../tests/test_upgrade_kit_stacking.py) | Upgrade Kits occupy one warehouse/backpack cell per location as one stack. |
 | [tests/test_verify_hosted_gameplay_modes.py](../tests/test_verify_hosted_gameplay_modes.py) | QA tool checks and a real local four-account TLS scenario; no VPS access. |
 | [tests/test_verify_published_launcher_update.py](../tests/test_verify_published_launcher_update.py) | Small local checks for the read-only public verification boundary. |
 | [tests/test_visibility.py](../tests/test_visibility.py) | См. код и вызывающие модули. |

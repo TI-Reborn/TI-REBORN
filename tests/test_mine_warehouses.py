@@ -70,7 +70,9 @@ class MineWarehouseTests(unittest.TestCase):
             allocations.append(max(i.instance_id for i in items))
             with transaction(self.path) as db:
                 self.assertEqual(counts(db,'alice'),(0,len(allocations)))
-        self.assertEqual(len(set(allocations)),5)
+        # Upgrade Kits stack: every checkpoint adds to the same shared record.
+        self.assertEqual(len(set(allocations)),1)
+        self.assertEqual([i.count for i in self.store.items('alice')],[5])
         for town in (*MINE_LOCATIONS, 3):
             self.move(town)
             self.assertEqual({i.instance_id for i in self.store.items('alice')},set(allocations))
@@ -79,7 +81,7 @@ class MineWarehouseTests(unittest.TestCase):
             self.assertEqual(self.store.items('bob'), ())
             with self.assertRaises(ValueError): self.store.exchange('bob',1,withdrawals=((allocations[0],1),))
             self.assertEqual(self.snapshot(),before)
-        self.store.exchange('alice',1,withdrawals=((allocations[0],1),))
+        self.store.exchange('alice',1,withdrawals=((allocations[0],5),))
         self.move(13)
         with self.assertRaises(ValueError): self.store.exchange('alice',1,withdrawals=((allocations[0],1),))
         with closing(sqlite3.connect(self.path)) as db:

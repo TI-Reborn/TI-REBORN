@@ -2480,6 +2480,7 @@
     <value key="durability" val="1" />
     <value key="itype" val="upgkit" />
     <value key="image" val="itm_upgradekit.png" />
+    <value key="stackable" val="1" />
   </item>
   <item id="20" name="Health Injection">
     <value key="actionPoints" val="10" />
