@@ -1388,6 +1388,7 @@
 | [tests/test_ratings_public.py](../tests/test_ratings_public.py) | Read-only public rankings use real independent accounts, private hops and locks. |
 | [tests/test_recovery_bundle.py](../tests/test_recovery_bundle.py) | Full recovery capture safety against temporary fixtures and fake commands. |
 | [tests/test_rental.py](../tests/test_rental.py) | См. код и вызывающие модули. |
+| [tests/test_repair_kit_stacking.py](../tests/test_repair_kit_stacking.py) | Repair Kits 17/18/19 stack when identical; partial use splits one kit off. |
 | [tests/test_reservation_launcher.py](../tests/test_reservation_launcher.py) | См. код и вызывающие модули. |
 | [tests/test_reservation_texture_codec.py](../tests/test_reservation_texture_codec.py) | Native BMP alpha resources must not become opaque RGBA PNG files. |
 | [tests/test_reservation_visuals.py](../tests/test_reservation_visuals.py) | Visual bindings must preserve authoritative gameplay and other cities. |

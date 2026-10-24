@@ -607,13 +607,20 @@ class Combat:
         selection=self.repair_selections.get(owner)
         if packet[0]==0x7e and (selection is None or selection[0]!=identity):
             raise ValueError('Сначала выберите ремкомплект')
+        loot=getattr(self.field,'loot',None);allocated=[]
+        def allocate():
+            # Match-wide allocator; committed only after persistence succeeds.
+            if loot is None or loot.next_id>0xffffffff:raise ValueError('Item identity space exhausted')
+            allocated.append(loot.next_id);return loot.next_id
         inventory,audit=repair_inventory(self.inventories[identity],target,
-            selection[1] if packet[0]==0x7e else None)
+            selection[1] if packet[0]==0x7e else None,allocate=allocate)
         if actor.action_points<1:raise ValueError('Insufficient action points')
         from .protocol.action_points import encode_action_points
         replies=(self.inventory_packet(identity,inventory),encode_action_points(identity,actor.action_points-1),repair_message(112))
-        self._persist_batch({identity:inventory},repair_audit=(identity,audit))
+        self._persist_batch({identity:inventory},repair_audit=(identity,audit),
+                            temporary_ids=self.temporary_items if allocated else None)
         self.inventories[identity]=inventory
+        if allocated:loot.next_id=allocated[-1]+1
         self.field._actors[identity]=replace(actor,action_points=actor.action_points-1)
         self.repair_selections.pop(owner,None)
         return replies
