@@ -120,9 +120,9 @@ class ContractsLocalTcpTests(unittest.TestCase):
     def native_markers(self, login):
         result = {}
         for packet in self.frames[login]:
-            if packet[:2] == b'\xc8\x2d':
+            if packet[:2] == b'\xc8\x2d' and int.from_bytes(packet[2:4], 'little') in (23, 24, 25):
                 marker = decode_town_info(packet)
-                if marker.town_id in (18, 19, 20):
+                if marker.town_id in (23, 24, 25):
                     result[marker.town_id] = marker.final_bool
         return result
 
@@ -188,11 +188,11 @@ class ContractsLocalTcpTests(unittest.TestCase):
                          if packet[:2] == b'\xb9\x03']
             zones = next(data for data in snapshots if data.name_bytes == b'zones')
             xml = ET.fromstring(zlib.decompress(zones.compressed_bytes))
-            self.assertEqual([int(town.get('id')) for town in xml], list(range(1, 21)))
+            self.assertEqual([int(town.get('id')) for town in xml], list(range(1, 26)))
             for town in xml[-3:]:
                 values = {value.get('key'): value.get('val') for value in town}
                 self.assertEqual(values['enabled'], '0')
-            self.assertEqual(self.native_markers(login), {18: 0, 19: 0, 20: 0})
+            self.assertEqual(self.native_markers(login), {23: 0, 24: 0, 25: 0})
 
         bob_start, carol_start = len(self.frames['bob']), len(self.frames['carol'])
         replies = self.command('alice', '!contracts list')
@@ -205,9 +205,9 @@ class ContractsLocalTcpTests(unittest.TestCase):
         room, contract = self.group_and_accept()
         for login in self.peers:
             self.flush(self.peers[login])
-        self.assertEqual(self.native_markers('alice'), {18: 1, 19: 0, 20: 0})
-        self.assertEqual(self.native_markers('bob'), {18: 1, 19: 0, 20: 0})
-        self.assertEqual(self.native_markers('carol'), {18: 0, 19: 0, 20: 0})
+        self.assertEqual(self.native_markers('alice'), {23: 1, 24: 0, 25: 0})
+        self.assertEqual(self.native_markers('bob'), {23: 1, 24: 0, 25: 0})
+        self.assertEqual(self.native_markers('carol'), {23: 0, 24: 0, 25: 0})
         for owner in ('alice', 'bob'):
             roster = OwnedPetStore(self.config.database).list(owner)
             self.assertTrue(all(decode_pet_info(raw, human_equipment=True).fields['0x8c4ab1'] > 0 for _, raw, _ in roster))
@@ -305,18 +305,18 @@ class ContractsLocalTcpTests(unittest.TestCase):
         self.assertIsNone(self.server.multi.active_accounts['carol'].locations.current('carol'))
         for login in ('alice', 'bob', 'carol'):
             start = len(self.frames[login])
-            for packet in (b'\x79\x12', b'\x79\x13', b'\x79\x02', b'\x79\x01',
-                           b'\x79\xff', b'\x79\x15', b'\x79', b'\x79\x12\0'):
+            for packet in (b'\x79\x17', b'\x79\x18', b'\x79\x02', b'\x79\x01',
+                           b'\x79\xff', b'\x79\x1a', b'\x79', b'\x79\x17\0'):
                 self.peers[login].send(packet)
             self.flush(self.peers[login])
             replies = self.frames[login][start:]
             infos = {info.town_id: info for packet in replies if packet[:2] == b'\xc8\x2d'
                      for info in (decode_town_info(packet),)}
-            self.assertEqual(infos[18].final_bool, int(login != 'carol'))
-            self.assertEqual(infos[19].final_bool, 0)
+            self.assertEqual(infos[23].final_bool, int(login != 'carol'))
+            self.assertEqual(infos[24].final_bool, 0)
             self.assertEqual(infos[2].final_bool, 1)
             self.assertEqual(infos[1].final_bool, 0)
-            self.assertNotIn(21, infos)
+            self.assertNotIn(26, infos)
             self.assertNotIn(255, infos)
             self.assertFalse(any(packet[:5] == b'\xf0' + (394).to_bytes(4, 'little') for packet in replies))
             self.assertFalse(any(packet[:1] in (b'\x35', b'\x41') for packet in replies))

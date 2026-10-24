@@ -44,7 +44,9 @@ def validate_ui_path(name: str) -> None:
     require(not path.is_absolute() and path.as_posix() == name and '..' not in path.parts
             and '\\' not in name and ':' not in name, 'Unsafe UI path: ' + name)
     require((name.startswith(('base/pda/', 'base/gui/', 'base/gui2/'))
-             and path.suffix.lower() in IMAGE_SUFFIXES) or name in ADDITIONAL_UI_PATHS,
+             and path.suffix.lower() in IMAGE_SUFFIXES) or name in ADDITIONAL_UI_PATHS
+            or name == 'base/ui-hd/battle-controls/hd4-bui-plates.png'
+            or re.fullmatch(r'base/ui-hd/icons/a/(100|125|150|200)/a-(map|soldier|ratings|money|filter|handshake|info|mail|refresh|rifle|search|squad|wrench|zoom-minus|zoom-plus)-\1\.png', name),
             'Not an allowed UI resource: ' + name)
     require(all(re.fullmatch(r'[A-Za-z0-9_ .()\-]+', part)
                 and not part.endswith(('.', ' ')) for part in path.parts),
@@ -101,10 +103,12 @@ def validate_manifests(previous, updated, allowed_paths, patch_plan=None, added_
     new_version = tuple(map(int, updated['version'].split('.')))
     require(new_version > old_version, 'Client version must increase')
     require({key: value for key, value in previous.items()
-             if key not in ('version', 'news', 'files')}
+             if key not in ('version', 'news', 'files', 'archive')}
             == {key: value for key, value in updated.items()
-                if key not in ('version', 'news', 'files')},
+                if key not in ('version', 'news', 'files', 'archive')},
             'Non-release manifest metadata changed')
+    require('archive' not in updated or updated.get('archive') == previous.get('archive')
+            and 'archive' in previous, 'Unapproved client archive metadata changed')
     if 'news' in updated:
         require(isinstance(updated['news'], str), 'Invalid release news')
     changed = {name for name in before if before[name] != after[name]} | additions

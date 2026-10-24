@@ -44,6 +44,28 @@ class MenuInterfaceReleaseTests(unittest.TestCase):
         for name in ('silver.dll', 'base/config.cfg', 'base/models/armor.mdjx'):
             self.assertEqual(before[name], after[name])
 
+    def test_builder_removes_stale_archive_for_file_updates(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self.previous['archive'] = dict(size=100, sha256='a'*64, filesSha256='b'*64)
+            previous = root/'previous.json'
+            previous.write_text(json.dumps(self.previous))
+            assets = root/'assets'; assets.mkdir()
+            (assets/'frame.tga').write_bytes(b'new frame')
+            output = root/'release'
+            build(previous, assets, {'base/gui/frame.tga':'frame.tga'}, '2026.10.07.4', output)
+            _, raw, _, _, _ = read_release(output/'client-release')
+            self.assertNotIn('archive', json.loads(raw))
+            self.assertEqual(json.loads((output/'client-release/previous-manifest.json').read_bytes()), self.previous)
+
+    def test_ui_release_cannot_inject_or_modify_archive(self):
+        self.updated['archive'] = dict(size=100, sha256='a'*64, filesSha256='b'*64)
+        with self.assertRaisesRegex(ValueError, 'Unapproved client archive'):
+            validate_manifests(self.previous, self.updated, self.allowed)
+        self.previous['archive'] = dict(size=100, sha256='c'*64, filesSha256='b'*64)
+        with self.assertRaisesRegex(ValueError, 'Unapproved client archive'):
+            validate_manifests(self.previous, self.updated, self.allowed)
+
     def test_existing_empty_non_ui_file_is_preserved(self):
         self.previous['files'].append(record('base/SalesInfo.txt', b''))
         self.updated['files'].append(record('base/SalesInfo.txt', b''))
@@ -62,6 +84,22 @@ class MenuInterfaceReleaseTests(unittest.TestCase):
                      'base/pda/../config.cfg', 'base/pda/a/../../gui/frame.png',
                      'base/pda\\frame.png', '/base/pda/mainbg.jpg',
                      'base/pda/C:frame.png', 'base/pda/a.png ', 'base/pda/log.txt'):
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                validate_ui_path(name)
+
+    def test_personal_gui_hd_navigation_paths_are_exact_and_density_matched(self):
+        for density in (100, 125, 150, 200):
+            for symbol in ('map', 'soldier', 'ratings', 'money', 'filter', 'handshake', 'info', 'mail',
+                           'refresh', 'rifle', 'search', 'squad', 'wrench', 'zoom-minus', 'zoom-plus'):
+                validate_ui_path(f'base/ui-hd/icons/a/{density}/a-{symbol}-{density}.png')
+        validate_ui_path('base/ui-hd/battle-controls/hd4-bui-plates.png')
+        for name in ('base/ui-hd/icons/a/100/a-map-200.png',
+                     'base/ui-hd/icons/a/300/a-map-300.png',
+                     'base/ui-hd/icons/a/100/a-map-100.dll',
+                     'base/ui-hd/icons/a/100/a-inventory-100.png',
+                     'base/ui-hd/battle-controls/hd4-bui-glyphs.png',
+                     'base/ui-hd/battle-controls/other-plates.png',
+                     'base/ui-hd/icons/a/100/../../config.cfg'):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 validate_ui_path(name)
 

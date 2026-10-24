@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="editor-token" content="__EDITOR_TOKEN__">
+  <title>TIO · Редактор баланса</title>
+  <link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">TI<span>O</span></span><span class="brand-divider"></span><div><strong>Редактор баланса</strong><span class="eyebrow">ПРЕДМЕТЫ И БОЕВЫЕ ПАРАМЕТРЫ</span></div></div>
+    <span class="environment"><i></i> Локальная мастерская</span>
+    <button id="help-button" class="icon-button" aria-label="Как работает редактор">?</button>
+  </header>
+  <section class="profilebar" aria-label="Профиль баланса">
+    <div class="profile-picker"><label for="profiles">ПРОФИЛЬ</label><select id="profiles"><option value="">Исходный баланс</option></select><span id="revision" class="muted"></span></div>
+    <button id="new-profile" class="button secondary">＋ Новый профиль</button>
+    <button id="import-profile" class="button quiet">Импорт</button><input id="import-file" type="file" accept=".json,application/json" hidden>
+    <span class="spacer"></span><span id="save-status" class="save-status" role="status">Чтение каталогов…</span>
+    <button id="export-profile" class="button secondary" disabled>Профиль JSON ↓</button>
+    <button id="save" class="button primary" aria-label="Сохранить профиль" disabled>Сохранить профиль <kbd aria-hidden="true">Ctrl S</kbd></button>
+  </section>
+  <div id="banner" class="banner" hidden></div>
+  <div class="workspace">
+    <aside class="catalog">
+      <div class="catalog-head"><div class="section-title">Каталог <span id="total-count" class="count">—</span></div><div class="search-wrap"><span>⌕</span><input id="search" type="search" placeholder="Название или ID…" aria-label="Поиск предметов"><kbd>Ctrl K</kbd></div>
+        <div id="filters" class="filters" aria-label="Тип предмета"></div><label class="changed-filter"><input type="checkbox" id="changed-only"> Только изменённые</label>
+      </div>
+      <div class="list-caption"><span>ПРЕДМЕТ</span><span>ТИП / ID</span></div>
+      <div id="item-list" class="item-list" role="list" aria-label="Предметы"><div class="empty">Загрузка…</div></div>
+      <div class="catalog-footer"><span id="visible-count">—</span><span>Основа: наш проект</span></div>
+    </aside>
+    <main id="editor" class="editor">
+      <div class="editor-title"><div><div id="item-category" class="eyebrow">ОРУЖИЕ</div><h1 id="item-name">Загрузка каталога</h1><div class="item-subtitle"><span id="item-id" class="tag">ID —</span><span id="item-subtype" class="muted"></span><span id="item-changed" class="changed-tag" hidden>Изменён</span></div></div><button id="reset-item" class="button quiet" disabled>↺ Сбросить предмет</button></div>
+      <div id="readonly-hint" class="readonly-hint">Выберите или создайте профиль, чтобы редактировать параметры.</div>
+      <form id="item-form" novalidate><div id="field-groups"></div></form>
+      <div id="item-notes" class="item-notes"></div>
+      <details class="source-details"><summary>Откуда берутся значения</summary><p>Оружие — каталог боевых параметров. Броня и вес — XML предметов. Цены — политика кредитной экономики; цена указана за упаковку. Профиль хранит исходный снимок и отдельные изменения.</p><p>Штатные каталоги и хостинг редактор не изменяет. Исторические значения и неизвестные параметры не подменяются догадками.</p></details>
+    </main>
+    <aside class="preview-panel">
+      <div class="preview-heading"><div class="eyebrow">ПРОВЕРКА ПАРАМЕТРОВ</div><h2>Как меняется урон</h2><p>Исходный баланс и ваш профиль</p></div>
+      <div class="simulation-inputs"><label>Броня цели<input id="target-defense" type="number" value="0" min="0" max="65535" step="1"></label><label>Запас ОД<input id="ap-budget" type="number" value="20" min="1" max="255" step="1"></label></div>
+      <div id="preview-error" class="inline-error" role="status" hidden></div>
+      <div id="chart" class="chart" aria-label="Урон по дальности"></div>
+      <div class="legend"><span><i class="base-swatch"></i>Исходный</span><span><i class="profile-swatch"></i>Профиль</span></div>
+      <div id="distance-control"><label class="distance-label" for="distance">Дистанция <strong id="distance-value">1 клетка</strong></label><input id="distance" type="range" min="1" max="10" value="1"></div>
+      <div id="metrics" class="metrics"></div>
+      <p id="preview-note" class="preview-note"></p>
+      <div class="preview-footer"><span class="small-dot"></span> Расчёт по формулам нашего сервера</div>
+    </aside>
+  </div>
+  <footer class="reviewbar"><div><strong id="change-count">0 изменений</strong><span id="change-summary">Создайте профиль для первого эксперимента</span></div><button id="review" class="button secondary">Посмотреть изменения <span id="diff-count" class="count">0</span></button><button id="export-candidate" class="button primary" disabled>Экспорт кандидата ZIP ↗</button></footer>
+  <dialog id="text-dialog"><form method="dialog"><div class="eyebrow">ПРОФИЛЬ БАЛАНСА</div><h2 id="dialog-title">Новый профиль</h2><p id="dialog-description"></p><label id="dialog-label">Название<input id="dialog-input" maxlength="80" autocomplete="off" required></label><div class="dialog-actions"><button value="cancel" class="button secondary" formnovalidate>Отмена</button><button value="ok" class="button primary" id="dialog-ok">Создать</button></div></form></dialog>
+  <dialog id="review-dialog"><div class="review-header"><div><div class="eyebrow">ОТ ИСХОДНОГО К ПРОФИЛЮ</div><h2>Изменения баланса</h2></div><button class="icon-button" id="close-review" aria-label="Закрыть изменения">×</button></div><div class="diff-scroll"><table><thead><tr><th>Предмет</th><th>Параметр</th><th>Исходный</th><th>Профиль</th></tr></thead><tbody id="diff-body"></tbody></table><div id="diff-empty" class="empty">Пока ничего не изменено</div></div><div class="dialog-actions"><button id="reset-all" class="button quiet">Сбросить все изменения</button><span class="spacer"></span><button id="done-review" class="button secondary">Готово</button></div></dialog>
+  <dialog id="help-dialog"><div class="eyebrow">МАСТЕРСКАЯ БАЛАНСА</div><h2>Изменяйте. Сравнивайте. Проверяйте.</h2><ol><li>Создайте профиль на основе текущих локальных каталогов.</li><li>Выберите предмет, измените параметры и проверьте график.</li><li>Сохраните профиль. Его можно загрузить снова или передать как JSON.</li><li>Экспортируйте ZIP с каталогами кандидата и списком изменений.</li></ol><p>Экспорт предназначен для проверки. Для применения в игре отдельно нужны сверка хостинга, клиентских данных и проверка multiplayer. Кнопки публикации здесь нет.</p><div class="dialog-actions"><button id="close-help" class="button primary">Понятно</button></div></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body></html>

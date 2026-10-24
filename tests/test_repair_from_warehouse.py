@@ -61,14 +61,14 @@ class WarehouseRepairTests(unittest.TestCase):
         with closing(sqlite3.connect(self.path)) as db:
             self.assertEqual(db.execute('SELECT bucket,town FROM warehouse_places WHERE instance_id=9002').fetchone(),('city',3))
 
-    def test_untagged_and_overflow_match_counter_other_city_and_account_untouched(self):
+    def test_all_town_stocks_and_overflow_supply_repair_but_other_account_is_untouched(self):
         self.bag();self.bag('bob')
         self.stash((item(1,17,resource=100,capacity=600),))
         self.stash((item(2,18,resource=100,capacity=1200),),town=2,bucket='overflow')
         self.stash((item(3,19,resource=3600),),town=2)
         self.stash((item(1,19,resource=3600),),'bob',town=3)
         self.run_repair()
-        self.assertEqual(self.assets().repair_points,0)
+        self.assertEqual(self.assets().repair_points,3509)
         self.assertEqual(self.assets('bob').repair_points,3600)
         with closing(sqlite3.connect(self.path)) as db:
             self.assertEqual(db.execute('SELECT instance_id FROM warehouse_items WHERE account=?',('alice',)).fetchall(),[(3,)])

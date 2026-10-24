@@ -691,7 +691,10 @@ class Combat:
         impact=(request.x,request.y)
         victims=[v for v in f._actors.values() if v.health is not None and v.health>0
                  and (v.x,v.y)==(request.x,request.y)]
-        if source.get('weaponAttack')=='Minigun':
+        if weapon_id==324:
+            from .flamethrower import victims as flame_victims
+            victims=flame_victims(f,a,(request.x,request.y))
+        elif source.get('weaponAttack')=='Minigun':
             # Manual p39/p61: choose a direction on empty ground; everyone
             # in the burst can be hit, including unseen actors and allies.
             # Each ray respects static obstacles/doors and dynamic smoke.

@@ -94,8 +94,8 @@ class ContractsServiceTests(unittest.TestCase):
         from xml.etree import ElementTree as ET
         from tio.protocol.town_info import decode_town_info
         zones = ET.fromstring(self.service.zones_xml())
-        self.assertEqual([int(t.get('id')) for t in zones], list(range(1,21)))
-        for zone in list(zones)[17:]:
+        self.assertEqual([int(t.get('id')) for t in zones], list(range(1,26)))
+        for zone in list(zones)[22:]:
             values = {value.get('key'): value.get('val') for value in zone}
             self.assertEqual(values['enabled'], '0')
         self.send(0, '!party create'); self.send(0, '!party invite Bob')
@@ -105,9 +105,9 @@ class ContractsServiceTests(unittest.TestCase):
             self.service.sync(session)
             updates = [decode_town_info(packet) for packet in self.hub.queues[self.hub.identities[session]]
                        if packet[:2] == b'\xc8\x2d']
-            self.assertEqual({info.town_id for info in updates}, {18,19,20})
+            self.assertEqual({info.town_id for info in updates}, {23,24,25})
             self.assertEqual([info.town_id for info in updates if info.final_bool],
-                             [18] if session.account in ('alice','bob') else [])
+                             [23] if session.account in ('alice','bob') else [])
 
     def test_existing_gameplay_allowed_when_ungrouped(self):
         self.assertFalse(self.service.guard(self.sessions[0], b'\xba\x03\x01\x01'))
@@ -190,11 +190,11 @@ class ContractsServiceTests(unittest.TestCase):
         party = self.service.parties.info('alice')
         contract = self.service.contracts.active(party['id'])
         for session in self.sessions:
-            for town in (18, 19, 20):
+            for town in (23, 24, 25):
                 replies = self.service.map_query(session, bytes((0x79, town)))
                 self.assertEqual(len(replies), 1)
                 info = decode_town_info(replies[0])
-                enabled = session.account in ('alice', 'bob') and town == 18
+                enabled = session.account in ('alice', 'bob') and town == 23
                 self.assertEqual((info.town_id, info.final_bool), (town, int(enabled)))
                 self.assertEqual(info.unknown_bools, (0, 0, 0))
                 if enabled:
@@ -223,13 +223,13 @@ class ContractsServiceTests(unittest.TestCase):
 
     def test_map_tooltip_unknown_malformed_and_cancelled_slots_stay_private(self):
         from tio.protocol.town_info import decode_town_info
-        for packet in (b'\x79', b'\x79\x12\0', b'\x79\0', b'\x79\x15', b'\x79\xff'):
+        for packet in (b'\x79', b'\x79\x17\0', b'\x79\0', b'\x79\x1a', b'\x79\xff'):
             self.assertEqual(self.service.map_query(self.sessions[2], packet), ())
         self.assertIsNone(self.service.map_query(self.sessions[0], b'\x75'))
         self.send(0, '!party create'); self.send(0, '!party invite Bob')
         self.send(1, f"!party accept {self.service.parties.invitations('bob')[0]['id']}")
         self.send(0, '!contracts take camp'); self.send(0, '!contracts cancel')
-        self.assertEqual(decode_town_info(self.service.map_query(self.sessions[0], b'\x79\x12')[0]).final_bool, 0)
+        self.assertEqual(decode_town_info(self.service.map_query(self.sessions[0], b'\x79\x17')[0]).final_bool, 0)
 
     def test_city_button_queries_do_not_create_group_and_replies_are_private(self):
         contracts = self.send(0, '!contracts list')

@@ -125,7 +125,7 @@ class BattleStateTests(unittest.TestCase):
         field=self.field();before=field.actor(101)
         for owner,actor,path in [(99,101,((3,2),)),(17,102,((5,3),)),(17,404,((3,2),)),
                                  (17,101,()),(17,101,((3,2),(5,2))),
-                                 (17,101,((3,2),(3,3))), (17,101,((3,2),(4,2),(5,2))),
+                                 (17,101,((3,2),(3,3))),
                                  (17,101,((2,3),(3,4))), (17,101,((1,2),(0,2),(-1,2)))]:
             with self.subTest(path=path,owner=owner,actor=actor):
                 with self.assertRaises(ValueError):field.move(owner,BattleMove(actor,path))

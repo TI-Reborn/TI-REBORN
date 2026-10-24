@@ -169,6 +169,8 @@ def catalogue(xml=DESCRIPTOR):
         level=raw[0x31e], levels=raw[0x31f], value=struct.unpack_from('<i', raw, 0x320)[0],
         active=raw[0x326], ap=raw[0x327], cooldown=struct.unpack_from('<I', raw, 0x32c)[0],
         range=raw[0x332], target=raw[0x337], hidden=raw[5],
+        minimum_range=raw[0x333], splash_range=raw[0x335],
+        item_consume_index=struct.unpack_from('<I',raw,0x33c)[0],
         lookups=looked_up, isolated=sorted(isolated), xml_sha256=hashlib.sha256(xml.encode()).hexdigest())
     return result
 

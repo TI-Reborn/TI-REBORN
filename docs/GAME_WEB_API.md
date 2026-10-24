@@ -118,3 +118,16 @@ These validate API authentication, creation/retries/conflicts, game-compatible
 passwords, legacy resets, character preservation, body/rate limits, real TCP
 health checks and exact/stale status handling. They do not substitute for
 validation with two graphical game clients on the hosted multiplayer service.
+
+
+### Mailbox-authorized password recovery (2026-10-23)
+
+`POST /v1/accounts/recovery` is private and bearer-authenticated, with exact
+fields `{username,newPassword,requestId,provisioningId}`. Only the portal calls
+it after consuming/validating mailbox proof under its credential lock. For an
+ACTIVE account, provisioningId is empty and an existing game account is required.
+For PENDING signup it is the original stable creation ID; an existing game
+account must have that matching creation receipt. Unrelated legacy accounts
+cannot be taken over. Credentials and receipt commit atomically; stale receipt
+replay fails after an intervening change. Response:
+`{username,changed:true,replayed:boolean}`. No public reverse-proxy route is added.

@@ -5,7 +5,7 @@ from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 from tio.world_encounters import EncounterService,POLICY,reward
-from tio.locations import LocationStore,stop_packet,leave_town_packet
+from tio.locations import LocationStore,stop_packet,leave_town_packet,MAP_SPEED
 from tio.arena_service import ArenaService
 from tio.wallets import WalletStore
 from tio.owned_pets import OwnedPetStore
@@ -40,7 +40,7 @@ class EncounterTests(unittest.TestCase):
         return self.locations.travel(name,struct.pack('<Bii',0x1b,*target),character)
 
     def encounter(self):
-        self.travel();self.now[0]+=20
+        self.travel();self.now[0]+=120/MAP_SPEED
         started=self.service.tick('alice',42,b'Alice');self.assertIsNotNone(started)
         return started[0]
 
@@ -48,7 +48,7 @@ class EncounterTests(unittest.TestCase):
         self.travel()
         self.assertIsNone(self.service.tick('alice',42,b'Alice'))
         for _ in range(10):self.travel(target=(399,299))
-        self.now[0]+=4
+        self.now[0]+=24/MAP_SPEED
         self.assertIsNone(self.service.tick('alice',42,b'Alice'))
         self.now[0]+=20
         self.assertIsNone(self.service.tick('alice',42,b'Alice',busy=True))
@@ -61,7 +61,7 @@ class EncounterTests(unittest.TestCase):
         self.travel();self.now[0]+=5;self.travel(target=(350,200))
         with closing(sqlite3.connect(self.path)) as db:
             distance=db.execute('SELECT distance FROM world_encounter_state WHERE account=?',('alice',)).fetchone()[0]
-        self.assertAlmostEqual(distance,30)
+        self.assertAlmostEqual(distance,5*MAP_SPEED)
         self.now[0]+=15;self.assertIsNotNone(self.service.tick('alice',42,b'Alice'))
 
     def test_infected_npcs_native_dog_profile_and_regular_dogs_unchanged(self):

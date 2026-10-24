@@ -33,6 +33,8 @@ node_modules/
 .next*/
 dist/
 build/
+**/bin/
+**/obj/
 *.log
 *.zip
 *.tar

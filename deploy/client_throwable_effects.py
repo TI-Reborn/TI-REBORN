@@ -23,7 +23,7 @@ SIGNATURE=b'TIO-throwable-animation-v1'
 RESOURCES=(('gfx\\tio-effects\\tio-smoke.png',64,64,1),
            ('gfx\\tio-effects\\tio-flare.png',128,192,32),
            ('gfx\\tio-effects\\tio-fire.png',64,128,32),
-           ('gfx\\tio-effects\\tio-glow.png',256,256,1))
+           ('gfx\\tio-effects\\tio-glow.png',192,192,1))
 
 
 def load_code():
@@ -31,8 +31,8 @@ def load_code():
     for i,(_,w,h,_) in enumerate(RESOURCES):
         c.emit('8db3');c.word(ROWS+i*64)
         c.emit('833e00');c.branch('0f85','loaded'+str(i))
-        c.emit('6a00 6a00 6a02 56 8b4620 01d8 ba');c.word(h)
-        c.emit('b9');c.word(w);c.call(0x4f2cb4)
+        c.emit('6a00 6a00 6a02 56 8b4620 01d8 ba');c.word(w)
+        c.emit('b9');c.word(h);c.call(0x4f2cb4)
         c.label('loaded'+str(i))
     c.emit('619d c3');return c.finish(0x200)
 
@@ -141,16 +141,16 @@ def extension():
         off=address-0x400000-RVA;data[off:off+len(code)]=code
     at=NAMES-RVA
     for i,(path,w,h,count) in enumerate(RESOURCES):
-        # Managed immutable ANSI strings have a reference count and length.
-        blob=path.encode();struct.pack_into('<ii',data,at,-1,len(blob));at+=8
-        data[at:at+len(blob)+1]=blob+b'\0'
+        # Silver and the native SDK accept Delphi UnicodeString, not ANSI.
+        blob=path.encode('utf-16le');struct.pack_into('<HHiI',data,at,1200,2,-1,len(path));at+=12
+        data[at:at+len(blob)+2]=blob+b'\0\0'
         # The loader output record is12 bytes; path pointer at+32.
         struct.pack_into('<I',data,ROWS-RVA+i*64+32,NAMES+at-(NAMES-RVA))
-        at=(at+len(blob)+4)&~3
+        at=(at+len(blob)+5)&~3
     # Each row needs its own path field, outside the native output record.
     # Sound pointers occupy fixed strings beyond texture paths.
     for offset,name in ((0x200,'tio_fx_flare'),(0x240,'tio_fx_fire'),(0x280,'tio_fx_smoke'),(0x2c0,'tio_fx_flare_start')):
-        at=NAMES-RVA+offset;blob=name.encode();struct.pack_into('<ii',data,at-8,-1,len(blob));data[at:at+len(blob)+1]=blob+b'\0'
+        at=NAMES-RVA+offset;blob=name.encode('utf-16le');struct.pack_into('<HHiI',data,at-12,1200,2,-1,len(name));data[at:at+len(blob)+2]=blob+b'\0\0'
     data[-len(SIGNATURE):]=SIGNATURE
     return bytes(data)
 

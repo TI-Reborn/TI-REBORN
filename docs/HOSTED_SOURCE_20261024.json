@@ -1,0 +1,1578 @@
+{
+  "date": "2026-10-24",
+  "description": "Read-only snapshot of current hosted Python sources and public runtime catalogs, normalized UTF-8/LF. Excludes player data, settings, credentials, and the older deployed check runner.",
+  "files": [
+    {
+      "path": "config/abilities.json",
+      "sha256_utf8_lf": "99a318c6118995a34b459cd9f9ccc74d098a427bb58f322a2e8395b03ca9f583"
+    },
+    {
+      "path": "config/ability_learning.json",
+      "sha256_utf8_lf": "d21426cad690c92e2319a6e35cda38c735d68f7e2c7697cf37215b93aca5b4e6"
+    },
+    {
+      "path": "config/achievements.json",
+      "sha256_utf8_lf": "be31d8da9eea1a531475909dcd630406dae61b5d4ecec286f7fd05fa803d92b8"
+    },
+    {
+      "path": "config/arena_fragments.json",
+      "sha256_utf8_lf": "31747206a6961de21ee80bba09644abde927bc6489f3d8b0728a098e7020fb13"
+    },
+    {
+      "path": "config/arena_map.json",
+      "sha256_utf8_lf": "4e5c24dcf3c19e81f679a6ef0df37aa81dbe177b129cecfa3e2a396ae8257e4a"
+    },
+    {
+      "path": "config/arena_surroundings.json",
+      "sha256_utf8_lf": "35ef350117a6d329fe619f7c887147759920c95eb036430a4285c05c2159f22d"
+    },
+    {
+      "path": "config/assault_maps.json",
+      "sha256_utf8_lf": "ba9721aaa272af1c5f0e17bf501f30a708b79cf15cb239de696c75725aa48e8b"
+    },
+    {
+      "path": "config/avatars.json",
+      "sha256_utf8_lf": "fb99397ef67540a5a5413820ea93bbef542d9a17b6cd6555df2023b810d30e31"
+    },
+    {
+      "path": "config/bank_economy.json",
+      "sha256_utf8_lf": "8b24ed7abe62a30584d0175d6452eb2d2d77ea09cb20fa7763bcb4e6515f4c90"
+    },
+    {
+      "path": "config/battle_item_catalog_extension.json",
+      "sha256_utf8_lf": "08874f6ba68524de30e674fa3b55d722d71d0583872ec733895457ae1c6a6064"
+    },
+    {
+      "path": "config/battle_item_effects.json",
+      "sha256_utf8_lf": "c500123c4a99745e68f0cdc6b3f87b97a2ea2084cf10da62673dc67fdd204e92"
+    },
+    {
+      "path": "config/battle_loot.json",
+      "sha256_utf8_lf": "5ea6ed88e47e9218cead2b4ea71689282f692d5e13464b5f4be443c15e53cfe2"
+    },
+    {
+      "path": "config/battle_map_profiles.json",
+      "sha256_utf8_lf": "bada0e46d1770bd7dde625d6394e7bc3bda986da9c69dd4490e97b1cb83d5bdd"
+    },
+    {
+      "path": "config/city_catalogs.json",
+      "sha256_utf8_lf": "ea76119a2693aa1ccbe6918e99aed597b2a7366c2d37a36acff6098c01d8f6f0"
+    },
+    {
+      "path": "config/clan_benefits.json",
+      "sha256_utf8_lf": "6afd2b98ef338eded2091a7dc42571b27860a6cbf43f994106047d11b5be61df"
+    },
+    {
+      "path": "config/combat_completion.json",
+      "sha256_utf8_lf": "93140eff6d2bbebe295ebca8ce62e898b323f25b7b097430b7af455444d28fe6"
+    },
+    {
+      "path": "config/combat_rules.json",
+      "sha256_utf8_lf": "7c94dfa8eb72c851f78448cea866742b867c7464c1a06523cfc1355dc747330b"
+    },
+    {
+      "path": "config/contest_maps.json",
+      "sha256_utf8_lf": "44d4099612d653be9acf905b838de8fed3221f1aa8469164e1cc1702ff57947f"
+    },
+    {
+      "path": "config/contracts_map_profiles.json",
+      "sha256_utf8_lf": "3d6bacadefbf235000f7f5e09ba58798b19d32fefa2fbf8c11c92ad69397c8f3"
+    },
+    {
+      "path": "config/credit_economy.json",
+      "sha256_utf8_lf": "4581e4f144943202160d4a81fe14ef91e9d83db84492793059d1fc0fa7309ecb"
+    },
+    {
+      "path": "config/dog_abilities.json",
+      "sha256_utf8_lf": "c7c43d743b3835c1a7290b5477920396ca3392e900bde39df11818bf715b023d"
+    },
+    {
+      "path": "config/english_translations.json",
+      "sha256_utf8_lf": "dc80529c2824a07a63ce151a0126ab07697cbdc8e63dea8c82088d5bc17d3996"
+    },
+    {
+      "path": "config/enhancement.json",
+      "sha256_utf8_lf": "31b8d31e504e9b5bcd7ea91b4b8f77483b1013ec00c1286881a8b3bcf21e4edf"
+    },
+    {
+      "path": "config/equipment_batch.json",
+      "sha256_utf8_lf": "d21ff78297a02d7125b34252b38385424ad93fe9f5f81257dc00af0d18c19c5f"
+    },
+    {
+      "path": "config/level_progression.json",
+      "sha256_utf8_lf": "974862d0cf1cd6b897a8a4ffbc6bd65dca8482bd2577b5f9ac6dc6696b3fc687"
+    },
+    {
+      "path": "config/mail.json",
+      "sha256_utf8_lf": "9b3734c90ceeb995e3357ff84ec52cfcf2dd072f8a192aca1ac5e168a8644d21"
+    },
+    {
+      "path": "config/mine_maps.json",
+      "sha256_utf8_lf": "525b5bdf46f3f2e80f1c74603162f0ba04c85c68633ac69a3a40c17bd5d3ff81"
+    },
+    {
+      "path": "config/mine_requests.json",
+      "sha256_utf8_lf": "96ee1f11e4074ccfe9a8c8ab151e811b10ea4b5bd5dcfdf6f5be040deb8ad323"
+    },
+    {
+      "path": "config/mine_rounds.json",
+      "sha256_utf8_lf": "cfe9bd72e48a651098adeb55e6dcdb1c1461a51a9bbc21b0ae0b6a094158b00e"
+    },
+    {
+      "path": "config/miner_abilities.json",
+      "sha256_utf8_lf": "36b01c1c24b042df93681e12813944d1aa484cbd228dce8537c84164718f8833"
+    },
+    {
+      "path": "config/mining.json",
+      "sha256_utf8_lf": "a40675596444f2a76d5cb9ec1243d256d1cf082d90ebdef818d076a5a436b8e7"
+    },
+    {
+      "path": "config/original_shop_prices.json",
+      "sha256_utf8_lf": "5a0abac42fb36376603e74ee9f85cd3fe5efab3b3e3b733011bd242efdc1d609"
+    },
+    {
+      "path": "config/premium.json",
+      "sha256_utf8_lf": "25c8c1759c4229c90cdb6c6d5953998cf8af9bd8d134852da51615ca897a186e"
+    },
+    {
+      "path": "config/private_shops.json",
+      "sha256_utf8_lf": "6fbd11c92cbbb578b4566a392641af84971a8f5deecfaffd95be06d02b5ba3f5"
+    },
+    {
+      "path": "config/pve_contracts.json",
+      "sha256_utf8_lf": "f4fb4d991ebc5961e214e806964994ad73f235f1e9071dbaccfa6dc0a2449f43"
+    },
+    {
+      "path": "config/ranks.json",
+      "sha256_utf8_lf": "8a4dc72bd9dffc3aeddc1d5b2918ea9251540a4bab97c08723f9943394aec91b"
+    },
+    {
+      "path": "config/rating_completion.json",
+      "sha256_utf8_lf": "0cffaec459473ac13684624464e55945dfd96c702c50a7b8f5e13bf54bba63c2"
+    },
+    {
+      "path": "config/rating_seasons.json",
+      "sha256_utf8_lf": "b8c57bb198910456496f54a18a05d16ad9a6befd581cb1df3a268152d5c8e9d7"
+    },
+    {
+      "path": "config/recovery.json",
+      "sha256_utf8_lf": "3c99c4f21c7252d430c3b59260439e9af687e8d922074ff1411efa25e31447f2"
+    },
+    {
+      "path": "config/rental_catalog.json",
+      "sha256_utf8_lf": "68e83b73e292cd4359ae0860242bff9493a93fa1d0bff24ce562c7d5424ca1bc"
+    },
+    {
+      "path": "config/reservation_visuals.json",
+      "sha256_utf8_lf": "e0267927fc9e2879185cc52ebbdffd0be97cc648d9132ece05316a80e1f6d113"
+    },
+    {
+      "path": "config/roster_progression.json",
+      "sha256_utf8_lf": "ee1dbf34ab63e54c9bdb39b87f874a38015f44663e5b599c6097b743478ea48d"
+    },
+    {
+      "path": "config/sc_auction.json",
+      "sha256_utf8_lf": "57f7b680a95db28d0394e826f9488c2635f51ce97f422da8bfd6c31d3447916a"
+    },
+    {
+      "path": "config/sc_catalog.json",
+      "sha256_utf8_lf": "fba6e40fccec82525c99fc73229e118312b70f711b0b1b2054ddd1323ec95cac"
+    },
+    {
+      "path": "config/services_completion.json",
+      "sha256_utf8_lf": "a8dbec4f066ab4baf3c24657045908f08e243dcd457b90a67e59790d3a0492d2"
+    },
+    {
+      "path": "config/shooting_range.json",
+      "sha256_utf8_lf": "fb3d727985c7518375cfecdf691694de80e119fa14b42de4c7066ae2b44f2dd8"
+    },
+    {
+      "path": "config/shooting_range_map.json",
+      "sha256_utf8_lf": "1d567451e5f30a88f1ff33b45d92fe8ec673ffc3959008ccdc423d35f2d6b7c1"
+    },
+    {
+      "path": "config/shop_completion.json",
+      "sha256_utf8_lf": "be3e3d16c0b7f0c991eba231064ded7c9827dccd643641b9fa81da7775a505bc"
+    },
+    {
+      "path": "config/social_completion.json",
+      "sha256_utf8_lf": "457a507d5d65406a5035628a35c91779012755ef604a1eb28dbbf105fb745505"
+    },
+    {
+      "path": "config/special_items.json",
+      "sha256_utf8_lf": "c298611fb526591d2de9ccf968a9081d0f8c6782267317536fca68b7a2ac9d0d"
+    },
+    {
+      "path": "config/survival.json",
+      "sha256_utf8_lf": "514a02a3c977fb0de78be77e5faed38818b1cf8d8c3154ca663f78a57e714d95"
+    },
+    {
+      "path": "config/territories.json",
+      "sha256_utf8_lf": "0478cd9e02f189aa2b7fabad51ddc375d36b7b6544c0640a285e3b12230c70fe"
+    },
+    {
+      "path": "config/tutorial.json",
+      "sha256_utf8_lf": "2f3f0951476b024918a60ab94881a5a9bdf650372d8359f362109a3a3f6d5503"
+    },
+    {
+      "path": "config/tutorial_map.json",
+      "sha256_utf8_lf": "944a2b7160845136114403a7214c3aea3d0bd0585fb43dea6139ed45ef613122"
+    },
+    {
+      "path": "config/wagers.json",
+      "sha256_utf8_lf": "ca9cac8c54cc84f29292284cd7aa0cf79acaa55819cc29637ae4701c8c037a58"
+    },
+    {
+      "path": "config/weapon_catalog.json",
+      "sha256_utf8_lf": "d20d9d002244bba79110cb338115ba20986b38e233e9120324486fd53a7076c9"
+    },
+    {
+      "path": "config/weapon_proficiency.json",
+      "sha256_utf8_lf": "c97fd65de155ef87acc303b77fff2e1da6c5e711b4385dad4928643431cfe4c1"
+    },
+    {
+      "path": "config/weather.json",
+      "sha256_utf8_lf": "8d0dc82c6848633c0943fa9c9bf67a02dc0555600ae9856d7c5cafb5aa5b8ab3"
+    },
+    {
+      "path": "config/weight.json",
+      "sha256_utf8_lf": "a53980dcde5b3a7abd031da90c907e9b73d5e6b6777bf1695489874ce4ba103d"
+    },
+    {
+      "path": "config/world_completion.json",
+      "sha256_utf8_lf": "42af78d8d34f8999a9cae0b242970945c981d8f36d7fc485f499e104360e00d9"
+    },
+    {
+      "path": "config/world_completion_maps.json",
+      "sha256_utf8_lf": "c7170207d2fedc5ab2a73ec676893adf093a884f08e94e287f752d5ffaa9f74b"
+    },
+    {
+      "path": "config/world_encounters.json",
+      "sha256_utf8_lf": "67c9133d04d7e150c2d632e6bf6bf9db475b3b18b3bdf0f8d009e65384e4781f"
+    },
+    {
+      "path": "deploy/backup.py",
+      "sha256_utf8_lf": "83acf80cc3385aa0426077eeb6a4aeef1142506fde766af197556ddffc30bad6"
+    },
+    {
+      "path": "deploy/check_connection.py",
+      "sha256_utf8_lf": "3bc82c96f71eb4c2c5bc469591e97fac5243ce08b20ea23019f91a09163cde68"
+    },
+    {
+      "path": "deploy/client_character_onboarding.py",
+      "sha256_utf8_lf": "446fe1eab5cadb1eaca708e11f94206a1e782640e5f01703950404ba1fa3e5fa"
+    },
+    {
+      "path": "deploy/client_character_onboarding_v1.py",
+      "sha256_utf8_lf": "6452b8c61daab5cb4c3b628e6db1f66023cccc196a4d3eea410d384705b6765b"
+    },
+    {
+      "path": "deploy/client_russian_encoding.py",
+      "sha256_utf8_lf": "0a564209527eb18430caac8235bb4fa16a8937687eae50539f82787a40fc8911"
+    },
+    {
+      "path": "deploy/package_friend_client.py",
+      "sha256_utf8_lf": "c91c0abafe3dc9839f7c726336e6c9ad3e61a5ce9f30661b9d9d54d26f0c7251"
+    },
+    {
+      "path": "deploy/package_server.py",
+      "sha256_utf8_lf": "0e36ee352752b9baa36a49ba812feedc3de848f11ba344a7c7585ae6c68687bf"
+    },
+    {
+      "path": "deploy/recovery_bundle.py",
+      "sha256_utf8_lf": "e7529e58ea178541f52e152b42086ae75033a89b1ed653b3bbd3ef2d9a66f726"
+    },
+    {
+      "path": "deploy/renew_game_tls.py",
+      "sha256_utf8_lf": "3cafd7dcb870a209f3f9fcaaeffebd9f41352c072098184b28a1ecd885b866b6"
+    },
+    {
+      "path": "deploy/scheduled_backup.py",
+      "sha256_utf8_lf": "663bec05201a45b60591502d7880384fa4d8d843bd616d78b1bfbb4c50f4d374"
+    },
+    {
+      "path": "evidence/customization_diagnostic.xml",
+      "sha256_utf8_lf": "0b3a765220140868fc41ec2411972b5609c0f79a94e0d51d56fb1c02e03df935"
+    },
+    {
+      "path": "evidence/items_diagnostic.xml",
+      "sha256_utf8_lf": "dc7e670dfe4b80cebeb49a5dde7e0e74a081f7252b93de58bc5d522837a8daf9"
+    },
+    {
+      "path": "evidence/owned_pet_trial.json",
+      "sha256_utf8_lf": "81762a1193ade7f119494d92e63a8f15518f08b50b5d840702ad980e7dae96d1"
+    },
+    {
+      "path": "evidence/skills_diagnostic.xml",
+      "sha256_utf8_lf": "6a72d15a80c83f4940633b195bd7f1a296d25a0a852aee2eb658c63f9df65c38"
+    },
+    {
+      "path": "evidence/zones_diagnostic.xml",
+      "sha256_utf8_lf": "f873cf1038b024e5e4b9730f1f46e8b405d392ffb8f35df716f66e1785173874"
+    },
+    {
+      "path": "registration/__init__.py",
+      "sha256_utf8_lf": "0c5b669280e58f064aaea96253dd6e31fc450332ae8208d73657ac9db934b888"
+    },
+    {
+      "path": "registration/__main__.py",
+      "sha256_utf8_lf": "9ec540583f7d50531483891d18d2ae34997d231decc421458962bca268749420"
+    },
+    {
+      "path": "registration/app.py",
+      "sha256_utf8_lf": "bc1755d57f1edcb7479c610046314a1ea012214ce8a852f72ba800dc76f1a70d"
+    },
+    {
+      "path": "registration/game_bridge.py",
+      "sha256_utf8_lf": "d7eea43bc100c1c4e9f9c6a8e4df33a86d6c0122d6eb74fb748ccefd15fecea5"
+    },
+    {
+      "path": "server/__init__.py",
+      "sha256_utf8_lf": "2b907b12637da2d488821c9b612c5c5590b83cc1855e5cf10bcb11b48f5e94ab"
+    },
+    {
+      "path": "server/__main__.py",
+      "sha256_utf8_lf": "7212b0ce1aa122151bc31f8b0dab31623db8a5474b5eeded07cc7b42296dab0c"
+    },
+    {
+      "path": "server/accounts.py",
+      "sha256_utf8_lf": "f36dbdd05b7db93acd74539841e6a0b66d1ae58d1d893a4ac0310a4a7194d304"
+    },
+    {
+      "path": "server/alliance_service.py",
+      "sha256_utf8_lf": "04748ce4f28e5681fd0b59f3fc8a12c413f31c68e32dc6c99f920fafaa40e9dd"
+    },
+    {
+      "path": "server/assault_arena.py",
+      "sha256_utf8_lf": "6e6914a96063134456caf9d2bcafd7d7c6580afb2e7d4586501a0f8cc7d2b505"
+    },
+    {
+      "path": "server/assault_public.py",
+      "sha256_utf8_lf": "dc6894c03ca4425f6e2567f7a7ed0fc34039414a884ac061b215c77f24451884"
+    },
+    {
+      "path": "server/auth_errors.py",
+      "sha256_utf8_lf": "32eace5c6731cf3ebd31f4bf6b99c560561c262390482c2122af18d17d2b3d47"
+    },
+    {
+      "path": "server/avatar_service.py",
+      "sha256_utf8_lf": "7c769729d80a8a626de71b71a480a91f6c6367d4b6eea42a4687f7c536668b09"
+    },
+    {
+      "path": "server/bank_gameplay.py",
+      "sha256_utf8_lf": "b0852231e45145cd1949a5b459638578691f831c875bdb3cb4a4692a181ae26f"
+    },
+    {
+      "path": "server/bank_gateway.py",
+      "sha256_utf8_lf": "f093677ed5c1cb375fbfa2e2cdf0934228a5c51621b761efb7850d142af97a4c"
+    },
+    {
+      "path": "server/bank_operations.py",
+      "sha256_utf8_lf": "0951beed713c40fb5f951a11013feae020419fa5a0e52ded6da8569c8687f9f2"
+    },
+    {
+      "path": "server/battle_events.py",
+      "sha256_utf8_lf": "26dc86eb873f156d40530d15884daca890f631d21f471db568b3051228d554fd"
+    },
+    {
+      "path": "server/battle_failures.py",
+      "sha256_utf8_lf": "8475c6a724b4f384658e9c2340512c59b322f98c37848169effc93cd8b1bb4e1"
+    },
+    {
+      "path": "server/battle_journal.py",
+      "sha256_utf8_lf": "ba6697d297999a81cbafd6d2d9ebc952c246cce79f56db3d6cc6716fab153990"
+    },
+    {
+      "path": "server/battle_reconnect.py",
+      "sha256_utf8_lf": "89fc0dd9da08fef2206af60e8b01e08a4a28cb4d9b4a9a2d855a704764260b06"
+    },
+    {
+      "path": "server/city_http.py",
+      "sha256_utf8_lf": "eafbfd385a2f285e6e6dccee03874e488d891d28554235c195c86ef58f7714bd"
+    },
+    {
+      "path": "server/city_operations.py",
+      "sha256_utf8_lf": "14f2ab47a5fd0a0ead51906d83007906a1a4c8e67263671e5dbb459162d99f96"
+    },
+    {
+      "path": "server/city_receipts.py",
+      "sha256_utf8_lf": "7d5942dc7b75a0450909c6e7e68fd977133633e237504df71692b079f98c8698"
+    },
+    {
+      "path": "server/city_services.py",
+      "sha256_utf8_lf": "9576ef481c187874e8daeb9e34cb87d0e88bc926a5d1fe62e6b253e63759e284"
+    },
+    {
+      "path": "server/clan_gameplay.py",
+      "sha256_utf8_lf": "510351a68bf1ccb739466b6bf062f6d44850e557c562af7ddb41280859b6db40"
+    },
+    {
+      "path": "server/clan_service.py",
+      "sha256_utf8_lf": "74c3eaf7ea2aeaefa40f0a34b11c0332b344307f3a74387c7211bb3d6f2ef5d1"
+    },
+    {
+      "path": "server/config.py",
+      "sha256_utf8_lf": "029c18967fd7b73eba5263f695ce5244d2630324c5ba3bbd2a41f4352ff44a37"
+    },
+    {
+      "path": "server/contracts_combat.py",
+      "sha256_utf8_lf": "acf14d519783a77c1b6260f74933560f36530ae8e2b6a8f6efc68be260f311f9"
+    },
+    {
+      "path": "server/contracts_service.py",
+      "sha256_utf8_lf": "90c280be9f746056654edb3a0cee7da209239048d82cbb4a464ccb844242fdd9"
+    },
+    {
+      "path": "server/contracts_ui.py",
+      "sha256_utf8_lf": "6145f1dd1cce1d9719c9529ba491c8018cf029f26eee4d7819d913d249c8558a"
+    },
+    {
+      "path": "server/economy_runtime.py",
+      "sha256_utf8_lf": "eca2939f1ecb513e13df5dd419f9fd1d992c1809a9dde3db46780d918d90aa3f"
+    },
+    {
+      "path": "server/failure_policy.py",
+      "sha256_utf8_lf": "6c0d41d02f8baebb5f18d34b45a5593d4944ee53f0cd883ea407d76e7705f4ea"
+    },
+    {
+      "path": "server/friends_service.py",
+      "sha256_utf8_lf": "2271b274b6acfdb77787a4572998b0f0a83b79558d503e819bd618d4da9acead"
+    },
+    {
+      "path": "server/game_operations.py",
+      "sha256_utf8_lf": "c7a8a6b8d220a4a01bd5feb1ba02a3ff419ffe5e18bbcb8d72e47f65f4011b01"
+    },
+    {
+      "path": "server/login_guard.py",
+      "sha256_utf8_lf": "5e7ee607c914dd6718c11cd53e3095ea724870699f1047683796ab5e93c740a8"
+    },
+    {
+      "path": "server/mail_service.py",
+      "sha256_utf8_lf": "a56d6d5a19e95de7a5b7d3ab780d4613b81bd549a2c002206f14170f21a870d2"
+    },
+    {
+      "path": "server/market_operations.py",
+      "sha256_utf8_lf": "d7fbcd17aa378b73524bccde124668e0f1b8edc35753780feb7cb95f43e443a9"
+    },
+    {
+      "path": "server/mine_arena.py",
+      "sha256_utf8_lf": "4f82efe747baa8b9554bcfcd73aaa3790cfe1db7de159ace30ad6d8d12e441c1"
+    },
+    {
+      "path": "server/mine_requests.py",
+      "sha256_utf8_lf": "a92cad1d2c1191daab31b541483cb27b77cb07f9ba392ba691e0affdf8b0c093"
+    },
+    {
+      "path": "server/multi.py",
+      "sha256_utf8_lf": "68f56825385a2c5fc587cae070b7552c400eb57b1d3cffe5b6331ad91cf43c55"
+    },
+    {
+      "path": "server/player_auction.py",
+      "sha256_utf8_lf": "3b2357d24251dfb3894f9874c962cc1bf36b754e13b8be483ecc52990adc894d"
+    },
+    {
+      "path": "server/player_trade.py",
+      "sha256_utf8_lf": "f441d5ee72b2087b930ed1ca71d094472ba4b821b982f31ed30ca1d60ebce455"
+    },
+    {
+      "path": "server/presence.py",
+      "sha256_utf8_lf": "0480719c51840d9d7b9611cef8ca88fd3cbb2a602c5337a05d15ea839f9aa5f2"
+    },
+    {
+      "path": "server/private_market.py",
+      "sha256_utf8_lf": "4ce918f99f2c2903f201becf7ebbad681e6096d9a128cca5a7129e884748b55f"
+    },
+    {
+      "path": "server/public_profile.py",
+      "sha256_utf8_lf": "7fbfe65c45a60ea0ad864639fcf07c53bea58dfd57f56b31dbc1a3930d2f6fdc"
+    },
+    {
+      "path": "server/ranked_arena.py",
+      "sha256_utf8_lf": "37526008c1160abd0403c74df8387512ad96d65975ba5b93a441e8d5f552eab2"
+    },
+    {
+      "path": "server/ranked_bots.py",
+      "sha256_utf8_lf": "ce5246b4f6fe7d40269313c38f63710ee4e7afafd2291b0c52aba96f802e6b6e"
+    },
+    {
+      "path": "server/ranked_party.py",
+      "sha256_utf8_lf": "1233ef23991e835fc7bc9518be74271b3782f46c6feb64441295513c700f93b8"
+    },
+    {
+      "path": "server/ratings_public.py",
+      "sha256_utf8_lf": "6429bdbb54c97f936a40d7f0413a107350e06e45cef3eca8ba255f036fdccfcc"
+    },
+    {
+      "path": "server/runtime.py",
+      "sha256_utf8_lf": "29c07b5aa2629b2c0630838f5ed652b176b50a1f805fe8ed99c146688d08c2f6"
+    },
+    {
+      "path": "server/service_operations.py",
+      "sha256_utf8_lf": "bdcf84b7ea568d014fc10d62319403aed15b226a5e0a02164b96a7aaa237ae5f"
+    },
+    {
+      "path": "server/services_runtime.py",
+      "sha256_utf8_lf": "f0e0a1db751976271c12c02251150a558ab7ac22d5b4da05b128b124199e3c6c"
+    },
+    {
+      "path": "server/services_v2.py",
+      "sha256_utf8_lf": "0d140ced435b8c53fa9c265f0e1dc7ef53f88c45a180f4543a0061abcf39ecd1"
+    },
+    {
+      "path": "server/social_commands.py",
+      "sha256_utf8_lf": "641144bbeb51b074c7db2a029c3d2acbf6157e74c2882942f97b7113285586bd"
+    },
+    {
+      "path": "server/tactical_marks.py",
+      "sha256_utf8_lf": "4789b540b8585e6d9ad3c3156d55b7e6ae2da7d7f7110152581893ce129f9c08"
+    },
+    {
+      "path": "server/team_arena.py",
+      "sha256_utf8_lf": "375606a832bbff9f601ab52d3954aa7ec1958eb87bf6e61fef23a840a216f1c5"
+    },
+    {
+      "path": "server/team_ranked.py",
+      "sha256_utf8_lf": "7705e7fffd6adb3420e619d086812e5aec09f1f4091b8230251e940a5f71f97d"
+    },
+    {
+      "path": "server/territory_service.py",
+      "sha256_utf8_lf": "4d94eae1332a7215ba72101817c850930673033e0d511f7f44d0d30e58de10fb"
+    },
+    {
+      "path": "server/tls.py",
+      "sha256_utf8_lf": "444eb0a6ca14d2f555518b49ffb9ac010fd8a03366283d9af7eeba9ee6e8c63b"
+    },
+    {
+      "path": "server/training_arena.py",
+      "sha256_utf8_lf": "b7d6687189b0074facbae76bdfd5b594b9d1d552e7dc0ab40578a086b6758cb0"
+    },
+    {
+      "path": "server/tutorial_arena.py",
+      "sha256_utf8_lf": "09246dadecddf9445303a635d51b80352560b67020586f22c14dfe6b5904ab8e"
+    },
+    {
+      "path": "server/wager_arena.py",
+      "sha256_utf8_lf": "ec2dded02d77cdb49f3888d9f32c8123b292cba55a8d9e2b7d48b4e298a3d51f"
+    },
+    {
+      "path": "server/warehouse_capacity.py",
+      "sha256_utf8_lf": "acf1dbca0b768432e1c07ca71f29b5c9763c02d705bf8db0f4b9c7108259cd3b"
+    },
+    {
+      "path": "server/web_status.py",
+      "sha256_utf8_lf": "e3c33081e3dd997553013148c8ba4117ddffbef347c8f52c14fabc9ef5c99a70"
+    },
+    {
+      "path": "server/world_runtime.py",
+      "sha256_utf8_lf": "d75c5598b1e78e001807ff727f5516fa1624dc9cd8b760a4a7d5aab20e793e32"
+    },
+    {
+      "path": "tio/__init__.py",
+      "sha256_utf8_lf": "364db165fa765eee0bc41f68daa27558569bbe7ece38d44329c2ac48ec25b93c"
+    },
+    {
+      "path": "tio/__main__.py",
+      "sha256_utf8_lf": "877d470ea3a6f18a1c5f0f101394d6fdb40b13b4c9aa95b0c9ee9ffca040b929"
+    },
+    {
+      "path": "tio/abilities.py",
+      "sha256_utf8_lf": "6b5f46a8aaf3845d3d4d5e58f3ea29f75226e46b5e7d2c16694d1d66a40780d7"
+    },
+    {
+      "path": "tio/ability_learning.py",
+      "sha256_utf8_lf": "36da004e693488f49749849e5d244da1010899961bd443c5bbf91f5d1ab67285"
+    },
+    {
+      "path": "tio/ability_progression.py",
+      "sha256_utf8_lf": "7203fabc417651b5a8b804637db587ae57b24867285bb9f4b7583d96b9ff444c"
+    },
+    {
+      "path": "tio/ability_state.py",
+      "sha256_utf8_lf": "0e1afd85512099b1711c14eed742d7652fa3b4a18d7faf771d582f5b44fcf4b3"
+    },
+    {
+      "path": "tio/achievement_benefits.py",
+      "sha256_utf8_lf": "61444e7cf58ba19c64f0f478f43035d3feeb2db54765189b610d25af55ada84a"
+    },
+    {
+      "path": "tio/achievements.py",
+      "sha256_utf8_lf": "3ce54ce2578d361bf6e908c37cf42a6924287ce6d9f4059ab27501ec080166aa"
+    },
+    {
+      "path": "tio/alliances.py",
+      "sha256_utf8_lf": "8c6d4bd52d4be6532fa9c24aee8d223e878b2700c1bce4e4bfee05f2bd96eec9"
+    },
+    {
+      "path": "tio/appearance.py",
+      "sha256_utf8_lf": "72f6113ddd10324811f4dd0cc1a335d7dafd2f5dfca9c01dd8e2b3f2466da151"
+    },
+    {
+      "path": "tio/arena_equipment.py",
+      "sha256_utf8_lf": "b927866638773c2529357b0320209ade1f399cb3f5d5981d5763872d87e05e52"
+    },
+    {
+      "path": "tio/arena_gears.py",
+      "sha256_utf8_lf": "e8879d7cce8f3f00e32e0a2fc1ce5d8462e71aed1335e629bd93b0e879412e47"
+    },
+    {
+      "path": "tio/arena_map.py",
+      "sha256_utf8_lf": "346a0bf1b8f304663465cff23b2c49a040e840b6f1e5976a7b8305d2255f78c5"
+    },
+    {
+      "path": "tio/arena_rooms.py",
+      "sha256_utf8_lf": "7412d4cba5826af57886efdbe489bea87d1112cdcbd3f4a0d7df8588a3f3a531"
+    },
+    {
+      "path": "tio/arena_roster.py",
+      "sha256_utf8_lf": "ab6185f463376763728f422081674a4381af3505605dc492e5c2677f83381691"
+    },
+    {
+      "path": "tio/arena_service.py",
+      "sha256_utf8_lf": "4c6c1b4cd97ea8cb0ff4293f0c869c0a3b3f5f4b6bae2ef0ddcc65462185e5c7"
+    },
+    {
+      "path": "tio/arena_surroundings.py",
+      "sha256_utf8_lf": "575e40bfb3f639087c23cff1810d42b2f27611957e9ef3670975c0b821a23c10"
+    },
+    {
+      "path": "tio/armor.py",
+      "sha256_utf8_lf": "8902ca76b56be3d32e7c1c0108e67a09096fb4569aa74c972d638d1b9d7e47c0"
+    },
+    {
+      "path": "tio/armor_display.py",
+      "sha256_utf8_lf": "632cca0678f6b905299a39b7a09dabd8539a8f2a7f1200035d292ff8bda43d5f"
+    },
+    {
+      "path": "tio/assault_battle.py",
+      "sha256_utf8_lf": "30126ecfb60547cfc1a1b571f53278cb14318969b3f53d8c6adcbe3ef7c7c3de"
+    },
+    {
+      "path": "tio/assault_map.py",
+      "sha256_utf8_lf": "5cc1db3e9188431d583cba73424a23cdd112f426fdd210e49fefa29c0cd43508"
+    },
+    {
+      "path": "tio/avatars.py",
+      "sha256_utf8_lf": "b43f3084bb5794313b5c8f23e0da5a6b3ecef5d3a9bafbf383af6a740ca6063a"
+    },
+    {
+      "path": "tio/bank_economy.py",
+      "sha256_utf8_lf": "1a6d4f5ae99b3130e63aa8e48eba5171157b302f17a503b0c8cde7ce38629262"
+    },
+    {
+      "path": "tio/base_fund_completion.py",
+      "sha256_utf8_lf": "3f4a4e71add8eb1ba3506817b90db4d770d9f9b381b7fa5997efbadccbf47095"
+    },
+    {
+      "path": "tio/battle_checkpoints.py",
+      "sha256_utf8_lf": "7c88e602437545409f3858ffbb10945a267206ec84c27f1038e0b76642a5374e"
+    },
+    {
+      "path": "tio/battle_doors.py",
+      "sha256_utf8_lf": "fa0ad8dd30e6a980086f7f923ea116934e908c1a5ef51134e3d4fb31447cf168"
+    },
+    {
+      "path": "tio/battle_equipment.py",
+      "sha256_utf8_lf": "8a6211b0a5d0b10525852ee9c97031749691fd69725c7960bf84429ed5f195a8"
+    },
+    {
+      "path": "tio/battle_exchange.py",
+      "sha256_utf8_lf": "fb70e7d48415f5330edbb4f44ba8e869f45121453d3a25c6a5be55bb60c06959"
+    },
+    {
+      "path": "tio/battle_hazards.py",
+      "sha256_utf8_lf": "416c3d656cf63de3d2b745389744c2a5133f1f3a475ac02c6f87d405fb7603e5"
+    },
+    {
+      "path": "tio/battle_item_effects.py",
+      "sha256_utf8_lf": "5b636ec50f4a6ac851e98c8f41315c31211ef805128ff228ac96370984ca9261"
+    },
+    {
+      "path": "tio/battle_item_visuals.py",
+      "sha256_utf8_lf": "3875709ae8123a0812a48631950b80dd1e696f9782db4e2f9a1e8af74c6b54ce"
+    },
+    {
+      "path": "tio/battle_loot.py",
+      "sha256_utf8_lf": "e32b52e05e45a32555cd6222cf1b9ee1a392ca662daeab74a5273bc4a3f04fcf"
+    },
+    {
+      "path": "tio/battle_modes.py",
+      "sha256_utf8_lf": "291360a69342fa80d751fe5b46487e5641352ccbe565535d3c2c3590fc404ce9"
+    },
+    {
+      "path": "tio/battle_recovery.py",
+      "sha256_utf8_lf": "2e3ab8c002232edcc2361197a8894b994065120b1be4f035f442be92884d53ae"
+    },
+    {
+      "path": "tio/battle_rejection.py",
+      "sha256_utf8_lf": "66fb4e3aeb8463aac1b401eed53cb05dcbf0d1c13594cc58b513012b251f417b"
+    },
+    {
+      "path": "tio/battle_rewards.py",
+      "sha256_utf8_lf": "267778a904b4ceed5f57ebde8dbfaef85cc8687a018f80aecf7b5a365f5f82dd"
+    },
+    {
+      "path": "tio/battle_settlement.py",
+      "sha256_utf8_lf": "a84d0c3fdabe7453ec08bca96c00154b52fed5af21007d6d4bcf5849c641c64c"
+    },
+    {
+      "path": "tio/battle_snapshot.py",
+      "sha256_utf8_lf": "39b475d2c5c4814ea99f2cd180758b945ac5e334677f7da454df6414a63fb6d9"
+    },
+    {
+      "path": "tio/battle_state.py",
+      "sha256_utf8_lf": "463375fdf394750c1b5726b37d828286942d23e41bf82fc3901cf13ec412a982"
+    },
+    {
+      "path": "tio/bot_finishing.py",
+      "sha256_utf8_lf": "790d397b972cb539bf6144aae9eb3b06ff13510ce1a35a853cce19bca2cbfb9a"
+    },
+    {
+      "path": "tio/character_identity.py",
+      "sha256_utf8_lf": "708167099de3484d80c3b55ef38090a33c73e82f612600d808ff22c2c6322f29"
+    },
+    {
+      "path": "tio/characters.py",
+      "sha256_utf8_lf": "ebd15d1d21b51d57b0db601a8255419079c2276aa43518d826b1de6d51f0b1fe"
+    },
+    {
+      "path": "tio/cities.py",
+      "sha256_utf8_lf": "4fafb5f092fec9c0a3925b8797166f319145a7360c3bd2a971a0019c8df07a45"
+    },
+    {
+      "path": "tio/city_catalogs.py",
+      "sha256_utf8_lf": "0be186a92d70da4aa8952224b254f873178f0208df3ac05debe59eb8e27bd91f"
+    },
+    {
+      "path": "tio/city_inventory.py",
+      "sha256_utf8_lf": "8f382890d017da42a8cb7f701810224c78e73b251d5202ceafb032f79982ba76"
+    },
+    {
+      "path": "tio/clan_benefits.py",
+      "sha256_utf8_lf": "9d0f91b9fdfaf2580d9c27aafcb11b0829b40ee4be19e72a7ffc93c623b67b1f"
+    },
+    {
+      "path": "tio/clan_ratings.py",
+      "sha256_utf8_lf": "bf7dcc255ebfb9672bce858cac711324ac6ebc699f806feece6d8904cb7726f7"
+    },
+    {
+      "path": "tio/clans.py",
+      "sha256_utf8_lf": "3a1bec482aa6a581d5cf500eb610602c2f63d41d7ac2f03ccf44c08280fdbbc3"
+    },
+    {
+      "path": "tio/combat.py",
+      "sha256_utf8_lf": "28129379a954551f81ba249d2a7457a9c632b267eaa1ae857c19e1c0b448c906"
+    },
+    {
+      "path": "tio/combat_completion.py",
+      "sha256_utf8_lf": "ead236bf00017120fe487fa1c2894f2ffa8405598d8858836ad773f1e661cf0a"
+    },
+    {
+      "path": "tio/combat_distance.py",
+      "sha256_utf8_lf": "0ded46579dcc34c7083964a29ed48bd0f3fe770d5c2ff6d0bed2a5c2e605417f"
+    },
+    {
+      "path": "tio/combat_rolls.py",
+      "sha256_utf8_lf": "a79666bb73638ccd3354564da5e8755bc54f324563af0ff56f519b0cb38aa5b5"
+    },
+    {
+      "path": "tio/contest_maps.py",
+      "sha256_utf8_lf": "ca98daea4ce2c455315ceacf2e46a3a6abf06cd12033dfab92b4b7cdf385572d"
+    },
+    {
+      "path": "tio/contract_scene.py",
+      "sha256_utf8_lf": "a55711c401c8392743fbef4b871a75fdfb628c7003b438f69c1440431dff27b9"
+    },
+    {
+      "path": "tio/control_points.py",
+      "sha256_utf8_lf": "2e64eccdfcf257b5099008ac442f672b8e729846a1da6ba945f664c7d34e2711"
+    },
+    {
+      "path": "tio/credit_economy.py",
+      "sha256_utf8_lf": "b0370691bd526e686cf8eee0e268683fe4e87f8f5ab99c79e03c0a9d989146f9"
+    },
+    {
+      "path": "tio/crystal_market.py",
+      "sha256_utf8_lf": "e076b06cb13d7c43a6f0db97e9d8c735084e6b6cd9331753dbd1389921e76323"
+    },
+    {
+      "path": "tio/db_transaction.py",
+      "sha256_utf8_lf": "54d9deb9fc63cefcfa4129b9fadaded706a397bf5346f28bd1692fb7d8dd9850"
+    },
+    {
+      "path": "tio/dog_abilities.py",
+      "sha256_utf8_lf": "ea348092223ba50d810a267c650a5ad6b9d8c76924cc317294428a79ed061886"
+    },
+    {
+      "path": "tio/durability.py",
+      "sha256_utf8_lf": "c9cc7006e148d8e192a8b9b76e9c9c0b7471b983aa5e53a26544b867aad99fcc"
+    },
+    {
+      "path": "tio/encounter_loot.py",
+      "sha256_utf8_lf": "1f5c3a8c175ba96d5cc6bd369c55c521168f4c8f6a057cb5a719e7b5f41adfe7"
+    },
+    {
+      "path": "tio/enhancement.py",
+      "sha256_utf8_lf": "72e1f53bb0bdc940b7cabf6f90131772e6720c75912f36964ef89a60daca2b61"
+    },
+    {
+      "path": "tio/enhancement_limits.py",
+      "sha256_utf8_lf": "e112588d75e51eff6d23c1755dcf8d782fd3746fe32b8a02b4ae810e016d06ca"
+    },
+    {
+      "path": "tio/equipment.py",
+      "sha256_utf8_lf": "bf1f54d6968df9eeb69cbc6c09624ea823e6e6d8a8c0e34c6168a5a5427de928"
+    },
+    {
+      "path": "tio/equipment_batch.py",
+      "sha256_utf8_lf": "27d2062766800b87c730721e1c3a56027d35a6f56493108dc3a05b5393d46346"
+    },
+    {
+      "path": "tio/equipment_bonuses.py",
+      "sha256_utf8_lf": "52bb1dce16a4ea72e5a3974f77ca0a8f5ba8dce2b69eccb4c1e3033edf056ca0"
+    },
+    {
+      "path": "tio/equipment_templates.py",
+      "sha256_utf8_lf": "06961bd2ada990f4f733787f3fb55d29db24555c4abe5c5ec3f00864c33d2bb8"
+    },
+    {
+      "path": "tio/flamethrower.py",
+      "sha256_utf8_lf": "9119e6d0dc114c362d3ef4d15486e40e359e3a05243f0d157d366c1e5f177e11"
+    },
+    {
+      "path": "tio/friends.py",
+      "sha256_utf8_lf": "8c695a834ccf5bde67f3b78d032b1e883bf428f11f12bda72d2d5501e96ddb2c"
+    },
+    {
+      "path": "tio/hiring.py",
+      "sha256_utf8_lf": "d1c4d4d7df79ac16b27e3285274e0ab1f3cba2e59cd6ef6516475381e9ef460e"
+    },
+    {
+      "path": "tio/inventory_capacity.py",
+      "sha256_utf8_lf": "8d65437d62f35e957a3df902471bebeff3427b6cb19339b83f0f248385fa9ecc"
+    },
+    {
+      "path": "tio/item_boosters.py",
+      "sha256_utf8_lf": "513ebba1762d0124bac22fec75a20739eb39096ddd2c2bc37dc4d4e28d3fa250"
+    },
+    {
+      "path": "tio/item_stacking.py",
+      "sha256_utf8_lf": "b29e7ccad123ec254c0ca4f26d3e86c72ba6da7b2dc677694b36508ec98cb0ec"
+    },
+    {
+      "path": "tio/level_progression.py",
+      "sha256_utf8_lf": "af1afd3b8a429d58a4565baab06bd0b27118ba98cf0e435bb784ab71ea364317"
+    },
+    {
+      "path": "tio/localization.py",
+      "sha256_utf8_lf": "b1810cadb40f0da36e008ba12e30e6789063c041ffe40bafbf024e5f618abdd5"
+    },
+    {
+      "path": "tio/locations.py",
+      "sha256_utf8_lf": "8c67cc57c7101e4d4ea770c833da4e67da1a76ecce810b388bae45d4206a3b99"
+    },
+    {
+      "path": "tio/mail.py",
+      "sha256_utf8_lf": "0fc39d69275dd8cd9e7aeb5e2b3b8b3939152dfbc5cc081d6a24f93a521d0f22"
+    },
+    {
+      "path": "tio/map_generation.py",
+      "sha256_utf8_lf": "15c81539f685fa4b5eb8801fdd8bbba1bd65b0fdb6c25d67d582e4c481e1060d"
+    },
+    {
+      "path": "tio/market_inventory.py",
+      "sha256_utf8_lf": "f35a20c0db0b56aaef219016b3bb0783c14157dec4c59d5308c9bddac82deb5e"
+    },
+    {
+      "path": "tio/matchmaking.py",
+      "sha256_utf8_lf": "610eeabbeaeefbc7d42590a98d708d22b827343449130accde14d142322fe3b8"
+    },
+    {
+      "path": "tio/mine_claims.py",
+      "sha256_utf8_lf": "181636fbe9a6fec40bc8c0326192a275284f725ff2a8ddd74c929cd99d1f4f93"
+    },
+    {
+      "path": "tio/mine_map.py",
+      "sha256_utf8_lf": "c41605be7ce25efe218e34ab6a111fc56ca60ed0c573c30b561871cbf76de793"
+    },
+    {
+      "path": "tio/mine_radio.py",
+      "sha256_utf8_lf": "e7dede85e975bf94f347c44c6b0e2b182fb7afdb2364a3eed14083ce0fa75bc5"
+    },
+    {
+      "path": "tio/mine_rounds.py",
+      "sha256_utf8_lf": "13830d6e8f0e5618a203c19eec511228ed1cc0a377a6f53f86a61862b2c64875"
+    },
+    {
+      "path": "tio/miner_abilities.py",
+      "sha256_utf8_lf": "44e5957e9b0cf45d0f8674b4ee6b9789a704484b4ddfff25045d947a98d9a89a"
+    },
+    {
+      "path": "tio/mining.py",
+      "sha256_utf8_lf": "528325f0aa21f8ca553c9ac1749e0eb045eb8e2ecc32aaa8eef486e569d159d5"
+    },
+    {
+      "path": "tio/mining_ai.py",
+      "sha256_utf8_lf": "b34c945f82c71ed39cd1ddbcdc3c40af4179dddf34a3ab4fed1a53f747b68900"
+    },
+    {
+      "path": "tio/mining_service.py",
+      "sha256_utf8_lf": "85247d26364f015cf944ed1725e5dde4228ccc37c87a9d255e5898770e753c7b"
+    },
+    {
+      "path": "tio/onboarding.py",
+      "sha256_utf8_lf": "a3b9633cadf435716068fc6b31e8d9873a996bb71a8d3191b4f7b202c564e039"
+    },
+    {
+      "path": "tio/owned_pets.py",
+      "sha256_utf8_lf": "383a3cbdc236b206aff258017a4e32779cb677ec8d76d4f964b74eeaeb110d91"
+    },
+    {
+      "path": "tio/party_travel.py",
+      "sha256_utf8_lf": "b85b28e1c8676ee11225b00fe1b551c1d1014c61ccf096337a0749f139f2827d"
+    },
+    {
+      "path": "tio/passive_stats.py",
+      "sha256_utf8_lf": "6d4970d002362f7dac187dfc77109e2a211570f4c0f7bcdcd5beb7baf4c82271"
+    },
+    {
+      "path": "tio/performance.py",
+      "sha256_utf8_lf": "5240605fa4921f850a648c3965b8bf02e337ff24cd015b3e16d1a886ddd30c32"
+    },
+    {
+      "path": "tio/player_auction.py",
+      "sha256_utf8_lf": "3c10d0502d4a435c81c530863f01ffa012b225664c4e7ad1320fe44a8d071a89"
+    },
+    {
+      "path": "tio/player_statistics.py",
+      "sha256_utf8_lf": "32ee1891573245e1675c903f004ba1770b544ba32e43cb0bb5d65a38d3b002bf"
+    },
+    {
+      "path": "tio/player_trade.py",
+      "sha256_utf8_lf": "f3d037bf61c77256a6eb6868ef4f307dc442f5285bd2a165edeac1e951c86fb7"
+    },
+    {
+      "path": "tio/premium.py",
+      "sha256_utf8_lf": "9b8335d56e4d838cd03da7bec8965053ea3632ed2df9a56fe7a1275186e89899"
+    },
+    {
+      "path": "tio/private_shops.py",
+      "sha256_utf8_lf": "97cee2f9b7a486797f0554d5318a023d732fb329788ec781b4cc1d21f76748a7"
+    },
+    {
+      "path": "tio/protocol/__init__.py",
+      "sha256_utf8_lf": "645701323157997878df10b1151a4e266c716f02987049a7e3601898398c6b49"
+    },
+    {
+      "path": "tio/protocol/abilities.py",
+      "sha256_utf8_lf": "6ca667df803d671f3298b08dd4c21949e8b87c2244ec1004c4c1b595495208a0"
+    },
+    {
+      "path": "tio/protocol/ability_cast.py",
+      "sha256_utf8_lf": "e9e01030457f577745ee85d977aeb3b61abd9cd61810c3ce3691b0855a8a228b"
+    },
+    {
+      "path": "tio/protocol/ability_status.py",
+      "sha256_utf8_lf": "01bd34af803d66eb1f7852842ff6e1af93f845b5a33ee1c2ee3abdeabe4a3435"
+    },
+    {
+      "path": "tio/protocol/achievements.py",
+      "sha256_utf8_lf": "defd4e7fe81c3f620c812450544114c7e6a1a10b9c0a9f3896525436b696e394"
+    },
+    {
+      "path": "tio/protocol/action_points.py",
+      "sha256_utf8_lf": "9099d8b100b4a15c7167b44678f3694f36fb8cd6aa8530a68d253ef6e0400065"
+    },
+    {
+      "path": "tio/protocol/alliances.py",
+      "sha256_utf8_lf": "52f8a4002f91608d43ace732dcc6eec80602bb300ff760b66d3fbc16f1c804a2"
+    },
+    {
+      "path": "tio/protocol/arena.py",
+      "sha256_utf8_lf": "a1766333cf09ae1268e4e27cd76d3d0559cfb6a6beb385039254b20f97f058fe"
+    },
+    {
+      "path": "tio/protocol/assault.py",
+      "sha256_utf8_lf": "94d0ff19de661f8a53dcf89e61db2184ec45aada9bdd20cd6908d55444a00eb4"
+    },
+    {
+      "path": "tio/protocol/asset_count.py",
+      "sha256_utf8_lf": "fc2e6bdbbd080df2e5e757c73f7185b880a0ce4bc7890373b1b001ccaa7ad760"
+    },
+    {
+      "path": "tio/protocol/auth2.py",
+      "sha256_utf8_lf": "701770c53d4c227e8df75b79b96afa8a939ecd0bc4915646e15fa820ccf87458"
+    },
+    {
+      "path": "tio/protocol/battle_attack.py",
+      "sha256_utf8_lf": "6733316cad8c50ee565b5c53610b790b1a1cc71a234863cf7d8b0777e6fbfa61"
+    },
+    {
+      "path": "tio/protocol/battle_door.py",
+      "sha256_utf8_lf": "0c33ceb4e9703a191c2df3be589012f506346464abf464ccb845c5f0129808bf"
+    },
+    {
+      "path": "tio/protocol/battle_exchange.py",
+      "sha256_utf8_lf": "0894550818f429939566f6188e4622b74ac65e7028923d8c4bc4b7039ef983c2"
+    },
+    {
+      "path": "tio/protocol/battle_ground.py",
+      "sha256_utf8_lf": "9e12e255e746e52757e5b9316fbd480b51e1da73e7a638594fe78ffa9a3187eb"
+    },
+    {
+      "path": "tio/protocol/battle_item_status.py",
+      "sha256_utf8_lf": "b0631df3473bf0f7dcdd4263fe78db77db514d7ef195f4174df13fcc948f6ad6"
+    },
+    {
+      "path": "tio/protocol/battle_item_visuals.py",
+      "sha256_utf8_lf": "abca50990baf01e301dc53c6f363d1699f2d3ed20bc75c9bdf00bceb22a4756e"
+    },
+    {
+      "path": "tio/protocol/battle_loaded.py",
+      "sha256_utf8_lf": "dd315cf13b21c926eedc1417b82e6b8b421029d1093dace14ba5b523eeaa4485"
+    },
+    {
+      "path": "tio/protocol/battle_loot.py",
+      "sha256_utf8_lf": "4814a5acc106036f17f8709527cefc716aa1808a8b46d91d7c04b028a8b4afdf"
+    },
+    {
+      "path": "tio/protocol/battle_members.py",
+      "sha256_utf8_lf": "92e16d9d3c659b473608e5c9d18c0c84f8ebf88bf1791a36ab0949a6eaec8c39"
+    },
+    {
+      "path": "tio/protocol/battle_mines.py",
+      "sha256_utf8_lf": "415126244fc5bd007a843163eca4e0681ea7d6f949b1288098a5e212c0ab4c48"
+    },
+    {
+      "path": "tio/protocol/battle_move.py",
+      "sha256_utf8_lf": "2ac2b757d2e571068e5fc0bec48d2e7a66c177fceb0586ffbb1ed4ac3c3b1435"
+    },
+    {
+      "path": "tio/protocol/battle_over.py",
+      "sha256_utf8_lf": "baba74a02252586305d44544107fb342a74bb9e8b6ab5dce88d9af6f1380e877"
+    },
+    {
+      "path": "tio/protocol/battle_position.py",
+      "sha256_utf8_lf": "c2206ced7467374037af34ba25cf5e2e0e327ca90edf38f3ded8bbcafe65025e"
+    },
+    {
+      "path": "tio/protocol/battle_remove.py",
+      "sha256_utf8_lf": "c448013cf2ce882b6c29c5c125e3b11e3571a1ebcb3b166ed6193d782f74da28"
+    },
+    {
+      "path": "tio/protocol/battle_soldier.py",
+      "sha256_utf8_lf": "16ad6e48f3b890a6e597bd904901093327dc6ff2a5d78b72f93176ae47da01f0"
+    },
+    {
+      "path": "tio/protocol/battle_turn.py",
+      "sha256_utf8_lf": "ec822b2ed8d1912c467a07f7920f19c8dc78560ec63ddb5ee347f57a0b4c3371"
+    },
+    {
+      "path": "tio/protocol/binary.py",
+      "sha256_utf8_lf": "27f95e05b8d5610a6f7fbdce0ea805d1704f9d1559ae038f609669e253ea7804"
+    },
+    {
+      "path": "tio/protocol/character_create.py",
+      "sha256_utf8_lf": "569a39808904b7ea0d1cb6671cc867cdbd78fdef36ade43433f0be88d5ca2828"
+    },
+    {
+      "path": "tio/protocol/character_select.py",
+      "sha256_utf8_lf": "cf9403f0c45010e7740a71ca800e9686abdbf019caead0a0c9b090300653513f"
+    },
+    {
+      "path": "tio/protocol/chat.py",
+      "sha256_utf8_lf": "c8e308a9a3d708b6efe352cf4561a40dc2c911c69bb8face6b31d62d22b0e8cb"
+    },
+    {
+      "path": "tio/protocol/city_catalogs.py",
+      "sha256_utf8_lf": "08ed134aa60c7ba96b34e8e6fc4986813d3ab99ded5ebfe89ce159ae9d613ec3"
+    },
+    {
+      "path": "tio/protocol/city_services.py",
+      "sha256_utf8_lf": "a541dda0f9122bbff825b8c65529dab5dc0118322e0b480f1f799d7a54ff0976"
+    },
+    {
+      "path": "tio/protocol/clan_crests.py",
+      "sha256_utf8_lf": "e88a4ed4f97f72bdd922b615fb286f281d71255b90c6f02614858c03d837203f"
+    },
+    {
+      "path": "tio/protocol/clan_ratings.py",
+      "sha256_utf8_lf": "f2b13c3025ecb25fe8b1d5117957aa649f034c946e12298dafe62aa802be9451"
+    },
+    {
+      "path": "tio/protocol/clans.py",
+      "sha256_utf8_lf": "3e87d663e503c780f138450daed048ca95b8c1e2bd952d58b4220e30a2bed3cf"
+    },
+    {
+      "path": "tio/protocol/enhancement.py",
+      "sha256_utf8_lf": "364039db7b15f42a395ff71da409cac51c44d34a3a907f3896172d183e2d8fe1"
+    },
+    {
+      "path": "tio/protocol/equipment_batch.py",
+      "sha256_utf8_lf": "907f986553ac75e2255b8e05c6990996ffb71de39625eea0459e5beb0b12c27d"
+    },
+    {
+      "path": "tio/protocol/equipment_templates.py",
+      "sha256_utf8_lf": "d541b51824484c16217e884b5f3814d83196227c3b367c2d24965c7a37045e2a"
+    },
+    {
+      "path": "tio/protocol/flame_stream.py",
+      "sha256_utf8_lf": "92bca88995624b9b5122cbb5968565ffec3d7e84be9b4819800ee82ffb3712e5"
+    },
+    {
+      "path": "tio/protocol/friends.py",
+      "sha256_utf8_lf": "755678ee397487e973dacf3d2e694a322cce0cf2addb0a0f922474fc0f629a43"
+    },
+    {
+      "path": "tio/protocol/health.py",
+      "sha256_utf8_lf": "4aabf6b7e5433d1a532b2a3bb49e529a4f213774a0191642c85c020248d10e21"
+    },
+    {
+      "path": "tio/protocol/hire.py",
+      "sha256_utf8_lf": "e87b9688365f9db48b00c2e89dbd3038c2842025b012791a083130d8acab91c0"
+    },
+    {
+      "path": "tio/protocol/item_action.py",
+      "sha256_utf8_lf": "78b2cd428674946d4e65d0b4c330cf93625d2e16e9b474d27363fd0c39851493"
+    },
+    {
+      "path": "tio/protocol/item_batch.py",
+      "sha256_utf8_lf": "071437df4ac5872975192a580743e436ed3759caeb35bd01f9bc82619ff72108"
+    },
+    {
+      "path": "tio/protocol/item_list.py",
+      "sha256_utf8_lf": "0b722e8cea76a6ff5d521f6b37bc48853b80395a8c0a039fbb7ad5faab1e9006"
+    },
+    {
+      "path": "tio/protocol/item_marks.py",
+      "sha256_utf8_lf": "8d449a27ed5e55c6c9a7772561608c01a43300ba8f1ad761a07eef6bea0d0807"
+    },
+    {
+      "path": "tio/protocol/known_mines.py",
+      "sha256_utf8_lf": "c11af9c8c6d8df35673849d4c76e43cafa315cd91f85e8cfa0cbb21035fcc161"
+    },
+    {
+      "path": "tio/protocol/login.py",
+      "sha256_utf8_lf": "39c3894911904241d7612506c2cc80448f06a313e92daf17b53f3e7cb642f360"
+    },
+    {
+      "path": "tio/protocol/mail.py",
+      "sha256_utf8_lf": "974746b60951570f536fee2fd180cebe8b0c32e91ca7fc2283e9184ebd5847ff"
+    },
+    {
+      "path": "tio/protocol/mine_defuse.py",
+      "sha256_utf8_lf": "795b1b18a78c7c97834b12aa7fbc3d2b94739a71a29be94519f879904341d519"
+    },
+    {
+      "path": "tio/protocol/mine_requests.py",
+      "sha256_utf8_lf": "1dae3512f28f44716636f711e6a8217bbaea0a1ff203fd97cf99f977a66397b3"
+    },
+    {
+      "path": "tio/protocol/mining.py",
+      "sha256_utf8_lf": "86493ef5322b1544a68774896fceb823be7319fc9968b2406c29fd0a9ed24f4d"
+    },
+    {
+      "path": "tio/protocol/mode1.py",
+      "sha256_utf8_lf": "03cf2193b7730eed6f87365d2da5cb66943e57481a0e18b7ed51eeb54ebc8b28"
+    },
+    {
+      "path": "tio/protocol/night_vision_state.py",
+      "sha256_utf8_lf": "0bc341d583004373a3a8c56f6eb4a4559c078b15a688500b9c2d549ca91b05f1"
+    },
+    {
+      "path": "tio/protocol/pet_info.py",
+      "sha256_utf8_lf": "bd22870169b7deed68bb33f345b5120b19c2113d68b8b0bb41780b5cb29c5ad6"
+    },
+    {
+      "path": "tio/protocol/pet_state.py",
+      "sha256_utf8_lf": "24d0986b7bfcf246509a0db0f36f2ba415c5f34f4be893925b998ecb2770a2a8"
+    },
+    {
+      "path": "tio/protocol/player_auction.py",
+      "sha256_utf8_lf": "2c4d7c1d260edea8b3beb4f95ccf82352fb84cc0a5cd86b3911513e12627c441"
+    },
+    {
+      "path": "tio/protocol/player_top100.py",
+      "sha256_utf8_lf": "abcb35f0b175b9c26741195b2c44cac88881263966a6567f0c4ba807cd39d463"
+    },
+    {
+      "path": "tio/protocol/player_trade.py",
+      "sha256_utf8_lf": "f9435042230afe40c1a5577c1f5edcd6dc56c036acbe2db440d4fee19dd4a306"
+    },
+    {
+      "path": "tio/protocol/premium_shop.py",
+      "sha256_utf8_lf": "36a12d52c6b6b3bce3d98bf56faa2893ab27a17fa702b8f0bfe51384eb1333c5"
+    },
+    {
+      "path": "tio/protocol/presence.py",
+      "sha256_utf8_lf": "a9835b6de5cc1f6aeb2601cde6b7f71e76edc4d19ce7ab4387bd1c79dd886043"
+    },
+    {
+      "path": "tio/protocol/private_shops.py",
+      "sha256_utf8_lf": "ca69345e1ffd18cadb83afce6d6ef6b9c33cc1c58cbc1b0bd71e2e1200e29fb7"
+    },
+    {
+      "path": "tio/protocol/proficiency_decrease.py",
+      "sha256_utf8_lf": "de0c45058e3daafe23b288cb12c72b0a6bf5987c4edb2c51370d26fcedcc7953"
+    },
+    {
+      "path": "tio/protocol/public_profile.py",
+      "sha256_utf8_lf": "c71e41701cbb047adf70da6e5b4138ffe3fbc75ab914bd28dbaec222a391c523"
+    },
+    {
+      "path": "tio/protocol/quest_ack.py",
+      "sha256_utf8_lf": "63886a9af5810aae6155977b844b5e05263612fc84cb3aabf098472b5026205d"
+    },
+    {
+      "path": "tio/protocol/ranked.py",
+      "sha256_utf8_lf": "bb2793cb0a493e2ed659b71dbc99712824c626d393e831499e82396c1899401b"
+    },
+    {
+      "path": "tio/protocol/ranked_party.py",
+      "sha256_utf8_lf": "4e13f5be62dd46e132bcb2eb0be59fc4f83bbc4618336d6df715f5e2fc6fcdf8"
+    },
+    {
+      "path": "tio/protocol/rental.py",
+      "sha256_utf8_lf": "4258d6fc6303f1aaa2246a65c4242e2d957e4f372429336fb19d40fe3bbefce3"
+    },
+    {
+      "path": "tio/protocol/repair.py",
+      "sha256_utf8_lf": "15715effd46a9a194199b0f3d200c14922d2e442ac5a3d5b423a31370cffc6a6"
+    },
+    {
+      "path": "tio/protocol/sc_auction.py",
+      "sha256_utf8_lf": "b1214f6a64c1a550824ea25ceb0f094be31f5a5a39b0129f3720937714b7582e"
+    },
+    {
+      "path": "tio/protocol/sc_auction_view.py",
+      "sha256_utf8_lf": "4a86765f7c0ac19b21d7bf5934d7eb42a32f9fc2203f6e75a40157830a71eb89"
+    },
+    {
+      "path": "tio/protocol/sc_shop.py",
+      "sha256_utf8_lf": "ebccc63808072da5a85d566bc9e127f345adf809728b427c62b57a2aaacc7ba4"
+    },
+    {
+      "path": "tio/protocol/server_list.py",
+      "sha256_utf8_lf": "529b78e14c32a85e584f839b30b444982902ce8db75c3e2212d6a765b51d5a04"
+    },
+    {
+      "path": "tio/protocol/server_login.py",
+      "sha256_utf8_lf": "cc4f225ca35bab9dc82137a04e1bfec63d8cfceb47c70bf41ac243f748f49eb0"
+    },
+    {
+      "path": "tio/protocol/shared_config.py",
+      "sha256_utf8_lf": "a07f87379c03d9eb8be76b31dab183434a6ab1d9bc16d3dc87b3f10f5f9d4d40"
+    },
+    {
+      "path": "tio/protocol/shop_purchase.py",
+      "sha256_utf8_lf": "7b64a78da59f32e819c24e5d633a77cd6d406726e30c15483e82b4600dbd2768"
+    },
+    {
+      "path": "tio/protocol/shop_sale.py",
+      "sha256_utf8_lf": "417e8229f6cd9a7929ae90ea0ca830c6a78cd6f47d8807bd26e73d1a9f16ebe9"
+    },
+    {
+      "path": "tio/protocol/system_message.py",
+      "sha256_utf8_lf": "fc7d4afc0d8230acd20d190c507d1a830e9532280e30246ed27964c4cb9ef3ee"
+    },
+    {
+      "path": "tio/protocol/tactical_marks.py",
+      "sha256_utf8_lf": "db6ab934b8168f9d8b90158b0ca37e6f370231e805f532578d91b913ba31767f"
+    },
+    {
+      "path": "tio/protocol/town_info.py",
+      "sha256_utf8_lf": "a3f2f381f9304c510903d7e867643e55cc329ee2e18054598236920b2a8dc930"
+    },
+    {
+      "path": "tio/protocol/trace.py",
+      "sha256_utf8_lf": "78981f1b49b36092004264895107116b9b52d444cd1227c3903b4a7e1eb1049c"
+    },
+    {
+      "path": "tio/protocol/transport.py",
+      "sha256_utf8_lf": "f93068712db4bf95490864a154448b0de4463a8146122c4f3c246b28394c512d"
+    },
+    {
+      "path": "tio/protocol/wagers.py",
+      "sha256_utf8_lf": "bc90df3fc334dd83b0e372cf99ef36a09b97ef9d3dc8a407b17eb3b83bb73569"
+    },
+    {
+      "path": "tio/protocol/warehouse.py",
+      "sha256_utf8_lf": "b8c6270ea177df40d3641047fd5d9577b81972d5c7c74adc53637d332b870ae4"
+    },
+    {
+      "path": "tio/protocol/warehouse_capacity.py",
+      "sha256_utf8_lf": "95cfbc6c0b8dec91f8de8d808ea6e449a7e658930b668c1f680f366a6cfe2f0c"
+    },
+    {
+      "path": "tio/protocol/warehouse_transfer.py",
+      "sha256_utf8_lf": "e31054b3aaad057bd6e2554ad440648392b45cf51e5a9a17d8cf75161837e35d"
+    },
+    {
+      "path": "tio/protocol/weather.py",
+      "sha256_utf8_lf": "7cf711fc463ec1d8b99f98cb9187070c9e6cb57d0e44a107f44c7a9688ca97c2"
+    },
+    {
+      "path": "tio/protocol/world_bootstrap.py",
+      "sha256_utf8_lf": "480f3136cfbc9de875c16559d7638521492fe9e526c1b60c6ea67c22d5186e74"
+    },
+    {
+      "path": "tio/pve_contracts.py",
+      "sha256_utf8_lf": "1d376b007d4f4deeb3e743cf668fb39c5800708c937d9997d82fe313dbcd885a"
+    },
+    {
+      "path": "tio/ranked.py",
+      "sha256_utf8_lf": "c4992c0100495483af2ee90c99bf5879b211410251d454438238a1da37877142"
+    },
+    {
+      "path": "tio/ranked_loadout.py",
+      "sha256_utf8_lf": "a4dbd905444b5a574b6d8ed756dada5280a8535003c62dc8751977b6e9b9b555"
+    },
+    {
+      "path": "tio/ranked_tokens.py",
+      "sha256_utf8_lf": "147a074b72e7e0b810295bf24a3b40e75597329f1fe6dc740025db23d0c45aa2"
+    },
+    {
+      "path": "tio/ranks.py",
+      "sha256_utf8_lf": "314274c8cf9a916768a761542e9696ebacd0a22cb7a172059f3ab6208ffee142"
+    },
+    {
+      "path": "tio/rating_completion.py",
+      "sha256_utf8_lf": "81f83087668877adb0d9619e2e6491d45ce896c306c43beb94a6ef1bde1017a0"
+    },
+    {
+      "path": "tio/rating_seasons.py",
+      "sha256_utf8_lf": "55c86d6534a9b11aad25ebc25fb1ab352b5338006de44c4d10ab50658400aaf9"
+    },
+    {
+      "path": "tio/rating_visibility.py",
+      "sha256_utf8_lf": "79d6211c2e6ea11e3e7d95e7cb7ad50203a3382d0fc577e7605f6924d7e7b478"
+    },
+    {
+      "path": "tio/recon_geometry.py",
+      "sha256_utf8_lf": "b05f2f1478f543999adc3c7c89f8ed0ebc233772456b2f63fd4bd09a37ec5c48"
+    },
+    {
+      "path": "tio/rental.py",
+      "sha256_utf8_lf": "031f3f6515a819640c7850301bbd10d0f842fcc7ce3bcbd02b4ac2e30023da7f"
+    },
+    {
+      "path": "tio/repair.py",
+      "sha256_utf8_lf": "3af02b6b63eb619feb958b85a40f2f63e1147bc8b6b47861849aedf4256657b0"
+    },
+    {
+      "path": "tio/reward_policy.py",
+      "sha256_utf8_lf": "0319d30f05fe1f49d9d25f78637ff612a2f6e0cd10af584322f37674081da834"
+    },
+    {
+      "path": "tio/roster_progression.py",
+      "sha256_utf8_lf": "b4c7389c0c9cc9b1dbc2e1cfc95017b426d3802635ef66120d1505f8a4ea761c"
+    },
+    {
+      "path": "tio/sc_auction.py",
+      "sha256_utf8_lf": "83eb2a63e1b5282911b5072fb5a098112e2767a37eb129f0e2636e2d40289f0e"
+    },
+    {
+      "path": "tio/sc_pricing.py",
+      "sha256_utf8_lf": "8349f4c918691a0def99642dc879a68415ac9e385f55c63c1a0ffbb360a9c2ad"
+    },
+    {
+      "path": "tio/sc_shop.py",
+      "sha256_utf8_lf": "afa2e2ddfec87245eb1033d2db367102f8142e67ac7130b4f482425cb1d51b1f"
+    },
+    {
+      "path": "tio/services.py",
+      "sha256_utf8_lf": "47c08278fe672d1611051a0ff7c66a581e6e065e0de180993e47a9a657070377"
+    },
+    {
+      "path": "tio/services_completion.py",
+      "sha256_utf8_lf": "3575108008375cd29bd21a6338b3a315d9fdbc88c19934cba151ded0157526de"
+    },
+    {
+      "path": "tio/shooting_range.py",
+      "sha256_utf8_lf": "8885660051d84cb7f5be5759b5e58c76ebdf726fc2279b51dd3b946967926455"
+    },
+    {
+      "path": "tio/shop.py",
+      "sha256_utf8_lf": "2060fda755d98ddb99abd5f79a139c49acba8c48b873ff25c0a7267d882f99ce"
+    },
+    {
+      "path": "tio/shop_completion.py",
+      "sha256_utf8_lf": "86b5d5f5c5f200faa23650b1f3f2029e32e8df9c78f51d3f3916175456c7b9c0"
+    },
+    {
+      "path": "tio/shop_errors.py",
+      "sha256_utf8_lf": "1dde338d7dc34439e9d9c3cab0f62a0664b994062529ea337a6bbe918f7ef709"
+    },
+    {
+      "path": "tio/shot_geometry.py",
+      "sha256_utf8_lf": "ca011fe1aca155937705c5df80807f0fd1dad7fc5dc499f6f430dc8b10429e12"
+    },
+    {
+      "path": "tio/sniper_rifles.py",
+      "sha256_utf8_lf": "af8d7ef8c314560dd43bb76cf15e4457ea0ea7784416ca9bfd3146854bcf5400"
+    },
+    {
+      "path": "tio/sniper_scope.py",
+      "sha256_utf8_lf": "50833a0222d6eee63f1278898a345841b29b52e152ff02901df238a34ed91690"
+    },
+    {
+      "path": "tio/social_completion.py",
+      "sha256_utf8_lf": "c09c4b579046d746d75feb765820aae857d304847d54bf696304bdd12f6fd2b4"
+    },
+    {
+      "path": "tio/squad.py",
+      "sha256_utf8_lf": "60ce8d7bf6ebbdcfaa6ac88f974218dafe9bc63e4eb46c8fd0bf0d912316bd27"
+    },
+    {
+      "path": "tio/survival_service.py",
+      "sha256_utf8_lf": "198bf2250605c1e87632e371f7a77c1cd2b96add3a676745f5085bf1481a06e8"
+    },
+    {
+      "path": "tio/tactical_bot.py",
+      "sha256_utf8_lf": "288ece3825c86a51be50217e1eed629d3c7296d2319f938ecdc2296f904f06b7"
+    },
+    {
+      "path": "tio/team_lobbies.py",
+      "sha256_utf8_lf": "54ada74e80980c13cdf17f0108c14e9bb3ece390afdad98d4e34d8b1cfe5dbe1"
+    },
+    {
+      "path": "tio/team_ratings.py",
+      "sha256_utf8_lf": "34c7b2e432438fc4489d3103342e9a97733dcbaccacd1289a150228dbeae8d54"
+    },
+    {
+      "path": "tio/team_scene.py",
+      "sha256_utf8_lf": "ce8efd942e5838dc66014a4e106cea76f99994bbad04c791ac5d94ea092dab58"
+    },
+    {
+      "path": "tio/territories.py",
+      "sha256_utf8_lf": "6e4720a6ad3636e8d745df184a8dd7a2caae18908c92185537a70cf99c0d6215"
+    },
+    {
+      "path": "tio/training_bot.py",
+      "sha256_utf8_lf": "c2dafc187f2cec9ac34e252215a41a8d58d665938e6fc7da579b32ca7e2814a3"
+    },
+    {
+      "path": "tio/travel_party.py",
+      "sha256_utf8_lf": "e3e295241bbf1382fb09c336bcbcd206f4c204457a323aee7ae6d02354808d0b"
+    },
+    {
+      "path": "tio/visibility.py",
+      "sha256_utf8_lf": "dd464ee9c6a5ac792fbe8b8a44c6b07482379d38c3bff0c9e6f2d880c6a61e7d"
+    },
+    {
+      "path": "tio/wagers.py",
+      "sha256_utf8_lf": "4bca2c26b3e93dc6072b44f5cb78d87b07c345d55baa988705c3e4d0b3c2cf6b"
+    },
+    {
+      "path": "tio/wallets.py",
+      "sha256_utf8_lf": "c87c36e9b7e44425e1e39d2001affb79614795f7a435e311662f25432cb587a3"
+    },
+    {
+      "path": "tio/warehouse.py",
+      "sha256_utf8_lf": "933b11b4d0a678047a1bd4030a909ca77c14b9d9af4b5ae29e09405902ad05ae"
+    },
+    {
+      "path": "tio/warehouse_completion.py",
+      "sha256_utf8_lf": "4f40218ddeb673f9688ab1339b4b96753717b24bf4c88d4a9e42c8c91978218b"
+    },
+    {
+      "path": "tio/warehouse_queries.py",
+      "sha256_utf8_lf": "4b4f7dab0fec746ad22b8eba0926316048be655c9aa7b05318944cab8f0a062a"
+    },
+    {
+      "path": "tio/warehouse_resources.py",
+      "sha256_utf8_lf": "851dc8c4b7b2163a8c3c7deb41e60c53f31a2834cecbb90857cb2db4e686c418"
+    },
+    {
+      "path": "tio/warehouse_service.py",
+      "sha256_utf8_lf": "372581058b55f834d1fc1909d9cb7e90824ab903fb074bfefa3236f282b12c00"
+    },
+    {
+      "path": "tio/weapon_effects.py",
+      "sha256_utf8_lf": "1d53fb8f53c54b04b92def55e576b84738be7b83343183bfeed853847241e32b"
+    },
+    {
+      "path": "tio/weapon_proficiency.py",
+      "sha256_utf8_lf": "4dda1eff9d2b048c5ec5d4bf846f4cd96a5f8e27fe875ab40a9ef0c5adbf0158"
+    },
+    {
+      "path": "tio/weapons.py",
+      "sha256_utf8_lf": "acf82ca949604c7884a5ab437436fca44c3d68f8ed00458ede144d3347be4549"
+    },
+    {
+      "path": "tio/weather.py",
+      "sha256_utf8_lf": "c31c106a779c45bf34abfad8317c72ee8b681da73f5154dc374e19f7dcbffb19"
+    },
+    {
+      "path": "tio/weight.py",
+      "sha256_utf8_lf": "75d6d6debe7d26b3dff21424697871cbaba44699faf6ce1a2ce2130389ee7751"
+    },
+    {
+      "path": "tio/world_completion.py",
+      "sha256_utf8_lf": "39181041c0456f4eca41241997057c562a0956fb11197b27fce3ccd978c191c2"
+    },
+    {
+      "path": "tio/world_encounters.py",
+      "sha256_utf8_lf": "012ee438f67d332fb13a06b7b8bd7ef2c4c7f1afe5125248b7e82f7c4e751995"
+    },
+    {
+      "path": "tools/battle_actor_fixture.py",
+      "sha256_utf8_lf": "0b703f3db4ad30eeafddf4c20dfadc64f39cd742afb80ef3a3258665381cd49d"
+    },
+    {
+      "path": "tools/battle_roster_fixture.py",
+      "sha256_utf8_lf": "54786f0d4ae3c242a13bd5725dbefab56df50224331b350d8d2476414b35be53"
+    },
+    {
+      "path": "tools/build_item_fixture.py",
+      "sha256_utf8_lf": "dabe00a0c554ab772049dd0919d347db09dff9b14efd061a25d8634f344ffb95"
+    },
+    {
+      "path": "tools/build_skills_fixture.py",
+      "sha256_utf8_lf": "6384f0849b8cc92f2cf13c096c87b9fed83dd0e4c3c40d4a0820abe06e5bab7e"
+    },
+    {
+      "path": "tools/encounter_scene.py",
+      "sha256_utf8_lf": "1e0c60a840edb8ef9e3db96c4e328ae6d03475b80f221abc2ecc9a1a4d224e6b"
+    },
+    {
+      "path": "tools/import_weapon_catalog.py",
+      "sha256_utf8_lf": "d362ff4142033986d4e87e57152e247c5211bfe8ec23732c58f4c2bccb6b2315"
+    },
+    {
+      "path": "tools/loopback_exchange.py",
+      "sha256_utf8_lf": "e2c8601df687cefccd4e132108c894a758930d851aa49095a435111523a31df2"
+    },
+    {
+      "path": "tools/manage_mine_claims.py",
+      "sha256_utf8_lf": "081538ef40575329f192aec9a41b5c0c66d6999030b509b6df0a9b5c62916a54"
+    },
+    {
+      "path": "tools/manage_team_seasons.py",
+      "sha256_utf8_lf": "7ec2cee4d3ffdcbde6689c2eb9d09b83fd11914154d118c686dab899fd239d17"
+    },
+    {
+      "path": "tools/manage_territories.py",
+      "sha256_utf8_lf": "34d316573b824cdb604d0f652841c996f8ee099b87265d375b442c1e57874c01"
+    },
+    {
+      "path": "tools/mining_scene.py",
+      "sha256_utf8_lf": "675dbf821e65e949e55bf3ae8651c85d4df7edb68ad418fe3cfd0f060ecd2347"
+    },
+    {
+      "path": "tools/moderate_prison.py",
+      "sha256_utf8_lf": "56088e47bd6e7c6900c7d09e1c5ee307e3cffd6eb21e641eb2d5c3dd4d4a9aae"
+    },
+    {
+      "path": "tools/shooting_range_scene.py",
+      "sha256_utf8_lf": "eabfdc664840ebc639de5fb3c9f2d5749e9889312a650eab6183e8f000fbb979"
+    },
+    {
+      "path": "tools/survival_scene.py",
+      "sha256_utf8_lf": "b7287bf3cc57ef015587dcd9cc03370c5b362bc3a9ab11df6eea108f493165cc"
+    },
+    {
+      "path": "tools/verify_ranked_native.py",
+      "sha256_utf8_lf": "c99bf371bdf93a23482b297bc792e8395953a06b6f8920765bafeacf6e4e9c1f"
+    }
+  ]
+}

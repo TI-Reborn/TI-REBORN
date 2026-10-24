@@ -87,7 +87,7 @@ def money_sources():
     return seen
 
 
-def treasury_fields():
+def warehouse_resource_fields():
     u=emulator();obj=DATA+0x2000;character=DATA+0x4000;warehouse=DATA+0x8000
     packet=encode_asset_count(AssetCount(1000,2000,unknown_u32_08=500,unknown_u32_09=100))
     u.mem_write(DATA,packet[2:]);put32(u,0xacd0e8,DATA)
@@ -102,7 +102,7 @@ def treasury_fields():
     u.emu_start(0x7d4c28,STOP,count=5000)
     assert u.reg_read(UC_X86_REG_EIP)==STOP
     assert (get32(u,warehouse+0x34),get32(u,warehouse+0x38))==(500,100)
-    return dict(reader='65802c',consumer='7d4c28',credits=500,gold=100)
+    return dict(reader='65802c',consumer='7d4c28',repair_points=500,upgrade_kits=100)
 
 
 def main():
@@ -122,7 +122,7 @@ def main():
     _,seen=reader(encode_invitation(9,b'Alice',b'Alpha'),0x6e6de8);assert seen==[dict(inviter=9)]
     cases.extend([dict(kind='info/member/invitation readers',passed=True),dict(kind='native personal money cache copying',records=money_sources())])
     cases.append(warehouse_writer(2,1,0,(WarehouseItem(0xffff0001,1,500,0,0,0),WarehouseItem(0xffff0002,2,100,0,0,0))))
-    cases.append(treasury_fields())
+    cases.append(warehouse_resource_fields())
     folder=ROOT/'reports/clans';folder.mkdir(parents=True,exist_ok=True)
     (folder/'native.json').write_text(json.dumps(dict(sha256=EXPECTED_SHA,method=__doc__,cases=cases),indent=2)+'\n')
     print('Native clan builders/readers and money cache: PASS')
