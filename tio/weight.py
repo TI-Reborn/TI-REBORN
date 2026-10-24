@@ -86,24 +86,30 @@ def project_carried_weight(packet: bytes, human: bool, inventory: bytes) -> byte
     return encode_pet_info(PetInfo(human, fields))
 
 
-def encode_weight(actor_id, weight, capacity):
-    """Original4E attributes7(maximum) and6(carried), both native u32 stores.
+def encode_weight(actor_id: int, weight: int, capacity: int | None = None) -> bytes:
+    """Original4E carried mass, optionally including battle capacity.
 
     Unlike initial66/24 word fields this preserves totals above65535.
+    City profiles already carry capacity. Native status7 unconditionally
+    redraws the shared city/selection scale for nonselected squadmates, while
+    status6 checks the selection. Never send redundant city status7 updates.
     """
-    return (Writer().u8(0x4e).u32(actor_id).u32(2)
-            .u32(7).u32(capacity).u32(6).u32(weight).u8(0).build())
+    attributes = ((6, weight),) if capacity is None else ((7, capacity), (6, weight))
+    writer = Writer().u8(0x4e).u32(actor_id).u32(len(attributes))
+    for attribute, value in attributes:
+        writer.u32(attribute).u32(value)
+    return writer.u8(0).build()
 
 
 def city_weight_update(path: str | Path, account: str, inventory: bytes) -> bytes:
     from contextlib import closing
     owner = decode_item_list(inventory)[0]
     with closing(connect(path)) as db:
-        row = db.execute('SELECT human,pet_packet FROM owned_pets WHERE account=? AND pet_id=?',
+        row = db.execute('SELECT 1 FROM owned_pets WHERE account=? AND pet_id=?',
                          (account, owner)).fetchone()
         if row is None:
             raise ValueError('Owned actor required for weight update')
-        return _city_weight(db, account, owner, row[0], row[1], inventory)
+        return _city_weight(owner, inventory)
 
 
 def city_profile_weight_update(path: str | Path, account: str, packet: bytes) -> bytes | None:
@@ -117,15 +123,12 @@ def city_profile_weight_update(path: str | Path, account: str, packet: bytes) ->
     with closing(connect(path)) as db:
         if not db.in_transaction:
             db.execute('BEGIN')
-        row = db.execute('SELECT human,pet_packet,inventory_packet FROM owned_pets '
+        row = db.execute('SELECT inventory_packet FROM owned_pets '
                          'WHERE account=? AND pet_id=?', (account, owner)).fetchone()
         if row is None:
             return None
-        return _city_weight(db, account, owner, *row)
+        return _city_weight(owner, row[0])
 
 
-def _city_weight(db, account, owner, human, base, inventory):
-    from .passive_stats import project_saved_pet
-    pet = project_saved_pet(db, account, owner, base, bool(human))
-    fields = decode_pet_info(pet, human_equipment=bool(human)).fields
-    return encode_weight(owner, min(0xffffffff, inventory_weight(inventory)), fields['0x8c4b57'])
+def _city_weight(owner: int, inventory: bytes) -> bytes:
+    return encode_weight(owner, min(0xffffffff, inventory_weight(inventory)))
