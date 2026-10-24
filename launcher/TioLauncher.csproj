@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>TIO Launcher</AssemblyName>
-    <Version>0.1.33</Version>
+    <Version>0.1.34</Version>
     <ApplicationIcon>Assets\tio-launcher.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup Condition="'$(SteamDistribution)' == 'true'">
