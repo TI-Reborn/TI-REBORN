@@ -1,6 +1,6 @@
 """Separate authenticated logins from durable character save owners.
 
-Slot one deliberately keeps its historical login key. Additional owners cannot
+Original slot one deliberately keeps its historical login key; recreated slots use fresh generation keys. Additional owners cannot
 be supplied as Accounts logins, and are reached only through an owned slot.
 Mappings are created with the character, never by a startup data migration.
 """
@@ -16,6 +16,8 @@ def initialise(db):
     db.execute('''CREATE TABLE IF NOT EXISTS character_identities (
         login TEXT NOT NULL, slot INTEGER NOT NULL CHECK(slot BETWEEN 2 AND 5),
         owner TEXT NOT NULL UNIQUE, PRIMARY KEY(login,slot))''')
+    from .character_lifecycle import schema
+    schema(db)
 
 
 def alias(login, slot):
@@ -33,7 +35,15 @@ def has_mappings(db):
 def owner_for_slot(db, login, slot):
     """An unowned or missing slot has no valid gameplay identity."""
     expected = alias(login, slot)
-    if slot != 1:
+    from .character_lifecycle import latest, valid_key
+    revision = latest(db, login, slot)
+    if revision is not None:
+        if revision[2] is not None:
+            raise ValueError('Character slot is not owned by this account')
+        expected = revision[1]
+        if not valid_key(login, slot, expected):
+            raise ValueError('Corrupt character ownership mapping')
+    elif slot != 1:
         row = db.execute('SELECT owner FROM character_identities WHERE login=? AND slot=?',
                          (login, slot)).fetchone() if has_mappings(db) else None
         if row is None or row[0] != expected:
@@ -55,6 +65,13 @@ def owners(path, login):
                 if owner != alias(login, slot):
                     raise ValueError('Corrupt character ownership mapping')
                 result.append(owner)
+        from .character_lifecycle import exists, valid_key
+        if exists(db):
+            for slot, owner in db.execute('SELECT slot,owner FROM character_revisions WHERE login=?', (login,)):
+                if not valid_key(login, slot, owner):
+                    raise ValueError('Corrupt character ownership mapping')
+                if owner not in result:
+                    result.append(owner)
     return tuple(result)
 
 
@@ -67,6 +84,13 @@ def auth_account(path, owner, *, connection=None):
     if connection is None:
         with closing(connect(path)) as db:
             return auth_account(path,owner,connection=db)
+    from .character_lifecycle import exists, valid_key
+    revision = connection.execute('SELECT login,slot FROM character_revisions WHERE owner=?',
+                                  (owner,)).fetchone() if exists(connection) else None
+    if revision is not None:
+        if not valid_key(*revision, owner):
+            raise ValueError('Corrupt character ownership mapping')
+        return revision[0]
     row = connection.execute('SELECT login,slot FROM character_identities WHERE owner=?',
                              (owner,)).fetchone() if has_mappings(connection) else None
     if row is None or alias(row[0], row[1]) != owner:
@@ -81,4 +105,5 @@ def owner_for_name(db, name):
     except (AttributeError, UnicodeError):
         return None
     row = db.execute('SELECT account FROM characters WHERE name_key=?', (key,)).fetchone()
-    return None if row is None else row[0]
+    from .character_lifecycle import retired
+    return None if row is None or retired(db, row[0]) else row[0]

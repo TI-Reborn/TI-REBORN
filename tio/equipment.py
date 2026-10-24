@@ -8,6 +8,8 @@ from .db_transaction import connect
 from contextlib import closing
 from dataclasses import replace
 import sqlite3
+from collections.abc import Mapping
+from typing import NotRequired, TypedDict
 
 from .owned_pets import OwnedPetStore
 from .protocol.item_action import TARGET_MASKS
@@ -17,6 +19,20 @@ from .protocol.item_list import decode_item_list, encode_item_list
 
 class EquipmentRejected(ValueError):
     pass
+
+
+class ArmorRule(TypedDict):
+    slot: int
+    dog: bool
+    level: int
+    covers: NotRequired[tuple[int, ...]]
+    female: NotRequired[bool]
+    miner: NotRequired[bool]
+
+
+def armor_coverage(template: int, slot: int, rules: Mapping[int, ArmorRule]) -> frozenset[int]:
+    """One slot-conflict rule for equipment placement and effective defense."""
+    return frozenset(rules.get(template, {}).get('covers', (slot,)))
 
 
 class EquipmentStore:
@@ -77,8 +93,8 @@ class EquipmentStore:
             if item.instance_id == instance_id:
                 item = replace(item, unknown_u8_01=int(slot is not None), location_raw=slot or 0)
             elif slot is not None and item.equipped and (
-                set(self.armor.get(selected.template_id, {}).get('covers', (slot,))) &
-                set(self.armor.get(item.template_id, {}).get('covers', (item.client_slot,)))
+                armor_coverage(selected.template_id, slot, self.armor) &
+                armor_coverage(item.template_id, item.client_slot, self.armor)
             ):
                 item = replace(item, unknown_u8_01=0, location_raw=0)
             updated.append(item)
@@ -160,10 +176,10 @@ def swap_city_weapons(path, account, packet):
     return inventory
 
 
-def armor_rules():
+def armor_rules() -> dict[int, ArmorRule]:
     """Use the same client-derived catalog delivered to the game, not item names.
 
-    Female Exo covers chest/legs; Tank covers head/chest/legs. Both use chest4.
+    Female Exo and Tank cover head/chest/legs. Both use chest4.
     Other complex armor remains unsupported; default body meshes are not clothing.
     Native target masks: head1, chest4, legs8; dog chest also4.
     """
@@ -181,6 +197,5 @@ def armor_rules():
         result[identity]={'slot':slot,'dog':values.get('dogs_only')=='1','level':int(values.get('level_required','0'))}
         if values.get('freaks_only')=='1':result[identity]['miner']=True
         if values.get('woman_only')=='1':result[identity]['female']=True
-        if female_exo:result[identity]['covers']=(4,8)
-        if tank:result[identity]['covers']=(1,4,8)
+        if female_exo or tank:result[identity]['covers']=(1,4,8)
     return result

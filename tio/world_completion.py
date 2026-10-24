@@ -122,12 +122,19 @@ def players(db, *, sort='rating', limit=100):
         if error.name!='tio.achievement_benefits':raise
         total_rating=lambda db,account,base:base
     from .rating_visibility import excluded
-    logins={r[0] for r in db.execute('SELECT login FROM accounts') if not excluded(db,r[0])};owners=set(logins)
+    logins={r[0] for r in db.execute('SELECT login FROM accounts') if not excluded(db,r[0],include_retired=False)};owners=set(logins)
     if exists(db,'character_identities'):
         for login,slot,owner in db.execute('SELECT login,slot,owner FROM character_identities'):
             if login in logins:
                 if owner!=alias(login,slot):raise ValueError('Corrupt public character identity')
                 owners.add(owner)
+    from .character_lifecycle import exists as has_revisions, valid_key
+    if has_revisions(db):
+        for login, slot, owner in db.execute('SELECT login,slot,owner FROM character_revisions WHERE deleted_at IS NULL'):
+            if login in logins:
+                if not valid_key(login, slot, owner):raise ValueError('Corrupt public character identity')
+                owners.add(owner)
+    owners = {owner for owner in owners if not excluded(db, owner)}
     characters=list(db.execute('SELECT account,name,name_key FROM characters WHERE slot=1'))
     ratings=dict(db.execute('''SELECT s.account,SUM(s.rating) FROM soldier_ratings s
         JOIN owned_pets p ON p.account=s.account AND p.pet_id=s.pet_id GROUP BY s.account''')) if exists(db,'soldier_ratings') and exists(db,'owned_pets') else {}
