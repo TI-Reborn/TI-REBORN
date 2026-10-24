@@ -36,6 +36,7 @@ MODULES = (
     'test_clan_crest_projections',
     'test_premium_credits_policy',
     'test_warehouse_resources',
+    'test_upgrade_kit_stacking',
     'test_repair_warehouse_regression',
     'test_area_fire',
     'test_friends',
