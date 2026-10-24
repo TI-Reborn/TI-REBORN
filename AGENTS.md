@@ -8,33 +8,33 @@ The user wants updates deployed and verified on the hosting server as part of ga
 
 Known deployment target from project documentation: root@185.184.42.88, service tio-server, code /opt/tio-emulator, configuration /etc/tio-server/server.toml, data /var/lib/tio-server. SSH authentication must be configured; do not assume connectivity or report deployment without verifying it.
 
-# Принципы разработки
+# Development principles
 
-Обязательны для автора и каждого агента на любом языке (решение автора от 18.10.2026). Перед написанием кода понять, какую одну обязанность он выполняет и куда относится по архитектуре (`docs/ARCHITECTURE.md`, `CONTRIBUTING.md`). Принципы относятся к новому и изменяемому коду; существующие пути и API не переносить и не переформатировать массово вне отдельного PR.
+User direction (2026-10-23): these principles are binding for the author and every agent, in any language. Before writing code, understand the single responsibility it serves and where it belongs in the architecture (docs/ARCHITECTURE.md, CONTRIBUTING.md). They apply to new and modified code; do not move existing paths and APIs or mass-reformat existing code outside a dedicated PR.
 
-1. Одна обязанность (SRP). У модуля, класса и функции одна причина меняться. Игровые правила, хранение данных, сетевой протокол, координация сессий и представление — разные обязанности. Не создавать классы там, где достаточно функции.
-2. Открыт для расширения (OCP). Новое поведение добавлять новыми обработчиками, стратегиями, реализациями интерфейсов или записями данных, а не каскадами условий. Абстракции — только по реальной необходимости: простая правка в одном месте допустима, если она понятнее и безопаснее.
-3. Подстановка Лисков (LSP). Реализация интерфейса или наследник соблюдает контракт: предусловия, постусловия, ошибки, поведение. Без заглушек «не реализовано» и фиктивных результатов. Несовместимые возможности — разные интерфейсы.
-4. Узкие интерфейсы (ISP). Небольшие интерфейсы и понятные публичные API. Потребитель зависит только от нужного ему.
-5. Зависимость от абстракций (DIP). Зависимости передавать явно через аргументы и конструкторы. Без глобального изменяемого состояния, скрытых зависимостей и одиночек. Время, случайность, сеть, файлы и БД делать подставляемыми, когда это нужно для тестов.
-6. Один источник правды (DRY). Не дублировать игровые правила, формулы, форматы и алгоритмы. Не объединять похожий код, если у него разные причины меняться.
-7. Простота (KISS, YAGNI). Самое простое решение под текущее требование, без слоёв и фабрик «на будущее». Предпочитать стандартную библиотеку языка; новые внешние зависимости — только по решению владельца.
-8. Композиция вместо наследования. Наследование — только для настоящего отношения «является» с общим контрактом.
-9. Разделение слоёв. Правила не зависят от сети, HTTP, БД и инфраструктуры. Координация сценариев, хранение и адаптеры внешних форматов — отдельно. Зависимости направлены к правилам.
-10. Чистые функции. Вычисления отделять от побочных эффектов; ввод-вывод, БД, сеть и логирование держать на границах, чтобы логику можно было тестировать без внешних ресурсов.
-11. Читаемость. Соглашения стиля языка, понятные имена, короткие функции, ранний выход. Не скрывать побочные эффекты за неожиданными именами. Комментарии объясняют причины и ограничения, а не пересказывают код.
-12. Явные ошибки. Клиент недоверенный, сервер авторитетен: входные данные проверять на границах. Не перехватывать все ошибки без необходимости, не глотать их, не возвращать фиктивные значения вместо сбоя. Деньги и предметы менять атомарно; учитывать повторные запросы, reconnect и одновременный доступ. Ожидания, блокировки, повторы и сетевые операции — с тайм-аутами и пределами.
-13. TDD. Цикл «красный → зелёный → рефакторинг». Для дефекта сначала регрессионный тест. Каждый тест проверяет конкретное поведение; внешние зависимости подменять. Для мультиплеерных функций проверять несколько аккаунтов. Не подменять проверку логики проверкой вызовов моков.
-14. Типы — часть контракта. Публичные функции и границы модулей типизировать средствами языка. Типы не заменяют проверку внешних данных.
-15. Ресурсы и состояние. Файлы, соединения, блокировки и сокеты освобождать явно и гарантированно. Общее изменяемое состояние — только при необходимости и под синхронизацией.
-16. Конкурентность — по требованию задачи. Не смешивать модели конкурентности без явной границы. Учитывать отмену, тайм-ауты, ошибки и корректное завершение.
-17. Проверки перед завершением. Запускать тесты и инструменты, принятые для компонента. Не объявлять задачу завершённой, если проверки не запускались или упали. Раздельно сообщать, что проверено автотестами, что — настоящими клиентами, а что не проверено.
+1. Single responsibility (SRP). A module, class or function has one reason to change. Game rules, data storage, the network protocol, session coordination and presentation are separate responsibilities. Do not create classes where a plain function is enough.
+2. Open for extension (OCP). Add new behaviour through new handlers, strategies, interface implementations or data entries rather than growing conditional chains. Introduce abstractions only when actually needed: a simple change in one place is fine if it is clearer and safer.
+3. Liskov substitution (LSP). An interface implementation or subclass honours the contract: preconditions, postconditions, errors and behaviour. No "not implemented" stubs or fake results. Incompatible capabilities belong in separate interfaces.
+4. Interface segregation (ISP). Small interfaces and clear public APIs. A consumer depends only on what it uses.
+5. Dependency inversion (DIP). Pass dependencies explicitly through arguments and constructors. No global mutable state, hidden dependencies or singletons. Make time, randomness, network, files and the database substitutable where tests need it.
+6. Single source of truth (DRY). Do not duplicate game rules, formulas, formats or algorithms. Do not merge similar code that has different reasons to change.
+7. Simplicity (KISS, YAGNI). Choose the simplest solution that meets the current requirement; no layers or factories "for the future". Prefer the language's standard library; new external dependencies only by owner decision.
+8. Composition over inheritance. Use inheritance only for a genuine "is-a" relationship with a shared contract.
+9. Layer separation. Rules do not depend on network, HTTP, database or infrastructure. Use-case coordination, storage and adapters for external formats are kept separate. Dependencies point toward the rules.
+10. Pure functions. Separate computation from side effects; keep I/O, database, network and logging at the boundaries so logic can be tested without external resources.
+11. Readability. Follow the language's style conventions; clear names, short functions, early returns. Do not hide side effects behind unexpected names. Comments explain reasons and constraints, not what the code already says.
+12. Explicit errors. The client is untrusted and the server is authoritative: validate input at the boundaries. Do not catch everything without need, swallow errors, or return fake values instead of failing. Change money and items atomically; account for duplicate requests, reconnects and concurrent access. Waits, locks, retries and network operations need timeouts and limits.
+13. TDD. Red, green, refactor. For a defect, write the regression test first. Each test checks one concrete behaviour; substitute external dependencies. Multiplayer features are tested with several accounts. Do not replace testing logic with testing mock calls.
+14. Types are part of the contract. Type public functions and module boundaries using the language's means. Types do not replace validation of external data.
+15. Resources and state. Release files, connections, locks and sockets explicitly and reliably. Shared mutable state only when necessary and under synchronization.
+16. Concurrency only when the task needs it. Do not mix concurrency models without a clear boundary. Handle cancellation, timeouts, errors and clean shutdown.
+17. Checks before completion. Run the tests and tools adopted for the component. Do not declare a task done if checks were not run or failed. Report separately what automated tests verified, what real game clients verified, and what remains unverified.
 
-## Python-код сервера
+## Python server code
 
-- Только стандартная библиотека; код совместим с Python 3.11 (`requires-python`).
-- PEP 8, аннотации типов; `Protocol`, `dataclass`, `Enum`, `TypedDict` по необходимости. Ресурсы через `with`, без изменяемых значений по умолчанию.
-- Правила — `tio/`, координация — `server/`, пакеты клиента — `tio/protocol/`. Новых импортов `server` из `tio` не добавлять.
-- Конкурентность на потоках и `selectors`; `asyncio` не вводить без согласования.
-- Тесты на `unittest` в `tests/test_<тема>*.py`; подстановки через `unittest.mock` и временные SQLite-базы.
-- Проверки как в CI: `python tools/check_handoff.py`, `python -m server --check`, `python tools/run_server_checks.py`.
+- Standard library only; code stays compatible with Python 3.11 (requires-python).
+- PEP 8 and type annotations; Protocol, dataclass, Enum, TypedDict where useful. Manage resources with `with`; no mutable default arguments.
+- Rules live in tio/, coordination in server/, client packets in tio/protocol/. Do not add new imports of server from tio.
+- Concurrency uses threads and selectors; do not introduce asyncio without agreement.
+- Tests use unittest in tests/test_<topic>*.py; substitute dependencies with unittest.mock and temporary SQLite databases.
+- Checks as in CI: `python tools/check_handoff.py`, `python -m server --check`, `python tools/run_server_checks.py`.
