@@ -113,7 +113,7 @@ class WeightTests(unittest.TestCase):
             result=shop.purchase('alice',ShopPurchase(1,0,offer.unknown_u32_01,3))
             rounds=decode_item_list(result.inventory)[1][0]
             self.assertEqual(rounds.count,120)
-            self.assertEqual(city_weight_update(path,'alice',result.inventory),encode_weight(1,120*item_weights()[5][0],1000))
+            self.assertEqual(city_weight_update(path,'alice',result.inventory),encode_weight(1,120*item_weights()[5][0]))
             store=WarehouseStore(path,capacity=100)
             inventory,_=store.exchange('alice',1,deposits=((rounds.instance_id,100),))
             self.assertEqual(inventory_weight(inventory),20*item_weights()[5][0])
@@ -123,7 +123,7 @@ class WeightTests(unittest.TestCase):
                 projected=project_saved_pet(db,'alice',1,row[0],True)
             fields=decode_pet_info(projected,human_equipment=True).fields
             self.assertEqual(fields['0x8c4b6d'],20*item_weights()[5][0])
-            self.assertEqual(city_weight_update(path,'alice',inventory),encode_weight(1,fields['0x8c4b6d'],1000))
+            self.assertEqual(city_weight_update(path,'alice',inventory),encode_weight(1,fields['0x8c4b6d']))
 
     def test_survival_first_turn_and_visibility_snapshot_apply_overload(self):
         from tio.abilities import AbilityCatalog,AbilityLevel

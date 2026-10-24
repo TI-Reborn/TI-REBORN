@@ -12,7 +12,7 @@ from tio.battle_recovery import save_wounds
 from tio.owned_pets import OwnedPetStore
 from tio.protocol.item_list import ItemRecord, encode_item_list
 from tio.protocol.pet_info import decode_pet_info, encode_pet_info
-from tio.weight import city_profile_weight_update, encode_weight
+from tio.weight import city_profile_weight_update, city_weight_update, encode_weight
 
 
 class RecoveryWeightTcpTests(unittest.TestCase):
@@ -28,6 +28,10 @@ class RecoveryWeightTcpTests(unittest.TestCase):
             ammo = ItemRecord(500, 3, bytes(2), count, 0, 0, (1, 1, 1), bytes(4), None, bytes(3))
             OwnedPetStore(self.case.config.database).ensure(
                 name, raw, encode_item_list(1, (ammo,)), human=True)
+            other = encode_pet_info(replace(pet, fields={**pet.fields, '0x8c43eb': 2,
+                                                        '0x8c44a6': 2}))
+            OwnedPetStore(self.case.config.database).ensure(
+                name, other, encode_item_list(2, ()), human=True)
         self.case.start()
         self.peers = {}
         self.now = [1000.]
@@ -56,12 +60,14 @@ class RecoveryWeightTcpTests(unittest.TestCase):
             if packet[:1] != b'\x66':
                 continue
             fields = decode_pet_info(packet, human_equipment=True).fields
-            self.assertEqual(fields['0x8c4b6d'], expected)
+            identity = fields['0x8c43eb']
+            weight = expected if identity == 1 else 0
+            self.assertEqual(fields['0x8c4b6d'], weight)
             self.assertLess(index+1, len(rows), 'Profile refresh needs a weight follow-up')
             update = rows[index+1]
             self.assertEqual(update[:1], b'\x4e', 'Native profile refresh resets the weight display')
-            self.assertEqual(struct.unpack('<BIIIIIIB', update),
-                             (0x4e, 1, 2, 7, fields['0x8c4b57'], 6, expected, 0))
+            self.assertEqual(struct.unpack('<BIIIIB', update),
+                             (0x4e, identity, 1, 6, weight, 0))
 
     def test_healing_keeps_both_accounts_weight_stable_for_three_ticks(self):
         for hp in (51, 52, 53):
@@ -91,11 +97,11 @@ class CityProfileWeightTests(unittest.TestCase):
 
     def test_absolute_update_preserves_weight_above_petinfo_word_limit(self):
         self.assertEqual(city_profile_weight_update(self.path, 'alice', self.pet),
-                         encode_weight(1, 70000, 1000))
+                         encode_weight(1, 70000))
 
     def test_same_pet_id_in_other_account_has_its_own_weight(self):
         self.assertEqual(city_profile_weight_update(self.path, 'bob', self.pet),
-                         encode_weight(1, 0, 1000))
+                         encode_weight(1, 0))
 
     def test_unknown_pet_does_not_fabricate_a_zero_weight_update(self):
         foreign = self.pet[:1]+(999).to_bytes(4, 'little')+self.pet[5:]
@@ -108,8 +114,20 @@ class CityProfileWeightTests(unittest.TestCase):
             before = db.execute('SELECT * FROM owned_pets ORDER BY account,pet_id').fetchall()
             for _ in range(3):
                 self.assertEqual(city_profile_weight_update(self.path, 'alice', projected),
-                                 encode_weight(1, 70000, 1000))
+                                 encode_weight(1, 70000))
             self.assertEqual(db.execute('SELECT * FROM owned_pets ORDER BY account,pet_id').fetchall(), before)
+
+    def test_empty_squadmate_refresh_cannot_repaint_selected_fighters_weight(self):
+        # Native status7 redraws the global city/selection scale even for a
+        # nonselected fighter. Status6 has the required selection check.
+        pet = decode_pet_info(self.pet, human_equipment=True)
+        other = encode_pet_info(replace(pet, fields={**pet.fields, '0x8c43eb': 2,
+                                                    '0x8c44a6': 2}))
+        empty = encode_item_list(2, ())
+        OwnedPetStore(self.path).ensure('alice', other, empty, human=True)
+        expected = struct.pack('<BIIIIB', 0x4e, 2, 1, 6, 0, 0)
+        self.assertEqual(city_profile_weight_update(self.path, 'alice', other), expected)
+        self.assertEqual(city_weight_update(self.path, 'alice', empty), expected)
 
 
 if __name__ == '__main__':
