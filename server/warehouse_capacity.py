@@ -6,6 +6,7 @@ Legacy/overflow items remain accessible without consuming private city slots.
 """
 from contextlib import closing, contextmanager
 from contextvars import ContextVar
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 import hashlib
@@ -21,7 +22,7 @@ from tio.protocol.warehouse import (encode_private_warehouse_snapshot,
     encode_warehouse_list, warehouse_item_from_inventory, WarehouseItem,
     decode_warehouse_list)
 from tio.protocol.warehouse_capacity import OPT_IN, Snapshot, encode_snapshot, encode_clear
-from tio.protocol.transport import encode_initial_frame
+from tio.protocol.transport import InitialCipher, encode_initial_frame
 
 
 @dataclass
@@ -67,7 +68,7 @@ _read_snapshot = ContextVar('tio_warehouse_read_snapshot', default=None)
 
 
 def _preflight(session):
-    from .economy_runtime import city_idle, busy_accounts
+    from .economy_runtime import city_idle
     router, login = _active(session)
     owner = getattr(session, 'account', None)
     slot = getattr(session, 'selected_character_slot', 1)
@@ -75,7 +76,10 @@ def _preflight(session):
     if (not getattr(session, 'owned_pet_probe', False) or type(character) is not int
             or not 0 < character <= 0xffffffff or alias(login, slot) != owner):
         raise ValueError('Owned selected character required')
-    if not city_idle(session) or owner in busy_accounts(router):
+    # city_idle includes this owner's shared/private battle leases. The SQL
+    # snapshot below rechecks persisted leases; unrelated sessions do not
+    # participate in authorising this owner's personal or clan warehouse.
+    if not city_idle(session):
         raise ValueError('Warehouse is available in an idle city only')
     return (login, owner, slot, character), session.locations.current(owner)
 
@@ -227,6 +231,8 @@ def transfer(session, packet, *, capacity):
         # Store scopes cannot commit the outer unit. Re-read only after commit.
         fresh = query(session, bytes((0x69, request.warehouse_type)))
         if fresh is None: raise PacketError('Unknown transfer warehouse kind')
+        from .economy_runtime import note_warehouse_transfer
+        note_warehouse_transfer(session, packets)
         result = []
         inserted = False
         for packet in packets:
@@ -234,6 +240,21 @@ def transfer(session, packet, *, capacity):
                 if not inserted: result.extend(fresh); inserted = True
             else: result.append(packet)
         return tuple(result)
+
+
+def encode_transfer_replies(
+        database: str | Path, replies: tuple[bytes, ...], cipher: InitialCipher,
+        encode_reply: Callable[[bytes, InitialCipher], bytes]) -> bytes:
+    """Project a committed transfer's replies on one short SQL unit.
+
+    City weight, armor, marks and counters otherwise reopen the same database
+    many times. Nested projectors join this unit; no frames leave until commit.
+    The item transfer itself has already committed independently.
+    """
+    with transaction(database):
+        return b''.join(encode_initial_frame(reply, cipher)
+                        if reply[:1] in (b'\xfa', b'\x6a') else encode_reply(reply, cipher)
+                        for reply in replies)
 
 
 def _invalidate(value, *, disable=True):

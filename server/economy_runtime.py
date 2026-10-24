@@ -3,7 +3,7 @@ from contextlib import closing
 import hashlib
 import time
 
-from tio.db_transaction import connect,transaction
+from tio.db_transaction import connect,transaction,current
 from tio.bank_economy import BankStore,expire_marks,project_marks
 from tio.private_shops import PrivateShopStore
 from tio.sc_auction import SCAuctionStore
@@ -106,10 +106,51 @@ class SharedEconomy:
                 self.next_clan_tick=self.clock()+60
 
 
+def note_warehouse_transfer(session: object, packets: tuple[bytes, ...]) -> None:
+    """Acknowledge canonical committed replies in this session's push baseline.
+
+    This cache never supplies inventory or authorisation. Subsequent refreshes
+    still read SQL and detect deliveries, other actors and external changes.
+    """
+    if current() is not None:
+        raise ValueError('Warehouse acknowledgement requires committed gameplay')
+    identity = (getattr(session, 'account'), str(getattr(session, 'database')))
+    previous = getattr(session, '_economy_inventory_snapshot', None)
+    if (previous is None or getattr(session, '_economy_inventory_identity', None) != identity
+            or getattr(session, '_economy_inventory_digest', None) is None):
+        return
+    inventories = {int.from_bytes(packet[1:5], 'little'): packet
+                   for packet in packets if packet[:1] == b'\x30'}
+    private_stock = tuple(packet for packet in packets if packet[:5] == b'\x6a\0\0\0\0')
+    from tio.weight import project_carried_weight
+    # Transfers reject equipped items. Only carried mass changes in PetInfo;
+    # the direct ItemList reply already carries its matching 4E weight update.
+    with closing(connect(getattr(session, 'database'))) as db:
+        profiles = dict(db.execute('SELECT pet_id,human FROM owned_pets WHERE account=?',
+                                   (identity[0],)))
+    updated = []
+    for packet in previous:
+        if private_stock and packet[:5] == b'\x6a\0\0\0\0':
+            continue
+        if packet[:1] == b'\x30':
+            packet = inventories.get(int.from_bytes(packet[1:5], 'little'), packet)
+        elif packet[:1] == b'\x66':
+            owner = int.from_bytes(packet[1:5], 'little')
+            if owner in inventories:
+                packet = project_carried_weight(packet, bool(profiles[owner]), inventories[owner])
+        updated.append(packet)
+    updated.extend(private_stock)
+    canonical = tuple(updated)
+    setattr(session, '_economy_inventory_snapshot', canonical)
+    setattr(session, '_economy_inventory_digest', hashlib.sha256(b''.join(canonical)).digest())
+
+
 def refresh_inventory(session,*,force=False):
     if not city_idle(session):return ()
     packets=inventory_snapshot(session.database,session.account)
     digest=hashlib.sha256(b''.join(packets)).digest()
+    session._economy_inventory_snapshot=packets
+    session._economy_inventory_identity=(session.account,str(session.database))
     if not force and getattr(session,'_economy_inventory_digest',None)==digest:return ()
     # The native header reads C8/39, not its filtered/segmented 6A list.
     # Refresh after committed inventory changes, including another session's

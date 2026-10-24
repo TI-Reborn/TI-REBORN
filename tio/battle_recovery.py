@@ -109,6 +109,13 @@ class RecoveryStore:
                         rank_changed.discard(owner)
                 if owner in rank_changed:changed.append(encode_pet_info(pet))
                 if hp>=maximum:stamp=now
+                # Healthy/paused actors do not bank elapsed time. Preserve an
+                # unchanged clock instead of committing an idle write after
+                # every game packet. A wound, max-HP or pause transition still
+                # resets the interval, and fractional healing time is retained.
+                if (old and old[1:] == (hp, maximum, int(blocked))
+                        and (hp >= maximum or blocked or stamp == old[0])):
+                    continue
                 db.execute('INSERT INTO pet_recovery VALUES (?,?,?,?,?,?) ON CONFLICT(account,pet_id) DO UPDATE SET stamp=excluded.stamp,hp=excluded.hp,maximum=excluded.maximum,paused=excluded.paused',
                            (account,owner,stamp,hp,maximum,int(blocked)))
         return tuple(changed)
