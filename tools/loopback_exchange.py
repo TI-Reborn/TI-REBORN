@@ -841,6 +841,7 @@ class LoopbackExchange:
                 self.survival.disconnected(getattr(self,'probe_character_id',None))
                 self.events.append({'event':'client_disconnected'})
                 return
+            received_at = self.arena._clock()
             packets=reader.feed(data)
             from server.economy_runtime import private_command
             sensitive=any(private_command(p) for p in packets)
@@ -1229,7 +1230,7 @@ class LoopbackExchange:
                                 view=self.visibility_views.get(room.room_id)
                                 if view is not None:replies=(*replies,*view.refresh())
                             elif packet[:1]==b'\x3a':
-                                reply=self.arena.end_turn(self.probe_character_id,packet)
+                                reply=self.arena.end_turn(self.probe_character_id,packet,received_at=received_at)
                                 replies=self.arena.finished_turn_packets(self.probe_character_id,reply)
                                 if getattr(self,'battle_remove_probe',False):
                                     from tio.protocol.battle_remove import encode_battle_remove

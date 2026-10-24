@@ -10,11 +10,13 @@ from .protocol.arena import BattleSettings, decode_create_request, encode_battle
 from .protocol.battle_members import BattleMemberRecord, encode_battle_members
 from .protocol.arena import decode_room_ready
 from dataclasses import replace
+from collections.abc import Callable, Iterable
 import time
+from .turn_repeats import END_TURN_REPEAT_SECONDS, within_end_turn_repeat
 
 
 class ArenaService:
-    def __init__(self, *, clock=time.monotonic):
+    def __init__(self, *, clock: Callable[[], float] = time.monotonic):
         self._clock = clock
         self._settlement_inputs={}
         self.rooms = ArenaRooms()
@@ -30,6 +32,7 @@ class ArenaService:
         self._map_returned = set()
         self._scene_headers = {}
         self._turn_finish_effects = {}
+        self._end_turn_fences: dict[int, float] = {}
 
     def start_survival(self, character_id, name, prepared, *, existing_room=None):
         """Server-created training match; preparation must finish before entry.
@@ -507,7 +510,7 @@ class ArenaService:
                 template=next((i.template_id for i in items if i.instance_id==request.instance_id),0)
         return (encode_mine_deployed(MineDeployed(request.actor_id,request.x,request.y,template,4)),)
 
-    def begin_turn(self, character_id, actor_ids, seconds):
+    def begin_turn(self, character_id: int, actor_ids: Iterable[int], seconds: int) -> bytes:
         from .protocol.battle_turn import encode_your_turn
         room=next((r for r in self.rooms.snapshot() if character_id in r.members),None)
         if room is None or self._loading.get(room.room_id)!=set(room.members):
@@ -522,6 +525,9 @@ class ArenaService:
         field=self._fields.get(room.room_id)
         if field is not None:
             field.prepare_turn(character_id,sorted(actors))
+        if room.room_id in self._end_turn_fences:
+            # A queued legacy skip can arrive only after the next turn starts.
+            self._end_turn_fences[room.room_id] = self._clock() + END_TURN_REPEAT_SECONDS
         self._turns[room.room_id]=(character_id,actors,deadline)
         return reply
 
@@ -543,11 +549,27 @@ class ArenaService:
         extraction=() if mining is None or getattr(mining,'shared',False) or character_id!=mining.owner else mining.advance(max(field._ability_turns[i] for i in actors))
         return (*effects,*updates,*weights,*skills,*extraction,reply)
 
-    def end_turn(self, character_id, packet):
+    def end_turn(self, character_id: int, packet: bytes, *,
+                 received_at: float | None = None) -> bytes | None:
+        """Finish an owned turn, or ignore a recent range skip repeat."""
         from .protocol.battle_turn import decode_end_turn,encode_your_turn_finished
         actor=decode_end_turn(packet)
         room=next((r for r in self.rooms.snapshot() if character_id in r.members),None)
         turn=None if room is None else self._turns.get(room.room_id)
+        field = None if room is None else self._fields.get(room.room_id)
+        if getattr(field, 'practice', None) is not None:
+            if actor and actor not in field.actor_ids(character_id):
+                raise ValueError('Actor does not belong to the turn owner')
+            fence = self._end_turn_fences.get(room.room_id)
+            # The transport timestamps recv(), before expensive journal work.
+            # All frames received together belong to the same bounded tail,
+            # even when dispatch of the third frame happens after its expiry.
+            if received_at is None:
+                repeat = within_end_turn_repeat(fence or 0, self._clock())
+            else:
+                repeat = fence is not None and received_at < fence
+            if repeat:
+                return None
         if turn is None or turn[0]!=character_id:raise ValueError('Character does not own the current turn')
         if self._clock()>=turn[2]:raise ValueError('Turn deadline has expired')
         if actor and actor not in turn[1]:raise ValueError('Actor does not belong to the turn owner')
@@ -557,10 +579,12 @@ class ArenaService:
         self._last_turn[room.room_id]=character_id
         return reply
 
-    def clear_finished_ap(self, room_id, turn):
+    def clear_finished_ap(self, room_id: int, turn: tuple[int, frozenset[int], float]) -> None:
         from dataclasses import replace
         field=self._fields.get(room_id)
         if field is not None:
+            if getattr(field, 'practice', None) is not None:
+                self._end_turn_fences[room_id] = self._clock() + END_TURN_REPEAT_SECONDS
             from .battle_item_effects import end_turn
             combat=getattr(field,'combat',None)
             effect_actors=turn[1] if getattr(field,'battle_mode',None)==21 else field.actor_ids(turn[0])
@@ -568,8 +592,11 @@ class ArenaService:
             for identity in field.living_actor_ids(turn[0]):
                 field._actors[identity]=replace(field.actor(identity),action_points=0)
 
-    def finished_turn_packets(self, character_id, reply=b'\x39'):
+    def finished_turn_packets(self, character_id: int, reply: bytes | None = b'\x39') -> tuple[bytes, ...]:
         """Clear displayed AP before native TurnFinished disables battle input."""
+        if reply is None:
+            # A repeat must not disable input/AP or tick effects on the new turn.
+            return ()
         from .protocol.action_points import encode_action_points
         room=next((r for r in self.rooms.snapshot() if character_id in r.members),None)
         field=None if room is None else self._fields.get(room.room_id)
@@ -701,6 +728,8 @@ class ArenaService:
         for field in self._fields.values():
             field.remove_owner(character_id)
         self._last_turn={room_id:owner for room_id,owner in self._last_turn.items() if room_id in live_rooms}
+        self._end_turn_fences = {room_id: deadline for room_id, deadline in self._end_turn_fences.items()
+                                 if room_id in live_rooms}
         remaining={member for room in self.rooms.snapshot() for member in room.members}
         for member in affected:
             if member not in remaining:self._records.pop(member,None)
