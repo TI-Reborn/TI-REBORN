@@ -16,6 +16,8 @@ from .protocol.item_list import ItemRecord, decode_item_list, encode_item_list
 from .protocol.rental import RentalOffer, encode_rental_catalog, decode_rental_request
 from .protocol.asset_count import AssetCount, encode_asset_count
 from .protocol.warehouse import encode_private_warehouse_snapshot
+from .item_catalog import items_root
+from functools import lru_cache
 
 
 def eligible_rental_items(rules):
@@ -31,12 +33,16 @@ def eligible_rental_items(rules):
             if sources.get(identity,{}).get('weaponAttack')!='Suicide'}
 
 
+@lru_cache(maxsize=1)
+def complex_armor():
+    return frozenset(int(n.get('id')) for n in items_root()
+                     if any(v.get('key') == 'bodypart' and v.get('val') == 'complexarmor' for v in n))
+
+
 def rental_tax_units(inventory):
     """Manual: 22.5% per worn rental, full-body armor counts as three."""
-    import xml.etree.ElementTree as ET
-    complex_armor = {int(n.get('id')) for n in ET.parse(ROOT/'evidence/items_diagnostic.xml').getroot()
-                     if any(v.get('key') == 'bodypart' and v.get('val') == 'complexarmor' for v in n)}
-    return min(4, sum(3 if i.template_id in complex_armor else 1
+    complex_armor_ids = complex_armor()
+    return min(4, sum(3 if i.template_id in complex_armor_ids else 1
                       for i in decode_item_list(inventory)[1] if i.equipped and i.unknown_bytes_02[3]))
 
 

@@ -6,6 +6,7 @@ for a positive hit. This is emulator balance, not a recovered server formula.
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from .protocol.item_list import decode_item_list
+from .item_catalog import items_root
 
 
 class ArmorCatalog:
@@ -16,7 +17,7 @@ class ArmorCatalog:
         rules=armor_rules()
         self.slot_rules = rules
         self.items={}
-        for item in ET.parse(Path(__file__).resolve().parents[1]/'evidence/items_diagnostic.xml').getroot().iter('item'):
+        for item in items_root().iter('item'):
             v={x.get('key'):x.get('val') for x in item.findall('value')}
             slot={'head':1,'chest':4,'legs':8}.get(v.get('bodypart'))
             identity=int(item.get('id'))

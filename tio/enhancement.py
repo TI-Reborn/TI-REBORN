@@ -12,6 +12,7 @@ import xml.etree.ElementTree as ET
 from .owned_pets import OwnedPetStore
 from .protocol.item_list import decode_item_list, encode_item_list
 from .protocol.enhancement import decode_enhancement_request, encode_enhancement_result
+from .item_catalog import items_root
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -33,7 +34,7 @@ class EnhancementRules:
         eligible_weapons = {i for i, w in weapons.weapons.items()
                             if i not in (300, 333, 337) and (w.weapon_type != 'Throwing' or i == 316)}
         self.items = {}
-        for node in ET.parse(ROOT/'evidence/items_diagnostic.xml').getroot().iter('item'):
+        for node in items_root().iter('item'):
             identity = int(node.get('id'))
             values = {v.get('key'): v.get('val') for v in node.findall('value')}
             # Manual p75 explicitly describes upgrading miner armor. The

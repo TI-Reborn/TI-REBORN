@@ -15,6 +15,7 @@ import re
 import sqlite3
 import xml.etree.ElementTree as ET
 from .protocol.achievements import decode_request,encode_list,encode_awards
+from .item_catalog import items_root
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -146,7 +147,7 @@ def settle_battle(db,account,report,result,*,escaped=False):
 @lru_cache(maxsize=1)
 def item_definitions():
     return {int(n.get('id')):{v.get('key'):v.get('val') for v in n.findall('value')}
-            for n in ET.parse(ROOT/'evidence/items_diagnostic.xml').getroot().iter('item')}
+            for n in items_root().iter('item')}
 
 
 class AchievementStore:

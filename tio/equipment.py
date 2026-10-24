@@ -15,6 +15,8 @@ from .owned_pets import OwnedPetStore
 from .protocol.item_action import TARGET_MASKS
 from .protocol.item_action import decode_item_action
 from .protocol.item_list import decode_item_list, encode_item_list
+from .item_catalog import items_root
+from functools import lru_cache
 
 
 class EquipmentRejected(ValueError):
@@ -177,16 +179,20 @@ def swap_city_weapons(path, account, packet):
 
 
 def armor_rules() -> dict[int, ArmorRule]:
+    """Fresh copy of the cached armor rules (callers and snapshots may own it)."""
+    return {identity: dict(rule) for identity, rule in _armor_rules().items()}
+
+
+@lru_cache(maxsize=1)
+def _armor_rules() -> dict[int, ArmorRule]:
     """Use the same client-derived catalog delivered to the game, not item names.
 
     Female Exo and Tank cover head/chest/legs. Both use chest4.
     Other complex armor remains unsupported; default body meshes are not clothing.
     Native target masks: head1, chest4, legs8; dog chest also4.
     """
-    from pathlib import Path
-    import xml.etree.ElementTree as ET
     result={}
-    for item in ET.parse(Path(__file__).resolve().parents[1]/'evidence/items_diagnostic.xml').getroot().iter('item'):
+    for item in items_root().iter('item'):
         values={v.get('key'):v.get('val') for v in item.findall('value')}
         identity=int(item.get('id'))
         slot={'head':1,'chest':4,'legs':8}.get(values.get('bodypart'))
