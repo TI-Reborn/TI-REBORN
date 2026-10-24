@@ -66,6 +66,7 @@ MODULES = (
     'test_gameplay_audit',
     'test_character_deletion',
     'test_mine_turn_repeats',
+    'test_mine_inventory_weight',
     'test_shooting_range_turn_repeats',
     'test_armor_equipment',
     'test_enhancement',

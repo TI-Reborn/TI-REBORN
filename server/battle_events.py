@@ -12,6 +12,31 @@ from tio.protocol.battle_attack import decode_attack_result, encode_attack_resul
 from tio.protocol.action_points import encode_action_points
 from tio.protocol.health import encode_health
 from tio.protocol.battle_soldier import decode_battle_soldier
+from tio.battle_state import BattleField
+
+
+def with_inventory_weights(field: BattleField, owner: int,
+                           packets: tuple[bytes, ...]) -> tuple[bytes, ...]:
+    """Pair owned inventory replies with the committed battlefield weight.
+
+    Shared scenes bypass the private transport's ItemList/weight pairing.
+    Use live battle inventories: saved city bags exclude temporary drills,
+    and equipment previews must not change authoritative carrying bonuses.
+    """
+    replies = []
+    combat = field.combat
+    for packet in packets:
+        replies.append(packet)
+        if packet[:1] != b'\x30':
+            continue
+        identity = int.from_bytes(packet[1:5], 'little')
+        actor = field._actors.get(identity)
+        if actor is None or actor.owner_id != owner or identity not in combat.inventories:
+            continue
+        weight = combat.weight_packet(identity)
+        if weight is not None and weight not in packets:
+            replies.append(weight)
+    return tuple(replies)
 
 
 def movement_packets(view, before, packet):

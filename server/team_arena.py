@@ -101,10 +101,14 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
                     self.put(target,reply)
             LOG.info('battle_chat match=%s owner=%d channel=%d',battle['match_id'],owner,channel)
 
-    def put(self, owner, *packets):
+    def put(self, owner: int, *packets: bytes) -> None:
         if owner in self.offline:return
         q=self.queues.get(owner)
         if q is None:return
+        battle = self.battles.get(owner)
+        if battle is not None:
+            from .battle_events import with_inventory_weights
+            packets = with_inventory_weights(battle['field'], owner, packets)
         if len(q)+len(packets)>2048:
             self.players[owner].stop()
             return
