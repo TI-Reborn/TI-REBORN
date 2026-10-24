@@ -57,6 +57,7 @@ MODULES = (
     'test_shared_warehouse',
     'test_warehouse_latency',
     'test_warehouse_errors',
+    'test_recovery_weight_display',
     'test_city_inventory',
     'test_city_inventory_wait',
     'test_sc_shop_locations',
