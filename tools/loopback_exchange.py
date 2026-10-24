@@ -601,6 +601,8 @@ class LoopbackExchange:
                 # total, so health/skill refreshes cannot accumulate armor.
                 from tio.armor_display import project_city_pet
                 packet=project_city_pet(self.database,self.account,packet)
+                from tio.weight import city_profile_weight_update
+                weight_update=city_profile_weight_update(self.database,self.account,packet)
             if packet[:2]==b'\xc8\x39' and self.mining is not None:
                 from tio.protocol.asset_count import decode_asset_count
                 packet=encode_asset_count(self.mining.market.project(self.account,decode_asset_count(packet)))
