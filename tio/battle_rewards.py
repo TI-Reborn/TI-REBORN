@@ -96,12 +96,14 @@ def settle(path,account,match_id,result,*,health=None,rental_tax=0,rank_report=N
         from .premium import state,experience_multiplier
         premium_kind,_=state(db,account,now)
         numerator,denominator=experience_multiplier(db,account,now)
-        experience_factor=repeat*Fraction(numerator,denominator)
+        progression_factor=repeat
+        experience_factor=progression_factor*Fraction(numerator,denominator)
         frozen=None
         if db.execute("SELECT 1 FROM sqlite_master WHERE name='world_city_matches'").fetchone():
             if db.execute('SELECT 1 FROM world_city_matches WHERE match_id=?',(match_id,)).fetchone():
                 from .world_completion import frozen_city
                 frozen=frozen_city(db,match_id)
+                progression_factor*=Fraction(frozen['experience'])
                 experience_factor*=Fraction(frozen['experience'])
                 if frozen['town_id']==4:rank_report={}
         if premium_kind and contract_report is None:
@@ -126,12 +128,16 @@ def settle(path,account,match_id,result,*,health=None,rental_tax=0,rank_report=N
             bonus = {int(identity): value for identity, value in contract_report['bonus_experience'].items()} if contract_report else {}
             if any(experience_report.get(identity, 0) < value for identity, value in bonus.items()):
                 raise ValueError('Contract experience bonus missing from report')
+            # Anti-experience suppresses level XP, not the combat contribution
+            # used for clan influence. Keep repeat/city limits on both paths.
+            influence_factor=experience_factor if numerator else progression_factor
+            influence_report={i:min(MAX_XP,(n-bonus.get(i,0))*influence_factor.numerator//influence_factor.denominator+bonus.get(i,0)) for i,n in experience_report.items()}
             experience_report={i:min(MAX_XP,(n-bonus.get(i,0))*experience_factor.numerator//experience_factor.denominator+bonus.get(i,0)) for i,n in experience_report.items()}
             settle_experience(db,account,match_id,experience_report)
             from .clans import settle_influence
             from .cities import CITIES
             city=CITIES.get(reward_context.town_id) if reward_context is not None else None
-            settle_influence(db,account,experience_report,identity=match_id,
+            settle_influence(db,account,influence_report,identity=match_id,
                 city_coefficient=Fraction(frozen['influence']) if frozen is not None else 1 if city is None else city.influence,now=now)
         if rank_report:
             from .ranks import settle_ranks

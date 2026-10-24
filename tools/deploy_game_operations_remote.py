@@ -25,9 +25,36 @@ SCOPES['bank-trade']=SCOPES['bank']|SCOPES['trade']
 SCOPES['battle-screen-fixes']=frozenset(('server/team_arena.py','tio/visibility.py'))
 SCOPES['bot-finishing']=frozenset(('tio/tactical_bot.py','tio/bot_finishing.py'))
 SCOPES['bot-credit-rewards']=frozenset(('tio/reward_policy.py','server/team_arena.py'))
+SCOPES['encounter-movement']=frozenset(('tio/battle_state.py',))
+SCOPES['training-base']=frozenset(('server/training_arena.py','server/contracts_service.py'))
+SCOPES['training-strings']=frozenset(('tio/protocol/assault.py',))
+SCOPES['training-counter']=frozenset(('server/training_arena.py',))
+SCOPES['warehouse-counter-refresh']=frozenset(('server/economy_runtime.py',))
+SCOPES['mine-warehouses']=frozenset(('tio/warehouse_completion.py',))
+SCOPES['shared-warehouse']=frozenset(('tio/warehouse_completion.py','tio/warehouse_resources.py'))
+SCOPES['map-speed']=frozenset(('tio/locations.py',))
+SCOPES['premium-effects']=frozenset(('tio/premium.py','tio/battle_rewards.py'))
+SCOPES['warehouse-counters']=frozenset(('tio/clans.py','tio/protocol/asset_count.py','tio/warehouse_resources.py','tio/warehouse_service.py','server/economy_runtime.py'))
+SCOPES['ranked-cancel']=frozenset(('server/ranked_arena.py','server/team_arena.py'))
+SCOPES['crystal-quotes']=frozenset(('tio/mining_service.py',))
+SCOPES['area-fire']=frozenset(('tio/combat.py','tio/combat_rolls.py'))
+SCOPES['clan-icons']=frozenset(('server/clan_service.py','tio/protocol/clan_crests.py','tio/clan_benefits.py'))
+SCOPES['clan-crest-projections']=frozenset(('server/presence.py','server/training_arena.py'))
+SCOPES['performance']=frozenset(('server/team_arena.py','server/training_arena.py',
+    'server/economy_runtime.py','tio/performance.py','tio/owned_pets.py',
+    'tio/battle_snapshot.py','tio/db_transaction.py'))
+SCOPES['performance-lists']=frozenset(('server/team_arena.py','server/wager_arena.py'))
+SCOPES['performance-fastpaths']=SCOPES['performance-lists']|frozenset(('tio/battle_snapshot.py',))
+SCOPES['performance-read-projections']=frozenset(('tio/owned_pets.py','tio/passive_stats.py',
+    'tio/travel_party.py','tio/party_travel.py','tio/locations.py','tio/character_identity.py'))
+SCOPES['performance-through-reads']=SCOPES['performance-fastpaths']|SCOPES['performance-read-projections']
+SCOPES['performance-idle-writes']=frozenset(('tio/pve_contracts.py','tio/travel_party.py','tio/sc_auction.py'))
+SCOPES['performance-hub-contention']=frozenset(('tio/performance.py','tio/db_transaction.py',
+    'tio/territories.py','server/assault_arena.py','server/training_arena.py','server/team_arena.py'))
 SCOPES['tactical-bots']=frozenset(('tio/tactical_bot.py','tio/training_bot.py','tio/matchmaking.py',
     'tio/team_scene.py','tio/visibility.py','server/team_arena.py','server/battle_events.py','config/survival.json'))
 KEEP_TABLES=('accounts','characters','owned_pets','wallets','warehouse_items','clans','clan_members')
+SCOPES['repair-from-warehouse']=frozenset(('tio/repair.py','tools/loopback_exchange.py'))
 
 
 def digest(path):
@@ -47,7 +74,7 @@ def snapshot(db):
     return result
 
 
-def idle(maintenance_restart=False):
+def idle(maintenance_restart=False, *, check_travel=False):
     sockets=run('ss','-Htn','state','established',
         '( sport = :28512 or sport = :28513 or sport = :29512 or sport = :29513 )').stdout.strip()
     if sockets and not maintenance_restart:raise RuntimeError('Players are connected; deployment deferred')
@@ -55,6 +82,16 @@ def idle(maintenance_restart=False):
         for table in ('battle_checkpoints','battle_checkpoint_members','battle_settlement_jobs'):
             if db.execute('SELECT 1 FROM '+table+' LIMIT 1').fetchone():
                 raise RuntimeError('Retained gameplay exists; deployment deferred: '+table)
+        if check_travel:
+            idle_routes(db)
+
+
+def idle_routes(db):
+    # Old-speed timestamps must not coexist with a faster advertised 1A speed.
+    # Completed offline routes may remain saved and require no alteration.
+    for table in ('map_journeys','travel_party_journeys'):
+        if db.execute('SELECT 1 FROM '+table+' WHERE arrives>? LIMIT 1',(time.time(),)).fetchone():
+            raise RuntimeError('Map travel is in progress; speed deployment deferred')
 
 
 def main():
@@ -81,7 +118,7 @@ def main():
         if digest(ROOT/path)!=expected:raise RuntimeError('Remote runtime changed: '+path)
     if run('systemctl','is-active','tio-server').stdout.strip()!='active':
         raise RuntimeError('Game service is not active')
-    if not args.prepare_only:idle(args.maintenance_restart)
+    if not args.prepare_only:idle(args.maintenance_restart,check_travel=args.scope=='map-speed')
     stage=Path('/opt')/('tio-operation-validation-'+args.backup.name.removeprefix('tio-before-game-operations-'))
     stage.mkdir(mode=0o755)
     for name in ('server','tio','tools','config','evidence'):
@@ -126,7 +163,7 @@ def main():
                     local_player_data_uploaded=False,database_restored=False)
         (args.backup/'preparation.json').write_text(json.dumps(report,indent=2))
         print(json.dumps(report));return
-    idle(args.maintenance_restart)
+    idle(args.maintenance_restart,check_travel=args.scope=='map-speed')
     for path,record in manifest.items():
         if digest(ROOT/path)!=record['before']:raise RuntimeError('Code changed before cutover: '+path)
     if digest(CONFIG)!=config_hash:raise RuntimeError('Configuration changed')
@@ -138,6 +175,7 @@ def main():
             for table in ('battle_checkpoints','battle_checkpoint_members','battle_settlement_jobs'):
                 if source.execute('SELECT 1 FROM '+table+' LIMIT 1').fetchone():
                     raise RuntimeError('Gameplay appeared before shutdown; code replacement cancelled')
+            if args.scope=='map-speed':idle_routes(source)
             source.backup(target);before=snapshot(source)
             if target.execute('PRAGMA integrity_check').fetchone()!=('ok',):raise RuntimeError('Cutover backup integrity failed')
         backup_receipt['at_cutover_sha256']=digest(args.backup/'at-cutover.sqlite3')

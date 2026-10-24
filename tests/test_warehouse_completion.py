@@ -1,4 +1,4 @@
-"""City isolation, legacy preservation and real scoped-consumer transactions."""
+"""Shared location access, owner isolation and real consumer transactions."""
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 from dataclasses import replace
@@ -105,22 +105,19 @@ class WarehouseCompletionTests(unittest.TestCase):
             self.assertEqual((status['capacity'],status['used'],status['legacy'],status['accessible']), (32,1,100,101))
             self.assertEqual(db.execute('SELECT COUNT(*) FROM warehouse_places').fetchone()[0], 1)
 
-    def test_city_and_account_isolation_reserves_hidden_ids_and_whole_metadata(self):
+    def test_cities_share_stock_while_account_isolation_and_ids_are_preserved(self):
         self.inventory((replace(self.gun, instance_id=5000),))
         self.store.exchange('alice',1,deposits=((5000,1),))
         self.location('alice',2)
-        self.assertEqual(self.store.items('alice'), ())
+        self.assertEqual(self.store.items('alice'), (replace(self.gun,instance_id=5000),))
         before = self.state()
-        for account in ('alice','bob'):
-            with self.assertRaises(ValueError): self.store.exchange(account,1,withdrawals=((5000,1),))
-            self.assertEqual(self.state(), before)
+        with self.assertRaises(ValueError): self.store.exchange('bob',1,withdrawals=((5000,1),))
+        self.assertEqual(self.state(),before)
         ammo = replace(self.gun, instance_id=1, template_id=3, unknown_u32_01=50, unknown_words=(1,)*3)
         self.inventory((ammo,))
         self.store.exchange('alice',1,deposits=((1,20),))
-        item = self.store.items('alice')[0]
-        self.assertEqual((item.instance_id,item.count), (5001,20))
         self.location('alice',3)
-        self.assertEqual(self.store.items('alice'), (replace(self.gun,instance_id=5000),))
+        self.assertEqual([(i.instance_id,i.count) for i in self.store.items('alice')],[(5000,1),(5001,20)])
 
     def test_capacity32_and_paid_service8_16_legacy_does_not_consume_city_slots(self):
         self.stash(32)
@@ -138,14 +135,14 @@ class WarehouseCompletionTests(unittest.TestCase):
     def test_durable_delivery_overflow_retains_origin_id_and_withdraws_elsewhere(self):
         delivered = self.stash(33, origin='mail:accepted-1')
         self.location('alice',2)
-        self.assertEqual(self.store.items('alice'), (delivered[-1],))
+        self.assertEqual(self.store.items('alice'), delivered)
         result,_ = self.store.exchange('alice',1,withdrawals=((132,1),))
         self.assertEqual(decode_item_list(result)[1], (delivered[-1],))
         with transaction(self.path) as db:
             self.assertEqual(db.execute('SELECT bucket,origin FROM warehouse_places WHERE instance_id=132').fetchone(), ('overflow','mail:accepted-1'))
             self.assertEqual(completion.status(db,'alice')['stored_total'],32)
 
-    def test_merge_compaction_never_combines_remote_city_or_legacy_stacks(self):
+    def test_merge_compaction_combines_city_stacks_but_preserves_legacy(self):
         ammo = replace(self.gun, template_id=3, unknown_u32_01=50, unknown_words=(1,)*3)
         with transaction(self.path) as db:
             db.execute('INSERT INTO warehouse_items VALUES (?,?,?)', ('alice',9000,encode_item_list(0,(replace(ammo,instance_id=9000),),7)))
@@ -155,17 +152,20 @@ class WarehouseCompletionTests(unittest.TestCase):
         before = self.state()
         STACKING.compact_saved_items(self.path,'alice')
         self.assertEqual(self.state(),before)
-        self.assertEqual([(i.instance_id,i.count) for i in self.store.items('alice')],[(2,50),(9000,50)])
+        self.assertEqual([(i.instance_id,i.count) for i in self.store.items('alice')],[(1,100),(9000,50)])
 
-    def test_market_and_mail_cannot_select_remote_city_and_no_fee_is_charged(self):
+    def test_market_and_mail_can_select_stock_deposited_in_another_town(self):
         self.stash(1)
         self.location('alice',2)
-        mail = MAIL.MailStore(self.path)
         before = self.state()
-        with transaction(self.path) as db:
-            with self.assertRaises(ValueError): MARKET.take(db,'alice',100,1)
-        with self.assertRaisesRegex(ValueError, 'доступные предметы'): mail.send('alice',b'Bob','Items','Delivery',items=((100,1),),request_id='remote-mail-test-0001',now=100)
+        with self.assertRaises(RuntimeError):
+            with transaction(self.path) as db:
+                self.assertEqual(MARKET.take(db,'alice',100,1).instance_id,100)
+                raise RuntimeError('rollback probe')
         self.assertEqual(self.state(),before)
+        mail = MAIL.MailStore(self.path)
+        mail.send('alice',b'Bob','Items','Delivery',items=((100,1),),request_id='shared-mail-test-0001',now=100)
+        self.assertEqual(self.store.items('alice'),())
 
     def test_mail_claim_overflow_is_once_only_and_not_lost_on_full_city(self):
         self.stash(32,account='bob',first=1000)
@@ -177,7 +177,7 @@ class WarehouseCompletionTests(unittest.TestCase):
             self.assertEqual((completion.status(db,'bob')['used'],completion.status(db,'bob')['overflow']), (32,1))
             self.assertEqual(db.execute("SELECT COUNT(*) FROM mail_receipts WHERE action='claimed'").fetchone()[0],1)
 
-    def test_template_cannot_pull_remote_equipment_or_rewrite_other_city_rows(self):
+    def test_template_can_pull_equipment_deposited_in_another_town(self):
         from tio.protocol.equipment_templates import Element, Template
         from test_equipment_templates import save, command
         self.stash(1)
@@ -185,12 +185,9 @@ class WarehouseCompletionTests(unittest.TestCase):
         store = TEMPLATES.EquipmentTemplateStore(self.path)
         t = Template('My outfit',1,0,0,(Element(object_id=100),*[Element() for _ in range(6)]))
         identity = int.from_bytes(store.handle('alice',save(t))[1][2:],'little')
-        before = self.state()
-        with self.assertRaises(ValueError): store.handle('alice',command(4,identity))
-        self.assertEqual(self.state(),before)
-        self.location('alice',3)
         store.handle('alice',command(4,identity))
         self.assertEqual(decode_item_list(OwnedPetStore(self.path).inventory('alice',1))[1][0].instance_id,100)
+        self.assertEqual(self.store.items('alice'),())
 
     def test_outer_transaction_rejection_rolls_back_inventory_placements_and_services(self):
         self.inventory((self.gun,));before = self.state()
@@ -273,20 +270,19 @@ class WarehouseCompletionTests(unittest.TestCase):
         self.clans.exchange('alice',1,2,withdrawals=((0x50000000,1),))
         self.assertEqual(len(self.clans.items('alice',2)),32)
 
-    def test_auction_remote_selection_is_rejected_before_pledge_or_escrow(self):
+    def test_auction_can_select_shared_warehouse_item_from_another_town(self):
         from test_player_auction import create_packet
         self.stash(1);self.location('alice',2)
         auction = AUCTION.AuctionStore(self.path,pledge_percent=5)
-        before = self.state()
-        with self.assertRaisesRegex(ValueError, 'отсутствует'): auction.create('alice','Alice',create_packet(instance=100),session='city-scope',now=100)
-        self.assertEqual(self.state(),before)
+        auction.create('alice','Alice',create_packet(instance=100),session='shared-warehouse',now=100)
+        self.assertEqual(self.store.items('alice'),())
         with closing(sqlite3.connect(self.path)) as db:
-            self.assertEqual(db.execute('SELECT COUNT(*) FROM player_auction_lots').fetchone()[0],0)
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM player_auction_lots').fetchone()[0],1)
 
-    def test_native_warehouse_projection_includes_legacy_and_current_not_remote(self):
+    def test_native_warehouse_projection_includes_all_deposit_locations(self):
         self.stash(1);self.location('alice',2);self.stash(1,first=200)
         packets = encode_private_warehouse_snapshot(self.store.items('alice'))
-        self.assertEqual([i.instance_id for p in packets for i in decode_warehouse_list(p)[3]], [200])
+        self.assertEqual([i.instance_id for p in packets for i in decode_warehouse_list(p)[3]], [100,200])
         with transaction(self.path) as db:
             from tio.warehouse import WarehouseStore
             self.assertEqual(set(WarehouseStore._read(db,'alice')), {100,200})
@@ -319,20 +315,16 @@ class WarehouseCompletionTests(unittest.TestCase):
             self.assertEqual(db.execute('SELECT delivered FROM achievement_prizes WHERE account=? AND id=4 AND position=0',('alice',)).fetchone()[0],1)
             self.assertEqual(completion.status(db,'alice')['used'],32)
         self.location('alice',3)
-        self.assertEqual(self.store.items('alice'),remote)
+        self.assertIn(remote[0],self.store.items('alice'))
         self.assertEqual(store.flush('alice'),())
 
-    def test_new_mark_remote_rejects_without_fee_and_existing_expiry_recovers_remote(self):
-        self.stash(1);self.location('alice',2);before = self.state()
+    def test_mark_and_loan_can_use_shared_stock_and_expiry_restores_owner(self):
+        self.stash(1);self.location('alice',2)
         with transaction(self.path) as db:
-            with self.assertRaises(ValueError): BANK.mark_item(db,'alice',100,1,'1234','remote-mark',now=100)
-        self.assertEqual(self.state(),before)
-        self.location('alice',3)
-        with transaction(self.path) as db:
-            mark = BANK.mark_item(db,'alice',100,1,'1234','valid-mark',now=100)
+            mark = BANK.mark_item(db,'alice',100,1,'1234','shared-mark',now=100)
             BANK.lend_marked(db,'alice',mark['mark_id'],'bob','loan-mark',now=100)
-        self.location('bob',2)
-        self.assertEqual(self.store.items('bob'),())
+        self.location('bob',13)
+        self.assertEqual(len(self.store.items('bob')),1)
         with transaction(self.path) as db:
             self.assertEqual(BANK.expire_marks(db,now=86500),('alice','bob'))
         self.assertEqual(self.store.items('bob'),())
@@ -354,7 +346,7 @@ class WarehouseCompletionTests(unittest.TestCase):
         self.assertEqual(projected,[5000])
         self.assertEqual(self.store.items('alice'),visible)
         self.location('alice',3)
-        self.assertEqual(self.store.items('alice'),())
+        self.assertEqual(self.store.items('alice'),visible)
 
 
 if __name__ == '__main__': unittest.main()

@@ -60,6 +60,17 @@ location /updates/blobs/ {
     autoindex off;
     try_files $uri =404;
 }
+# Keep immutable version URLs for self-updates while browsers save a stable name.
+location ~ ^/downloads/TIO-Launcher(?:-[0-9]+\.[0-9]+\.[0-9]+)?\.exe$ {
+    root /var/www/tio-client;
+    default_type application/octet-stream;
+    etag off;
+    if_modified_since off;
+    add_header Content-Disposition 'attachment; filename="TIO-Launcher.exe"';
+    add_header Cache-Control "no-cache" always;
+    autoindex off;
+    try_files $uri =404;
+}
 location /downloads/ {
     root /var/www/tio-client;
     default_type application/octet-stream;

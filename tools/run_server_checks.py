@@ -50,6 +50,15 @@ MODULES = (
     'test_weapon_effects',
     'test_ranked_loadout',
     'test_shared_mine_arena.SharedMineArenaTests.test_skill_bar_request_lists_own_battle_skills_and_slash_is_usable',
+    'test_premium_effects',
+    'test_mine_warehouses',
+    'test_shared_warehouse',
+    'test_map_speed',
+    'test_pve_contracts',
+    'test_contracts_service',
+    'test_contracts_ui',
+    'test_contracts_combat',
+    'test_contracts_local_tcp',
 )
 
 if __name__ == '__main__':

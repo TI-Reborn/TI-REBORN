@@ -178,7 +178,7 @@ def create_app(database, key, status_file, *, probe=lambda: False, clock=time.ti
                 if (receipt[0] != operation or receipt[1] != username
                         or not hmac.compare_digest(receipt[2], fingerprint)):
                     raise ApiError('request_id_conflict', 409)
-                if operation == 'password':
+                if operation in ('password', 'recovery'):
                     # A lost-response retry is safe only while its intended
                     # result remains current. An older receipt must not report
                     # success after an intervening password change.
@@ -192,7 +192,20 @@ def create_app(database, key, status_file, *, probe=lambda: False, clock=time.ti
                         raise ApiError('invalid_credentials', 401)
                 return True
             exists = db.execute('SELECT 1 FROM accounts WHERE login=?', (username,)).fetchone()
-            if operation == 'create':
+            if operation == 'recovery':
+                # Only the authenticated portal calls this after mailbox proof.
+                # A pending signup may finish provisioning, but cannot take
+                # over an unrelated legacy account that claimed its name.
+                provisioning = data['provisioningId']
+                if provisioning:
+                    owner = db.execute('SELECT operation,login FROM game_web_receipts WHERE request_id=?',
+                                       (provisioning,)).fetchone()
+                    if exists and owner != ('create', username):
+                        raise ApiError('username_exists', 409)
+                elif not exists:
+                    raise ApiError('invalid_credentials', 401)
+                password = data['newPassword']
+            elif operation == 'create':
                 if exists:
                     raise ApiError('username_exists', 409)
                 password = data['password']
@@ -207,9 +220,14 @@ def create_app(database, key, status_file, *, probe=lambda: False, clock=time.ti
                 password = data['newPassword']
             salt = secrets.token_bytes(16)
             digest = hashlib.pbkdf2_hmac('sha256', password_bytes(password), salt, ITERATIONS)
-            if operation == 'create':
+            if operation == 'create' or (operation == 'recovery' and not exists):
                 db.execute('INSERT INTO accounts(login,salt,digest,iterations) VALUES (?,?,?,?)',
                            (username, salt, digest, ITERATIONS))
+                if operation == 'recovery':
+                    # Reserve the original provisioning identity as well, so
+                    # recovery after a lost response can prove ownership.
+                    db.execute('INSERT INTO game_web_receipts VALUES (?,?,?,?,?)',
+                               (data['provisioningId'], 'create', username, fingerprint, time.time()))
             else:
                 db.execute('UPDATE accounts SET salt=?,digest=?,iterations=? WHERE login=?',
                            (salt, digest, ITERATIONS, username))
@@ -248,6 +266,14 @@ def create_app(database, key, status_file, *, probe=lambda: False, clock=time.ti
     def password():
         data = payload(('username', 'currentPassword', 'newPassword', 'requestId'))
         replayed = hash_work(lambda: mutate(data, 'password'))
+        return jsonify(username=data['username'], changed=True, replayed=replayed)
+
+    @app.post('/v1/accounts/recovery')
+    def recovery():
+        data = payload(('username', 'newPassword', 'requestId', 'provisioningId'))
+        if data['provisioningId'] and not REQUEST_ID.fullmatch(data['provisioningId']):
+            raise ApiError('invalid_request')
+        replayed = hash_work(lambda: mutate(data, 'recovery'))
         return jsonify(username=data['username'], changed=True, replayed=replayed)
 
     @app.get('/v1/status')

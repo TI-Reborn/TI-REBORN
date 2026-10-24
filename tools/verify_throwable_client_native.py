@@ -34,9 +34,9 @@ def run(image_base=0x400000):
             x=u.reg_read(UC_X86_REG_EAX);y=u.reg_read(UC_X86_REG_EDX);put(x,get(x)+500);put(y,get(y)+300);ret()
         elif at==0x2000260:
             sp=u.reg_read(UC_X86_REG_ESP);row=get(sp+4);name=get(sp+8)
-            text=bytes(u.mem_read(name,get(name-4))).decode()
+            text=bytes(u.mem_read(name,get(name-4)*2)).decode('utf-16le')
             assert text.startswith('gfx\\tio-effects\\')
-            state['loads'].append(text);put(row,0x12345678);put(row+4,0);put(row+8,(get(sp+16)&65535)|((get(sp+12)&65535)<<16));ret(28)
+            state['loads'].append(text);put(row,0x12345678);put(row+4,0);put(row+8,(get(sp+12)&65535)|((get(sp+16)&65535)<<16));ret(28)
         elif at==0x2000220:
             sp=u.reg_read(UC_X86_REG_ESP);args=[get(sp+4+i*4) for i in range(10)]
             handle,_,_,x,y,width,height,frame,tint,flags=args
@@ -46,7 +46,7 @@ def run(image_base=0x400000):
             ret(40)
         elif at==0x4f2864:ret(12)
         elif at==0x2000240:
-            name=get(u.reg_read(UC_X86_REG_ESP)+4);state['sounds'].append(bytes(u.mem_read(name,get(name-4))).decode());ret(4)
+            name=get(u.reg_read(UC_X86_REG_ESP)+4);state['sounds'].append(bytes(u.mem_read(name,get(name-4)*2)).decode('utf-16le'));ret(4)
         elif at==stop:u.emu_stop()
     u.hook_add(UC_HOOK_CODE,hook)
     def invalid(u,access,address,size,value,_):

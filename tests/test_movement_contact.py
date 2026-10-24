@@ -59,3 +59,40 @@ class MovementContactTests(unittest.TestCase):
         reply=decode_battle_move(field.move(10, BattleMove(1, path)))
         self.assertEqual(reply.path, path[1:6])
         self.assertEqual(field.actor(1).action_points, 5)
+
+    def test_hidden_dog_in_tail_does_not_reject_first_contact(self):
+        field=self.field(enemy=BattleActor(2,20,8,1,17,35,35))
+        path=tuple((x,1) for x in range(2,11))
+        self.assertNotIn(2,visible_actors(field,10))
+        reply=decode_battle_move(field.move(10,BattleMove(1,path)))
+        self.assertEqual(reply.path,path[:4])
+        self.assertEqual((field.actor(1).x,field.actor(1).action_points),(5,11))
+        self.assertIn(2,visible_actors(field,10))
+        # The next command stops before the occupied cell. A fresh order can
+        # still move around the dog: contact never leaves a persistent lock.
+        reply=decode_battle_move(field.move(10,BattleMove(1,path[4:])))
+        self.assertEqual(reply.path,((6,1),(7,1)))
+        reply=decode_battle_move(field.move(10,BattleMove(1,((7,2),(8,2),(9,2)))))
+        self.assertEqual(reply.path[-1],(9,2))
+        self.assertEqual(field.actor(1).action_points,6)
+
+    def test_dynamic_corner_stops_only_the_travelled_prefix(self):
+        field=self.field(enemy=BattleActor(2,20,4,1,17,35,35))
+        path=((2,1),(3,1),(4,2))
+        reply=decode_battle_move(field.move(10,BattleMove(1,path)))
+        self.assertEqual(reply.path,path[:2])
+        self.assertEqual(field.actor(1).action_points,13)
+
+    def test_no_legal_step_keeps_state_and_allows_next_command(self):
+        field=self.field(enemy=BattleActor(2,20,2,1,17,35,35))
+        before=dict(field._actors)
+        with self.assertRaisesRegex(ValueError,'occupied'):
+            field.move(10,BattleMove(1,((2,1),(3,1))))
+        self.assertEqual(field._actors,before)
+        reply=decode_battle_move(field.move(10,BattleMove(1,((1,2),(2,2)))))
+        self.assertEqual(reply.path,((1,2),(2,2)))
+
+    def test_dead_dog_does_not_block_a_path(self):
+        field=self.field(enemy=BattleActor(2,20,3,1,0,0,35))
+        path=((2,1),(3,1),(4,1))
+        self.assertEqual(decode_battle_move(field.move(10,BattleMove(1,path))).path,path)

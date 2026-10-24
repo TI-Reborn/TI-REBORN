@@ -378,7 +378,7 @@ class TrainingTownProjectionRuntimeTests(unittest.TestCase):
         self.session.router = Session()
         self.session.router.team_arena = self.training
 
-    def test_current_training_town_uses_real_native_schedule_and_location_band(self):
+    def test_current_training_town_keeps_permanent_registration_and_location_band(self):
         for town, band, cap in ((19,(4,6),10), (20,(7,10),15), (21,(11,15),20), (22,(16,20),25)):
             with self.subTest(town=town):
                 with transaction(self.path) as db:
@@ -391,7 +391,7 @@ class TrainingTownProjectionRuntimeTests(unittest.TestCase):
                 phase, utc = struct.unpack_from('<II', body)
                 self.assertEqual((phase, utc), (1, 100))
                 self.assertEqual(body[8], 1)
-                self.assertEqual(struct.unpack_from('<II', body, 9), (100, 1900))
+                self.assertEqual(struct.unpack_from('<II', body, 9), (100, 0))
                 self.assertEqual(tuple(body[17:22]), (*band, *band, cap))
                 self.assertEqual(body[22:], b'\0\0')
                 self.assertEqual(projected[-1], original[-1])
@@ -400,7 +400,7 @@ class TrainingTownProjectionRuntimeTests(unittest.TestCase):
         with transaction(self.path) as db:
             LocationStore._save(db, 'alice', 19, *center(19))
         projected = runtime.project_town(self.session, town_packets(19, clock=lambda: self.now)[0])
-        self.assertEqual(struct.unpack_from('<I', projected, len(town_packets(19)[0])-1)[0], 2)
+        self.assertEqual(struct.unpack_from('<I', projected, len(town_packets(19)[0])-1)[0], 1)
 
     def test_ordinary_packets_and_missing_training_adapter_are_preserved(self):
         for raw in (*town_packets(3), b'\xc8\x2d', b'\xc8\x2d\x13', b'\x9e'):

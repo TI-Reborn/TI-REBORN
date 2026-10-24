@@ -64,7 +64,7 @@ class ContractTests(unittest.TestCase):
         before = dict(TOWNS)
         records = self.store.catalog()
         self.assertEqual([r['id'] for r in records], ['camp', 'depot', 'checkpoint'])
-        self.assertEqual([r['zone_id'] for r in records], [18, 19, 20])
+        self.assertEqual([r['zone_id'] for r in records], [23, 24, 25])
         records[0]['reward']['credits'] = 123456
         self.assertEqual(self.store.catalog()[0]['reward']['credits'], 150)
         self.assertEqual(TOWNS, before)
@@ -313,7 +313,7 @@ class ContractTests(unittest.TestCase):
             lambda c: c['templates'][0]['reward'].update(credits=-1),
             lambda c: c['templates'][0]['enemies'].update(unknown=1),
             lambda c: c['templates'][0].update(map_profile='../escape'),
-            lambda c: c['templates'][1].update(zone_id=18),
+            lambda c: c['templates'][1].update(zone_id=c['templates'][0]['zone_id']),
             lambda c: c['templates'][1].update(id='camp'),
             lambda c: c['templates'][1].update(bounds=c['templates'][0]['bounds']))
         for index, change in enumerate(changes):

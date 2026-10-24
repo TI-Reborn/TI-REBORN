@@ -9,7 +9,7 @@ from verify_battle_loaded_native import exe_emulator,EXE_SHA
 from verify_shot_geometry_native import NativeSight
 from unicorn.x86_const import UC_X86_REG_EBX,UC_X86_REG_ESI,UC_X86_REG_EDI
 
-REPORT=ROOT/'reports/battle-screen-fixes-20261016'
+REPORT=Path(__import__('os').environ.get('TIO_DOOR_REPORT',ROOT/'reports/battle-screen-fixes-20261016'))
 
 class Probe:
     def __init__(self):
@@ -91,11 +91,31 @@ def main():
         assert ray==(expected==2)
         cases.append(dict(state=state,stable=p.state(),collision=p.cell(3,3),original_ray_clear=ray))
     p.state(1)
+    # The original click handler72e370 compares this rounded distance to1.
+    # Its native math already accepts diagonals; only the surface was hidden.
+    native_distances=[]
+    for dx,dy in ((-1,-1),(-1,1),(1,-1),(1,1),(0,1),(1,0),(2,0),(2,2)):
+        u=p.u;sp=STACK+0x8000;put32(u,sp,STOP)
+        u.mem_write(sp+4,struct.pack('<ffff',3.,3.,float(3+dx),float(3+dy)))
+        u.reg_write(UC_X86_REG_ESP,sp);u.emu_start(0x7493c8,STOP,count=1000)
+        distance=u.reg_read(UC_X86_REG_EAX)&0xffff
+        assert (distance<=1)==(max(abs(dx),abs(dy))==1)
+        assert u.reg_read(UC_X86_REG_ESP)==sp+20
+        native_distances.append(dict(offset=[dx,dy],distance=distance))
     for kwargs in (dict(hp=0),dict(owner=8),dict(x=0,y=0),dict(x=-1),dict(x=255)):
         p.actor(**kwargs);p.refresh();assert p.seen(3,3)==0
-    p.actor(x=2,y=2);p.cell(2,3,3);p.refresh();assert p.seen(3,3)==0
-    p.cell(2,3,1);p.cell(3,2,2);p.refresh();assert p.seen(3,3)==0
-    p.cell(3,2,1);p.refresh();assert p.seen(3,3)==1 and p.seen(4,3)==0
+    neighbor_cases=0
+    for dx in (-1,0,1):
+        for dy in (-1,0,1):
+            if not (dx or dy):continue
+            p.actor(x=3+dx,y=3+dy)
+            for a in (0,3):
+                for b in (0,3):
+                    if dx and dy:p.cell(3+dx,3,a);p.cell(3,3+dy,b)
+                    p.refresh();assert p.seen(3,3)==1
+                    assert all(p.seen(x,y)==0 for x in range(8) for y in range(8) if (x,y)!=(3,3))
+                    neighbor_cases+=1
+                    if dx and dy:p.cell(3+dx,3,0);p.cell(3,3+dy,0)
     # Receiver wrapper normalizes only door flag1, leaves crates unchanged.
     for flag in (0,1):
         for state in (1,2,3,4):
@@ -108,7 +128,7 @@ def main():
     for count in (0,10001):
         put32(p.u,DATA+0x1208,count);p.u.mem_write(DATA+0x5000,bytes(0x800))
         p.refresh();assert p.seen(3,3)==0
-    result=dict(passed=True,exe_sha256=EXE_SHA,cases=cases,observer_limits=8,receiver_cases=8,
+    result=dict(passed=True,exe_sha256=EXE_SHA,cases=cases,observer_limits=5,neighbor_cases=neighbor_cases,receiver_cases=8,native_click_distances=native_distances,
                 stack_and_registers_preserved=True,original_ray_code_unstubbed=True,scope=__doc__)
     (REPORT/'launcher-native-doors.json').write_text(json.dumps(result,indent=2)+'\n')
     print('Exact launcher native adapter, original sight, observer limits and receiver: PASS')

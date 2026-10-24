@@ -1,7 +1,7 @@
 """Persistent world-map travel using original1B/1D/1E and native interpolation.
 
-City bounds come from base/towns.cfg. Speed6 doubles the previous emulator
-setting at the user's request; historical server speed is not recovered.
+City bounds come from base/towns.cfg. Speed12 doubles the prior speed6 again
+at the user's request; historical server speed is not recovered.
 """
 
 from .db_transaction import connect
@@ -29,7 +29,7 @@ from .world_completion import location_bounds,location as world_location,policy 
 TOWNS.update(location_bounds())
 BASE_LOCATIONS.update({r['id']:tuple(r['bounds']) for r in world_policy()['locations']
                        if r['kind']=='base' and r['capture']})
-MAP_SPEED = 6  # Original MyCharInfo1A u16 -> character+8, map units/second.
+MAP_SPEED = 12  # Original MyCharInfo1A u16 -> character+8, map units/second.
 
 
 def center(town):

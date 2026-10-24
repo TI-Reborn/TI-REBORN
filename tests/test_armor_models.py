@@ -27,5 +27,6 @@ class ArmorModelTests(unittest.TestCase):
         self.assertEqual(fields['model_1'],'man_armor_battlese_chest')
         self.assertEqual(fields['w_model_1'],'woman_armor_battlese_chest')
         self.assertEqual(fields['texture_1'],'armor_battlese.jpg')
-        self.assertNotIn('model_2',fields);self.assertNotIn('model_3',fields)
+        self.assertEqual(fields['model_2'],'chr_man_hands');self.assertNotIn('model_3',fields)
+        self.assertEqual(fields['w_model_2'],'chr_woman_hands')
         self.assertEqual(fields['p_def'],'85')

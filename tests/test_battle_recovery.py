@@ -163,14 +163,15 @@ class PassiveRecoveryTests(unittest.TestCase):
         try:
             now[0]+=10;request(b'\x70')
             packets=receive(2)
-            pet=next(p for p in packets if p[0]==0x66)
-            self.assertEqual(decode_pet_info(pet,human_equipment=True).fields['0x8c4ab1'],99)
+            from tio.protocol.health import encode_health
+            self.assertIn(encode_health(1,99),packets)
+            self.assertFalse(any(p[0] in (0x66,0x30) for p in packets))
             with patch.object(exchange.survival,'searching',return_value=True):
                 request(bytes.fromhex('7c0101000000'));self.assertEqual(receive(1)[0][0],0xf0)
             self.assertEqual(self.wallet.ensure('probe_user').credits,10000)
             request(bytes.fromhex('7c0101000000'))
-            packets=receive(2);self.assertEqual([p[0] for p in packets],[0xc8,0x66])
-            self.assertEqual(decode_pet_info(packets[1],human_equipment=True).fields['0x8c4ab1'],100)
+            packets=receive(2);self.assertEqual([p[0] for p in packets],[0xc8,0x4e])
+            self.assertEqual(packets[1],encode_health(1,100))
             self.assertEqual(self.wallet.ensure('probe_user').credits,9998)
             request(bytes.fromhex('7c0101000000'));receive(2)
             self.assertEqual(self.wallet.ensure('probe_user').credits,9998)
@@ -203,5 +204,7 @@ class MinerRecoveryTests(unittest.TestCase):
         self.assertEqual(recovery.refresh('alice'),())
         now[0]+=10
         packets=recovery.refresh('alice')
-        pet=decode_pet_info(packets[0],human_equipment=True)
+        from tio.protocol.health import encode_health
+        self.assertEqual(packets,(encode_health(1,99),))
+        pet=decode_pet_info(OwnedPetStore(self.path).list('alice')[0][1],human_equipment=True)
         self.assertEqual((pet.fields['0x8c4ab1'],pet.fields['0x8c4a07']),(99,118))

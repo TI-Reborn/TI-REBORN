@@ -1,5 +1,11 @@
 # Noncapturable Assault4 training
 
+**2026-10-18:** production now uses permanent registration and starts when two
+ready four-owner groups queue. The native client fixes, hosted eight-account
+acceptance and deployment evidence are documented in
+[TRAINING_BASE_20261018.md](TRAINING_BASE_20261018.md). Historical schedule-mode
+details below remain available through `init_training(schedule='scheduled')`.
+
 The original scoped package added `server/training_arena.py` and focused tests;
 root has since installed its integration in the shared27-file phase8 runtime.
 This does not claim original-client graphical acceptance.
@@ -14,8 +20,10 @@ authenticated native TownInfo at arrival, and applies common frozen-coefficient
 SQL settlement/reconnect. The final242 local and242 remote-isolated phase8
 checks and actual deployment passed on2026-10-08; see
 `reports/gameplay-completion/stage8-world/validation.json` and `deployment.json`.
-A positive hosted eight-eligible-owner training scenario remains separate
-pending verification; no graphical acceptance is claimed.
+On 2026-10-18 the positive hosted eight-owner protocol scenario passed. A native
+graphical client also created a group, readied and started a shared battle,
+rendered the Assault4 field and the eight-owner result screen. Its seven peers
+were TLS protocol clients, not seven additional graphical clients.
 
 ## Root wiring
 
@@ -65,13 +73,14 @@ pending verification; no graphical acceptance is claimed.
 ## Tour and battlefield distinction
 
 `AssaultMapLoader.rules` uses validated `config/territories.json`: registration
-1800seconds, three tours of1800seconds separated by300second pauses. Training
-events start on demand at the first native request/hub tick and repeat after the
-three-tour window. This on-demand scheduling is emulator policy; the original
-historical training timetable is unknown. Pairing starts only in TOUR1/2/3.
-Groups may form in registration/pauses and must confirm readiness again after a
-completed battle if they wish to re-enter. Matches are at most900seconds and end
-at the tour cutoff, matching existing Assault4 combat rules. Old2008–2011
+1800seconds, three tours of1800seconds separated by300second pauses for ordinary
+territories and optional legacy scheduled training. Default training now uses
+`schedule='on_demand'`: registration remains open, `ends=phase_ends=0`, and two
+queued ready groups immediately create a match with its own900second deadline.
+The first group waits for real opponents. Groups must form and confirm readiness
+again after a completed battle. The exact original historical training timetable
+is unknown; this permanent availability is the user's approved emulator policy.
+Old2008–2011
 five-flag/reserve rules are not mixed with the installed Assault4 client.
 
 `battle['training_event']` freezes the event ID, town, UTC window, rules,

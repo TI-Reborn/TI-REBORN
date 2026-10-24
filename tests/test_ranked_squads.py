@@ -75,11 +75,13 @@ class RankedSquadTests(unittest.TestCase):
     def test_two_character_slots_of_same_login_cannot_be_ranked_opponents(self):
         from tio.character_identity import alias,initialise
         from wallet_fixture import fund_wallet
-        owner=alias('alice',2);fund_wallet(self.path,owner,credits=10_000,gold=0)
+        owner=alias('alice',2)
+        with closing(sqlite3.connect(self.path)) as db,db:
+            initialise(db);db.execute('INSERT INTO character_identities VALUES (?,?,?)',('alice',2,owner))
+        fund_wallet(self.path,owner,credits=10_000,gold=0)
         for identity,pet,inventory in OwnedPetStore(self.path).list('bob'):
             OwnedPetStore(self.path).ensure(owner,pet,inventory,human=True)
         with closing(sqlite3.connect(self.path)) as db,db:
-            initialise(db);db.execute('INSERT INTO character_identities VALUES (?,?,?)',('alice',2,owner))
             self.case.sessions[1].locations._save(db,owner,2,-367,-424)
         self.case.sessions[1].account=owner
         self.case.send(0,join((1,2,3,4)));self.case.send(1,join((1,2,3,4)))

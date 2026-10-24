@@ -1,6 +1,6 @@
 """Bridge legacy CFG armor names to installed client meshes.
 
-Single modern meshes replace legacy torso/arms/hands pieces. XML loader
+Modern chest meshes replace the legacy torso/arms, but omit separate hands. XML loader
 a70ceb/a70dbf accepts w_model_N/w_texture_N for female render bindings.
 """
 import re
@@ -46,3 +46,11 @@ def normalize(fields,models=MODELS):
     if identity in (263,264):
         fields['model_1']=fields['w_model_1'];fields['texture_1']=texture
         fields['female']='1'
+    if identity==208:fields['showface']='1'
+    if fields.get('bodypart')=='chest' or identity in (263,264):
+        fields['model_2']='chr_woman_hands' if identity in (263,264) else 'chr_man_hands'
+        fields['texture_2']='chr_woman_body.jpg' if identity in (263,264) else 'chr_man_body.jpg'
+        fields['w_model_2']='chr_woman_hands';fields['w_texture_2']='chr_woman_body.jpg'
+    if identity==206:
+        fields['model_2']='chr_man_legs';fields['texture_2']='chr_man_body.jpg'
+        fields['w_model_2']='chr_woman_legs';fields['w_texture_2']='chr_woman_body.jpg'

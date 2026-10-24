@@ -52,7 +52,8 @@ class CrystalQuoteHistoryTests(unittest.TestCase):
         self.assertEqual(len(values),3)
         service=object.__new__(MiningService);service.market=self.market
         packets=service.quote()
-        self.assertEqual(packets[1],price_history(values))
+        # Original client reverses wire candles before drawing the graph.
+        self.assertEqual(packets[1],price_history(tuple(reversed(values))))
         self.assertEqual(len(packets[1]),4+16*3)
         self.assertEqual(values[-1],(rate,)*4)
 

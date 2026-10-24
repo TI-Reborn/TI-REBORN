@@ -31,7 +31,11 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--report-dir',type=Path,default=ROOT/'reports/site-backups',
                         help='Directory for sanitized website-tests.log and website-tests.json; relative paths use the repository root (default: reports/site-backups)')
+    parser.add_argument('--test-file', action='append', default=[], help='Run selected tests/*.test.ts files instead of the full suite')
     args=parser.parse_args()
+    for name in args.test_file:
+        if not re.fullmatch(r'[a-z][a-z0-9-]*\.test\.ts', name) or not (ROOT/'web'/'tests'/name).is_file():
+            parser.error('Test file must be an existing tests/*.test.ts basename')
     report_dir=args.report_dir if args.report_dir.is_absolute() else ROOT/args.report_dir
     name='portal_check_'+secrets.token_hex(8)
     assert re.fullmatch(r'portal_check_[a-f0-9]{16}',name)
@@ -59,7 +63,8 @@ def main():
         environment['DATABASE_URL']=url
         pnpm=shutil.which('pnpm.cmd' if os.name=='nt' else 'pnpm')
         if not pnpm:raise RuntimeError('pnpm is unavailable')
-        result=subprocess.run([pnpm,'test'],cwd=ROOT/'web',env=environment,capture_output=True,text=True,encoding='utf-8',errors='replace',creationflags=HIDDEN)
+        command=[pnpm,'exec','tsx','--test',*[f'tests/{name}' for name in args.test_file]] if args.test_file else [pnpm,'test']
+        result=subprocess.run(command,cwd=ROOT/'web',env=environment,capture_output=True,text=True,encoding='utf-8',errors='replace',creationflags=HIDDEN)
         output=(result.stdout+'\n'+result.stderr).replace(url,'[isolated database URL]').replace(password,'[redacted]')
         report=report_dir/'website-tests.log'
         report.parent.mkdir(parents=True,exist_ok=True)

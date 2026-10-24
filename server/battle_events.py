@@ -55,6 +55,10 @@ def project_action(view, owner, before, visible_before, packets, *, visuals=True
         if opcode==0x4b:
             attack=decode_attack_result(packet)
             if attack.actor_id in visible_before:
+                if attack.weapon_id==324:
+                    from tio.flamethrower import visual_packet
+                    stream=visual_packet(view,before,attack)
+                    if stream is not None:replies.append(stream)
                 hits=tuple(h for h in attack.hits if h.actor_id in visible_before)
                 replies.append(encode_attack_result(replace(attack,hits=hits)))
                 hit_updates.update(h.actor_id for h in hits)
