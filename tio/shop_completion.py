@@ -9,15 +9,17 @@ nonce: optional operation identities must come from the server, not guessed
 from an identical-looking later purchase.
 """
 from contextlib import closing
+from collections.abc import Mapping
 from dataclasses import asdict, replace
 from fractions import Fraction
 from pathlib import Path
 import json
 import math
+import sqlite3
 import time
 import xml.etree.ElementTree as ET
 
-from .db_transaction import connect
+from .db_transaction import connect, Lease
 from .protocol.item_list import ItemRecord, decode_item_list, encode_item_list
 from .protocol.sc_shop import SCOffer, decode_sc_request, encode_sc_catalog, encode_sc_basket
 from .protocol.asset_count import AssetCount, encode_asset_count
@@ -43,6 +45,18 @@ def _identity(identity):
         raise ValueError('Invalid server shop operation identity')
 
 
+def _shop_level_limits(configured: Mapping[int, int]) -> dict[int, int]:
+    """Known city, base and mine shops use their authoritative world bands."""
+    from .cities import CITIES
+    from .locations import BASE_LOCATIONS, MINE_LOCATIONS, location_levels
+    from .world_completion import policy
+    bases = {row['id'] for row in policy()['locations'] if row['kind'] == 'base'}
+    eligible = {*CITIES, *BASE_LOCATIONS, *MINE_LOCATIONS, *bases}
+    limits = {town: location_levels(town)[1] for town in eligible}
+    limits.update(configured)
+    return limits
+
+
 class ShopCompletion:
     def __init__(self, path, catalogs=None, *, policy_path=None, clock=None):
         self.path, self.catalogs = path, catalogs
@@ -57,9 +71,11 @@ class ShopCompletion:
                 or p['sc']['retain_legacy_cart_terms'] is not True
                 or p['sc']['retain_non_enhanceable_legacy_offers'] is not True):
             raise ValueError('Unsupported shop completion policy')
-        self.towns = {int(k): v for k, v in p['town_max_level'].items()}
-        if not self.towns or any(type(v) is not int or not 1 <= v <= 20 for v in self.towns.values()):
+        configured_limits = {int(k): v for k, v in p['town_max_level'].items()}
+        if not configured_limits or any(type(v) is not int or not 1 <= v <= 20
+                                       for v in configured_limits.values()):
             raise ValueError('Invalid shop city band')
+        self.towns = _shop_level_limits(configured_limits)
         for rule in p['stock'].values():
             if rule['mode'] == 'infinite':
                 if set(rule) != {'mode'}: raise ValueError('Invalid infinite stock rule')
@@ -102,7 +118,7 @@ class ShopCompletion:
             raise ValueError('Invalid shop clock')
         return int(now)
 
-    def town(self, db, account):
+    def town(self, db: sqlite3.Connection | Lease, account: str) -> int:
         _transaction(db)
         if not isinstance(account, str) or not account:
             raise ValueError('Account required')
@@ -113,6 +129,11 @@ class ShopCompletion:
         town = row[0] if row else 3
         if type(town) is not int or town not in self.towns:
             raise ValueError('Магазин доступен только в городе')
+        for table in ('map_journeys', 'battle_checkpoint_members', 'battle_settlement_jobs'):
+            if db.execute('SELECT 1 FROM sqlite_master WHERE name=?', (table,)).fetchone():
+                if db.execute('SELECT 1 FROM '+table+' WHERE account=? LIMIT 1',
+                              (account,)).fetchone():
+                    raise ValueError('Магазин недоступен во время путешествия или боя')
         return town
 
     def allowed(self, template, town, *, gold=False):
