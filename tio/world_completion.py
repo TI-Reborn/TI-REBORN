@@ -250,10 +250,18 @@ def prison_online(db, account, token, *, now=None, active=True):
     return prison_state(db,account)
 
 
-def require_travel(db, account, destination=None):
-    state=prison_state(db,account)
-    if state and state['remaining']>0:raise ValueError('Наказание отбывается онлайн в Prison')
-    if destination==10:raise ValueError('Prison доступна только по назначенному наказанию')
+class TravelRestriction(ValueError):
+    """A known prison restriction on entering another location or activity."""
+
+
+def require_travel(
+    db: sqlite3.Connection, account: str, destination: int | None = None,
+) -> None:
+    state = prison_state(db, account)
+    if state and state['remaining'] > 0:
+        raise TravelRestriction('Наказание отбывается онлайн в Prison')
+    if destination == 10:
+        raise TravelRestriction('Prison доступна только по назначенному наказанию')
 
 
 def _detroit_dimensions(width,height,map_size):

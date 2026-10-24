@@ -52,6 +52,12 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
         self.survival_queue=SurvivalQueue(clock=clock)
         self.survival_waiting=set()
         self.ranked_waiting={}
+        from .ranked_party import PartyService
+        from .ranked_party_access import ArenaPartyAccess
+        self.ranked_party_service = PartyService(
+            ArenaPartyAccess(self), self.ranked_waiting, self.clock)
+        self.ranked_parties = self.ranked_party_service.groups
+        self.ranked_invitations = self.ranked_party_service.invitations
         self.init_wagers()
         self.init_mine_requests()
         self.wager_listing_cache={}
@@ -70,7 +76,7 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
     def busy(self, session):
         with self.lock:
             owner=self.identities.get(session)
-            return owner in getattr(self,'ranked_parties',{}) or self.mine_waiting(owner) or owner in self.ranked_waiting or owner in self.survival_waiting or owner in self.battles or owner in self.results or self.lobbies.room(owner) is not None or self.wager_busy(owner) or self.assault_group(session) is not None
+            return owner in self.ranked_parties or self.mine_waiting(owner) or owner in self.ranked_waiting or owner in self.survival_waiting or owner in self.battles or owner in self.results or self.lobbies.room(owner) is not None or self.wager_busy(owner) or self.assault_group(session) is not None
 
     def in_battle(self, session):
         with self.lock:
@@ -1172,7 +1178,7 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
         with self.lock:
             owner=self.identities.get(session)
             if owner is not None:
-                from .ranked_party import leave as leave_party
+                from .ranked_party import disconnect as leave_party
                 leave_party(self,owner)
                 self.arena_listing_cache.pop(owner,None)
             if owner is not None and self.detach(session,owner):return True

@@ -8,7 +8,8 @@ from contextlib import closing
 from dataclasses import dataclass, replace
 import sqlite3
 from tio.owned_pets import OwnedPetStore
-from tio.matchmaking import SurvivalQueue
+from tio.matchmaking import SurvivalQueue, SquadAdmissionError
+from tio.ranked_party import MAX_FIGHTERS, is_ranked_level
 from tio.passive_stats import project_passives
 from tio.protocol.pet_info import decode_pet_info,encode_pet_info
 from tio.protocol.abilities import decode_abilities, encode_abilities
@@ -32,10 +33,10 @@ class PreparedSurvival:
 def prepare_survival(path, account, ticket, catalog, *, arena_map=None, seed=None, mode=0, admitted_prefix=False, selected_ids=False,allow_mixed_levels=False,ranked=False):
     from tio.battle_modes import mode_rules, level_band, BattleMode
     if ranked and (mode!=0 or not selected_ids or allow_mixed_levels):raise ValueError('Invalid ranked scene policy')
-    policy = BattleMode(0,2,4) if ranked else mode_rules(mode)
+    policy = BattleMode(0,2,MAX_FIGHTERS) if ranked else mode_rules(mode)
     policy.validate(len(ticket.actors))
     if ranked and (len(ticket.actors)!=len(ticket.levels) or len(set(ticket.actors))!=len(ticket.actors)
-                   or any(type(level) is not int or not 4<=level<=20 for level in ticket.levels)):
+                   or any(type(level) is not int or not is_ranked_level(level) for level in ticket.levels)):
         raise ValueError('Invalid ranked squad')
     if mode and not allow_mixed_levels and len({level_band(level) for level in ticket.levels}) != 1:
         raise ValueError('Team fighters must belong to the same level range')
@@ -63,14 +64,14 @@ def prepare_survival(path, account, ticket, catalog, *, arena_map=None, seed=Non
             chosen=[]
             owned={i:(human,p,inv) for i,human,p,inv in rows}
             for i in ticket.actors:
-                if i not in owned:raise ValueError('Selected fighter no longer owned')
+                if i not in owned:raise SquadAdmissionError('Selected fighter no longer owned')
                 human,p,inv=owned[i]
                 # Recovery persists current HP against the derived maximum;
                 # Saved maxHP is the base value; learned/equipment bonuses
                 # belong to the city/admission copy, never the saved packet.
                 from tio.passive_stats import project_saved_pet
                 pet=decode_pet_info(project_saved_pet(db,account,i,bytes(p),bool(human)),human_equipment=bool(human))
-                if pet.fields['0x8c4ab1']!=pet.fields['0x8c4a07']:raise ValueError('Ranked fighter is wounded')
+                if pet.fields['0x8c4ab1']!=pet.fields['0x8c4a07']:raise SquadAdmissionError('Ranked fighter is wounded')
                 chosen.append((i,encode_pet_info(replace(pet,fields={**pet.fields,'0x8c44a6':len(chosen)+1})),bytes(inv)))
             saved=tuple(chosen)
         if admitted_prefix:
@@ -94,7 +95,7 @@ def prepare_survival(path, account, ticket, catalog, *, arena_map=None, seed=Non
         else:
             fresh = SurvivalQueue().join(ticket.character_id, saved,mode=1 if allow_mixed_levels else mode if admitted_prefix else 0)
         if (fresh.actors, fresh.levels) != (ticket.actors, ticket.levels):
-            raise ValueError('Selected squad changed during search')
+            raise SquadAdmissionError('Selected squad changed during search')
         has_skills = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='ability_states'").fetchone()
         for i, human, p, inv in rows:
             if i not in ticket.actors: continue

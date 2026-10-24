@@ -9,6 +9,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 from .protocol.item_list import decode_item_list,encode_item_list,ItemRecord
 from .protocol.pet_info import decode_pet_info,encode_pet_info
+from .ranked_party import RankedRejection
 
 SLOTS={0:1,2:4,3:8,4:16,7:128}
 
@@ -35,19 +36,19 @@ def validate(packet,inventory,human,equipment):
             for slot in rule.get('covers',(item.client_slot,)):occupied[slot]=item
     for wire_slot,template in equipment:
         slot=SLOTS[wire_slot]
-        if template not in allowed:raise ValueError('Неизвестный предмет TrueSkill')
+        if template not in allowed:raise RankedRejection('Неизвестный предмет TrueSkill')
         rule=armor.get(template)
         if rule:
             if slot!=rule['slot'] or bool(rule['dog'])==human or bool(rule.get('miner'))!=(resource==6) or rule.get('female') and resource!=2:
-                raise ValueError('Предмет TrueSkill не подходит бойцу или слоту')
+                raise RankedRejection('Предмет TrueSkill не подходит бойцу или слоту')
         elif template not in weapons.weapons or slot not in (16,128) or not human or (weapons.sources[template].get('freaks_only')=='1')!=(resource==6):
-            raise ValueError('Оружие TrueSkill не подходит бойцу или слоту')
+            raise RankedRejection('Оружие TrueSkill не подходит бойцу или слоту')
         covers=rule.get('covers',(slot,)) if rule else (slot,)
-        if any(s in occupied for s in covers):raise ValueError('Слот TrueSkill уже занят: обновите выбор экипировки')
+        if any(s in occupied for s in covers):raise RankedRejection('Слот TrueSkill уже занят: обновите выбор экипировки')
         for s in covers:occupied[s]=template
     # A broken owned piece must be repaired, not silently replaced by a loan.
     if any(i.equipped and broken(i) for i in decode_item_list(inventory)[1]):
-        raise ValueError('Перед боем отремонтируйте экипировку')
+        raise RankedRejection('Перед боем отремонтируйте экипировку')
 
 
 def band(level):

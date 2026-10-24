@@ -1,7 +1,11 @@
 """Original C6 TrueSkill builders/readers: silver 952bfc, 953038, 953d30, 953e5c."""
 import struct
+from tio.ranked_party import MAX_FIGHTERS
 from .binary import Reader,Writer,PacketError
 from .arena import _name_write
+
+SEARCH_STARTED_PACKET = b'\xc6\x05'
+SEARCH_CANCELLED_PACKET = b'\xc6\x06'
 
 
 def encode_gears(item_ids):
@@ -35,7 +39,7 @@ def decode_join(packet):
     r=Reader(packet)
     if r.read(2)!=b'\xc6\x21':raise PacketError('Expected TrueSkill search')
     flags=(r.u8(),r.u8());count=r.u32()
-    if any(f not in (0,1) for f in flags) or not 1<=count<=4:raise PacketError('Invalid TrueSkill selection')
+    if any(f not in (0,1) for f in flags) or not 1<=count<=MAX_FIGHTERS:raise PacketError('Invalid TrueSkill selection')
     pets=[]
     for _ in range(count):
         identity=r.u32();n=r.u32()

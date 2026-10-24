@@ -36,6 +36,13 @@ SCOPES['map-speed']=frozenset(('tio/locations.py',))
 SCOPES['premium-effects']=frozenset(('tio/premium.py','tio/battle_rewards.py'))
 SCOPES['warehouse-counters']=frozenset(('tio/clans.py','tio/protocol/asset_count.py','tio/warehouse_resources.py','tio/warehouse_service.py','server/economy_runtime.py'))
 SCOPES['ranked-cancel']=frozenset(('server/ranked_arena.py','server/team_arena.py'))
+SCOPES['ranked-party-refactor'] = frozenset((
+    'server/ranked_party.py', 'server/ranked_party_access.py',
+    'server/ranked_arena.py', 'server/team_arena.py', 'tio/ranked_party.py',
+    'tio/protocol/ranked_party.py', 'tio/protocol/ranked.py', 'tio/ranked_loadout.py',
+    'tio/matchmaking.py', 'tools/survival_scene.py',
+    'tio/world_completion.py',
+))
 SCOPES['crystal-quotes']=frozenset(('tio/mining_service.py',))
 SCOPES['area-fire']=frozenset(('tio/combat.py','tio/combat_rolls.py'))
 SCOPES['clan-icons']=frozenset(('server/clan_service.py','tio/protocol/clan_crests.py','tio/clan_benefits.py'))
