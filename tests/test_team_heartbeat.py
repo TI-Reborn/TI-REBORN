@@ -14,7 +14,7 @@ class TeamHeartbeatTests(unittest.TestCase):
         self.session=Session()
         self.owner=self.hub.identity(self.session)
         self.frames=[]
-        self.socket=SimpleNamespace(sendall=self.frames.append)
+        self.socket=SimpleNamespace(sendall=self.frames.append, settimeout=lambda value: None)
         self.cipher=InitialCipher('S2C')
         self.reader=InitialFrameReader(InitialCipher('S2C'))
 

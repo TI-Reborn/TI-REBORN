@@ -22,13 +22,16 @@ from tio.protocol.arena import (decode_create_request, decode_room_ready, decode
 from tio.protocol.battle_members import BattleMemberRecord, encode_battle_members
 from tio.protocol.system_message import (encode_shop_error, encode_leave_room,
     encode_finish_battle_view, encode_current_town, encode_open_town_view)
-from tio.protocol.transport import encode_initial_frame
+from tio.protocol.transport import InitialCipher, encode_initial_frame
 from tio.protocol.battle_turn import encode_turn_now, turn_seconds
 
 LOG=logging.getLogger('tio.server')
 # Native silver.dll's frame watchdog is reset by 9E, not TCP keepalive or
 # ordinary turn packets. Quiet loading/turns must still service that watchdog.
 TEAM_HEARTBEAT_SECONDS=10
+# Polling for input is deliberately short. A write must tolerate ordinary
+# network backpressure, including the burst produced by a complete bot turn.
+TEAM_SEND_TIMEOUT_SECONDS = 5
 TEAM_LEVEL_RANGES=((1,3),(4,6),(7,10),(11,15),(16,20))
 from .battle_reconnect import BattleReconnect
 from .battle_failures import BattleFailures,BattleSettlementError
@@ -1214,7 +1217,7 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
             self.queues.pop(owner,None);self.players.pop(owner,None);self.identities.pop(session,None)
             return retained
 
-    def drain(self,session,game,cipher):
+    def drain(self, session: object, game: socket.socket, cipher: InitialCipher) -> None:
         with self.lock:
             owner=self.identities.get(session)
             packets=tuple(self.queues.get(owner,()))
@@ -1225,6 +1228,8 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
             session._team_heartbeat_at=now
         if last is not None and now-last>=TEAM_HEARTBEAT_SECONDS:
             packets+=(b'\x9e',)
+        if packets:
+            game.settimeout(TEAM_SEND_TIMEOUT_SECONDS)
         for packet in packets:
             if packet[:2]==b'\xc8\x39' and session.database is not None:
                 from tio.crystal_market import CrystalMarket
@@ -1244,7 +1249,14 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
                 packet=project_packet(session.database,session.account,packet)
             from .warehouse_capacity import frames as capacity_frames
             frame=capacity_frames(session,packet,cipher)
-            game.sendall(encode_initial_frame(packet,cipher) if frame is None else frame)
+            try:
+                game.sendall(encode_initial_frame(packet,cipher) if frame is None else frame)
+            except OSError as error:
+                # Never retry: sendall may already have written part of an
+                # encrypted frame. Reconnect rebuilds the authoritative scene.
+                LOG.warning('battle_delivery_failed account=%s owner=%s error_type=%s',
+                            getattr(session, 'account', None), owner, type(error).__name__)
+                raise
             if packet==b'\x9e':session._team_heartbeat_at=self.clock()
 
     def pump(self,session,game,reader,cipher):
