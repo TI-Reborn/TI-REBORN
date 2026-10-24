@@ -56,6 +56,8 @@ MODULES = (
     'test_mine_warehouses',
     'test_shared_warehouse',
     'test_warehouse_latency',
+    'test_city_inventory',
+    'test_city_inventory_wait',
     'test_map_speed',
     'test_pve_contracts',
     'test_contracts_service',
