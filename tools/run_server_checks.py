@@ -56,6 +56,8 @@ MODULES = (
     'test_mine_warehouses',
     'test_shared_warehouse',
     'test_warehouse_latency',
+    'test_city_inventory',
+    'test_city_inventory_wait',
     'test_gameplay_audit',
     'test_character_deletion',
     'test_mine_turn_repeats',
