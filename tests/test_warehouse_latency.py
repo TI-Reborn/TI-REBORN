@@ -11,6 +11,7 @@ from server import warehouse_capacity
 from server.economy_runtime import refresh_inventory
 from server.multi import configure_keepalive
 from tio.db_transaction import transaction
+from tio.battle_recovery import RecoveryStore, save_wounds
 from tio.owned_pets import OwnedPetStore
 from tio.protocol.item_list import ItemRecord, decode_item_list, encode_item_list
 from tio.protocol.pet_info import decode_pet_info, encode_pet_info
@@ -125,6 +126,54 @@ class WarehouseLatencyTests(unittest.TestCase):
         stock = next(packet for packet in packets if packet[:1] == b'\x6a')
         self.assertEqual(decode_item_list(bag)[1], ())
         self.assertEqual([item.instance_id for item in decode_warehouse_list(stock)[3]], [300])
+
+    def recovery_clock(self, hp):
+        with transaction(self.path) as database:
+            save_wounds(database, self.session.account, {1: hp})
+        now = [1000.0]
+        recovery = RecoveryStore(self.path, clock=lambda: now[0])
+        return recovery, now
+
+    def test_healthy_background_recovery_does_not_commit_unchanged_rows(self):
+        pet = OwnedPetStore(self.path).list(self.session.account)[0][1]
+        maximum = decode_pet_info(pet, human_equipment=True).fields['0x8c4a07']
+        recovery, now = self.recovery_clock(maximum)
+        recovery.refresh(self.session.account)
+        with sqlite3.connect(self.path) as observer:
+            self.addCleanup(observer.close)
+            version = observer.execute('PRAGMA data_version').fetchone()
+            now[0] += 1
+            self.assertEqual(recovery.refresh(self.session.account), ())
+            self.assertEqual(observer.execute('PRAGMA data_version').fetchone(), version)
+
+    def test_recovery_remainder_survives_read_only_idle_refreshes(self):
+        recovery, now = self.recovery_clock(10)
+        recovery.refresh(self.session.account)
+        with sqlite3.connect(self.path) as observer:
+            self.addCleanup(observer.close)
+            version = observer.execute('PRAGMA data_version').fetchone()
+            now[0] += 9
+            self.assertEqual(recovery.refresh(self.session.account), ())
+            self.assertEqual(observer.execute('PRAGMA data_version').fetchone(), version)
+        now[0] += 1
+        self.assertTrue(recovery.refresh(self.session.account))
+        pet = OwnedPetStore(self.path).list(self.session.account)[0][1]
+        self.assertEqual(decode_pet_info(pet, human_equipment=True).fields['0x8c4ab1'], 11)
+
+    def test_paused_background_recovery_keeps_wounds_and_resets_on_resume(self):
+        recovery, now = self.recovery_clock(10)
+        recovery.refresh(self.session.account, blocked=True)
+        with sqlite3.connect(self.path) as observer:
+            self.addCleanup(observer.close)
+            version = observer.execute('PRAGMA data_version').fetchone()
+            now[0] += 300
+            self.assertEqual(recovery.refresh(self.session.account, blocked=True), ())
+            self.assertEqual(observer.execute('PRAGMA data_version').fetchone(), version)
+        self.assertEqual(recovery.refresh(self.session.account), ())
+        now[0] += 10
+        self.assertTrue(recovery.refresh(self.session.account))
+        pet = OwnedPetStore(self.path).list(self.session.account)[0][1]
+        self.assertEqual(decode_pet_info(pet, human_equipment=True).fields['0x8c4ab1'], 11)
 
     def test_external_inventory_change_is_not_hidden_by_transfer_acknowledgement(self):
         refresh_inventory(self.session, force=True)
