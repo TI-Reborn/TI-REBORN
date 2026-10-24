@@ -22,8 +22,9 @@ from .protocol.action_points import encode_action_points
 from .visibility import clear_sight,visible_actors,field_sight
 from .combat_distance import combat_distance
 
-# Original base/items.cfg: item_id -> (power, actionPoints).
-MEDICAL_ITEMS={9:(10,1),10:(30,3),11:(50,5),20:(100,10),32:(15,1),34:(13,1)}
+from .medical_items import medical_items
+
+MEDICAL_ITEMS = medical_items()
 
 
 @lru_cache(maxsize=1)
