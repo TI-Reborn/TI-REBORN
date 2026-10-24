@@ -85,7 +85,7 @@ class WeaponEffectsTests(unittest.TestCase):
             self.assertEqual((field._actors,combat.inventories),before)
 
     def test_new_medical_items_and_dog_species_gate(self):
-        for template,human,power,ap in ((20,True,100,10),(32,False,15,1)):
+        for template,human,power,ap in ((20,True,100,8),(32,False,15,1)):
             field,combat=self.setup_effect(301)
             combat.register(1,encode_item_list(1,(item(200,template,2),)),human=human)
             field._actors[1]=replace(field.actor(1),health=1)

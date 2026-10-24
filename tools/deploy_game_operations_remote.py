@@ -94,6 +94,11 @@ SCOPES['tactical-bots']=frozenset(('tio/tactical_bot.py','tio/training_bot.py','
     'tio/team_scene.py','tio/visibility.py','server/team_arena.py','server/battle_events.py','config/survival.json'))
 KEEP_TABLES=('accounts','characters','owned_pets','wallets','warehouse_items','clans','clan_members')
 SCOPES['repair-from-warehouse']=frozenset(('tio/repair.py','tools/loopback_exchange.py'))
+SCOPES['medical-optics'] = frozenset((
+    'config/city_catalogs.json', 'config/credit_economy.json',
+    'config/sc_catalog.json', 'config/medical_items.json',
+    'tio/medical_items.py', 'tio/combat.py', 'tio/battle_item_effects.py',
+))
 
 
 def digest(path):

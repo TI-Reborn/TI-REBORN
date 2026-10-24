@@ -25,8 +25,11 @@ def effect_lines(effect: dict[str, Any], language: str) -> tuple[str, ...]:
         return labels[family], duration
     if kind == 'night_vision':
         bonus, ap = effect['sight_bonus'], effect['ap']
-        return ((f'Обзор в темноте: +{bonus} клетки', f'Расход: {ap} AP за ход') if russian
-                else (f'Sight in darkness: +{bonus} cells', f'Cost: {ap} AP per turn'))
+        armor = effect['armor']
+        return ((f'Броня: {armor}; обзор в темноте: +{bonus} клетки',
+                 f'Расход при включении: {ap} AP за ход') if russian else
+                (f'Armor: {armor}; sight in darkness: +{bonus} cells',
+                 f'While active: {ap} AP per turn'))
     if kind == 'vision':
         bonus = effect['sight_bonus']
         title = f'Дальность обзора: +{bonus} клетка' if russian else f'Sight range: +{bonus} cell'

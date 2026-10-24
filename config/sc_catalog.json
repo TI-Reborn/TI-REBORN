@@ -318,6 +318,24 @@
       "pack_count": 1,
       "stock_per_account": 1000,
       "credits": 120
+    },
+    {
+      "lot_id": 100020,
+      "item_id": 20,
+      "name": "Health Injection",
+      "durability": 1,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 300
+    },
+    {
+      "lot_id": 105002,
+      "item_id": 5002,
+      "name": "Night Vision Goggles",
+      "durability": 300,
+      "pack_count": 1,
+      "stock_per_account": 1000,
+      "credits": 1800
     }
   ]
 }

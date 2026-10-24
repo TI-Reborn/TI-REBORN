@@ -165,7 +165,8 @@ def normal_sight(combat, identity):
     state = initialize(combat)
     value = state['base_sight'][identity]
     if identity in state['vision']: value += rules()['items']['35']['sight_bonus']
-    if identity in state['night_vision'] and is_dark(combat): value += 2
+    if identity in state['night_vision'] and is_dark(combat):
+        value += rules()['items']['5002']['sight_bonus']
     if identity in state['flash']: value = min(value, 4)
     return max(0, min(255, value))
 
@@ -180,7 +181,8 @@ def effective_sight(combat, identity):
         # Flash is the final cap; darkness does not reduce that cap itself.
         state = combat.item_effects
         original = state['base_sight'][identity] + int(identity in state['vision'])
-        if identity in state['night_vision']: original += 2
+        if identity in state['night_vision']:
+            original += rules()['items']['5002']['sight_bonus']
         value = max(0, min(255, original - penalty))
         if identity in state['flash']: value = min(value, 4)
     return value
@@ -208,7 +210,9 @@ def refresh_sight(combat):
 
 def armor_bonus(combat, identity):
     actor = combat.field._actors.get(identity)
-    return 20 if actor is not None and actor.health and identity in initialize(combat)['night_vision'] else 0
+    if actor is None or not actor.health or identity not in initialize(combat)['night_vision']:
+        return 0
+    return rules()['items']['5002']['armor']
 
 
 def clear_item_sight(combat, start, end):

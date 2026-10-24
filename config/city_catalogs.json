@@ -1026,6 +1026,14 @@
         "unknown_u32_03": 1650,
         "durability": 300,
         "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 65020,
+        "unknown_u32_02": 1,
+        "item_id": 20,
+        "unknown_u32_03": 300,
+        "durability": 1,
+        "unknown_u8": 0
       }
     ]
   },
@@ -1804,9 +1812,17 @@
       "gold": 300,
       "durability": 1,
       "currency": 1
+    },
+    {
+      "offer_id": 1020,
+      "item_id": 20,
+      "pack_count": 1,
+      "gold": 300,
+      "durability": 1,
+      "currency": 1
     }
   ],
-  "price_revision": 20261009,
+  "price_revision": 20261010,
   "special_item_prices": "Explicit serverbalance config/special_items.json; classicmanualdoesnotdocumentpricesofexperimental319/321/323/324/325.",
   "battle_item_prices": "Manual printed64/79-83; smoke318180cr is explicit emulator policy, absent from book. Injection HP5012: manual printed82,100Gold; emulator ID policy."
 }
