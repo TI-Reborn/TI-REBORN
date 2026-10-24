@@ -2,12 +2,14 @@ import unittest
 from tio.warehouse_service import warehouse_error_reply
 from tio.warehouse import WarehouseRejected
 from tio.protocol.binary import Reader
+from tio.localization import for_language
 
 
 class WarehouseErrorTests(unittest.TestCase):
     def test_localized_error_wire_and_no_internal_details(self):
         for error, expected in (
             ('Warehouse capacity exceeded','недостаточно свободных мест'),
+            ('Недостаточно места на складе','недостаточно свободных мест'),
             ('Insufficient item quantity','недостаточно предметов'),
             ('Unequip item before transferring','сначала снимите'),
             ('private internal database detail','не удалось перенести предметы'),
@@ -18,3 +20,8 @@ class WarehouseErrorTests(unittest.TestCase):
             self.assertEqual(text[-2:],b'\0\0')
             self.assertIn(expected,text[:-2].decode('utf-16-le'))
             self.assertNotIn(error,text[:-2].decode('utf-16-le'))
+
+    def test_current_capacity_refusal_is_translated_for_english_client(self):
+        reply = warehouse_error_reply(WarehouseRejected('Недостаточно места на складе'))
+        rendered = for_language(reply, 'english')
+        self.assertIn('warehouse: not enough free places', rendered[13:-2].decode('utf-16-le'))
