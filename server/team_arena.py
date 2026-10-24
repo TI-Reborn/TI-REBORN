@@ -13,6 +13,7 @@ from tio.performance import timed,timed_lock
 from uuid import uuid4
 
 from tio.team_lobbies import TeamLobbies
+from tio.turn_repeats import END_TURN_REPEAT_SECONDS, within_end_turn_repeat
 from tio.matchmaking import SurvivalQueue
 from tio.battle_modes import level_band
 from tio.owned_pets import OwnedPetStore
@@ -971,7 +972,7 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
             # can arrive after a fast bot turn and otherwise finish the NEXT
             # human turn. Ignore only the bounded tail of a completed turn;
             # never echo TurnFinished into the newly active turn.
-            if 0<battle.get('end_turn_fences',{}).get(owner,0)-self.clock()<=1.0:
+            if within_end_turn_repeat(battle.get('end_turn_fences', {}).get(owner, 0), self.clock()):
                 LOG.info('team_turn_repeat_ignored match=%s owner=%d',battle['match_id'],owner)
                 return
         self.perform_action(battle,owner,packet)
@@ -981,7 +982,7 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
 
     def fence_finished_turn(self,battle,owner):
         if owner in battle['humans']:
-            battle.setdefault('end_turn_fences',{})[owner]=self.clock()+1.0
+            battle.setdefault('end_turn_fences', {})[owner] = self.clock() + END_TURN_REPEAT_SECONDS
 
     def settlement_inputs(self,battle,owner,*,escaped=False):
         if battle.get('kind') == 'contract':

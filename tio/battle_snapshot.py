@@ -145,6 +145,8 @@ def loads(text,*,clock=time.monotonic,wall=time.time,rebase=True):
         if name=='ArenaRooms':value._lock=threading.RLock()
         elif name=='ArenaService':
             value._clock=clock
+            value._end_turn_fences = {room_id: deadline + shift
+                                      for room_id, deadline in getattr(value, '_end_turn_fences', {}).items()}
             if rebase:value._turns={i:(o,ids,end+shift) for i,(o,ids,end) in value._turns.items()}
         elif name=='Practice':value.clock=wall
         elif name=='BattleField':
