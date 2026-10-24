@@ -19,7 +19,7 @@ def package(output):
     files += list((ROOT / 'deploy').glob('*.timer'))
     files += [ROOT / 'deploy/BACKUPS.md', ROOT / 'MULTIPLAYER.md', ROOT / 'TEAM_LOBBIES.md', ROOT / 'CITY_SOCIAL.md', ROOT / 'SURVIVAL_MULTIPLAYER.md']
     files += [ROOT / name for name in ('requirements.txt', 'SERVER_AUDIT.md',
-        'DEPLOY_HETZNER.md', 'CLIENT_CONNECTION.md', 'deploy/FIREWALL.md', 'deploy/tio-server.service')]
+        'DEPLOY.md', 'CLIENT_CONNECTION.md', 'deploy/FIREWALL.md', 'deploy/tio-server.service')]
     # Validate before creating the archive. Refuse accidental overwrite.
     for path in files:
         if not path.is_file():

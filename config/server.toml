@@ -1,5 +1,5 @@
 # Safe local default. On the VPS set bind_address = "0.0.0.0" and set
-# advertised_address to the VPS public IPv4. See DEPLOY_HETZNER.md.
+# advertised_address to the VPS public IPv4. See DEPLOY.md.
 bind_address = "127.0.0.1"
 advertised_address = "127.0.0.1"
 game_port = 28512
