@@ -24,6 +24,7 @@
     <value key="weight" val="20" />
     <value key="durability" val="600" />
     <value key="image" val="itm_repairkit.png" />
+    <value key="stackable" val="1" />
   </item>
   <item id="18" name="Advanced Repair Kit">
     <value key="actionPoints" val="1" />
@@ -31,6 +32,7 @@
     <value key="durability" val="1200" />
     <value key="spread" val="1" />
     <value key="image" val="itm_repairkit.png" />
+    <value key="stackable" val="1" />
   </item>
   <item id="300" name="Melee Combat">
     <value key="weaponAttack" val="None" />
@@ -2474,6 +2476,7 @@
     <value key="durability" val="3600" />
     <value key="image" val="itm_repair3.png" />
     <value key="special" val="1" />
+    <value key="stackable" val="1" />
   </item>
   <item id="30" name="Upgrade Kit">
     <value key="weight" val="50" />

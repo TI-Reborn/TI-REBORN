@@ -75,10 +75,10 @@ class UpgradeKitStackingTests(unittest.TestCase):
         node = next(n for n in ET.parse(ROOT / 'evidence/items_diagnostic.xml').getroot() if n.get('id') == str(KIT))
         self.assertEqual({v.get('key'): v.get('val') for v in node.findall('value')}.get('stackable'), '1')
 
-    def test_identical_kits_merge_but_repair_kits_and_marked_kits_stay_separate(self):
+    def test_identical_kits_merge_but_other_templates_and_marked_kits_stay_separate(self):
         self.assertEqual(merge_stacks((kit(1), kit(2), kit(3))), (kit(1, 3),))
-        repair = tuple(replace(kit(i), template_id=17) for i in (4, 5))
-        self.assertEqual(merge_stacks(repair), repair)
+        mixed = (kit(4), replace(kit(5), template_id=17))
+        self.assertEqual(merge_stacks(mixed), mixed)
         marked = kit(6, unknown_bytes_02=b'\0\0\x01\0')
         self.assertEqual(merge_stacks((kit(1), marked)), (kit(1), marked))
 
@@ -86,7 +86,8 @@ class UpgradeKitStackingTests(unittest.TestCase):
         # Screenshot case: five separate kits on the personal warehouse.
         self.seed(warehouse=[kit(i) for i in range(101, 106)])
         self.seed('bob', warehouse=[kit(201), kit(202)])
-        self.assertEqual(counts(sqlite3.connect(self.path), 'alice')[1], 5)
+        with closing(sqlite3.connect(self.path)) as db:
+            self.assertEqual(counts(db, 'alice')[1], 5)
         self.assertEqual(compact_saved_items(self.path, 'alice'), {'inventories': 0, 'warehouse': True})
         self.assertEqual(self.warehouse.items('alice'), (kit(101, 5),))
         with closing(sqlite3.connect(self.path)) as db:

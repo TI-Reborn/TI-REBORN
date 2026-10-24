@@ -11,6 +11,7 @@ MODULES = (
     # Known legacy failures/hangs are recorded in docs/VALIDATION.md.
     'test_multi_account.MultiAccountTests.test_bad_password_duplicate_login_and_reconnect_do_not_affect_other_player',
     'test_multi_account.MultiAccountTests.test_city_weapon_swap_tcp_persists_and_is_account_isolated',
+    'test_multi_account.MultiAccountTests.test_full_repair_bag_rejection_keeps_both_tcp_clients_connected',
     'test_multi_account.MultiAccountTests.test_private_bank_commands_shared_securities_replay_and_no_peer_broadcast',
     'test_survival_multiplayer_queue',
     'test_player_trade',
@@ -37,6 +38,7 @@ MODULES = (
     'test_premium_credits_policy',
     'test_warehouse_resources',
     'test_upgrade_kit_stacking',
+    'test_repair_kit_stacking',
     'test_repair_warehouse_regression',
     'test_area_fire',
     'test_friends',
