@@ -86,7 +86,8 @@ class UpgradeKitStackingTests(unittest.TestCase):
         # Screenshot case: five separate kits on the personal warehouse.
         self.seed(warehouse=[kit(i) for i in range(101, 106)])
         self.seed('bob', warehouse=[kit(201), kit(202)])
-        self.assertEqual(counts(sqlite3.connect(self.path), 'alice')[1], 5)
+        with closing(sqlite3.connect(self.path)) as db:
+            self.assertEqual(counts(db, 'alice')[1], 5)
         self.assertEqual(compact_saved_items(self.path, 'alice'), {'inventories': 0, 'warehouse': True})
         self.assertEqual(self.warehouse.items('alice'), (kit(101, 5),))
         with closing(sqlite3.connect(self.path)) as db:

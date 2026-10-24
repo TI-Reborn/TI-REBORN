@@ -497,6 +497,48 @@ class MultiAccountTests(unittest.TestCase):
         self.assertEqual(store.inventory('alice',owner),seed)
         self.ping(alice);self.ping(bob)
 
+    def test_full_repair_bag_rejection_keeps_both_tcp_clients_connected(self):
+        import struct
+        from tio.db_transaction import transaction
+        from tio.inventory_capacity import INVENTORY_SLOTS
+        from tio.protocol.item_list import ItemRecord
+
+        self.start()
+        alice = self.handoff(self.begin('alice')); self.enter(alice, 'Alice')
+        bob = self.handoff(self.begin('bob')); self.enter(bob, 'Bob')
+        gear = ItemRecord(9001, 301, bytes(2), 1, 1, 16, (50, 350, 350),
+                          bytes(4), None, bytes(3))
+        kit = ItemRecord(5, 17, bytes(2), 2, 0, 0, (600, 600, 600),
+                         bytes(4), None, bytes(3))
+        fillers = tuple(replace(kit, instance_id=100 + i, template_id=317,
+                                unknown_u32_01=1, unknown_words=(1, 1, 1))
+                        for i in range(INVENTORY_SLOTS - 2))
+        alice_inventory = encode_item_list(1, (gear, kit, *fillers))
+        bob_inventory = encode_item_list(1, (gear, replace(kit, unknown_u32_01=1)))
+        with transaction(self.config.database) as db:
+            db.executemany('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=1',
+                           ((alice_inventory, 'alice'), (bob_inventory, 'bob')))
+            db.execute('INSERT INTO item_sequences VALUES (?,?) ON CONFLICT(account) '
+                       'DO UPDATE SET next_id=excluded.next_id', ('alice', 9600))
+
+        request = b'\xc2\x03' + struct.pack('<II', 1, 9001)
+        alice.send(request)
+        refusal = alice.until(b'\xf0\x8a\x01\x00\x00')
+        self.assertIn('Inventory is full'.encode('utf-16-le'), refusal)
+        self.ping(alice); self.ping(bob)
+        store = OwnedPetStore(self.config.database)
+        self.assertEqual(store.inventory('alice', 1), alice_inventory)
+        self.assertEqual(store.inventory('bob', 1), bob_inventory)
+        with closing(sqlite3.connect(self.config.database)) as db:
+            self.assertEqual(db.execute('SELECT next_id FROM item_sequences WHERE account=?',
+                                        ('alice',)).fetchone()[0], 9600)
+
+        bob.send(request)
+        repaired = decode_item_list(bob.until(b'\x30'))[1]
+        self.assertEqual([i.unknown_words[0] for i in repaired], [341, 309])
+        self.assertEqual(store.inventory('alice', 1), alice_inventory)
+        self.ping(alice); self.ping(bob)
+
     def test_bad_password_duplicate_login_and_reconnect_do_not_affect_other_player(self):
         self.start()
         bob = self.handoff(self.begin('bob'));self.enter(bob,'Bob')

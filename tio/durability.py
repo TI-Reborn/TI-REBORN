@@ -4,10 +4,12 @@ Repair integer rounding is explicit emulator policy, calibrated to 50/350
 ->341/341 and 600->309 in the manual. No floating point or random wear.
 """
 from dataclasses import replace
+from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
 import xml.etree.ElementTree as ET
-from .protocol.item_list import decode_item_list, encode_item_list
+from .inventory_capacity import validate_capacity
+from .protocol.item_list import ItemRecord, decode_item_list, encode_item_list
 
 KITS = {17:600, 18:1200, 19:3600}
 
@@ -80,12 +82,13 @@ def repair_item(item, kit):
     return repaired,used,restored,loss
 
 
-def spending_order(kit):
+def spending_order(kit: ItemRecord) -> tuple[bool, int]:
     """Spend partially used kits first, so stacks leave at most one remainder."""
     return (kit.unknown_words[0]>=KITS[kit.template_id],kit.instance_id)
 
 
-def repair_inventory(packet,target,kit_id=None,*,allocate=None):
+def repair_inventory(packet: bytes, target: int, kit_id: int | None = None, *,
+                     allocate: Callable[[], int] | None = None) -> tuple[bytes, dict[str, int]]:
     """Spend one kit; a partial use of a stack splits it off under allocate()."""
     owner,items,flag=decode_item_list(packet)
     item=next((i for i in items if i.instance_id==target),None)
@@ -102,7 +105,9 @@ def repair_inventory(packet,target,kit_id=None,*,allocate=None):
             split=(replace(remaining,instance_id=allocate()),)
         remaining=replace(kit,unknown_u32_01=kit.count-1)
     changed=tuple(fixed if i.instance_id==target else remaining if i.instance_id==kit.instance_id else i for i in items)
-    return encode_item_list(owner,tuple(i for i in changed if i is not None)+split,flag),dict(
+    updated=tuple(i for i in changed if i is not None)+split
+    validate_capacity(items,updated)
+    return encode_item_list(owner,updated,flag),dict(
         target=target,kit=kit.instance_id,spent=spent,loss=loss,template=kit.template_id)
 
 
