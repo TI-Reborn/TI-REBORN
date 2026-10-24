@@ -8,6 +8,11 @@ static class Program
     [STAThread]
     static void Main(string[] args)
     {
+        if (args.Length == 3 && args[0] == "--item-effect-tooltips-self-test")
+        {
+            Environment.ExitCode = ItemEffectTooltipSelfTest.Run(args[1], args[2]) ? 0 : 1;
+            return;
+        }
         if (args.Length == 3 && args[0] == "--rain-texture-self-test") { NativeRainWeather.Test(args[1],args[2]); return; }
         if (args.Length == 3 && args[0] == "--password-limit-self-test") { NativePasswordLimit.Test(args[1],args[2]); return; }
         Console.OutputEncoding = new System.Text.UTF8Encoding(false);

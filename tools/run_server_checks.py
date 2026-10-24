@@ -55,6 +55,7 @@ MODULES = (
     'test_ranked_loadout',
     'test_shared_mine_arena.SharedMineArenaTests.test_skill_bar_request_lists_own_battle_skills_and_slash_is_usable',
     'test_premium_effects',
+    'test_item_effect_descriptions',
     'test_mine_warehouses',
     'test_shared_warehouse',
     'test_warehouse_latency',
