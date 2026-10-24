@@ -8,7 +8,12 @@ serve the barracks redesign and future HD densities (100/125/150/200 %).
 from __future__ import annotations
 
 import argparse
+from collections.abc import Collection
+import json
 from pathlib import Path
+import re
+
+from .catalog import ROOT
 
 WIDE = ((64, 32), (128, 64), (256, 128), (512, 256))
 SQUARE = ((64, 64), (128, 128), (256, 256), (512, 512))
@@ -34,27 +39,58 @@ def fit(image, size):
 
 def export(master: Path, out: Path, stem: str) -> list[Path]:
     from PIL import Image
-    image = Image.open(master)
-    image.load()
     written = []
-    for size in (*WIDE, *SQUARE):
-        folder = out / f'{size[0]}x{size[1]}'
-        folder.mkdir(parents=True, exist_ok=True)
-        path = folder / f'{stem}.png'
-        fit(image, size).save(path, optimize=True)
-        written.append(path)
+    with Image.open(master) as image:
+        image.load()
+        for size in (*WIDE, *SQUARE):
+            folder = out / f'{size[0]}x{size[1]}'
+            folder.mkdir(parents=True, exist_ok=True)
+            path = folder / f'{stem}.png'
+            fit(image, size).save(path, optimize=True)
+            written.append(path)
     return written
 
 
-def main():
+def select_masters(masters: Path, item_ids: Collection[int]) -> dict[int, Path]:
+    """Choose one approved <id> or <id>-<name> file per manifest item."""
+    selected: dict[int, Path] = {}
+    for master in sorted(masters.glob('*.png')):
+        if not master.is_file():
+            continue
+        match = re.fullmatch(r'(\d+)(?:-.+)?', master.stem)
+        if match is None:
+            continue
+        identity = int(match[1])
+        if identity not in item_ids:
+            raise ValueError(f'Item {identity} is not in the manifest: {master.name}')
+        if identity in selected:
+            raise ValueError(f'Duplicate master for item {identity}: '
+                             f'{selected[identity].name}, {master.name}')
+        selected[identity] = master
+    return dict(sorted(selected.items()))
+
+
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('masters', type=Path, help='folder of approved <id>.png masters')
     parser.add_argument('out', type=Path)
     parser.add_argument('--prefix', default='tio_ii_')
+    parser.add_argument('--manifest', type=Path,
+                        default=ROOT / 'assets/item-icons-hd-v1/manifest.json')
     args = parser.parse_args()
-    for master in sorted(args.masters.glob('*.png')):
-        export(master, args.out, args.prefix + master.stem)
-        print('exported', master.stem)
+    records = json.loads(args.manifest.read_text(encoding='utf-8'))['items']
+    item_ids = set()
+    for record in records:
+        identity = record['item_id']
+        if type(identity) is not int or identity <= 0 or identity in item_ids:
+            raise ValueError('Invalid or duplicate manifest item ID')
+        item_ids.add(identity)
+    selected = select_masters(args.masters, item_ids)
+    if not selected:
+        raise ValueError('No item masters found')
+    for identity, master in selected.items():
+        export(master, args.out, args.prefix + str(identity))
+        print('exported', identity)
 
 
 if __name__ == '__main__':

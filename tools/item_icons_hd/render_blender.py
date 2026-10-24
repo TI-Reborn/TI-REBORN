@@ -25,18 +25,12 @@ from mathutils import Vector  # noqa: E402  (Blender only)
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from tools.item_icons_hd import framing, mesh  # noqa: E402
+from tools.item_icons_hd.render_options import parse  # noqa: E402
 
 
-def arguments():
+def arguments() -> argparse.Namespace:
     argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--client', type=Path, required=True)
-    parser.add_argument('--manifest', type=Path, required=True)
-    parser.add_argument('--out', type=Path, required=True)
-    parser.add_argument('--ids', type=int, nargs='*')
-    parser.add_argument('--textures', type=Path)
-    parser.add_argument('--samples', type=int, default=128)
-    return parser.parse_args(argv)
+    return parse(argv, base=Path.cwd())
 
 
 def sha256(path):

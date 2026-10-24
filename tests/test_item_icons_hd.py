@@ -5,6 +5,7 @@ from pathlib import Path
 import struct
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from tools.item_icons_hd import catalog, framing, mesh
 
@@ -117,6 +118,60 @@ class FramingTests(unittest.TestCase):
             framing.frame(self.CUBE, 'head', (0, 10))
 
 
+class RenderPathTests(unittest.TestCase):
+    def test_relative_paths_are_anchored_before_blender_changes_context(self):
+        from tools.item_icons_hd.render_options import parse
+        with tempfile.TemporaryDirectory() as folder:
+            base = Path(folder)
+            args = parse(['--client', 'client', '--manifest', 'manifest.json',
+                          '--out', '../renders', '--textures', 'textures'], base=base)
+            self.assertEqual(args.client, base / 'client')
+            self.assertEqual(args.manifest, base / 'manifest.json')
+            self.assertEqual(args.out, base.parent / 'renders')
+            self.assertEqual(args.textures, base / 'textures')
+            self.assertTrue(all(p.is_absolute() for p in
+                                (args.client, args.manifest, args.out, args.textures)))
+
+    def test_absolute_paths_and_default_texture_directory_are_preserved(self):
+        from tools.item_icons_hd.render_options import parse
+        with tempfile.TemporaryDirectory() as folder:
+            base = Path(folder)
+            args = parse(['--client', str(base / 'client'),
+                          '--manifest', str(base / 'manifest.json'),
+                          '--out', str(base / 'renders')], base=base / 'other')
+            self.assertEqual(args.out, base / 'renders')
+            self.assertIsNone(args.textures)
+
+
+class MasterSelectionTests(unittest.TestCase):
+    def test_existing_weapon_names_export_by_id_and_skip_preview_sheets(self):
+        from tools.item_icons_hd.export import select_masters
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ('301-beretta.png', '313-hk-g3sg-1-v2.png', 'preview-01.png'):
+                (root / name).touch()
+            self.assertEqual(select_masters(root, {301, 313}),
+                             {301: root / '301-beretta.png',
+                              313: root / '313-hk-g3sg-1-v2.png'})
+
+    def test_duplicate_item_id_is_rejected_before_export(self):
+        from tools.item_icons_hd.export import select_masters
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for name in ('301.png', '301-beretta.png'):
+                (root / name).touch()
+            with self.assertRaisesRegex(ValueError, 'Duplicate.*301'):
+                select_masters(root, {301})
+
+    def test_numeric_master_must_belong_to_the_manifest(self):
+        from tools.item_icons_hd.export import select_masters
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / '9999.png').touch()
+            with self.assertRaisesRegex(ValueError, '9999'):
+                select_masters(root, {301})
+
+
 try:
     import PIL  # noqa: F401
 except ImportError:  # CI installs no third-party packages.
@@ -125,6 +180,23 @@ except ImportError:  # CI installs no third-party packages.
 
 @unittest.skipIf(PIL is None, 'Pillow is optional for the export step')
 class ExportTests(unittest.TestCase):
+    def test_cli_exports_numeric_names_without_preview_sheets(self):
+        from PIL import Image
+        from tools.item_icons_hd import export
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            masters = root / 'masters'
+            masters.mkdir()
+            with Image.new('RGBA', (64, 32), (200, 120, 40, 255)) as image:
+                image.save(masters / '301-beretta.png')
+                image.save(masters / 'preview-01.png')
+            out = root / 'out'
+            with patch('sys.argv', ['export', str(masters), str(out)]):
+                export.main()
+            files = tuple(out.rglob('*.png'))
+            self.assertEqual(len(files), 8)
+            self.assertEqual({p.name for p in files}, {'tio_ii_301.png'})
+
     def test_all_sizes_keep_alpha_and_centre_the_item(self):
         from PIL import Image
         from tools.item_icons_hd import export

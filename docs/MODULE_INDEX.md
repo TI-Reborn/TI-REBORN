@@ -575,6 +575,7 @@
 | [tools/item_icons_hd/mesh.py](../tools/item_icons_hd/mesh.py) | Read native MDJX geometry for icon rendering: skinned and static variants. |
 | [tools/item_icons_hd/preview.py](../tools/item_icons_hd/preview.py) | Quick software preview of icon framing without Blender (numpy + Pillow). |
 | [tools/item_icons_hd/render_blender.py](../tools/item_icons_hd/render_blender.py) | Render reference icons from native models. Run inside Blender 3.6+/4.x. |
+| [tools/item_icons_hd/render_options.py](../tools/item_icons_hd/render_options.py) | Resolve render CLI paths before Blender scene initialization. |
 | [tools/loopback_exchange.py](../tools/loopback_exchange.py) | Bounded loopback experiment for the statically recovered initial challenge. |
 | [tools/manage_launcher_archive.py](../tools/manage_launcher_archive.py) | Inspect, prepare or publish a compressed package of the exact hosted release. |
 | [tools/manage_mine_claims.py](../tools/manage_mine_claims.py) | Explicit, local checkpoint ownership administration; no SSH or native bypass. |
