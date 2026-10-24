@@ -7,12 +7,13 @@ from .protocol.warehouse_transfer import decode_warehouse_transfer
 from .protocol.warehouse import encode_private_warehouse_snapshot
 
 
-def warehouse_error_reply(error):
+def warehouse_error_reply(error: ValueError) -> bytes:
     """Use the verified localized F0/394 path, which also clears client waiting."""
     from .protocol.system_message import encode_shop_error
     reasons = {
         'Inventory is full': 'переноса: в инвентаре бойца недостаточно свободных мест',
         'Warehouse capacity exceeded': 'склада: недостаточно свободных мест',
+        'Недостаточно места на складе': 'склада: недостаточно свободных мест',
         'Insufficient item quantity': 'переноса: недостаточно предметов в выбранной стопке',
         'Unequip item before transferring': 'переноса: сначала снимите предмет с наёмника',
         'Owned mercenary required': 'переноса: ваш наёмник не найден',
