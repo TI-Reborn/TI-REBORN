@@ -15,7 +15,7 @@
 3. [Индекс каждого Python-модуля](docs/MODULE_INDEX.md).
 4. [Проверки и известные ограничения](docs/VALIDATION.md).
 5. [Порядок работы над pull request](CONTRIBUTING.md).
-6. [Доступ, секреты и выпуск на хостинг](docs/ACCESS_AND_RELEASE.md).
+6. [Доступ, секреты и выпуск на хостинг](docs/ACCESS_AND_RELEASE.md); хостинг is\*hosting и обновление сервера — [DEPLOY.md](DEPLOY.md).
 7. [Результаты анализа и очередь улучшений](docs/HANDOFF_AUDIT.md).
 8. [Каталог исторических документов](docs/DOCUMENT_INDEX.md).
 

@@ -43,7 +43,7 @@
 - [Verified backups and recovery](../deploy/BACKUPS.md)
 - [Сеть TIO](../deploy/FIREWALL.md)
 - [Самостоятельная регистрация на VPS](../deploy/REGISTRATION.md)
-- [Игровой TLS — установленная поставка 7 октября 2026](../DEPLOY_HETZNER.md)
+- [Развёртывание на хостинге](../DEPLOY.md)
 - [Прямой обмен между игроками](../DIRECT_PLAYER_TRADE.md)
 - [Доступ и выпуск](../docs/ACCESS_AND_RELEASE.md)
 - [Alliance crest: evidence and implemented server policy](../docs/ALLIANCE_CREST_RESEARCH.md)

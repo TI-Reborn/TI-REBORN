@@ -146,7 +146,7 @@ Python 3.14, NOT an Ubuntu 3.12 runtime. WSL reports not installed.
 - Added: `config/server.toml`, `requirements.txt`.
 - Added: `deploy/tio-server.service`, `deploy/FIREWALL.md`,
   `deploy/package_server.py`, `deploy/backup.py`, `deploy/check_connection.py`.
-- Added: `SERVER_AUDIT.md`, `DEPLOY_HETZNER.md`, `CLIENT_CONNECTION.md`.
+- Added: `SERVER_AUDIT.md`, `DEPLOY_HETZNER.md` (now `DEPLOY.md`), `CLIENT_CONNECTION.md`.
 - Added: `tests/test_server_deployment.py`.
 
 No launcher, game executable, client CFG, live player database, Account API,
