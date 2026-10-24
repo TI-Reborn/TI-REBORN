@@ -6,6 +6,7 @@ Legacy/overflow items remain accessible without consuming private city slots.
 """
 from contextlib import closing, contextmanager
 from contextvars import ContextVar
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 import hashlib
@@ -21,7 +22,7 @@ from tio.protocol.warehouse import (encode_private_warehouse_snapshot,
     encode_warehouse_list, warehouse_item_from_inventory, WarehouseItem,
     decode_warehouse_list)
 from tio.protocol.warehouse_capacity import OPT_IN, Snapshot, encode_snapshot, encode_clear
-from tio.protocol.transport import encode_initial_frame
+from tio.protocol.transport import InitialCipher, encode_initial_frame
 
 
 @dataclass
@@ -239,6 +240,21 @@ def transfer(session, packet, *, capacity):
                 if not inserted: result.extend(fresh); inserted = True
             else: result.append(packet)
         return tuple(result)
+
+
+def encode_transfer_replies(
+        database: str | Path, replies: tuple[bytes, ...], cipher: InitialCipher,
+        encode_reply: Callable[[bytes, InitialCipher], bytes]) -> bytes:
+    """Project a committed transfer's replies on one short SQL unit.
+
+    City weight, armor, marks and counters otherwise reopen the same database
+    many times. Nested projectors join this unit; no frames leave until commit.
+    The item transfer itself has already committed independently.
+    """
+    with transaction(database):
+        return b''.join(encode_initial_frame(reply, cipher)
+                        if reply[:1] in (b'\xfa', b'\x6a') else encode_reply(reply, cipher)
+                        for reply in replies)
 
 
 def _invalidate(value, *, disable=True):

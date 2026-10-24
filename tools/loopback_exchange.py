@@ -1412,10 +1412,9 @@ class LoopbackExchange:
                             replies=(warehouse_error_reply(error),)
                         else:
                             self.events.append({'event':'warehouse_transfer_saved','request_hex':packet.hex()})
-                        frames = tuple(encode_initial_frame(reply,outbound)
-                                       if reply[:1] in (b'\xfa',b'\x6a') else encode_reply(reply,outbound)
-                                       for reply in replies)
-                        game.sendall(b''.join(frames))
+                        frames = warehouse_capacity.encode_transfer_replies(
+                            self.database, replies, outbound, encode_reply)
+                        game.sendall(frames)
                         for reply in replies:
                             self.events.append({'direction':'S2C','stage':'warehouse_transfer_reply','plain_hex':reply.hex()})
                         continue

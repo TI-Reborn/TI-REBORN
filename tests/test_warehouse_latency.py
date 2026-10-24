@@ -1,9 +1,11 @@
 """Prompt warehouse replies without skipping authority or external updates."""
 from dataclasses import replace
 import socket
+import sqlite3
 import threading
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 from server import warehouse_capacity
 from server.economy_runtime import refresh_inventory
@@ -14,6 +16,7 @@ from tio.protocol.item_list import ItemRecord, decode_item_list, encode_item_lis
 from tio.protocol.pet_info import decode_pet_info, encode_pet_info
 from tio.protocol.warehouse import decode_warehouse_list
 from tio.protocol.warehouse_capacity import OPT_IN
+from tio.protocol.transport import InitialCipher, InitialFrameReader, encode_initial_frame
 from tio.protocol.warehouse_transfer import WarehouseTransfer, encode_warehouse_transfer
 from tio.warehouse import WarehouseStore
 import test_ranked as fixture
@@ -100,6 +103,28 @@ class WarehouseLatencyTests(unittest.TestCase):
         self.session._economy_inventory_digest = None
         self.transfer()
         self.assertTrue(refresh_inventory(self.session))
+
+    def test_transfer_reply_projections_share_one_sql_connection(self):
+        from server.economy_runtime import project_packet
+        from tio.weight import city_weight_update
+        replies = self.transfer()
+
+        def encode_reply(packet, cipher):
+            suffix = (city_weight_update(self.path, self.session.account, packet)
+                      if packet[:1] == b'\x30' else None)
+            packet = project_packet(self.path, self.session.account, packet)
+            frame = encode_initial_frame(packet, cipher)
+            return frame + (encode_initial_frame(suffix, cipher) if suffix else b'')
+
+        with patch('tio.db_transaction.sqlite3.connect', wraps=sqlite3.connect) as opened:
+            frame = warehouse_capacity.encode_transfer_replies(
+                self.path, replies, InitialCipher('S2C'), encode_reply)
+        self.assertEqual(opened.call_count, 1)
+        packets = InitialFrameReader(InitialCipher('S2C')).feed(frame)
+        bag = next(packet for packet in packets if packet[:1] == b'\x30')
+        stock = next(packet for packet in packets if packet[:1] == b'\x6a')
+        self.assertEqual(decode_item_list(bag)[1], ())
+        self.assertEqual([item.instance_id for item in decode_warehouse_list(stock)[3]], [300])
 
     def test_external_inventory_change_is_not_hidden_by_transfer_acknowledgement(self):
         refresh_inventory(self.session, force=True)
