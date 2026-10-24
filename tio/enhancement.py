@@ -113,9 +113,10 @@ class EnhancementStore:
             if roll is not None and (type(roll) is not int or not 0 <= roll < 100):
                 raise ValueError('Invalid enhancement random result')
             success = roll is None or roll < chance
-            special = rule['special'] or item.unknown_bytes_03[2] == 1
-            outcome = 'success' if success else 'weakened' if special else 'destroyed'
-            new_level = level + 1 if success else max(0,level-1) if special else 0
+            from .durability import special as is_special
+            special = is_special(item)
+            outcome = 'success' if success else 'reset' if special else 'destroyed'
+            new_level = level + 1 if success else 0
             replacement = None
             if outcome != 'destroyed':
                 # Manual p56: upgrade restores the theoretical maximum, not
@@ -125,10 +126,6 @@ class EnhancementStore:
                 if durability > 65535:
                     raise ValueError('Enhancement durability overflow')
                 words=(durability,)*3
-                if not success:
-                    theoretical=rule["durability"]+new_level*self.rules.config["durability_per_level"]
-                    maximum=max(1,min(item.unknown_words[1]-100,theoretical))
-                    words=(max(0,min(item.unknown_words[0]-100,maximum)),maximum,theoretical)
                 replacement = replace(item, unknown_words=words,
                     unknown_bytes_02=bytes((new_level,)) + item.unknown_bytes_02[1:],
                     unknown_bytes_03=bytes((new_level,)) + item.unknown_bytes_03[1:])

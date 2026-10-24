@@ -29,6 +29,9 @@ class MineTurnRepeatTests(unittest.TestCase):
         turn = self.next_turn(battle, owner)
         actors = tuple(battle['field'].actor(i) for i in battle['field'].actor_ids(owner))
         round_number = battle['field'].mining.round
+        # Direct hub.tick() leaves the previous turn's completion queued.
+        # Measure only packets caused by this new repeated request.
+        self.mine.hub.queues[owner].clear()
         replies = self.mine.send(self.mine.owners.index(owner), encode_end_turn())
         self.assertEqual(battle['arena']._turns.get(room), turn)
         self.assertEqual(tuple(battle['field'].actor(a.actor_id) for a in actors), actors)

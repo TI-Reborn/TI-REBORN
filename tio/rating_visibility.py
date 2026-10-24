@@ -1,4 +1,4 @@
-"""Keep server QA identities out of public standings, including character slots.
+"""Keep QA and retired save owners out of public standings, including slots.
 
 The random namespaces below are reserved by the hosted verification tools.
 Other trusted fixtures can be explicitly marked in rating_exclusions(account).
@@ -9,7 +9,10 @@ import re
 QA_LOGIN = re.compile(r'(?:q(?:[a-z]|er)[0-9a-f]{8}[a-h]|webqa_[0-9a-f]{10}|qa_mail_[0-9a-f]{12}|uon[0-9a-f]{12}[ab])\Z')
 
 
-def excluded(db, owner):
+def excluded(db, owner, *, include_retired=True):
+    from .character_lifecycle import retired
+    if include_retired and retired(db, owner):
+        return True
     login = owner.split(':')[1] if owner.startswith('@character:') else owner
     if QA_LOGIN.fullmatch(login):
         return True
