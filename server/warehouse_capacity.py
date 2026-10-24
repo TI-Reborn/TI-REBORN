@@ -67,7 +67,7 @@ _read_snapshot = ContextVar('tio_warehouse_read_snapshot', default=None)
 
 
 def _preflight(session):
-    from .economy_runtime import city_idle, busy_accounts
+    from .economy_runtime import city_idle
     router, login = _active(session)
     owner = getattr(session, 'account', None)
     slot = getattr(session, 'selected_character_slot', 1)
@@ -75,7 +75,10 @@ def _preflight(session):
     if (not getattr(session, 'owned_pet_probe', False) or type(character) is not int
             or not 0 < character <= 0xffffffff or alias(login, slot) != owner):
         raise ValueError('Owned selected character required')
-    if not city_idle(session) or owner in busy_accounts(router):
+    # city_idle includes this owner's shared/private battle leases. The SQL
+    # snapshot below rechecks persisted leases; unrelated sessions do not
+    # participate in authorising this owner's personal or clan warehouse.
+    if not city_idle(session):
         raise ValueError('Warehouse is available in an idle city only')
     return (login, owner, slot, character), session.locations.current(owner)
 
@@ -227,6 +230,8 @@ def transfer(session, packet, *, capacity):
         # Store scopes cannot commit the outer unit. Re-read only after commit.
         fresh = query(session, bytes((0x69, request.warehouse_type)))
         if fresh is None: raise PacketError('Unknown transfer warehouse kind')
+        from .economy_runtime import note_warehouse_transfer
+        note_warehouse_transfer(session, packets)
         result = []
         inserted = False
         for packet in packets:

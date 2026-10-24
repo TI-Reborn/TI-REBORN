@@ -79,6 +79,13 @@ def project_base_weight(packet, human, inventory):
     return encode_pet_info(PetInfo(human, fields))
 
 
+def project_carried_weight(packet: bytes, human: bool, inventory: bytes) -> bytes:
+    """Update carried mass without reapplying passive capacity/armor bonuses."""
+    pet = decode_pet_info(packet, human_equipment=human)
+    fields = {**pet.fields, '0x8c4b6d': min(65535, inventory_weight(inventory))}
+    return encode_pet_info(PetInfo(human, fields))
+
+
 def encode_weight(actor_id, weight, capacity):
     """Original4E attributes7(maximum) and6(carried), both native u32 stores.
 

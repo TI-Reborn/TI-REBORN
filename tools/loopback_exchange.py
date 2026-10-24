@@ -72,6 +72,8 @@ class LoopbackExchange:
         self.hiring=None
         self.ability_learning=None
         self.database=Path(database) if database is not None else None
+        self._economy_inventory_snapshot: tuple[bytes, ...] | None = None
+        self._economy_inventory_identity: tuple[str, str] | None = None
         from tio.squad import SquadStore
         self.squad=SquadStore(self.database) if self.database is not None else None
         from tio.locations import LocationStore
@@ -1410,8 +1412,11 @@ class LoopbackExchange:
                             replies=(warehouse_error_reply(error),)
                         else:
                             self.events.append({'event':'warehouse_transfer_saved','request_hex':packet.hex()})
+                        frames = tuple(encode_initial_frame(reply,outbound)
+                                       if reply[:1] in (b'\xfa',b'\x6a') else encode_reply(reply,outbound)
+                                       for reply in replies)
+                        game.sendall(b''.join(frames))
                         for reply in replies:
-                            game.sendall(encode_initial_frame(reply,outbound) if reply[:1] in (b'\xfa',b'\x6a') else encode_reply(reply,outbound))
                             self.events.append({'direction':'S2C','stage':'warehouse_transfer_reply','plain_hex':reply.hex()})
                         continue
                     if self.database is not None and packet[:2]==b'\xc8\x2a':

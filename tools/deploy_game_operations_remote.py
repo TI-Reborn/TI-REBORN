@@ -30,6 +30,10 @@ SCOPES['training-base']=frozenset(('server/training_arena.py','server/contracts_
 SCOPES['training-strings']=frozenset(('tio/protocol/assault.py',))
 SCOPES['training-counter']=frozenset(('server/training_arena.py',))
 SCOPES['warehouse-counter-refresh']=frozenset(('server/economy_runtime.py',))
+SCOPES['warehouse-latency'] = frozenset((
+    'server/economy_runtime.py', 'server/warehouse_capacity.py',
+    'server/multi.py', 'tools/loopback_exchange.py', 'tio/weight.py',
+))
 SCOPES['mine-warehouses']=frozenset(('tio/warehouse_completion.py',))
 SCOPES['shared-warehouse']=frozenset(('tio/warehouse_completion.py','tio/warehouse_resources.py'))
 SCOPES['map-speed']=frozenset(('tio/locations.py',))

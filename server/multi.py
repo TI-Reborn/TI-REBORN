@@ -26,8 +26,9 @@ MAX_SESSIONS = 16
 MAX_HANDOFFS = 8
 
 
-def configure_keepalive(connection):
-    """Detect vanished peers without disconnecting healthy, idle game clients."""
+def configure_keepalive(connection: socket.socket) -> None:
+    """Deliver small game replies promptly and detect vanished idle peers."""
+    connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
     connection.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
     if hasattr(socket, 'TCP_KEEPIDLE'):
         connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 60)
