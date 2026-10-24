@@ -73,8 +73,9 @@ def _preflight(session):
     owner = getattr(session, 'account', None)
     slot = getattr(session, 'selected_character_slot', 1)
     character = getattr(session, 'probe_character_id', None)
+    from tio.character_lifecycle import valid_key
     if (not getattr(session, 'owned_pet_probe', False) or type(character) is not int
-            or not 0 < character <= 0xffffffff or alias(login, slot) != owner):
+            or not 0 < character <= 0xffffffff or not valid_key(login, slot, owner)):
         raise ValueError('Owned selected character required')
     # city_idle includes this owner's shared/private battle leases. The SQL
     # snapshot below rechecks persisted leases; unrelated sessions do not

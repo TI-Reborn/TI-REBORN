@@ -29,6 +29,29 @@ SCOPES['encounter-movement']=frozenset(('tio/battle_state.py',))
 SCOPES['training-base']=frozenset(('server/training_arena.py','server/contracts_service.py'))
 SCOPES['training-strings']=frozenset(('tio/protocol/assault.py',))
 SCOPES['training-counter']=frozenset(('server/training_arena.py',))
+SCOPES['gameplay-audit'] = frozenset((
+    'server/character_operations.py',
+    'server/mine_arena.py',
+    'server/team_arena.py',
+    'server/warehouse_capacity.py',
+    'tio/armor.py',
+    'tio/character_deletion.py',
+    'tio/character_identity.py',
+    'tio/character_lifecycle.py',
+    'tio/characters.py',
+    'tio/combat.py',
+    'tio/enhancement.py',
+    'tio/equipment.py',
+    'tio/hiring.py',
+    'tio/mining.py',
+    'tio/protocol/character_delete.py',
+    'tio/rating_visibility.py',
+    'tio/roster_rules.py',
+    'tio/services_completion.py',
+    'tio/tactical_bot.py',
+    'tio/world_completion.py',
+    'tools/loopback_exchange.py',
+))
 SCOPES['warehouse-counter-refresh']=frozenset(('server/economy_runtime.py',))
 SCOPES['warehouse-latency'] = frozenset((
     'server/economy_runtime.py', 'server/warehouse_capacity.py',

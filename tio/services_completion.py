@@ -123,10 +123,11 @@ class ServicesCompletion:
 
     @staticmethod
     def _dismissable(db, owner, pet_id, row):
-        if pet_id == 1 or not _exists(db, 'hired_candidates') or not db.execute('SELECT 1 FROM hired_candidates WHERE account=? AND pet_id=?', (owner, pet_id)).fetchone():
-            raise ServiceRejected('Основного или сохранённого стартового бойца нельзя уволить')
-        if decode_item_list(bytes(row[2]))[1]:
-            raise ServiceRejected('Сначала освободите инвентарь увольняемого бойца')
+        from .roster_rules import require_dismissable, DismissalRejected
+        try:
+            require_dismissable(pet_id, decode_item_list(bytes(row[2]))[1])
+        except DismissalRejected as error:
+            raise ServiceRejected(str(error)) from error
 
     @staticmethod
     def _request(identity, action, arguments):

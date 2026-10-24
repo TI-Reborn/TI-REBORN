@@ -425,6 +425,12 @@ class LoopbackExchange:
         creation=getattr(self,'_creation_owner',None) or pending_owner(self.database,login)
         while not self.stopping.is_set():
             raw,packets=self.receive_choice(conn,reader,outbound)
+            if packets[0][:1] == b'\x13':
+                from server.character_operations import delete_character
+                for reply in delete_character(self, packets[0]):
+                    conn.sendall(encode_initial_frame(reply, outbound))
+                creation = pending_owner(self.database, login)
+                continue
             packet=packets[0]
             if packet[:1]==b'\x11':
                 if creation and pending(self.database,creation):
@@ -1373,9 +1379,14 @@ class LoopbackExchange:
                             self.events.append({'direction':'S2C','stage':'arena_create_reply','plain_hex':reply.hex()})
                         continue
                     if self.hiring is not None and packet[:1]==b'\x64':
+                        from tio.services_completion import ServiceRejected
                         try:
                             from server.services_runtime import native
                             replies=native(self,pet_id=decode_dismiss_request(packet))
+                        except ServiceRejected as error:
+                            from tio.protocol.system_message import encode_shop_error
+                            replies=(encode_shop_error('увольнения: '+str(error)),)
+                            self.events.append({'event':'dismiss_rejected','reason':str(error)})
                         except ValueError as error:
                             replies=(shop_error_reply(error),)
                             self.events.append({'event':'dismiss_rejected','reason':str(error)})

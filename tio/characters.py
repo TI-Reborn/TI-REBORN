@@ -35,8 +35,9 @@ class CharacterStore:
             occupied = {slot for slot,_ in self._owners(db,account)}
             slot = next((value for value in range(1,MAX_CHARACTERS+1) if value not in occupied),None)
             if slot is None:raise CreateRejected(2)
-            owner = alias(account,slot)
-            if slot != 1:
+            from .character_lifecycle import allocate
+            owner = allocate(db, account, slot)
+            if slot != 1 and owner == alias(account, slot):
                 # An alias is unloggable. Never reuse unexpected old data under
                 # it, or mint a fresh wallet over a historical owner.
                 if db.execute('SELECT 1 FROM characters WHERE account=?',(owner,)).fetchone():
@@ -50,16 +51,33 @@ class CharacterStore:
 
     @staticmethod
     def _owners(db,account):
+        from .character_lifecycle import retired, latest
         result=[]
-        if db.execute('SELECT 1 FROM characters WHERE account=? AND slot=1',(account,)).fetchone():
+        if (db.execute('SELECT 1 FROM characters WHERE account=? AND slot=1',(account,)).fetchone()
+                and not retired(db, account)):
             result.append((1,account))
         # This supports prepare/list of a particular save owner as well as
         # authentication-scoped lists on the native selection screen.
         if not account.startswith(PREFIX):
             for slot,owner in db.execute('SELECT slot,owner FROM character_identities WHERE login=? ORDER BY slot',(account,)):
+                if latest(db, account, slot) is not None:
+                    continue
                 if owner_for_slot(db,account,slot)!=owner:raise ValueError('Corrupt character mapping')
                 result.append((slot,owner))
-        return tuple(result)
+            for slot in range(1, MAX_CHARACTERS + 1):
+                revision = latest(db, account, slot)
+                if revision is not None and revision[2] is None:
+                    result.append((slot, owner_for_slot(db, account, slot)))
+        return tuple(sorted(result))
+
+    def delete(self, account: str, slot: int, *, now: float) -> None:
+        """Retire one owned character without deleting saves or credentials."""
+        from .character_lifecycle import retire
+        from .character_deletion import require_retirable
+        with transaction(self.path) as db:
+            owner = owner_for_slot(db, account, slot)
+            require_retirable(db, owner, now)
+            retire(db, account, slot, owner, now)
 
     def owner(self,account,slot):
         with closing(connect(self.path)) as db:

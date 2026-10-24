@@ -60,13 +60,14 @@ class HireStore:
             db.execute('BEGIN IMMEDIATE')
             row=db.execute('SELECT human,pet_packet,inventory_packet FROM owned_pets WHERE account=? AND pet_id=?',
                            (account,pet_id)).fetchone()
-            hired=db.execute('SELECT 1 FROM hired_candidates WHERE account=? AND pet_id=?',(account,pet_id)).fetchone()
             if row is None:raise PurchaseRejected('Wallet or owned recipient missing')
-            # The bootstrap actor is retained; only explicitly hired recruits can leave.
-            if hired is None:raise PurchaseRejected('Starting actor cannot be dismissed')
             if OwnedPetStore.validate(row[1],row[2],bool(row[0]))!=pet_id:
                 raise PurchaseRejected('Pet ID mismatch')
-            if decode_item_list(row[2])[1]:raise PurchaseRejected('Recruit inventory is not empty')
+            from .roster_rules import require_dismissable, DismissalRejected
+            try:
+                require_dismissable(pet_id, decode_item_list(row[2])[1])
+            except DismissalRejected as error:
+                raise PurchaseRejected(str(error)) from error
             db.execute('DELETE FROM owned_pets WHERE account=? AND pet_id=?',(account,pet_id))
             # Keep hire history: dismissed IDs cannot be reused by later hires.
         return reply
