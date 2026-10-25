@@ -1,0 +1,150 @@
+{
+ "description": "Known failing tests outside CI, each with a reason. tools/run_full_tests.py reports them separately and flags entries that start passing.",
+ "entries": [
+  {
+   "test": "test_bank_economy.",
+   "category": "retired-gold",
+   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+  },
+  {
+   "test": "test_bank_gateway.",
+   "category": "retired-gold",
+   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+  },
+  {
+   "test": "test_economy_antifarm.",
+   "category": "retired-gold",
+   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+  },
+  {
+   "test": "test_economy_runtime.EconomyRuntimeTests.test_paid_gold_refresh_and_empty_account_login",
+   "category": "retired-gold",
+   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+  },
+  {
+   "test": "test_original_shop_prices.",
+   "category": "retired-gold",
+   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+  },
+  {
+   "test": "test_premium_account.PremiumShopTests.test_gold_discount_rounding_matches_catalog_and_no_resale_arbitrage",
+   "category": "retired-gold",
+   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+  },
+  {
+   "test": "test_shop_clan_benefits.",
+   "category": "retired-gold",
+   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+  },
+  {
+   "test": "test_shop_completion.",
+   "category": "retired-gold",
+   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+  },
+  {
+   "test": "test_stage2_admission_capacity.",
+   "category": "retired-gold",
+   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+  },
+  {
+   "test": "test_item_stacking.StackTests.test_gold_purchase_stacks_candies_but_not_rockets",
+   "category": "retired-gold",
+   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+  },
+  {
+   "test": "test_warehouse_completion.WarehouseCompletionTests.test_rental_remote_expiry_preserves_city_rows_and",
+   "category": "retired-gold",
+   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+  },
+  {
+   "test": "test_multi_account.MultiAccountTests.test_premium_purchase_and_personal_shop_prices",
+   "category": "retired-gold",
+   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+  },
+  {
+   "test": "test_native_arena_group_rows.",
+   "category": "superseded-client-status",
+   "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+  },
+  {
+   "test": "test_native_team_lobby_list.",
+   "category": "superseded-client-status",
+   "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+  },
+  {
+   "test": "test_native_wager_lobby_captions.",
+   "category": "superseded-client-status",
+   "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+  },
+  {
+   "test": "test_backup_tools_deployment.",
+   "category": "local-artifact",
+   "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
+  },
+  {
+   "test": "test_special_items.",
+   "category": "local-artifact",
+   "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
+  },
+  {
+   "test": "test_hosted_clan_warfare.",
+   "category": "local-artifact",
+   "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
+  },
+  {
+   "test": "test_shared_mines_qa.",
+   "category": "local-artifact",
+   "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
+  },
+  {
+   "test": "test_stage7_hosted_qa.",
+   "category": "local-artifact",
+   "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
+  },
+  {
+   "test": "test_verify_hosted_gameplay_modes.",
+   "category": "local-artifact",
+   "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
+  },
+  {
+   "test": "test_game_tls_deploy.",
+   "category": "local-artifact",
+   "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
+  },
+  {
+   "test": "test_login_economy_boundary.",
+   "category": "not-merged",
+   "note": "Tests a function that is not in main (feature prepared but not merged). MultiServer.initialize_character_economy does not exist."
+  },
+  {
+   "test": "unittest.loader._FailedTest.test_hub_contention_performance",
+   "category": "not-merged",
+   "note": "Tests a function that is not in main (feature prepared but not merged). tio.performance.timed_block does not exist."
+  },
+  {
+   "test": "unittest.loader._FailedTest.test_recovery_roster_updates",
+   "category": "not-merged",
+   "note": "Tests a function that is not in main (feature prepared but not merged). tio.battle_recovery.treat_updates does not exist (tools/check_recovery_roster.py would add it)."
+  },
+  {
+   "test": "unittest.loader._FailedTest.test_launcher_archive",
+   "category": "local-artifact",
+   "note": "launcher/build_archive.py is not in the repository."
+  },
+  {
+   "test": "unittest.loader._FailedTest.test_menu_interface",
+   "category": "local-artifact",
+   "note": "launcher/build_menu_interface_update.py is not in the repository."
+  },
+  {
+   "test": "unittest.loader._FailedTest.test_portal_backup",
+   "category": "local-artifact",
+   "note": "web/ is not in the repository."
+  },
+  {
+   "test": "unittest.loader._FailedTest.test_base_fund_completion",
+   "category": "local-artifact",
+   "note": "Reads reports/gameplay-followup (gitignored)."
+  }
+ ]
+}

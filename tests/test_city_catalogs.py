@@ -17,7 +17,9 @@ class CityCatalogTests(unittest.TestCase):
         self.assertEqual(category, 0)
         ids=[item.item_id for item in items]
         self.assertEqual(ids[:2], [301, 3])
-        self.assertNotIn(326, ids)  # Knife is Gold-only in the original manual.
+        # Gold is retired (credits-only economy): the Knife, Gold-only in the
+        # original manual, is now an ordinary credits offer.
+        self.assertIn(326, ids)
         self.assertEqual(len(ids),len(set(ids)))
         self.assertTrue({3,9,210,211,212,302,304,312}.issubset(ids))
         self.assertFalse({0,1,2,300,65500}.intersection(ids))

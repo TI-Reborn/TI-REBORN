@@ -738,6 +738,7 @@
 | [tools/review_ui_hd_font_filename_abi.py](../tools/review_ui_hd_font_filename_abi.py) | Inspect real embedded font filenames through the pinned TI basename scanner. |
 | [tools/review_ui_hd_package_static.py](../tools/review_ui_hd_package_static.py) | Independent static review of the exact selected HD package and native hooks. |
 | [tools/revise_stage34_portal_integration.py](../tools/revise_stage34_portal_integration.py) | Add only the reviewed fund UI strings; retain the earlier integration proof. |
+| [tools/run_full_tests.py](../tools/run_full_tests.py) | Whole legacy suite; separates environment gaps and documented known failures from real ones. |
 | [tools/run_hosted_surroundings_qa.py](../tools/run_hosted_surroundings_qa.py) | Bounded public multiplayer diagnostics using an existing owned QA fixture. |
 | [tools/run_launcher_update_publication.py](../tools/run_launcher_update_publication.py) | Stage and publish a tested launcher using a fresh hosted backup, via SSH. |
 | [tools/run_legacy_graphical_qa.py](../tools/run_legacy_graphical_qa.py) | Own real 0.1.6 graphical client and genuine hosted TLS authentication. |

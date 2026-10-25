@@ -23,6 +23,7 @@ def run(source=ROOT,fixtures=None):
     from tio.wallets import WalletStore
     from tio import battle_checkpoints
     from tio.protocol.battle_turn import encode_end_turn
+    from tio.turn_repeats import END_TURN_REPEAT_SECONDS
     c=fixture.SharedTeamTests();c.setUp()
     try:
         for index in range(4):
@@ -41,6 +42,9 @@ def run(source=ROOT,fixtures=None):
                 owner=c.hub.identities[c.sessions[2*pair]];battle=c.hub.battles[owner]
                 current=battle['arena']._turns[battle['room'].room_id][0]
                 index=next(i for i,s in enumerate(c.sessions) if c.hub.identities[s]==current)
+                # The fixture clock is frozen; step past the native
+                # repeated-end-turn fence (tio.turn_repeats) so each end is real.
+                c.now+=END_TURN_REPEAT_SECONDS+.01
                 started=time.perf_counter();replies=c.send(index,encode_end_turn());c.hub.tick()
                 assert not any(p[0]==0xf0 for p in replies)
                 assert battle['arena']._turns[battle['room'].room_id][0]!=current

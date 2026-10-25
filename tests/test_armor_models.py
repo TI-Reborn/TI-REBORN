@@ -4,6 +4,7 @@ import xml.etree.ElementTree as ET
 from tools.normalize_armor_models import normalize,MODELS
 
 
+@unittest.skipUnless(MODELS.is_dir(), 'installed TI client models required: '+str(MODELS))
 class ArmorModelTests(unittest.TestCase):
     def test_installed_resources_for_all_supported_armor(self):
         root=ET.parse(Path(__file__).resolve().parents[1]/'evidence/items_diagnostic.xml').getroot()

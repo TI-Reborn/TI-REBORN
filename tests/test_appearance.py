@@ -88,8 +88,9 @@ class AppearanceTests(unittest.TestCase):
 
     def test_creation_is_free_once_then_city_changes_cost_credits(self):
         with closing(sqlite3.connect(self.path)) as db,db:
-            db.execute('CREATE TABLE character_onboarding (account TEXT PRIMARY KEY, completed INTEGER NOT NULL DEFAULT 0)')
-            db.execute("INSERT INTO character_onboarding VALUES ('alice',0)")
+            # The stores now create this table themselves.
+            db.execute('CREATE TABLE IF NOT EXISTS character_onboarding (account TEXT PRIMARY KEY, completed INTEGER NOT NULL DEFAULT 0)')
+            db.execute("INSERT OR REPLACE INTO character_onboarding VALUES ('alice',0)")
             db.execute("UPDATE wallets SET credits=0 WHERE account='alice'")
         selected=bytes((1,16,4,3,0,0))
         change(self.path,'alice',encode_request(1,selected),finish_creation=True)

@@ -3,8 +3,9 @@ import unittest
 from pathlib import Path
 from xml.etree import ElementTree as ET
 from tools.armor_missing_parts_20261021 import patch,validate,OUT
-from tools.normalize_armor_models import normalize
+from tools.normalize_armor_models import normalize,MODELS
 
+@unittest.skipUnless(MODELS.is_dir(), 'installed TI client models required: '+str(MODELS))
 class MissingArmorParts(unittest.TestCase):
  def test_patch_changes_only_render_bindings_and_keeps_pantsu_fix(self):
   before=(OUT/'items-before.xml').read_bytes();after=patch(before);self.assertTrue(validate(before,after)['passed'])

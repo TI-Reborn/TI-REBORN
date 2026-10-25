@@ -12,12 +12,15 @@ class WeaponDamageXmlTests(unittest.TestCase):
         for identity,w in WeaponCatalog().weapons.items():
             with self.subTest(weapon=identity):
                 item=items[identity]
-                self.assertEqual(item.find("for/set[@stat='patk']").get('val'),str(w.damage_base))
-                self.assertEqual(item.find("for/add[@stat='patk']").get('val'),str(w.damage_random))
-                source=WeaponCatalog().sources[identity]
-                self.assertEqual(item.find("value[@key='damageFade']").get('val'),source.get('damage_fade','100'))
-                for stat,key,default in (('accuracy','accuracy','100'),('accuracyGain','accuracy_gain_amount','0')):
-                    self.assertEqual(float(item.find(f"for/add[@stat='{stat}']").get('val')),int(source.get(key,default))/100)
+                # Smoke/flash grenades deal no damage and carry no combat stat block.
+                harmless=w.damage_base==w.damage_random==0 and item.find("for/set[@stat='patk']") is None
+                if not harmless:
+                    self.assertEqual(item.find("for/set[@stat='patk']").get('val'),str(w.damage_base))
+                    self.assertEqual(item.find("for/add[@stat='patk']").get('val'),str(w.damage_random))
+                    source=WeaponCatalog().sources[identity]
+                    self.assertEqual(item.find("value[@key='damageFade']").get('val'),source.get('damage_fade','100'))
+                    for stat,key,default in (('accuracy','accuracy','100'),('accuracyGain','accuracy_gain_amount','0')):
+                        self.assertEqual(float(item.find(f"for/add[@stat='{stat}']").get('val')),int(source.get(key,default))/100)
                 before=ET.tostring(item)
                 fields={e.get('key'):e.get('val') for e in item.findall('value')}
                 fields['item_id']=str(identity)
