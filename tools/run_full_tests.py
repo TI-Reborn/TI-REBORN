@@ -144,7 +144,8 @@ def main(argv=None):
     reasons = Counter(e['reason'] for e in result.environment)
     by_module = Counter(e['test'].split('.')[0] for e in result.real)
     failing = [e['test'] for e in (*result.known, *result.environment, *result.real)]
-    stale = [k['test'] for k in result.entries if not any(t.startswith(k['test']) for t in failing)]
+    # Only a whole-suite run can tell that a known failure now passes.
+    stale = [] if args.modules else [k['test'] for k in result.entries if not any(t.startswith(k['test']) for t in failing)]
     summary = dict(ran=result.testsRun, skipped=len(result.skipped),
                    environment=len(result.environment), environment_reasons=dict(reasons.most_common()),
                    known=len(result.known), known_categories=dict(Counter(e['category'] for e in result.known).most_common()),
