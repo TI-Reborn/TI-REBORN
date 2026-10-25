@@ -48,6 +48,7 @@ MODULES = (
     'test_repair_warehouse_regression',
     'test_area_fire',
     'test_friends',
+    'test_item_ids',
     'test_launch_admission',
     'test_repair_from_warehouse',
     'test_sniper_scope',

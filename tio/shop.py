@@ -14,6 +14,7 @@ from .protocol.shop_sale import encode_sale_request
 from .item_stacking import merge_stacks, stack_key
 from .inventory_capacity import validate_capacity
 from .shop_completion import ShopCompletion
+from .item_ids import next_item_id
 
 
 class PurchaseRejected(ValueError):
@@ -206,17 +207,8 @@ class ShopStore:
             OwnedPetStore.validate(row[1], row[2], bool(row[0]))
             owner, items, unknown = decode_item_list(row[2])
             # IDs are unique across this account's pets, including persisted seeds.
-            highest = 0
-            for (snapshot,) in db.execute('SELECT inventory_packet FROM owned_pets WHERE account=?', (account,)):
-                _, existing, _ = decode_item_list(snapshot)
-                highest = max(highest, max((i.instance_id for i in existing), default=0))
-            # Warehouse IDs remain occupied even when all bags are empty.
-            if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='warehouse_items'").fetchone():
-                from .warehouse import WarehouseStore
-                highest = max(highest, max(WarehouseStore._read(db, account), default=0))
-            sequence = db.execute('SELECT next_id FROM item_sequences WHERE account=?', (account,)).fetchone()
-            if sequence is not None:
-                highest = max(highest, sequence[0]-1)
+            # IDs are unique across this account's pets, warehouse and sequence.
+            highest = next_item_id(db, account) - 1
             additions, next_id = self._completed('additions',offer.item_id,offer.unknown_u32_02,
                                                    offer.durability,request.quantity,highest+1)
             # Serialization/capacity errors happen before either balance or inventory changes.

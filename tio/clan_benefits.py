@@ -14,6 +14,7 @@ import time
 
 from .clans import CREST, ClanRejected, membership, require, record
 from .item_catalog import items_root
+from .item_ids import next_item_id
 
 ROOT = Path(__file__).resolve().parents[1]
 base_fund_completion_installed=True
@@ -413,7 +414,7 @@ def deliver_prizes(db, account, *, capacity=3000):
         for item in decode_item_list(raw)[1]:
             if item.instance_id in seen:raise ClanRejected('Повтор идентификатора предмета')
             seen.add(item.instance_id)
-    seq=db.execute('SELECT next_id FROM item_sequences WHERE account=?',(account,)).fetchone();next_id=max(max(seen,default=0)+1,seq[0] if seq else 1)
+    next_id=next_item_id(db,account,seen)
     definitions={int(n.get('id')):{v.get('key'):v.get('val') for v in n.findall('value')} for n in items_root().iter('item')}
     completed=[]
     for event,template,count in rows:

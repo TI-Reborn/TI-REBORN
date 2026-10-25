@@ -29,6 +29,7 @@ from .owned_pets import OwnedPetStore
 from .wallets import WalletStore
 from .warehouse import WarehouseStore
 from .item_catalog import items_root
+from .item_ids import next_item_id
 
 ROOT = Path(__file__).resolve().parents[1]
 WEEK = 604800
@@ -413,8 +414,7 @@ class CompletedSCShopStore:
                 for item in decode_item_list(snapshot)[1]:
                     if item.instance_id in seen: raise ValueError('Duplicate item ID across owned inventories')
                     seen.add(item.instance_id)
-            sequence = db.execute('SELECT next_id FROM item_sequences WHERE account=?', (account,)).fetchone()
-            next_id = max(max(seen, default=0) + 1, sequence[0] if sequence else 1)
+            next_id = next_item_id(db, account, seen)
             additions = ()
             for offer, quantity in selection:
                 records, next_id = self.completion.additions(offer.item_id, packs[offer.lot_id], offer.durability, quantity, next_id, enhancement=offer.enhancement)

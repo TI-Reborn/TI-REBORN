@@ -21,6 +21,7 @@ from .protocol.character_create import decode_character_create, encode_character
 from .protocol.hire import encode_pet_deleted
 from .protocol.pet_info import decode_pet_info, encode_pet_info
 from .protocol.item_list import ItemRecord, decode_item_list, encode_item_list
+from .item_ids import next_item_id
 
 
 class ServiceRejected(ValueError):
@@ -288,14 +289,8 @@ class ServicesCompletion:
             if reward is None or reward[0] is not None:
                 raise ServiceRejected('Подарок отсутствует или уже получен')
             owner_id, items, unknown = decode_item_list(bytes(row[2]))
-            highest = 0
-            for (raw,) in db.execute('SELECT inventory_packet FROM owned_pets WHERE account=?', (owner,)):
-                highest = max(highest, max((i.instance_id for i in decode_item_list(bytes(raw))[1]), default=0))
-            if _exists(db, 'warehouse_items'):
-                highest = max(highest, db.execute('SELECT COALESCE(MAX(instance_id),0) FROM warehouse_items WHERE account=?', (owner,)).fetchone()[0])
             db.execute('CREATE TABLE IF NOT EXISTS item_sequences(account TEXT PRIMARY KEY,next_id INTEGER NOT NULL)')
-            sequence = db.execute('SELECT next_id FROM item_sequences WHERE account=?', (owner,)).fetchone()
-            highest = max(highest, sequence[0] - 1 if sequence else 0)
+            highest = next_item_id(db, owner) - 1
             if highest >= 0xffffffff:
                 raise ServiceRejected('ID предметов исчерпаны')
             item = ItemRecord(highest + 1, 32, b'\0' * 2, 1, 0, 0, (1, 1, 1), b'\0' * 4, None, b'\0' * 3)

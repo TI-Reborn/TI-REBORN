@@ -16,6 +16,7 @@ import hashlib,hmac,json,os,re,secrets,time,uuid
 
 from .db_transaction import connect,transaction,current
 from .protocol.item_list import decode_item_list,encode_item_list
+from .item_ids import next_item_id
 
 ROOT=Path(__file__).resolve().parents[1]
 MAX=0xffffffff
@@ -375,7 +376,7 @@ def _move(db,mark,destination,*,clear=False):
         raw=db.execute('SELECT inventory_packet FROM owned_pets WHERE account=? AND pet_id=?',(mark['holder'],pet)).fetchone()[0]
         _,items,_=decode_item_list(raw);packet=encode_item_list(pet,tuple(i for i in items if i.instance_id!=item.instance_id),flag)
         db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=?',(packet,mark['holder'],pet))
-    sequence=db.execute('SELECT next_id FROM item_sequences WHERE account=?',(destination,)).fetchone();new=max(max(target,default=0)+1,sequence[0] if sequence else 1)
+    new=next_item_id(db,destination,target)
     if not 0<new<0xffff0000:raise BankRejected('Исчерпаны идентификаторы предметов')
     received=replace(item,instance_id=new,unknown_u8_01=0,location_raw=0,unknown_bytes_02=item.unknown_bytes_02[:2]+(b'\0' if clear else b'\x01')+item.unknown_bytes_02[3:])
     from .warehouse_completion import stash

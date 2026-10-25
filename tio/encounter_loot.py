@@ -2,6 +2,7 @@
 from dataclasses import replace
 from .protocol.item_list import ItemRecord,decode_item_list,encode_item_list
 from .world_encounters import POLICY
+from .item_ids import next_item_id
 MATERIALS={int(k):v for k,v in POLICY.get('loot',{}).items()}
 
 def material_sale(item,count):
@@ -26,8 +27,7 @@ def award(db,account,match_id,result,report,*,escaped=False):
     if not rows:raise ValueError('Encounter recipient missing')
     ids=[i.instance_id for _,_,p in rows for i in decode_item_list(p)[1]]
     ids.extend(k for k, in db.execute('SELECT instance_id FROM warehouse_items WHERE account=?',(account,)))
-    sequence=db.execute('SELECT next_id FROM item_sequences WHERE account=?',(account,)).fetchone()
-    next_id=max(max(ids,default=0)+1,sequence[0] if sequence else 1)
+    next_id=next_item_id(db,account,ids)
     if next_id+len(MATERIALS)>0xffffffff:raise ValueError('Encounter loot ID space exhausted')
     materials=tuple(ItemRecord(next_id+index,identity,b'\0\0',report['dogs']*rule['per_dog'],0,0,(0,0,0),b'\0'*4,None,b'\0'*3)
                     for index,(identity,rule) in enumerate(MATERIALS.items()))

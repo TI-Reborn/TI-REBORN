@@ -19,6 +19,7 @@ from .protocol.item_list import decode_item_list, encode_item_list
 from .protocol.warehouse import encode_private_warehouse_snapshot
 from .item_stacking import merge_stacks
 from .inventory_capacity import validate_capacity
+from .item_ids import next_item_id
 
 BASE = 32
 CLAN_OFFERS = {3: ((8, 15000), (16, 45000)), 4: ((8, 15000), (16, 45000))}
@@ -234,8 +235,7 @@ def exchange(db, account, pet_id, *, deposits=(), withdrawals=()):
             if item is None: raise WarehouseRejected('Selected item is not in the owned source')
             if count > item.count: raise WarehouseRejected('Insufficient item quantity')
             if (item.equipped or item.slot) and count != item.count: raise WarehouseRejected('Unequip item before transferring')
-    sequence = db.execute('SELECT next_id FROM item_sequences WHERE account=?', (account,)).fetchone()
-    next_id = max(max(seen, default=0)+1, sequence[0] if sequence else 1)
+    next_id = next_item_id(db, account, seen)
     for selection, source, destination in ((withdrawals, warehouse, inventory), (deposits, inventory, warehouse)):
         for key, count in selection.items():
             item = source[key]
