@@ -42,8 +42,8 @@ def combat_rules():
 class Combat:
     def __init__(self,field,catalog,*,rng=None):
         self.field,self.catalog=field,catalog
-        from .armor import ArmorCatalog
-        self.armor=ArmorCatalog()
+        from .rule_catalogs import armor_catalog
+        self.armor=armor_catalog()
         self.rng=rng or random.Random()
         self.inventories={}
         self.enhancement_caps={}
@@ -64,10 +64,10 @@ class Combat:
         from .achievements import BattleAchievements
         self.achievements=BattleAchievements()
         self.rental_tax_units={}
-        from .weapon_proficiency import ProficiencyRules
-        self.proficiency_rules=ProficiencyRules()
-        from .enhancement import EnhancementRules
-        self.enhancement_rules=EnhancementRules()
+        from .rule_catalogs import proficiency_rules
+        self.proficiency_rules=proficiency_rules()
+        from .rule_catalogs import enhancement_rules
+        self.enhancement_rules=enhancement_rules()
         self.proficiencies={}
         self.miner_defense={}
         self.dog_bonuses={}

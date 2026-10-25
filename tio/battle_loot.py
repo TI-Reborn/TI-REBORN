@@ -12,6 +12,7 @@ from .protocol.action_points import encode_action_points
 from .item_stacking import merge_stacks
 from .inventory_capacity import validate_capacity
 from .item_catalog import items_root
+from functools import lru_cache
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -41,6 +42,13 @@ def match_id_floor(combat):
                 floor=max(floor,1+(highest or 0))
     return floor
 
+@lru_cache(maxsize=1)
+def loot_metadata():
+    """Read-only item values shared by every match (snapshots store a reference)."""
+    return {int(n.get('id')):{'name':n.get('name'),**{v.get('key'):v.get('val') for v in n.findall('value')}}
+            for n in items_root()}
+
+
 class BattleLoot:
     def __init__(self,combat,positions,*,level=1,rng=None):
         self.combat=combat
@@ -52,8 +60,7 @@ class BattleLoot:
         self.ground=set()
         self.sessions={}
         self.next_id=match_id_floor(combat)
-        self.metadata={int(n.get('id')):{'name':n.get('name'),**{v.get('key'):v.get('val') for v in n.findall('value')}}
-                       for n in items_root()}
+        self.metadata=loot_metadata()
         from .equipment import armor_rules
         rules=armor_rules()
         self.weapons=[i for i,v in self.metadata.items() if i in combat.catalog.weapons

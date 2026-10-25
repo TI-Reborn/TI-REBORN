@@ -5,6 +5,7 @@ callbacks. Object references preserve field/combat/view cycles. Runtime clocks
 and locks are rebound explicitly. Containers preserve tuple keys and fractions.
 """
 from collections import deque
+from copy import deepcopy
 from dataclasses import fields,is_dataclass
 from fractions import Fraction
 from functools import lru_cache
@@ -30,6 +31,13 @@ OBJECTS={'ArenaService','ArenaRooms','BattleField','Combat','WeaponCatalog','Arm
     'ProficiencyRules','EnhancementRules','BattleExperience','BattleAchievements','BattleDoors',
     'BattleLoot','VisibilityView','MiningBattle','Practice'}
 OMIT={'_clock','_lock','_durable','_durable_arena','clock'}
+# Rule catalogues identical to a fresh process copy are stored by reference.
+# rules_digest pins the catalogue sources, so a reference restores the same
+# values; a battle-specific (unequal) instance is still encoded in full.
+STATIC_CLASSES=('tio.weapons.WeaponCatalog','tio.armor.ArmorCatalog',
+    'tio.enhancement.EnhancementRules','tio.weapon_proficiency.ProficiencyRules')
+# STATIC_FACTORIES (below) names the factory for each reference.
+STATIC_ATTRIBUTES={('tio.battle_loot.BattleLoot','metadata'):'tio.battle_loot.loot_metadata'}
 
 
 @lru_cache(maxsize=1)
@@ -42,6 +50,43 @@ def registry():
                     and (is_dataclass(value) or value.__name__ in OBJECTS)):
                 result[value.__module__+'.'+value.__name__]=value
     return result
+
+
+STATIC_FACTORIES={'tio.weapons.WeaponCatalog':'tio.weapons.WeaponCatalog',
+    'tio.armor.ArmorCatalog':'tio.rule_catalogs.armor_catalog',
+    'tio.enhancement.EnhancementRules':'tio.rule_catalogs.enhancement_rules',
+    'tio.weapon_proficiency.ProficiencyRules':'tio.rule_catalogs.proficiency_rules',
+    'tio.battle_loot.loot_metadata':'tio.battle_loot.loot_metadata'}
+
+
+@lru_cache(maxsize=None)
+def canonical(name):
+    """Process-wide default instance/value for a static snapshot reference."""
+    if name not in STATIC_FACTORIES:raise ValueError('Unknown static snapshot reference')
+    module,function=STATIC_FACTORIES[name].rsplit('.',1)
+    return getattr(import_module(module),function)()
+
+
+def restored(name):
+    """Shared read-only catalogues are reused; the weapon catalogue is copied
+    because battle code and tests own (and may adjust) their weapon catalogue."""
+    value=canonical(name)
+    return deepcopy(value) if name=='tio.weapons.WeaponCatalog' else value
+
+
+def _equal(a,b):
+    """Strict structural equality: types must match (True is not 1)."""
+    if a is b:return True
+    if type(a) is not type(b):return False
+    if type(a) in (dict,MappingProxyType):
+        return a.keys()==b.keys() and all(_equal(x,b[k]) for k,x in a.items())
+    if type(a) in (list,tuple):return len(a)==len(b) and all(map(_equal,a,b))
+    if hasattr(a,'__dict__') and not isinstance(a,type):return _equal(vars(a),vars(b))
+    return a==b
+
+
+def _static(name,value):
+    return _equal(value,canonical(name))
 
 
 @lru_cache(maxsize=1)
@@ -88,9 +133,17 @@ def dumps(value,*,clock=time.monotonic,wall=time.time):
         elif name not in allowed:raise ValueError('Unsupported battle state type: '+name)
         if id(v) in seen:return {'r':seen[id(v)]}
         index=len(nodes);seen[id(v)]=index;nodes.append(None)
+        if name in STATIC_CLASSES and _static(name,v):
+            nodes[index]={'class':name,'static':name};return {'r':index}
         attributes={'state':v.getstate()} if name=='random.Random' else {
             k:x for k,x in vars(v).items() if k not in OMIT}
-        nodes[index]={'class':name,'attributes':encode(attributes)}
+        pairs=[]
+        for k,x in attributes.items():
+            shared=STATIC_ATTRIBUTES.get((name,k))
+            if shared is not None and _equal(x,canonical(shared)):
+                pairs.append([k,{'k':shared}])
+            else:pairs.append([encode(k),encode(x)])
+        nodes[index]={'class':name,'attributes':{'d':pairs}}
         return {'r':index}
     data=dict(version=VERSION,rules=rules_digest(),mono=clock(),wall=wall(),root=encode(value),nodes=nodes)
     text=json.dumps(data,separators=(',',':'),allow_nan=False)
@@ -107,7 +160,10 @@ def loads(text,*,clock=time.monotonic,wall=time.time,rebase=True):
     objects=[]
     for node in nodes:
         name=node['class']
-        if name=='random.Random':value=random.Random()
+        if 'static' in node:
+            if node['static']!=name or name not in STATIC_CLASSES:raise ValueError('Invalid static snapshot object')
+            value=restored(name)
+        elif name=='random.Random':value=random.Random()
         elif name in allowed:value=allowed[name].__new__(allowed[name])
         else:raise ValueError('Unknown snapshot class')
         objects.append(value)
@@ -121,6 +177,9 @@ def loads(text,*,clock=time.monotonic,wall=time.time,rebase=True):
         if tag=='r':
             if type(x) is not int or not 0<=x<len(objects):raise ValueError('Invalid snapshot reference')
             return objects[x]
+        if tag=='k':
+            if x not in STATIC_ATTRIBUTES.values():raise ValueError('Invalid static snapshot reference')
+            return canonical(x)
         if tag=='b':return bytes.fromhex(x)
         if tag=='p':return Path(x)
         if tag=='f':return Fraction(*x)
@@ -132,6 +191,7 @@ def loads(text,*,clock=time.monotonic,wall=time.time,rebase=True):
         if tag in factories:return factories[tag](decode(a) for a in x)
         raise ValueError('Unknown snapshot value type')
     for node,value in zip(nodes,objects):
+        if 'static' in node:continue
         attributes=decode(node['attributes'])
         if node['class']=='random.Random':value.setstate(attributes['state']);continue
         if any(not isinstance(k,str) or k.startswith('__') or k in OMIT for k in attributes):raise ValueError('Invalid snapshot attribute')

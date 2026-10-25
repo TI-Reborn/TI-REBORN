@@ -73,6 +73,24 @@ class SightFastPathTests(unittest.TestCase):
                         checked += 1; positives += expected
         self.assertGreater(positives, checked // 20)  # Not a vacuous all-False comparison.
 
+    def test_weather_prefilter_keeps_the_same_rain_cells(self):
+        from tio import weather
+        from tio.protocol.weather import decode_weather, MAX_CELLS
+        rng = random.Random(7); compared = 0
+        for _ in range(120):
+            combat = scene(rng); field = combat.field; field.combat = combat
+            field.scene_metadata = {'profile': next(iter(weather.policy()['profiles'])), 'seed': 0, 'objects': []}
+            while not weather.raining(field): field.scene_metadata['seed'] += 1
+            for owner in (0, 1):
+                observers = [a for a in field._actors.values() if a.health and field.allied(a.owner_id, owner)]
+                roofs = weather.sheltered(field)
+                expected = [(x, y) for y in range(field.height) for x in range(field.width)
+                            if (x, y) not in roofs and (x, y) not in field.blocked and not (x+2*y) % 3
+                            and any(reference(combat, a, SimpleNamespace(x=x, y=y), field=field) for a in observers)]
+                self.assertEqual(decode_weather(weather.packet(field, owner))[2], tuple(expected[:MAX_CELLS]))
+                compared += bool(expected)
+        self.assertGreater(compared, 50)
+
     def test_far_cells_trace_no_rays(self):
         combat = scene(random.Random(1)); field = combat.field
         state = initialize(combat); state['recon'].clear(); state['areas'].clear()
