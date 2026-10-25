@@ -25,6 +25,12 @@ def metadata():
     return frozenset(decode_gears(catalogue_packet())),armor_rules(),WeaponCatalog(),durability
 
 
+@lru_cache(maxsize=1)
+def _durability_per_level():
+    from .enhancement import EnhancementRules
+    return EnhancementRules().config['durability_per_level']
+
+
 def validate(packet,inventory,human,equipment):
     from .durability import broken
     allowed,armor,weapons,_=metadata()
@@ -80,7 +86,11 @@ def apply(field,templates,seats):
     choices={owner:{i:(e,b) for i,e,b in getattr(ticket,'selections',())} for owner,side,path,account,ticket,bot in seats}
     upgrades={owner:25 if getattr(ticket,'flags',(0,0))[0] else 10 for owner,side,path,account,ticket,bot in seats}
     combat.ranked_limits={};combat.ranked_bonuses={};combat.ranked_remainders={};combat.ranked_health={}
-    next_id=max((i.instance_id for p in combat.inventories.values() for i in decode_item_list(p)[1]),default=0)+1
+    # Loans live in the match ID namespace (see battle_loot.match_id_floor);
+    # a reused saved ID made the client dim the loaned active weapon.
+    from .battle_loot import match_id_floor
+    next_id=match_id_floor(combat)
+    per_level=_durability_per_level()
     for identity,actor in tuple(field._actors.items()):
         human=combat.human[identity];original=combat.proficiencies[identity]
         pet=decode_pet_info(original,human_equipment=human);f=dict(pet.fields)
@@ -91,7 +101,7 @@ def apply(field,templates,seats):
         upgrade=upgrades[actor.owner_id]
         durability=metadata()[3]
         for wire_slot,template in equipment:
-            additions.append(ItemRecord(next_id,template,bytes(2),1,1,SLOTS[wire_slot],(durability[template],)*3,bytes((upgrade,0,0,0)),None,bytes((upgrade,0,0))))
+            additions.append(ItemRecord(next_id,template,bytes(2),1,1,SLOTS[wire_slot],(durability[template]+upgrade*per_level,)*3,bytes((upgrade,0,0,0)),None,bytes((upgrade,0,0))))
             combat.temporary_items.add(next_id);next_id+=1
         # Loaned firearms need battle-only ammunition to be usable. One source
         # catalogue pack per ammo type is an explicit server supply policy.
