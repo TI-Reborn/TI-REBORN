@@ -11,6 +11,7 @@ from .protocol.battle_loot import encode_container,encode_open_container_state
 from .protocol.action_points import encode_action_points
 from .item_stacking import merge_stacks
 from .inventory_capacity import validate_capacity
+from .item_catalog import items_root
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -52,7 +53,7 @@ class BattleLoot:
         self.sessions={}
         self.next_id=match_id_floor(combat)
         self.metadata={int(n.get('id')):{'name':n.get('name'),**{v.get('key'):v.get('val') for v in n.findall('value')}}
-                       for n in ET.parse(ROOT/'evidence/items_diagnostic.xml').getroot()}
+                       for n in items_root()}
         from .equipment import armor_rules
         rules=armor_rules()
         self.weapons=[i for i,v in self.metadata.items() if i in combat.catalog.weapons

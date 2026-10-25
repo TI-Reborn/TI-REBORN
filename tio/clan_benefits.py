@@ -13,6 +13,7 @@ import struct
 import time
 
 from .clans import CREST, ClanRejected, membership, require, record
+from .item_catalog import items_root
 
 ROOT = Path(__file__).resolve().parents[1]
 base_fund_completion_installed=True
@@ -413,7 +414,7 @@ def deliver_prizes(db, account, *, capacity=3000):
             if item.instance_id in seen:raise ClanRejected('Повтор идентификатора предмета')
             seen.add(item.instance_id)
     seq=db.execute('SELECT next_id FROM item_sequences WHERE account=?',(account,)).fetchone();next_id=max(max(seen,default=0)+1,seq[0] if seq else 1)
-    definitions={int(n.get('id')):{v.get('key'):v.get('val') for v in n.findall('value')} for n in ET.parse(ROOT/'evidence/items_diagnostic.xml').getroot().iter('item')}
+    definitions={int(n.get('id')):{v.get('key'):v.get('val') for v in n.findall('value')} for n in items_root().iter('item')}
     completed=[]
     for event,template,count in rows:
         definition=definitions[template];durability=int(definition.get('durability','0'))

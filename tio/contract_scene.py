@@ -20,6 +20,7 @@ from .protocol.battle_soldier import decode_battle_soldier
 from .protocol.abilities import encode_abilities
 from .visibility import VisibilityView
 from .weapon_proficiency import NAMES, SAVED, BASE, bits
+from .item_catalog import items_root
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY_PATH = ROOT / 'config/contracts_map_profiles.json'
@@ -196,7 +197,7 @@ def prepare(seats, contract):
     weapons, armor = _validate(template, snapshot)
     templates = dict(next(iter(views.values())).templates)
     metadata = {int(node.get('id')): {v.get('key'): v.get('val') for v in node.findall('value')}
-                for node in ET.parse(ROOT / 'evidence/items_diagnostic.xml').getroot()}
+                for node in items_root()}
     used_item_ids = {item.instance_id for inventory in field.combat.inventories.values()
                      for item in decode_item_list(inventory)[1]}
     item_id = max(0x72000000, field.loot.next_id, max(used_item_ids, default=0) + 1)

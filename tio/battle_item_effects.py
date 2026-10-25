@@ -15,6 +15,7 @@ import json
 from pathlib import Path
 import time
 
+from .recon_geometry import contains
 from .combat_distance import combat_distance
 from .protocol.action_points import encode_action_points
 from .protocol.battle_attack import AttackResult, AttackHit, encode_attack_result
@@ -56,9 +57,12 @@ def initialize(combat):
         raise ValueError('Unsupported saved item effects')
     state.setdefault('owner_turns', {}); state.setdefault('last_owner_end', {})
     state.setdefault('weekly_rank', {})
-    for identity, actor in combat.field._actors.items():
-        state['base_sight'].setdefault(identity, actor.sight_radius)
-        state['last_sight'].setdefault(identity, actor.sight_radius)
+    actors = combat.field._actors
+    # Hot path (every sight check): skip the walk when no actor is new.
+    if not (actors.keys() <= state['base_sight'].keys() and actors.keys() <= state['last_sight'].keys()):
+        for identity, actor in actors.items():
+            state['base_sight'].setdefault(identity, actor.sight_radius)
+            state['last_sight'].setdefault(identity, actor.sight_radius)
     return state
 
 
@@ -229,27 +233,29 @@ def clear_item_sight(combat, start, end):
 
 
 def can_observe(combat, observer, target, *, field=None):
-    """Ordinary sight + illuminated cells within normal sight + coalition recon."""
+    """Ordinary sight + illuminated cells within normal sight + coalition recon.
+
+    Every positive path also needs a smoke-free observer ray. Cheap range and
+    footprint tests run first; rays are traced only for a possible path.
+    """
     if not observer.health: return False
     field = combat.field if field is None else field
     end = (target.x, target.y); start = (observer.x, observer.y)
-    if not clear_item_sight(combat, start, end): return False
     state = initialize(combat); distance = (observer.x-target.x)**2 + (observer.y-target.y)**2
-    # Long LOS rays are expensive on dense maps. Reject impossible ordinary
-    # ranges before tracing, retaining the separate allied recon path below.
     ordinary = distance <= observer.sight_radius**2
     illuminated = (not ordinary and is_dark(combat)
         and distance <= normal_sight(combat, observer.actor_id)**2
         and any(a['kind'] == 'flare' and (target.x-a['center'][0])**2 + (target.y-a['center'][1])**2 <= a['radius']**2
                 for a in state['areas'].values()))
+    recons = [recon for recon in state['recon'].values() if contains(recon, target.x, target.y)]
+    if not (ordinary or illuminated or recons): return False
+    if not clear_item_sight(combat, start, end): return False
     if (ordinary or illuminated) and field_sight(field, start, end): return True
-    for recon in state['recon'].values():
+    for recon in recons:
         source = field._actors.get(recon['source'])
         if source is None or not source.health or not field.allied(source.owner_id, observer.owner_id): continue
         x, y = recon['center']
-        from .recon_geometry import contains
-        if (contains(recon, target.x, target.y)
-            and clear_item_sight(combat, (x, y), end) and field_sight(field, (x, y), end)):
+        if clear_item_sight(combat, (x, y), end) and field_sight(field, (x, y), end):
             return True
     return False
 

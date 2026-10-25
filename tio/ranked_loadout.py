@@ -10,6 +10,7 @@ import xml.etree.ElementTree as ET
 from .protocol.item_list import decode_item_list,encode_item_list,ItemRecord
 from .protocol.pet_info import decode_pet_info,encode_pet_info
 from .ranked_party import RankedRejection
+from .item_catalog import items_root
 
 SLOTS={0:1,2:4,3:8,4:16,7:128}
 
@@ -21,7 +22,7 @@ def metadata():
     from .equipment import armor_rules
     from .weapons import WeaponCatalog
     source=Path(__file__).resolve().parents[1]/'evidence/items_diagnostic.xml'
-    durability={int(n.get('id')):int(next((v.get('val') for v in n.findall('value') if v.get('key')=='durability'),'0')) for n in ET.parse(source).getroot()}
+    durability={int(n.get('id')):int(next((v.get('val') for v in n.findall('value') if v.get('key')=='durability'),'0')) for n in items_root()}
     return frozenset(decode_gears(catalogue_packet())),armor_rules(),WeaponCatalog(),durability
 
 

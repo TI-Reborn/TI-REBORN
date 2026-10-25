@@ -28,6 +28,7 @@ from .inventory_capacity import validate_capacity
 from .owned_pets import OwnedPetStore
 from .wallets import WalletStore
 from .warehouse import WarehouseStore
+from .item_catalog import items_root
 
 ROOT = Path(__file__).resolve().parents[1]
 WEEK = 604800
@@ -94,7 +95,7 @@ class ShopCompletion:
         for identity,p in item_prices().items():
             self.prices[identity]=dict(item_id=identity,credits=p['credits'],credit_pack=p['pack_count'],gold=None,gold_pack=None)
         self.values = {int(n.get('id')): {v.get('key'): v.get('val') for v in n.findall('value')}
-                       for n in ET.parse(ROOT/'evidence/items_diagnostic.xml').getroot().iter('item')}
+                       for n in items_root().iter('item')}
         for row in json.loads((ROOT/'config/battle_item_catalog_extension.json').read_text())['items']:
             self.values.setdefault(row['id'],{}).update(row['fields'])
         from .enhancement import EnhancementRules
