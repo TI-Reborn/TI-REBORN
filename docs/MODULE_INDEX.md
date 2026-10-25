@@ -308,6 +308,7 @@
 
 | Файл | Назначение из docstring |
 | --- | --- |
+| [tests/test_item_icons_hd.py](../tests/test_item_icons_hd.py) | HD item icon pipeline: classification, native mesh reading and framing. |
 | [tools/aggregate_ui_scale_core_proof.py](../tools/aggregate_ui_scale_core_proof.py) | Aggregate offline proof provenance for the frozen 099 UI scale core. |
 | [tools/apply_original_shop_prices.py](../tools/apply_original_shop_prices.py) | Rebuild ordinary/Premium shop prices from the 2008-2011 manual tables. |
 | [tools/apply_portal_email_migration_remote.py](../tools/apply_portal_email_migration_remote.py) | Apply the bounded portal email migration after verifying hosted backups. |
@@ -566,6 +567,15 @@
 | [tools/install_global_map_client.py](../tools/install_global_map_client.py) | Install only the reviewed map release into the existing selected client. |
 | [tools/integrate_services_ratings_portal.py](../tools/integrate_services_ratings_portal.py) | Apply only pinned new files and three reviewed portal edits. |
 | [tools/inventory.py](../tools/inventory.py) | Reproducible client inventory and TI/AZT resource/string comparison. |
+| [tools/item_icons_hd/__init__.py](../tools/item_icons_hd/__init__.py) | Package marker. |
+| [tools/item_icons_hd/build_manifest.py](../tools/item_icons_hd/build_manifest.py) | Write assets/item-icons-hd-v1/manifest.json from the delivered catalogue. |
+| [tools/item_icons_hd/catalog.py](../tools/item_icons_hd/catalog.py) | Decide how each inventory item gets a high-resolution icon. |
+| [tools/item_icons_hd/export.py](../tools/item_icons_hd/export.py) | Deterministic size exports from one approved master icon (Pillow). |
+| [tools/item_icons_hd/framing.py](../tools/item_icons_hd/framing.py) | Pure camera framing for icon renders; shared by Blender and tests. |
+| [tools/item_icons_hd/mesh.py](../tools/item_icons_hd/mesh.py) | Read native MDJX geometry for icon rendering: skinned and static variants. |
+| [tools/item_icons_hd/preview.py](../tools/item_icons_hd/preview.py) | Quick software preview of icon framing without Blender (numpy + Pillow). |
+| [tools/item_icons_hd/render_blender.py](../tools/item_icons_hd/render_blender.py) | Render reference icons from native models. Run inside Blender 3.6+/4.x. |
+| [tools/item_icons_hd/render_options.py](../tools/item_icons_hd/render_options.py) | Resolve render CLI paths before Blender scene initialization. |
 | [tools/loopback_exchange.py](../tools/loopback_exchange.py) | Bounded loopback experiment for the statically recovered initial challenge. |
 | [tools/manage_launcher_archive.py](../tools/manage_launcher_archive.py) | Inspect, prepare or publish a compressed package of the exact hosted release. |
 | [tools/manage_mine_claims.py](../tools/manage_mine_claims.py) | Explicit, local checkpoint ownership administration; no SSH or native bypass. |
