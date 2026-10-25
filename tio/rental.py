@@ -18,6 +18,7 @@ from .protocol.asset_count import AssetCount, encode_asset_count
 from .protocol.warehouse import encode_private_warehouse_snapshot
 from .item_catalog import items_root
 from functools import lru_cache
+from .item_ids import next_item_id
 
 
 def eligible_rental_items(rules):
@@ -116,8 +117,7 @@ class RentalStore:
                     seen.add(item.instance_id)
             # Also reserve leases whose items may have been removed by a future subsystem.
             seen.update(i for i, in db.execute('SELECT instance_id FROM rentals WHERE account=?', (account,)))
-            sequence = db.execute('SELECT next_id FROM item_sequences WHERE account=?', (account,)).fetchone()
-            identity = max(max(seen, default=0)+1, sequence[0] if sequence else 1)
+            identity = next_item_id(db, account, seen)
             rule = self.rules.items[offer.item_id]
             durability = rule['durability'] + offer.enhancement * self.rules.config['durability_per_level']
             item = ItemRecord(identity, offer.item_id, bytes(2), 1, 0, 0, (durability,)*3,

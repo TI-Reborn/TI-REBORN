@@ -23,6 +23,7 @@ from .protocol.warehouse import encode_private_warehouse_snapshot
 from .warehouse import WarehouseStore
 from . import warehouse_completion as completion
 from .weapons import WeaponCatalog
+from .item_ids import next_item_id
 
 
 def npc_type(pet):
@@ -146,8 +147,7 @@ class EquipmentTemplateStore:
             raise ValueError('Шаблон не подходит по типу или уровню бойца')
         local = {i.instance_id: i for i in original}
         pool = {**warehouse, **local}
-        sequence = db.execute('SELECT next_id FROM item_sequences WHERE account=?', (account,)).fetchone()
-        next_id = max(max(owned, default=0) + 1, sequence[0] if sequence else 1)
+        next_id = next_item_id(db, account, owned)
         selected = []
         reserved = {e.object_id for n, e in enumerate(t.elements) if n in GEAR_SLOTS and e.object_id}
 

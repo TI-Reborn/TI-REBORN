@@ -11,6 +11,7 @@ from .protocol.player_trade import CURRENCIES
 from . import market_inventory as inv
 from .item_stacking import merge_stacks,stack_key
 from .inventory_capacity import validate_capacity
+from .item_ids import next_item_id
 
 def tradable(item):
     # The native barter record lacks 6A's special-enhancement field. Do not
@@ -89,8 +90,7 @@ class TradeStore:
             for account,pet in parties:
                 if any(v>inv.MAX for v in balances[account]):raise ValueError('Кошелёк получателя переполнен')
                 owned=inv.owned(db,account)
-                sequence=db.execute('SELECT next_id FROM item_sequences WHERE account=?',(account,)).fetchone()
-                next_id=max(max(owned,default=0)+1,sequence[0] if sequence else 1)
+                next_id=next_item_id(db,account,owned)
                 added=[]
                 for item in incoming[account]:
                     if next_id>=0xffff0000:raise ValueError('Исчерпаны ID предметов')

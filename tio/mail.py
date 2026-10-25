@@ -12,6 +12,7 @@ from .warehouse import WarehouseStore
 from . import warehouse_completion as completion
 from .wallets import WalletStore
 from .character_identity import owner_for_name
+from .item_ids import next_item_id
 
 MAX_CREDITS=0xffffffff
 
@@ -278,8 +279,7 @@ class MailStore:
                 for item in decode_item_list(inventory)[1]:
                     if item.instance_id in seen:raise ValueError('Duplicate owned item identity')
                     seen.add(item.instance_id)
-            sequence=db.execute('SELECT next_id FROM item_sequences WHERE account=?',(owner,)).fetchone()
-            next_id=max(max(seen,default=0)+1,sequence[0] if sequence else 1);delivered=[]
+            next_id=next_item_id(db,owner,seen);delivered=[]
             for escrow,count,message,position,item in available:
                 if next_id>MAX_CREDITS:raise ValueError('Item identity space exhausted')
                 delivered.append(replace(item,instance_id=next_id,unknown_u32_01=count,unknown_u8_01=0,location_raw=0));next_id+=1
@@ -316,8 +316,7 @@ class MailStore:
                 for item in decode_item_list(raw)[1]:
                     if item.instance_id in seen:raise ValueError('Duplicate owned item identity')
                     seen.add(item.instance_id)
-            sequence=db.execute('SELECT next_id FROM item_sequences WHERE account=?',(owner,)).fetchone()
-            next_id=max(max(seen,default=0)+1,sequence[0] if sequence else 1)
+            next_id=next_item_id(db,owner,seen)
             for item in attachments:
                 if next_id>MAX_CREDITS:raise ValueError('Item identity space exhausted')
                 delivered=replace(item,instance_id=next_id,unknown_u8_01=0,location_raw=0)

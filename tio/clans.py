@@ -15,6 +15,7 @@ from .protocol.item_list import decode_item_list,encode_item_list,ItemRecord
 from .warehouse import WarehouseStore,WarehouseRejected
 from .item_stacking import merge_stacks
 from .inventory_capacity import validate_capacity
+from .item_ids import next_item_id
 
 INVITE=2
 social_completion_installed=True
@@ -383,8 +384,7 @@ class ClansStore:
                 for i in decode_item_list(packet)[1]:
                     if i.instance_id in seen:raise ClanRejected('Item ID exists in multiple locations')
                     seen.add(i.instance_id)
-            sequence=db.execute('SELECT next_id FROM item_sequences WHERE account=?',(account,)).fetchone()
-            next_personal=max(max(seen,default=0)+1,sequence[0] if sequence else 1)
+            next_personal=next_item_id(db,account,seen)
             next_shared=db.execute('SELECT next_item FROM clans WHERE id=?',(clan['id'],)).fetchone()[0]
             for selection,source,destination in ((withdrawals,warehouse,inventory),(deposits,inventory,warehouse)):
                 for key,count in selection.items():

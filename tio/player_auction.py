@@ -15,6 +15,7 @@ from .warehouse import WarehouseStore
 from . import warehouse_completion as completion
 from .protocol.item_list import decode_item_list, encode_item_list
 from .protocol.player_auction import decode_create
+from .item_ids import next_item_id
 
 MAX_CREDITS = 0xffffffff
 
@@ -106,8 +107,7 @@ class AuctionStore:
         ids = set(WarehouseStore._read(db, account))
         for packet, in db.execute('SELECT inventory_packet FROM owned_pets WHERE account=?', (account,)):
             ids.update(item.instance_id for item in decode_item_list(packet)[1])
-        sequence = db.execute('SELECT next_id FROM item_sequences WHERE account=?', (account,)).fetchone()
-        next_id = max(max(ids, default=0)+1, sequence[0] if sequence else 1)
+        next_id = next_item_id(db, account, ids)
         items = AuctionStore._items(db, lot)
         if next_id+len(items)-1 > 0xffffffff:
             raise ValueError('Item ID space exhausted')

@@ -29,16 +29,10 @@ def match_id_floor(combat):
     floor=max(0x60000000,1+max((i.instance_id for p in (*combat.inventories.values(),
                                 *getattr(combat,'personal_inventories',{}).values())
                                 for i in decode_item_list(p)[1]),default=0))
+    from .item_ids import next_item_id
     for path,account in set(combat.persistence.values()):
         with closing(connect(path)) as db:
-            for packet, in db.execute('SELECT inventory_packet FROM owned_pets WHERE account=?',(account,)):
-                floor=max(floor,1+max((i.instance_id for i in decode_item_list(packet)[1]),default=0))
-            if db.execute("SELECT 1 FROM sqlite_master WHERE name='item_sequences'").fetchone():
-                row=db.execute('SELECT next_id FROM item_sequences WHERE account=?',(account,)).fetchone()
-                if row:floor=max(floor,row[0])
-            if db.execute("SELECT 1 FROM sqlite_master WHERE name='warehouse_items'").fetchone():
-                highest=db.execute('SELECT MAX(instance_id) FROM warehouse_items WHERE account=?',(account,)).fetchone()[0]
-                floor=max(floor,1+(highest or 0))
+            floor=max(floor,next_item_id(db,account))
     return floor
 
 class BattleLoot:

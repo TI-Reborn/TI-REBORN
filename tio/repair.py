@@ -7,6 +7,7 @@ from .durability import KITS,repair_inventory,repair_item,spending_order
 from .protocol.item_action import decode_item_action
 from .protocol.item_list import decode_item_list,encode_item_list
 from .protocol.repair import decode_repair,repair_message
+from .item_ids import next_item_id
 
 
 def select_kit(path,account,packet):
@@ -92,8 +93,7 @@ def reserve_item_id(db,account,extra=()):
     if exists(db,'warehouse_items'):
         seen.update(k for k, in db.execute('SELECT instance_id FROM warehouse_items WHERE account=?',(account,)))
     db.execute('CREATE TABLE IF NOT EXISTS item_sequences (account TEXT PRIMARY KEY, next_id INTEGER NOT NULL)')
-    seq=db.execute('SELECT next_id FROM item_sequences WHERE account=?',(account,)).fetchone()
-    identity=max(max(seen,default=0)+1,seq[0] if seq else 1)
+    identity=next_item_id(db,account,seen)
     if identity>0xffffffff:raise ValueError('Item ID space exhausted')
     db.execute('INSERT INTO item_sequences VALUES (?,?) ON CONFLICT(account) DO UPDATE SET next_id=excluded.next_id',(account,identity+1))
     return identity

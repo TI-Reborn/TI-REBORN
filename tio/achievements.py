@@ -16,6 +16,7 @@ import sqlite3
 import xml.etree.ElementTree as ET
 from .protocol.achievements import decode_request,encode_list,encode_awards
 from .item_catalog import items_root
+from .item_ids import next_item_id
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -206,8 +207,7 @@ class AchievementStore:
                 for item in decode_item_list(inv)[1]:
                     if item.instance_id in seen:raise ValueError('Duplicate item identity')
                     seen.add(item.instance_id)
-            seq=db.execute('SELECT next_id FROM item_sequences WHERE account=?',(account,)).fetchone()
-            next_id=max(max(seen,default=0)+1,seq[0] if seq else 1)
+            next_id=next_item_id(db,account,seen)
             changed=False;credits=0;notifications=[]
             for row,notified in awards:
                 prizes=list(row['prizes'])

@@ -8,6 +8,7 @@ from .protocol.item_list import decode_item_list, encode_item_list
 from .warehouse import WarehouseStore
 from . import warehouse_completion as completion
 from .item_stacking import stack_key
+from .item_ids import next_item_id
 
 MAX=0xffffffff
 
@@ -87,8 +88,7 @@ def take(db,account,key,count):
 def deliver(db,account,items):
     """Durable delivery ignores capacity, like existing auction/mail awards."""
     owner(db,account);inventory=owned(db,account)
-    row=db.execute('SELECT next_id FROM item_sequences WHERE account=?',(account,)).fetchone()
-    key=max(row[0] if row else 1,max(inventory,default=0)+1)
+    key=next_item_id(db,account,inventory)
     delivered=[]
     for item in items:
         if not 0<key<0xffff0000:raise ValueError('Исчерпаны ID предметов')
