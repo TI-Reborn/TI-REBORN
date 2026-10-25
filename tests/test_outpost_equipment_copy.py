@@ -49,6 +49,15 @@ class OutpostEquipmentTests(unittest.TestCase):
             db.execute('UPDATE owned_pets SET human=?,pet_packet=?,inventory_packet=? WHERE account=? AND pet_id=1',
                        (human,packet,encode_item_list(1,items,flag),account))
         self.abilities.replace(account,1,tuple(AbilityEntry(i,1,0,0) for i in learned),expected_revision=0)
+        # Ranked admission now rejects wounded fighters; learned passives can
+        # raise the projected maximum above the saved 100 HP, so heal to it.
+        from tio.passive_stats import project_saved_pet
+        with closing(sqlite3.connect(self.path)) as db,db:
+            human,raw=db.execute('SELECT human,pet_packet FROM owned_pets WHERE account=? AND pet_id=1',(account,)).fetchone()
+            maximum=decode_pet_info(project_saved_pet(db,account,1,bytes(raw),bool(human)),human_equipment=bool(human)).fields['0x8c4a07']
+            pet=decode_pet_info(bytes(raw),human_equipment=bool(human))
+            db.execute('UPDATE owned_pets SET pet_packet=? WHERE account=? AND pet_id=1',
+                       (encode_pet_info(replace(pet,fields={**pet.fields,'0x8c4ab1':maximum})),account))
 
     def prepare(self,town=4,**kwargs):
         from tio.team_scene import prepare
@@ -70,7 +79,8 @@ class OutpostEquipmentTests(unittest.TestCase):
             self.assertEqual(decode_item_list(combat.inventory_packet(identity))[1],())
             self.assertEqual([w.template_id for w in actor.weapons],[300])
             self.assertEqual(actor.action_points,field._turn_points[identity])
-            self.assertEqual((actor.health,actor.max_health),(100,maximum))
+            # Admission requires full health, so the copy starts at the projected maximum.
+            self.assertEqual((actor.health,actor.max_health),(maximum,maximum))
             self.assertEqual(actor.sight_radius,9)
             template=views[actor.owner_id].snapshot(identity)
             from tio.protocol.battle_soldier import decode_battle_soldier,HUMAN_EQUIPMENT_FIELDS

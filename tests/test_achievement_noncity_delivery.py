@@ -34,7 +34,8 @@ class NoncityDeliveryTests(unittest.TestCase):
                        ('alice', town, 0, 0))
 
     def test_defer_in_range_mine_base_map_and_prison_without_changing_receipts(self):
-        for town in (17, next(iter(MINE_LOCATIONS)), 6, -1, 10):
+        # Mine checkpoints have warehouses now (MINE_WAREHOUSES.md) and deliver.
+        for town in (17, 6, -1, 10):
             with self.subTest(town=town):
                 self.location(town)
                 before = self.dump()

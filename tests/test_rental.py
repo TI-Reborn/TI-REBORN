@@ -19,7 +19,12 @@ from tio.protocol.asset_count import decode_asset_count
 from tio.battle_rewards import settle
 
 
-def request(lot=331410, hours=3, recipient=1, currency=2):
+# Credits-only tariff (config/rental_catalog.json): +10 for 3 hours.
+BASE = 1_000_000
+PRICE = 3000
+
+
+def request(lot=331410, hours=3, recipient=1, currency=1):
     return b'\xb4\x10'+struct.pack('<IHIB', lot, hours, recipient, currency)
 
 
@@ -30,7 +35,7 @@ class RentalTests(unittest.TestCase):
         trial = json.loads((ROOT/'evidence/owned_pet_trial.json').read_text())
         self.original = bytes.fromhex(trial['inventory_packet_hex'])
         OwnedPetStore(self.path).ensure('alice',bytes.fromhex(trial['packet_hex']),self.original,human=True)
-        fund_wallet(self.path, 'alice', credits=10_000, gold=10_000)
+        fund_wallet(self.path, 'alice', credits=BASE, gold=0)
         self.store = RentalStore(self.path, clock=lambda:self.now)
 
     def saved(self):
@@ -45,14 +50,14 @@ class RentalTests(unittest.TestCase):
         packet, = self.store.handle('alice',b'\xb4\x0e')
         self.assertEqual((packet[:2],len(packet)),(b'\xb4\x0f',6+1044*19))
         inv, assets = self.store.handle('alice',request())
-        self.assertEqual((decode_asset_count(assets).credits,decode_asset_count(assets).gold),(10000,9970))
+        self.assertEqual((decode_asset_count(assets).credits,decode_asset_count(assets).gold),(BASE-PRICE,0))
         item = decode_item_list(inv)[1][-1]
         self.assertEqual((item.template_id,item.count,item.unknown_bytes_02,item.optional_u32),(314,1,b'\x0a\0\0\1',10800))
         self.assertEqual(item.unknown_words,(950,)*3)
         self.now += 3600
         RentalStore(self.path,clock=lambda:self.now).refresh('alice')
         self.assertEqual(decode_item_list(self.saved())[1][-1].optional_u32,7200)
-        self.assertEqual(WalletStore(self.path).ensure('alice').gold,9970)
+        self.assertEqual(WalletStore(self.path).ensure('alice').credits,BASE-PRICE)
 
     def test_complete_equipment_catalog_and_all_filter_combinations(self):
         import xml.etree.ElementTree as ET
@@ -67,27 +72,30 @@ class RentalTests(unittest.TestCase):
             selected=[o for o in offers if o.item_id==identity]
             self.assertEqual({(o.enhancement,o.hours) for o in selected},
                              {(level,hours) for level in (10,15,20) for hours in (3,4,8,24)})
-            self.assertTrue(all(o.credits==0 and o.gold>0 for o in selected))
+            self.assertTrue(all(o.credits>0 and o.gold==0 for o in selected))
             self.assertTrue(xml[identity].get('name'))
         self.assertLess(len(self.store.catalog),65533)
 
-    def test_every_template_can_be_rented_with_gold_and_expires(self):
+    def test_every_template_can_be_rented_with_credits_and_expires(self):
         selected=[o for o in self.store.offers.values() if o.enhancement==10 and o.hours==3]
         warehouse=WarehouseStore(self.path,capacity=100)
-        for offer in selected:
-            with self.subTest(template=offer.item_id):
-                packet,_=self.store.handle('alice',request(offer.lot_id))
-                record=decode_item_list(packet)[1][-1]
-                self.assertEqual((record.template_id,record.unknown_bytes_03[0],record.optional_u32),(offer.item_id,10,10800))
-                self.assertEqual(record.unknown_words,(self.store.rules.items[offer.item_id]['durability']+650,)*3)
-                # Exercise every offer without an impossible 88-item bag.
-                warehouse.exchange('alice',1,deposits=((record.instance_id,1),))
-        self.assertEqual(WalletStore(self.path).ensure('alice').gold,10000-sum(o.gold for o in selected))
-        self.assertEqual(len(warehouse.items('alice')),len(selected))
-        self.now+=10800
-        self.store.refresh('alice')
-        self.assertEqual(self.saved(),self.original)
-        self.assertEqual(warehouse.items('alice'),())
+        # Exercise every offer without an impossible 88-item bag. The city
+        # warehouse has its own slot limit, so expire the leases in batches.
+        for start in range(0,len(selected),20):
+            batch=selected[start:start+20]
+            for offer in batch:
+                with self.subTest(template=offer.item_id):
+                    packet,_=self.store.handle('alice',request(offer.lot_id))
+                    record=decode_item_list(packet)[1][-1]
+                    self.assertEqual((record.template_id,record.unknown_bytes_03[0],record.optional_u32),(offer.item_id,10,10800))
+                    self.assertEqual(record.unknown_words,(self.store.rules.items[offer.item_id]['durability']+650,)*3)
+                    warehouse.exchange('alice',1,deposits=((record.instance_id,1),))
+            self.assertEqual(len(warehouse.items('alice')),len(batch))
+            self.now+=10800
+            self.store.refresh('alice')
+            self.assertEqual(self.saved(),self.original)
+            self.assertEqual(warehouse.items('alice'),())
+        self.assertEqual(WalletStore(self.path).ensure('alice').credits,BASE-sum(o.credits for o in selected))
 
     def test_rented_miner_weapon_and_armor_receive_real_enhancement_bonus(self):
         from test_weapon_proficiency import setup,profile,change
@@ -107,7 +115,7 @@ class RentalTests(unittest.TestCase):
 
     def test_rejections_are_atomic(self):
         before = self.snapshot()
-        for packet in (request(hours=2),request(currency=1),request(currency=0),request(recipient=999),
+        for packet in (request(hours=2),request(currency=2),request(currency=0),request(recipient=999),
                        request(lot=1),request()+b'\0',request()[:-1]):
             with self.subTest(packet=packet),self.assertRaises(ValueError):self.store.handle('alice',packet)
             self.assertEqual(self.snapshot(),before)
@@ -117,14 +125,14 @@ class RentalTests(unittest.TestCase):
         for packet in (b'',b'\xb4',b'\xb4\x0e\0',b'\xb4\xff'):
             with self.assertRaises(ValueError):decode_rental_request(packet)
 
-    def test_insufficient_gold_and_database_rollback(self):
+    def test_insufficient_credits_and_database_rollback(self):
         with closing(sqlite3.connect(self.path)) as db,db:
-            db.execute('UPDATE wallets SET gold=29')
+            db.execute('UPDATE wallets SET credits=?',(PRICE-1,))
         before=self.snapshot()
-        with self.assertRaisesRegex(ValueError,'Insufficient gold'):self.store.handle('alice',request())
+        with self.assertRaisesRegex(ValueError,'Insufficient credits'):self.store.handle('alice',request())
         self.assertEqual(self.snapshot(),before)
         with closing(sqlite3.connect(self.path)) as db,db:
-            db.execute('UPDATE wallets SET gold=100')
+            db.execute('UPDATE wallets SET credits=?',(BASE,))
             db.execute("CREATE TRIGGER reject_rental BEFORE INSERT ON rentals BEGIN SELECT RAISE(ABORT,'test'); END")
         before=self.snapshot()
         with self.assertRaises(sqlite3.IntegrityError):self.store.handle('alice',request())
@@ -135,7 +143,7 @@ class RentalTests(unittest.TestCase):
             replies=list(pool.map(lambda _:self.store.handle('alice',request()),range(2)))
         items=decode_item_list(self.saved())[1]
         self.assertEqual(len({i.instance_id for i in items}),3)
-        self.assertEqual(WalletStore(self.path).ensure('alice').gold,9940)
+        self.assertEqual(WalletStore(self.path).ensure('alice').credits,BASE-2*PRICE)
 
     def test_expiry_boundary_and_battle_deferral(self):
         self.store.handle('alice',request())
@@ -150,7 +158,7 @@ class RentalTests(unittest.TestCase):
         self.assertEqual(replies,(self.original,))
         self.assertEqual(self.saved(),self.original)
         self.assertEqual(self.store.refresh('alice'),())
-        self.assertEqual(WalletStore(self.path).ensure('alice').gold,9970)
+        self.assertEqual(WalletStore(self.path).ensure('alice').credits,BASE-PRICE)
 
     def test_warehouse_transfer_preserves_deadline_and_expires_offline(self):
         self.store.handle('alice',request())
@@ -193,9 +201,9 @@ class RentalTests(unittest.TestCase):
         self.assertEqual(training_rental_tax(1000,(4,0)),450)
         from tio.reward_policy import RewardContext
         context=RewardContext((1,), (('bob',(1,)),), True)
-        self.assertEqual(settle(self.path,'alice','match',1,rental_units=(4,),reward_context=context).credits,10010)
-        self.assertEqual(settle(self.path,'alice','match',1,rental_units=(4,),reward_context=context).credits,10010)
-        self.assertEqual(settle(self.path,'alice','match',1).credits,10010)
+        self.assertEqual(settle(self.path,'alice','match',1,rental_units=(4,),reward_context=context).credits,BASE-PRICE+10)
+        self.assertEqual(settle(self.path,'alice','match',1,rental_units=(4,),reward_context=context).credits,BASE-PRICE+10)
+        self.assertEqual(settle(self.path,'alice','match',1).credits,BASE-PRICE+10)
 
 
 if __name__=='__main__':unittest.main()

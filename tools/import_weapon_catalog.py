@@ -34,7 +34,7 @@ def build(raw):
             'min_range':int(r.get('minRange',0)),'max_range':int(r.get('maxRange',0)),
             'source_fields':r}
     from tio.sniper_rifles import SVD,weapon
-    weapons[str(SVD)]=weapon(weapons['312'])
+    if '312' in weapons:weapons[str(SVD)]=weapon(weapons['312'])  # SVD derives from the source sniper rifle.
     return {'source':str(SOURCE),'sha256':hashlib.sha256(raw).hexdigest(),
         'status':'Original legacy CFG values; not confirmed final server balance',
         'unknowns':['reload_ap absent','random damage distribution not recovered',

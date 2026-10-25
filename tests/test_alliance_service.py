@@ -147,8 +147,9 @@ class AllianceServiceTests(unittest.TestCase):
         self.hub.players[self.sessions['bob']]=(None,self.hub.players[self.sessions['bob']][1])
         self.hub.chat(self.sessions['alice'],b'\x21\7'+ 'Только союзникам'.encode('utf-16-le')+b'\0\0')
         reply=encode_message(7,b'Alice','Только союзникам')
-        for a in ('alice','bob','member'):self.assertEqual(tuple(self.hub.messages[self.sessions[a]]),(reply,))
-        for a in ('carol','dave'):self.assertFalse(self.hub.messages[self.sessions[a]])
+        for a in ('bob','member'):self.assertEqual(tuple(self.hub.messages[self.sessions[a]]),(reply,))
+        # The native client shows its own outgoing text; the server no longer echoes it.
+        for a in ('alice','carol','dave'):self.assertFalse(self.hub.messages[self.sessions[a]])
         self.fixture.store.leave('bob');self.clear();self.hub.chat(self.sessions['alice'],b'\x21\7x\0\0\0')
         self.assertFalse(self.hub.messages[self.sessions['bob']])
         self.fixture.store.dissolve('alice');self.clear();self.hub.chat(self.sessions['alice'],b'\x21\7x\0\0\0')
