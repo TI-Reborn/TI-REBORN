@@ -65,6 +65,9 @@ class ServerConfig:
     session_port: int = 28513
     tls: TLSConfig = TLSConfig()
     contracts_enabled: bool = False
+    # Opt-in: switch the player database to SQLite WAL at startup. The mode
+    # is persistent in the database file; false leaves the current mode.
+    sqlite_wal: bool = False
 
     @classmethod
     def load(cls, path):
@@ -72,7 +75,7 @@ class ServerConfig:
         with path.open('rb') as stream:
             data = tomllib.load(stream)
         required = {'bind_address', 'advertised_address', 'game_port', 'data_directory', 'log_level'}
-        if not required <= set(data) or set(data)-required-{'multi_account','session_port','tls','contracts_enabled'}:
+        if not required <= set(data) or set(data)-required-{'multi_account','session_port','tls','contracts_enabled','sqlite_wal'}:
             raise ValueError('Invalid configuration keys; required: ' + ', '.join(sorted(required)))
         bind = IPv4Address(data['bind_address'])
         advertised = IPv4Address(data['advertised_address'])
@@ -105,7 +108,9 @@ class ServerConfig:
             if not multi:raise ValueError('TLS requires multi_account = true')
             if len({port, session_port, tls.login_port, tls.session_port}) != 4:
                 raise ValueError('Direct and TLS listener ports must all differ')
-        return cls(str(bind), str(advertised), port, directory.resolve(), level, multi, session_port, tls, contracts)
+        wal = data.get('sqlite_wal', False)
+        if type(wal) is not bool:raise ValueError('sqlite_wal must be boolean')
+        return cls(str(bind), str(advertised), port, directory.resolve(), level, multi, session_port, tls, contracts, wal)
 
     @property
     def database(self):

@@ -57,6 +57,7 @@ MODULES = (
     'test_battle_events',
     'test_battle_delivery',
     'test_team_heartbeat',
+    'test_sqlite_wal',
     'test_battle_item_visuals',
     'test_floor_fire',
     'test_shared_special_items',
