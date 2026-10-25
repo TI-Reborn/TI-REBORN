@@ -51,9 +51,21 @@ def packet(field,owner):
     from .battle_item_effects import can_observe
     observers=[a for a in field._actors.values() if a.health and field.allied(a.owner_id,owner)]
     roofs=sheltered(field);combat=getattr(field,'combat',None);cells=[]
+    # Necessary condition of can_observe: ordinary/illuminated range of some
+    # observer, or a recon footprint. Skips most cells without the full check.
+    reach=[(a.x,a.y,a.sight_radius**2) for a in observers]
+    recons=()
+    if combat is not None:
+        from .battle_item_effects import initialize,is_dark,normal_sight
+        if is_dark(combat):
+            reach=[(a.x,a.y,max(a.sight_radius,normal_sight(combat,a.actor_id))**2) for a in observers]
+        recons=tuple(initialize(combat)['recon'].values())
+    from .recon_geometry import contains
     for y in range(field.height):
         for x in range(field.width):
             if (x,y) in roofs or (x,y) in field.blocked or (x+2*y)%3:continue
+            if (all((ox-x)**2+(oy-y)**2>r2 for ox,oy,r2 in reach)
+                    and not any(contains(r,x,y) for r in recons)):continue
             target=SimpleNamespace(x=x,y=y)
             if any(can_observe(combat,a,target,field=field) if combat else
                    ((a.x-x)**2+(a.y-y)**2<=a.sight_radius**2 and field_sight(field,(a.x,a.y),(x,y)))
