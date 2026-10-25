@@ -69,6 +69,8 @@ def preflight(config):
             result = db.execute('PRAGMA quick_check').fetchone()[0]
             if result != 'ok':
                 raise ValueError('Database quick_check failed: ' + result)
+            LOG.info('Database journal_mode=%s (sqlite_wal=%s)',
+                     db.execute('PRAGMA journal_mode').fetchone()[0], str(config.sqlite_wal).lower())
     if config.multi_account:
         from .accounts import Accounts
         Accounts(config.database).check()
@@ -109,6 +111,9 @@ class Server:
         self.tls_reload_requested.set()
 
     def serve(self):
+        self.config.data_directory.mkdir(parents=True, exist_ok=True)
+        from tio.db_transaction import journal_mode
+        LOG.info('SQLite journal_mode=%s', journal_mode(self.config.database, wal=self.config.sqlite_wal))
         if self.config.multi_account:
             from .multi import MultiServer
             self.multi = MultiServer(self)

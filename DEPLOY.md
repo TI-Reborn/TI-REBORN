@@ -383,6 +383,18 @@ runuser -u tio -- .venv/bin/python -m server --config /etc/tio-server/server.tom
 Код обновляется отдельно, в `/opt/tio-emulator`. Боевые комнаты живут в памяти;
 остановка во время боя применяет существующие правила выхода/поражения.
 
+**Режим журнала SQLite (WAL, по желанию).** Проверка: `sudo -u tio sqlite3
+/var/lib/tio-server/reservation.sqlite3 'PRAGMA journal_mode;'` (или строка
+`Database journal_mode=…` в выводе `python -m server --check`). Если там `delete`,
+добавьте в `/etc/tio-server/server.toml` строку `sqlite_wal = true` и перезапустите
+службу без активных боёв: в журнале появится `SQLite journal_mode=wal`. Режим
+хранится в самом файле БД. Каждая транзакция по-прежнему фиксируется с
+`synchronous=FULL`; резервные копии используют backup API и WAL поддерживают.
+После включения запускайте `sqlite3` для этой БД **только от пользователя
+`tio`** (`sudo -u tio …`): запуск от root может создать принадлежащие root
+файлы `-wal`/`-shm`, и служба не сможет писать в БД. Откат: остановить
+службы, `sudo -u tio sqlite3 … 'PRAGMA journal_mode=DELETE;'`, убрать строку из конфига.
+
 ### 4. Firewall — до запуска
 
 Укажите внешний IPv4 вашего игрового компьютера. Пароль диагностического

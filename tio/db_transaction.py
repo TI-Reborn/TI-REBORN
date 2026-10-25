@@ -77,3 +77,20 @@ def transaction(path):
 def current():
     active=_current.get()
     return None if active is None else active[1]
+
+
+def journal_mode(path, *, wal=False):
+    """Report (and with wal=True, switch to) the database journal mode.
+
+    WAL lets readers proceed while one gameplay transaction writes; every
+    transaction still commits with synchronous=FULL. The mode is stored in
+    the database file, so it survives restarts and applies to the
+    registration site too. Backups use the SQLite backup API (WAL-safe).
+    """
+    db=sqlite3.connect(path)
+    try:
+        if wal:
+            mode=db.execute('PRAGMA journal_mode=WAL').fetchone()[0]
+            if mode.lower()!='wal':raise RuntimeError('SQLite refused WAL journal mode: '+mode)
+        return db.execute('PRAGMA journal_mode').fetchone()[0].lower()
+    finally:db.close()
