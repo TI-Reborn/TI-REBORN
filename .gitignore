@@ -49,3 +49,6 @@ evidence/*
 !evidence/zones_diagnostic.xml
 !evidence/customization_diagnostic.xml
 !evidence/owned_pet_trial.json
+
+# Some tests pass the placeholder database path "unused"; SQLite creates it in the cwd.
+/unused
