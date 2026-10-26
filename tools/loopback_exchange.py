@@ -399,6 +399,9 @@ class LoopbackExchange:
         elif name==b'premiumaccount':
             from tio.premium import shared_xml
             xml=shared_xml()
+        elif name==b'items':
+            from tio.item_presentation import items_xml
+            xml=items_xml(getattr(self,'interface','new'))
         else:
             contracts = getattr(self.router, 'contracts', None)
             xml = (contracts.zones_xml() if name == b'zones' and contracts is not None else

@@ -12,9 +12,14 @@ import json
 import hmac
 from pathlib import Path
 
+from tio.item_presentation import NEW, ORIGINAL
+
 BRIDGE_MAGIC = b'TIOT'
 BRIDGE_VERSION = 1
 BRIDGE_PREFACE_SIZE = 8
+# Preface flag bits chosen in the launcher; launcher/TlsBridge.cs sets them.
+LANGUAGE_FLAG = 1
+INTERFACE_FLAG = 2
 
 
 def bridge_preface(port):
@@ -67,7 +72,7 @@ def read_bridge_preface(connection, deadline, launch_manifests=None):
             parse_constant=lambda _: (_ for _ in ()).throw(ValueError('Invalid number')))
         if not isinstance(request,dict): raise ValueError('Invalid control body')
         return ContractsControl(token,request)
-    if magic != BRIDGE_MAGIC or version not in (1,2,3) or flags not in (0,1):
+    if magic != BRIDGE_MAGIC or version not in (1,2,3) or flags & ~(LANGUAGE_FLAG|INTERFACE_FLAG):
         raise ValueError('Invalid TLS bridge preface')
     if launch_manifests is not None and version not in (2,3):
         raise ValueError('Current launcher update verification is required')
@@ -84,7 +89,8 @@ def read_bridge_preface(connection, deadline, launch_manifests=None):
             validate_launch_identity(identity,launch_manifests)
     bridge_preface(port)
     result=BridgePort(port)
-    result.language='english' if flags==1 else 'russian'
+    result.language='english' if flags&LANGUAGE_FLAG else 'russian'
+    result.interface=ORIGINAL if flags&INTERFACE_FLAG else NEW
     result.control_token=_exact(connection,32,deadline) if version==3 else None
     return result
 
@@ -106,8 +112,9 @@ def validate_launch_identity(identity,root):
 
 
 class BridgePort(int):
-    """Integer-compatible login route carrying this connection's UI locale."""
+    """Integer-compatible login route carrying this connection's UI choices."""
     language='russian'
+    interface=NEW
 
 
 def build_context(config):

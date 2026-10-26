@@ -16,11 +16,7 @@ static class GameLanguage
     }
     internal static void Save(string language, string? path = null)
     {
-        Validate(language); string target = path ?? SettingsPath;
-        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-        string pending = target + "." + Guid.NewGuid().ToString("N") + ".tmp";
-        try { File.WriteAllText(pending, language, new UTF8Encoding(false)); File.Move(pending, target, true); }
-        finally { if (File.Exists(pending)) File.Delete(pending); }
+        Validate(language); SettingsFile.Save(path ?? SettingsPath, language);
     }
     internal static void Validate(string value)
     {

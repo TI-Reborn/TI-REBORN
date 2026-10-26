@@ -1359,5 +1359,18 @@
   "вещь передана персонажу {0}": "item transferred to character {0}",
   "ремонта: {0}": "repair: {0}",
   "улучшения: {0}": "improvements: {0}",
-  "шаблона экипировки: {0}": "equipment template: {0}"
+  "шаблона экипировки: {0}": "equipment template: {0}",
+  "НАСТРОЙКИ": "SETTINGS",
+  "Total Influence · Настройки": "Total Influence · Settings",
+  "ИНТЕРФЕЙС": "INTERFACE",
+  "Новый": "New",
+  "Оригинальный": "Original",
+  "Крупный боец, экипировка слева, вкладки справа и HD-иконки предметов.": "Large soldier, equipment on the left, tabs on the right and HD item icons.",
+  "Классическая казарма и склад, прежние иконки предметов.": "Classic barracks and warehouse with the previous item icons.",
+  "Изменение применится при следующем запуске игры. Если окно игры меньше 1200×544 с учётом масштаба интерфейса, казарма показывается в оригинальной раскладке.": "The change applies the next time the game starts. If the game window is smaller than 1200×544 after interface scaling, the barracks uses the original layout.",
+  "СОХРАНИТЬ": "SAVE",
+  "Не удалось сохранить настройки: ": "Could not save settings: ",
+  "Выбран оригинальный интерфейс. Он применится при следующем запуске игры.": "Original interface selected. It applies the next time the game starts.",
+  "Выбран новый интерфейс. Он применится при следующем запуске игры.": "New interface selected. It applies the next time the game starts.",
+  "Этот клиент не поддерживает оригинальный интерфейс. Нажмите «Проверить файлы».": "This client does not support the original interface. Click Check files."
 }

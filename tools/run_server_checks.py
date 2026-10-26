@@ -32,6 +32,13 @@ MODULES = (
     'test_ranked_cancel',
     'test_ranked_requeue',
     'test_item_icons_hd',
+    # A2 payload and Unicorn checks need the pefile/unicorn research extras;
+    # they run in tools/run_full_tests.py, not in this stdlib-only baseline.
+    'test_client_item_icons_hd',
+    'test_client_barracks_a2',
+    'test_client_barracks_skin',
+    'test_client_interface_mode.LauncherContractTests',
+    'test_interface_catalogue',
     'test_training_arena',
     'test_training_group_list',
     'test_training_on_demand',

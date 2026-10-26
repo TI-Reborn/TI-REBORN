@@ -43,6 +43,8 @@ def preflight(config):
             json.loads(path.read_text(encoding='utf-8'))
     for path in (ROOT / 'config').glob('*.json'):
         json.loads(path.read_text(encoding='utf-8'))
+    from tio.item_presentation import ORIGINAL, items_xml
+    items_xml(ORIGINAL)
     for name in RUNTIME_TOOLS:
         importlib.import_module('tools.' + name)
     # Instantiate readers for required configuration and imported geometry.
