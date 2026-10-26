@@ -33,6 +33,7 @@ internal static class SecureGame
         start.ArgumentList.Add("--tls-game"); start.ArgumentList.Add(Path.GetFullPath(root));
         start.ArgumentList.Add(pipeName); start.ArgumentList.Add(ownedQa ? "qa" : "player");
         start.Environment["TIO_GAME_LANGUAGE"] = L.Language;
+        start.Environment["TIO_GAME_INTERFACE"] = GameInterface.Load();
         using var helper = Process.Start(start) ?? throw new IOException(L.Text("Не удалось запустить защищённый мост игры."));
         using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(30));
         try
@@ -69,15 +70,18 @@ internal static class SecureGame
             writer = new StreamWriter(pipe, new UTF8Encoding(false), 4096, true) { AutoFlush = true };
             string locale = Environment.GetEnvironmentVariable("TIO_GAME_LANGUAGE") ?? "russian";
             GameLanguage.Validate(locale); L.Language = locale;
+            string presentation = Environment.GetEnvironmentVariable("TIO_GAME_INTERFACE") ?? GameInterface.New;
+            GameInterface.Validate(presentation);
             using var verificationTimeout = new CancellationTokenSource(TimeSpan.FromMinutes(25));
             var verification = await LaunchVerification.Verify(root, verificationTimeout.Token,ownedQa:ownedQa).ConfigureAwait(false);
-            // Apply locale after verification, which can install language files.
+            // Apply locale and interface after verification, which restores published files.
             GameLanguage.Apply(root, locale,ownedQa:ownedQa);
+            GameInterface.Apply(root, presentation, ownedQa:ownedQa);
             await using var bridge = new TlsBridge(TlsEndpoint.Production, language: locale, verification: verification);
             await bridge.ValidateEndpoints(CancellationToken.None).ConfigureAwait(false);
             bridge.Start();
             using var lifetime = new GameLifetime();
-            var profile = new GameLaunchProfile(bridge.LoginPort, bridge.SessionPort, ownedQa, verification);
+            var profile = new GameLaunchProfile(bridge.LoginPort, bridge.SessionPort, ownedQa, verification, presentation);
             uint pid = await Task.Run(() => GameStarter.Start(root, profile: profile, attachLifetime: lifetime.Assign)).ConfigureAwait(false);
             Trace("child_game_started");
             using var game = Process.GetProcessById(checked((int)pid));

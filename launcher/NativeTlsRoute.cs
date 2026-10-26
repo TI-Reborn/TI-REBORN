@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 namespace TioLauncher;
 
-internal sealed record GameLaunchProfile(int LoginPort, int SessionPort, bool OwnedQa = false, LaunchVerification? Verification = null);
+internal sealed record GameLaunchProfile(int LoginPort, int SessionPort, bool OwnedQa = false, LaunchVerification? Verification = null, string Interface = GameInterface.New);
 
 internal static class NativeTlsRoute
 {

@@ -49,6 +49,7 @@ static class GameStarter
     {
         startupTrace.Clear();
         if (profile?.Verification is null) throw new InvalidDataException("Запускайте игру через TIO Launcher с проверкой обновлений.");
+        string interfaceMode = profile.Interface;
         Pin(Path.Combine(root,"ti.exe"),NativeLaunchGate.ImageSha256);
         Pin(Path.Combine(root,"orange.dll"),"5fcf649fe389c32c5caed89719a8fc32049b0bca21b6c20cec8ea50afb28b589");
         if(profile is not null)
@@ -75,6 +76,7 @@ static class GameStarter
         uint nativeGrid=0;
         bool reconConfigured=false;
         bool guiThemeConfigured=false;
+        bool interfaceConfigured=false;
         try
         {
             attachLifetime?.Invoke(info.process);
@@ -155,6 +157,12 @@ static class GameStarter
                                 reconConfigured=true;
                                 startupTrace.Add(new { phase="native_recon_fog_bound",bound });
                             }
+                            if(kind==6 && !interfaceConfigured && file!=IntPtr.Zero && file!=new IntPtr(-1) && NativeEnglish.IsSilver(file))
+                            {
+                                NativeInterfaceMode.Apply(info.process,checked((uint)Marshal.ReadInt64(data,24)),interfaceMode);
+                                interfaceConfigured=true;
+                                startupTrace.Add(new { phase="native_interface_mode",mode=interfaceMode });
+                            }
                             if(kind==6 && L.Language=="english" && file!=IntPtr.Zero && file!=new IntPtr(-1) && NativeEnglish.IsSilver(file))
                             {
                                 uint module=checked((uint)Marshal.ReadInt64(data,24));
@@ -201,6 +209,15 @@ static class GameStarter
                         bool enabled=NativeGuiTheme.Apply(info.process,checked((uint)silver.BaseAddress.ToInt64()),root);
                         guiThemeConfigured=true;
                         startupTrace.Add(new { phase="native_gui_theme",enabled });
+                    }
+                    if(!interfaceConfigured)
+                    {
+                        using var interfaceProcess=Process.GetProcessById((int)info.pid);
+                        var silver=interfaceProcess.Modules.Cast<ProcessModule>().SingleOrDefault(m=>m.ModuleName.Equals("silver.dll",StringComparison.OrdinalIgnoreCase));
+                        if(silver is null) continue;
+                        NativeInterfaceMode.Apply(info.process,checked((uint)silver.BaseAddress.ToInt64()),interfaceMode);
+                        interfaceConfigured=true;
+                        startupTrace.Add(new { phase="native_interface_mode",mode=interfaceMode });
                     }
                     if(!englishCaptions)
                     {

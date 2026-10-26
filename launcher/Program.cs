@@ -73,6 +73,20 @@ static class Program
         if (args.Length == 2 && args[0] == "--website-self-test") { GameWebsiteSelfTest.Run(args[1]); return; }
         if (args.Length == 3 && args[0] == "--language-qa-apply") { GameLanguage.Apply(args[1],args[2]); L.Language=args[2]; return; }
         if (args.Length == 3 && args[0] == "--preview-language") { GameLanguage.Validate(args[1]); L.Language=args[1]; args=["--preview",args[2]]; }
+        if (args.Length == 4 && args[0] == "--preview-settings")
+        {
+            GameLanguage.Validate(args[1]); L.Language=args[1];
+            using var dialog = new LauncherSettingsDialog(args[2]);
+            dialog.Show(); Application.DoEvents();
+            using var image = new Bitmap(dialog.Width, dialog.Height);
+            dialog.DrawToBitmap(image, new Rectangle(Point.Empty, dialog.Size)); image.Save(args[3]); return;
+        }
+        if (args.Length == 2 && args[0] == "--interface-self-test") { GameInterfaceSelfTest.Run(args[1]); return; }
+        if (args.Length == 3 && args[0] == "--interface-image-self-test")
+        {
+            Environment.ExitCode = GameInterfaceSelfTest.RunImage(args[1], args[2]) ? 0 : 1;
+            return;
+        }
         if (args.Length == 2 && args[0] == "--launcher-update-helper") { LauncherUpdate.RunHelper(args[1]).GetAwaiter().GetResult(); return; }
         if (args.Length == 2 && args[0] == "--launcher-update-self-test") { LauncherUpdateSelfTest.Run(args[1]).GetAwaiter().GetResult(); return; }
         if (args.Length == 2 && args[0] == "--install-location-self-test") { InstallLocationSelfTest.Run(args[1]); return; }
@@ -196,7 +210,7 @@ sealed class LauncherForm : Form
     readonly Label state = new(), folder = new(), version = new();
     readonly RichTextBox news = new();
     readonly ProgressBar progress = new();
-    readonly Button check = new(), play = new(), choose = new(), cancel = new();
+    readonly Button check = new(), play = new(), choose = new(), cancel = new(), settings = new();
     readonly ComboBox language = new();
     readonly InstallLocation installLocation;
     string gameRoot;
@@ -221,7 +235,9 @@ sealed class LauncherForm : Form
         if (SteamDistribution.Enabled) { gameRoot=SteamDistribution.GameRoot; hasGameRoot=true; }
         else hasGameRoot = installLocation.TryLoadSaved(out gameRoot, out folderReason);
         AddLabel("TOTAL INFLUENCE", 28, 22, 740, 55, new Font("Georgia", 30, FontStyle.Bold), Gold);
-        AddLabel(L.Text("ЧАСТНЫЙ СЕРВЕР   /   МУЛЬТИПЛЕЕР"), 31, 85, 480, 24, new Font("Segoe UI", 10, FontStyle.Bold), Gold);
+        AddLabel(L.Text("ЧАСТНЫЙ СЕРВЕР   /   МУЛЬТИПЛЕЕР"), 31, 85, 400, 24, new Font("Segoe UI", 10, FontStyle.Bold), Gold);
+        Style(settings, L.Text("НАСТРОЙКИ"), 455, 82, 180, 34);
+        settings.Click += (_, _) => OpenSettings();
         var register = Button(L.Text("РЕГИСТРАЦИЯ"), 645, 82, 180, 34);
         register.Click += (_, _) => Process.Start(new ProcessStartInfo("https://ti-reborn.com/" + (L.Language == "english" ? "en" : "ru") + "/register") { UseShellExecute = true });
         AddLabel(L.Text("НОВОСТИ СЕРВЕРА"), 30, 142, 460, 25, new Font("Segoe UI", 12, FontStyle.Bold), Gold);
@@ -260,11 +276,11 @@ sealed class LauncherForm : Form
         {
             if (!verified || Updater.GameRunning()) return;
             launching=true;
-            play.Enabled = check.Enabled = choose.Enabled = language.Enabled = false;
+            play.Enabled = check.Enabled = choose.Enabled = language.Enabled = settings.Enabled = false;
             bool started = false;
             try { state.Text=L.Text("Проверка обновлений перед запуском игры…"); await SecureGame.Start(gameRoot); started = true; }
             catch (Exception ex) { state.Text = L.Text("Не удалось запустить игру: ") + ex.Message; }
-            finally { launching=false; play.Enabled=verified; check.Enabled=language.Enabled=true; choose.Enabled=!SteamDistribution.Enabled; }
+            finally { launching=false; play.Enabled=verified; check.Enabled=language.Enabled=settings.Enabled=true; choose.Enabled=!SteamDistribution.Enabled; }
             if (started) Close();
         };
         FormClosing += (_, e) => { if (launching) { e.Cancel=true; return; } if (operation != null) { operation.Cancel(); e.Cancel = true; state.Text = L.Text("Отмена загрузки. Дождитесь завершения операции."); } };
@@ -328,6 +344,14 @@ sealed class LauncherForm : Form
             operation.Dispose(); operation = null; check.Enabled = !restart; choose.Enabled = !restart && !SteamDistribution.Enabled; cancel.Enabled = false; play.Enabled = verified && !restart;
             if (restart) Close();
         }
+    }
+    void OpenSettings()
+    {
+        using var dialog = new LauncherSettingsDialog(GameInterface.Load());
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        state.Text = dialog.SavedInterface == GameInterface.Original
+            ? L.Text("Выбран оригинальный интерфейс. Он применится при следующем запуске игры.")
+            : L.Text("Выбран новый интерфейс. Он применится при следующем запуске игры.");
     }
     bool ChooseFolder()
     {

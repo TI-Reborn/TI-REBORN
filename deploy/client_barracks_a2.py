@@ -31,7 +31,11 @@ SHOW_TRAMPOLINE = LAYOUT + 0xe100
 MAIL = LAYOUT + 0xe200
 STRINGS = REGION + 0xd000
 STATE = REGION + 0xff00
-SIGNATURE = b'TIO-barracks-A2-layout-v1'
+# The launcher writes 1 before the barracks exists when the player chooses
+# the original interface. Zero keeps the A2 layout as the default.
+MODE = REGION + 0xff04
+SIGNATURE_OFFSET = 0xff40
+SIGNATURE = b'TIO-barracks-A2-layout-v2'
 HEADER = 0xac4bdc
 LEFT = 0xad10a0
 TABLE = 0xad10a4
@@ -252,6 +256,8 @@ def payload(item_ids: tuple[int,...]) -> bytes:
     for index in (2,3,4,5,7):
         skip=f'restore_column_{index}';_child(c,TABLE,index,skip)
         c.emit('c6404901');c.label(skip)
+    # STATE stays 0, so every A2 renderer and the HD item art keep stock paths.
+    c.emit('83bb');c.word(MODE);c.emit('00');c.branch('0f85','done')
     c.emit('817e38b0040000');c.branch('0f8c','done')
     c.emit('817e3c20020000');c.branch('0f8c','done')
     c.emit('817e3840060000');c.branch('0f8c','compact')
@@ -276,7 +282,7 @@ def payload(item_ids: tuple[int,...]) -> bytes:
     for index,text in enumerate(('Информация','Инвентарь','Почта','Клан','Альянс')):
         encoded=text.encode('utf-16le');at=STRINGS-REGION+index*0x80
         raw=struct.pack('<I',len(encoded))+encoded+b'\0\0';result[at:at+len(raw)]=raw
-    result[0xff40:0xff40+len(SIGNATURE)]=SIGNATURE
+    result[SIGNATURE_OFFSET:SIGNATURE_OFFSET+len(SIGNATURE)]=SIGNATURE
     show = Code(SHOW)
     show.emit('55 89e5 50')
     show.call(SHOW_TRAMPOLINE)
