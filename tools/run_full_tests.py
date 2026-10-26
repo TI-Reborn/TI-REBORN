@@ -20,6 +20,7 @@ Usage: python tools/run_full_tests.py [--pattern test_*.py] [--json out.json]
 Exit status is 1 only when real failures exist. It never touches hosting.
 """
 from collections import Counter
+from collections.abc import Iterator
 from pathlib import Path
 import argparse
 import io
@@ -33,13 +34,11 @@ ROOT = Path(__file__).resolve().parents[1]
 OPTIONAL_MODULES = {'pefile', 'unicorn', 'capstone', 'flask', 'waitress', 'bpy', 'PIL', 'numpy', 'werkzeug'}
 
 
-def ignored(path):
+def ignored(path: str) -> bool:
     """True for an input the repository does not ship.
 
-    That is a path outside the repository (installed client, home folders),
-    a gitignored path, or a path below a directory that is absent from this
-    checkout (local-only asset folders). A wrong path into an existing
-    directory stays a real failure.
+    External paths and explicitly gitignored inputs are optional. A missing
+    directory inside the repository is not evidence that its input is optional.
     """
     try:
         relative = Path(path).resolve().relative_to(ROOT)
@@ -47,56 +46,76 @@ def ignored(path):
         return True
     except OSError:
         return False
-    if subprocess.run(['git', 'check-ignore', '-q', str(relative)], cwd=ROOT).returncode == 0:
-        return True
-    return not (ROOT/relative).parent.is_dir()
+    result = subprocess.run(
+        ['git', 'check-ignore', '-q', str(relative)], cwd=ROOT,
+        capture_output=True, timeout=10,
+    )
+    return result.returncode == 0
 
 
-def chain(error):
+def file_reason(name: str) -> str | None:
+    """Check repository ownership before recognizing a Windows client path."""
+    if re.match(r'^[A-Za-z]:[\\/]', name):
+        if sys.platform != 'win32':
+            return 'file:windows-client'
+        try:
+            Path(name).resolve().relative_to(ROOT)
+        except ValueError:
+            return 'file:windows-client'
+    if not ignored(name):
+        return None
+    try:
+        relative = Path(name).resolve().relative_to(ROOT)
+    except ValueError:
+        return 'file:outside-repository'
+    return 'file:' + relative.parts[0]
+
+
+def chain(error: BaseException | None) -> Iterator[BaseException]:
     seen = set()
     while error is not None and id(error) not in seen:
         seen.add(id(error)); yield error
         error = error.__cause__ or error.__context__
 
 
-def _from_text(text):
+def _from_text(text: str) -> str | None:
     """Loader failures (unittest._FailedTest) carry the original error as text."""
     import re
     for name in re.findall(r"No module named '([^']+)'", text):
         if name.split('.')[0] in OPTIONAL_MODULES:return 'module:' + name.split('.')[0]
     for name in re.findall(r"No such file or directory: '([^']+)'", text):
-        if re.match(r'^[A-Za-z]:[\\/]', name):return 'file:windows-client'
-        if ignored(name):
-            try:return 'file:' + Path(name).resolve().relative_to(ROOT).parts[0]
-            except ValueError:return 'file:outside-repository'
+        reason = file_reason(name)
+        if reason:
+            return reason
     return None
 
 
-def environment_reason(error):
+def environment_reason(error: BaseException) -> str | None:
+    if isinstance(error, AssertionError):
+        return None
     for item in chain(error):
-        if isinstance(item, OSError) and isinstance(item.filename, str) and re.match(r'^[A-Za-z]:[\\/]', item.filename):
-            return 'file:windows-client'
         if isinstance(item, ImportError) and not isinstance(item, ModuleNotFoundError):
             reason = _from_text(str(item))
             if reason:return reason
         if isinstance(item, ModuleNotFoundError) and (item.name or '').split('.')[0] in OPTIONAL_MODULES:
             return 'module:' + item.name.split('.')[0]
-        if isinstance(item, FileNotFoundError) and item.filename and ignored(item.filename):
-            name = str(item.filename)
-            try:
-                return 'file:' + str(Path(name).resolve().relative_to(ROOT).parts[0])
-            except ValueError:
-                return 'file:outside-repository'
+        if isinstance(item, FileNotFoundError) and item.filename:
+            reason = file_reason(str(item.filename))
+            if reason:
+                return reason
     return None
 
 
 KNOWN = ROOT/'tools/full_tests_known.json'
 
 
-def known_entries():
+def known_entries() -> list[dict[str, str]]:
     data = json.loads(KNOWN.read_text(encoding='utf-8')) if KNOWN.exists() else {'entries': []}
     for entry in data['entries']:
-        if not {'test', 'category', 'note'} <= set(entry):raise ValueError('Invalid known-failure entry')
+        if not {'test', 'category', 'note', 'kind', 'error', 'message'} <= set(entry):
+            raise ValueError('Known failures require an exact test and signature')
+        if entry['test'].endswith('.') or entry['kind'] not in ('error', 'failure'):
+            raise ValueError('Invalid known-failure entry')
     return data['entries']
 
 
@@ -110,7 +129,10 @@ class ClassifyingResult(unittest.TextTestResult):
         reason = environment_reason(err[1])
         entry = dict(test=test.id(), kind=kind, error=type(err[1]).__name__,
                      message=str(err[1]).splitlines()[0][:200] if str(err[1]) else '')
-        match = next((k for k in self.entries if entry['test'].startswith(k['test'])), None)
+        match = next((k for k in self.entries
+                      if entry['test'] == k['test'] and kind == k.get('kind')
+                      and entry['error'] == k.get('error')
+                      and str(err[1]) == k.get('message')), None)
         if reason:
             entry['reason'] = reason; self.environment.append(entry)
         elif match is not None:
@@ -145,7 +167,7 @@ def main(argv=None):
     by_module = Counter(e['test'].split('.')[0] for e in result.real)
     failing = [e['test'] for e in (*result.known, *result.environment, *result.real)]
     # Only a whole-suite run can tell that a known failure now passes.
-    stale = [] if args.modules else [k['test'] for k in result.entries if not any(t.startswith(k['test']) for t in failing)]
+    stale = [] if args.modules else [k['test'] for k in result.entries if k['test'] not in failing]
     summary = dict(ran=result.testsRun, skipped=len(result.skipped),
                    environment=len(result.environment), environment_reasons=dict(reasons.most_common()),
                    known=len(result.known), known_categories=dict(Counter(e['category'] for e in result.known).most_common()),
@@ -154,7 +176,7 @@ def main(argv=None):
     print(json.dumps(summary, ensure_ascii=False, indent=1))
     if args.json:
         args.json.write_text(json.dumps(dict(summary=summary, real=result.real, known=result.known, environment=result.environment),
-                                        ensure_ascii=False, indent=1))
+                                        ensure_ascii=False, indent=1), encoding='utf-8')
     return 1 if result.real else 0
 
 
