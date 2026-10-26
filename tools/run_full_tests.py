@@ -176,7 +176,7 @@ def main(argv=None):
     print(json.dumps(summary, ensure_ascii=False, indent=1))
     if args.json:
         args.json.write_text(json.dumps(dict(summary=summary, real=result.real, known=result.known, environment=result.environment),
-                                        ensure_ascii=False, indent=1))
+                                        ensure_ascii=False, indent=1), encoding='utf-8')
     return 1 if result.real else 0
 
 

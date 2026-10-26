@@ -1,7 +1,9 @@
 """The full-suite runner separates environment gaps from real failures."""
 from pathlib import Path
+from contextlib import redirect_stdout
 import json
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 import io
@@ -12,6 +14,29 @@ import run_full_tests as runner
 
 
 class RunFullTestsTests(unittest.TestCase):
+    def test_json_report_preserves_unicode_with_a_legacy_system_encoding(self):
+        class CyrillicFailure(unittest.TestCase):
+            def runTest(self):
+                self.fail('\u041d\u043e\u0432\u0430\u044f \u043e\u0448\u0438\u0431\u043a\u0430')
+
+        original_open = Path.open
+
+        def legacy_open(path, mode='r', buffering=-1, encoding=None,
+                        errors=None, newline=None):
+            return original_open(path, mode, buffering, encoding or 'cp1252',
+                                 errors, newline)
+
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder)/'report.json'
+            suite = unittest.TestSuite([CyrillicFailure()])
+            with patch.object(runner, 'known_entries', return_value=[]), \
+                    patch.object(unittest.defaultTestLoader, 'loadTestsFromNames', return_value=suite), \
+                    patch.object(Path, 'open', legacy_open), redirect_stdout(io.StringIO()):
+                status = runner.main(['test_fixture', '--json', str(output)])
+            report = json.loads(output.read_text(encoding='utf-8'))
+            self.assertEqual(status, 1)
+            self.assertEqual(report['real'][0]['message'], '\u041d\u043e\u0432\u0430\u044f \u043e\u0448\u0438\u0431\u043a\u0430')
+
     def classify(self, identity, error, entries):
         class Failing(unittest.TestCase):
             def id(self):
