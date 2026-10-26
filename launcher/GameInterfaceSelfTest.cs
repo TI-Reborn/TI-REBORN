@@ -22,22 +22,12 @@ static class GameInterfaceSelfTest
             File.WriteAllText(settings, "unexpected");
             Check(GameInterface.Load(settings) == GameInterface.New, "Unknown stored value falls back to the new interface");
 
-            string root = Path.Combine(directory, "game");
-            string catalogue = Path.Combine(root, GameInterface.Catalogue);
-            string overlay = Path.Combine(root, GameInterface.OriginalCatalogue);
-            Directory.CreateDirectory(Path.GetDirectoryName(catalogue)!);
-            Directory.CreateDirectory(Path.GetDirectoryName(overlay)!);
-            File.WriteAllText(catalogue, "published");
-            File.WriteAllText(overlay, "original");
-            GameInterface.Apply(root, GameInterface.New);
-            Check(File.ReadAllText(catalogue) == "published", "New interface keeps the verified catalogue");
-            GameInterface.Apply(root, GameInterface.Original);
-            Check(File.ReadAllText(catalogue) == "original", "Original interface installs the previous item icons");
-            File.WriteAllText(catalogue, "published");
-            File.Delete(overlay);
-            try { GameInterface.Apply(root, GameInterface.Original); throw new Exception("Missing overlay accepted"); }
-            catch (FileNotFoundException) { checks.Add("Missing original catalogue rejected"); }
-            Check(File.ReadAllText(catalogue) == "published", "Failed overlay leaves the catalogue intact");
+            Check(LaunchVerification.Flags("russian", GameInterface.New) == 0, "Russian new interface keeps the old preface byte");
+            Check(LaunchVerification.Flags("english", GameInterface.New) == 1, "English new interface keeps the old preface byte");
+            Check(LaunchVerification.Flags("russian", GameInterface.Original) == 2, "Original interface sets its own bit");
+            Check(LaunchVerification.Flags("english", GameInterface.Original) == 3, "Language and interface bits combine");
+            try { LaunchVerification.Flags("russian", "classic"); throw new Exception("Invalid preface mode accepted"); }
+            catch (ArgumentException) { checks.Add("Invalid preface mode rejected"); }
 
             var (expected, replacement) = NativeInterfaceMode.Patch();
             Check(expected.Length == replacement.Length && expected[0] == 0 && replacement[0] == 1, "Native patch selects the original layout");

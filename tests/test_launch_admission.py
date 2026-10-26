@@ -36,7 +36,7 @@ class LaunchAdmissionTests(unittest.TestCase):
         with self.assertRaises(ValueError):validate_launch_identity(self.identity,self.root)
     def test_truncated_or_malformed_frames_rejected(self):
         valid=struct.pack('!4sBBH',b'TIOT',2,0,31001)+self.identity
-        for raw in (valid[:7],valid[:-1],b'BAD!'+valid[4:],valid[:5]+b'\x02'+valid[6:],valid[:6]+b'\0\0'+valid[8:]):
+        for raw in (valid[:7],valid[:-1],b'BAD!'+valid[4:],valid[:5]+b'\x04'+valid[6:],valid[:6]+b'\0\0'+valid[8:]):
             with self.assertRaises((ValueError,EOFError)):self.read(raw)
     def test_payload_is_left_for_native_transport(self):
         a,b=socket.socketpair();self.addCleanup(a.close);self.addCleanup(b.close)

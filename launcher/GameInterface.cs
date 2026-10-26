@@ -1,14 +1,12 @@
 namespace TioLauncher;
 
-// The player's barracks and warehouse presentation. "new" is the verified
-// release: the A2 layout and HD item art. "original" restores the stock
-// layout in Silver and the previous item icons in the client catalogue.
+// The player's barracks and warehouse presentation. "new" is the A2 layout
+// with HD item art; "original" keeps the stock layout (NativeInterfaceMode)
+// and asks the server for the previous item icons (LaunchVerification.Flags).
 static class GameInterface
 {
     internal const string New = "new";
     internal const string Original = "original";
-    internal const string Catalogue = "base/shared config/items.xml";
-    internal const string OriginalCatalogue = "base/interfaces/original/items.xml";
     internal static string SettingsPath => Path.Combine(SteamDistribution.SettingsRoot, "interface.txt");
     internal static string Load(string? path = null)
     {
@@ -18,20 +16,10 @@ static class GameInterface
     }
     internal static void Save(string mode, string? path = null)
     {
-        Validate(mode); GameFiles.SaveSetting(path ?? SettingsPath, mode);
+        Validate(mode); SettingsFile.Save(path ?? SettingsPath, mode);
     }
     internal static void Validate(string mode)
     {
         if (mode is not (New or Original)) throw new ArgumentException("Unsupported interface mode");
-    }
-    // Launch verification restores the published catalogue immediately
-    // before this call, so the new interface needs no file change.
-    internal static void Apply(string root, string mode, bool ownedQa = false)
-    {
-        Validate(mode);
-        if (mode == New) return;
-        GameFiles.EnsureClosed(root, ownedQa, L.Text("Закройте игру перед сменой интерфейса."));
-        byte[] catalogue = File.ReadAllBytes(GameFiles.Resolve(root, OriginalCatalogue));
-        GameFiles.WriteAtomic(GameFiles.Resolve(root, Catalogue), catalogue);
     }
 }

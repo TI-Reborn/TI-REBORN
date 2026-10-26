@@ -23,6 +23,7 @@ internal sealed class TlsBridge : IAsyncDisposable
 {
     readonly TlsEndpoint endpoint;
     readonly string language;
+    readonly string presentation;
     readonly LaunchVerification? verification;
     readonly byte[] contractsToken = RandomNumberGenerator.GetBytes(32);
     readonly SemaphoreSlim contractsRequests = new(1);
@@ -42,11 +43,12 @@ internal sealed class TlsBridge : IAsyncDisposable
     internal IPAddress BoundAddress => ((IPEndPoint)login.LocalEndpoint).Address;
     internal Task<Exception> Failure => failure.Task;
 
-    internal TlsBridge(TlsEndpoint endpoint, X509ChainPolicy? testChainPolicy = null, string language = "russian", LaunchVerification? verification = null)
+    internal TlsBridge(TlsEndpoint endpoint, X509ChainPolicy? testChainPolicy = null, string language = "russian", LaunchVerification? verification = null, string presentation = GameInterface.New)
     {
         this.endpoint = endpoint;
         this.verification = verification;
         GameLanguage.Validate(language); this.language = language;
+        GameInterface.Validate(presentation); this.presentation = presentation;
         this.testChainPolicy = testChainPolicy;
         login = Listen();
         try { session = Listen(); }
@@ -146,12 +148,12 @@ internal sealed class TlsBridge : IAsyncDisposable
                 {
                     if (verification is not null)
                     {
-                        byte[] preface=verification.Preface(SessionPort, language);preface[4]=3;
+                        byte[] preface=verification.Preface(SessionPort, language, presentation);preface[4]=3;
                         await connection.Tls.WriteAsync(preface.Concat(contractsToken).ToArray(), channel.Token);
                     }
                     else if (initial)
                     {
-                        byte[] preface = LoginPreface(SessionPort); preface[5] = language == "english" ? (byte)1 : (byte)0;
+                        byte[] preface = LoginPreface(SessionPort); preface[5] = LaunchVerification.Flags(language, presentation);
                         await connection.Tls.WriteAsync(preface, channel.Token);
                     }
                     using var local = native.GetStream();

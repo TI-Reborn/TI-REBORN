@@ -16,10 +16,18 @@ internal sealed class LaunchVerification
         BinaryPrimitives.WriteUInt16BigEndian(identity.AsSpan(34), checked((ushort)v.Minor));
         BinaryPrimitives.WriteUInt16BigEndian(identity.AsSpan(36), checked((ushort)v.Build));
     }
-    internal byte[] Preface(int port, string language)
+    // Preface flag bits; server/tls.py LANGUAGE_FLAG and INTERFACE_FLAG.
+    internal const byte LanguageFlag = 1;
+    internal const byte InterfaceFlag = 2;
+    internal static byte Flags(string language, string presentation)
+    {
+        GameLanguage.Validate(language); GameInterface.Validate(presentation);
+        return (byte)((language == "english" ? LanguageFlag : 0) | (presentation == GameInterface.Original ? InterfaceFlag : 0));
+    }
+    internal byte[] Preface(int port, string language, string presentation = GameInterface.New)
     {
         byte[] header = TlsBridge.LoginPreface(port);
-        header[4] = 2; header[5] = language == "english" ? (byte)1 : (byte)0;
+        header[4] = 2; header[5] = Flags(language, presentation);
         return header.Concat(identity).ToArray();
     }
     internal static async Task<LaunchVerification> Verify(string root, CancellationToken token,

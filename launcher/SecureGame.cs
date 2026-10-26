@@ -74,10 +74,10 @@ internal static class SecureGame
             GameInterface.Validate(presentation);
             using var verificationTimeout = new CancellationTokenSource(TimeSpan.FromMinutes(25));
             var verification = await LaunchVerification.Verify(root, verificationTimeout.Token,ownedQa:ownedQa).ConfigureAwait(false);
-            // Apply locale and interface after verification, which restores published files.
+            // Apply locale after verification, which can install language files.
             GameLanguage.Apply(root, locale,ownedQa:ownedQa);
-            GameInterface.Apply(root, presentation, ownedQa:ownedQa);
-            await using var bridge = new TlsBridge(TlsEndpoint.Production, language: locale, verification: verification);
+            // The server sends this interface's item catalogue at every login.
+            await using var bridge = new TlsBridge(TlsEndpoint.Production, language: locale, verification: verification, presentation: presentation);
             await bridge.ValidateEndpoints(CancellationToken.None).ConfigureAwait(false);
             bridge.Start();
             using var lifetime = new GameLifetime();

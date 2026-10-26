@@ -384,6 +384,7 @@ class MultiServer:
                     exchange.login_peer_address = address[0]
                     exchange.login_tls = secure
                     exchange.language = getattr(bridge_port,'language','russian')
+                    exchange.interface = getattr(bridge_port,'interface','new')
                     exchange.contracts_ui_token = getattr(bridge_port,'control_token',None)
                     exchange.port = int(bridge_port) if secure else self.config.session_port
                     exchange.completion_token = secrets.randbits(32)

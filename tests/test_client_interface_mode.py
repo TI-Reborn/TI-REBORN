@@ -5,28 +5,9 @@ import struct
 import unittest
 
 from deploy import client_barracks_a2 as a2
-from deploy.client_item_icons_hd import replace_item_images, restore_item_images
+from server.tls import INTERFACE_FLAG, LANGUAGE_FLAG
 
 ROOT = Path(__file__).resolve().parents[1]
-CATALOGUE = b'''<?xml version='1.0' encoding='utf-8'?>
-<items>
-  <item id="17" name="Kit">
-    <value key="image" val="kit.png" />
-    <value key="stackable" val="1" />
-  </item>
-  <item id="40" name="Rifle">
-    <value key="image" val="rifle.png" />
-    <value key="weight" val="4" />
-  </item>
-  <item id="41" name="Knife">
-    <value key="image" val="knife.png" />
-  </item>
-</items>
-'''
-
-
-def _images(raw: bytes) -> dict[str, str]:
-    return dict(re.findall(rb'id="(\d+)"[^>]*>\s*<value key="image" val="([^"]+)"', raw))
 
 
 class NativeModeFlagTests(unittest.TestCase):
@@ -55,56 +36,29 @@ class NativeModeFlagTests(unittest.TestCase):
 
 
 class LauncherContractTests(unittest.TestCase):
-    """The launcher writes the flag; both sides must agree on its location."""
+    """The launcher writes the flag and the preface bits; both sides must agree."""
 
     def setUp(self):
-        self.source = (ROOT / 'launcher/NativeInterfaceMode.cs').read_text(encoding='utf-8')
+        self.native = (ROOT / 'launcher/NativeInterfaceMode.cs').read_text(encoding='utf-8')
+        self.bridge = (ROOT / 'launcher/LaunchVerification.cs').read_text(encoding='utf-8')
 
     def test_launcher_uses_the_native_mode_rva(self):
-        match = re.search(r'ModeRva\s*=\s*0x([0-9a-f]+)', self.source)
+        match = re.search(r'ModeRva\s*=\s*0x([0-9a-f]+)', self.native)
         self.assertIsNotNone(match)
         self.assertEqual(int(match.group(1), 16), a2.MODE)
 
     def test_launcher_requires_the_mode_aware_signature(self):
-        match = re.search(r'Signature\s*=\s*"([^"]+)"', self.source)
+        match = re.search(r'Signature\s*=\s*"([^"]+)"', self.native)
         self.assertIsNotNone(match)
         self.assertEqual(match.group(1).encode(), a2.SIGNATURE)
-        offset = re.search(r'SignatureRva\s*=\s*0x([0-9a-f]+)', self.source)
+        offset = re.search(r'SignatureRva\s*=\s*0x([0-9a-f]+)', self.native)
         self.assertEqual(int(offset.group(1), 16), a2.REGION+a2.SIGNATURE_OFFSET)
 
-
-class OriginalCatalogueTests(unittest.TestCase):
-    def setUp(self):
-        self.published = replace_item_images(CATALOGUE, {40: 'tio_ii_40.png'})
-
-    def test_original_catalogue_restores_previous_item_art(self):
-        original = restore_item_images(self.published, CATALOGUE, (40,))
-        self.assertEqual(_images(original)[b'40'], b'rifle.png')
-
-    def test_original_catalogue_keeps_unrelated_published_values(self):
-        original = restore_item_images(self.published, CATALOGUE, (40,))
-        self.assertIn(b'<value key="weight" val="4" />', original)
-        self.assertIn(b'<value key="stackable" val="1" />', original)
-        self.assertEqual(_images(original)[b'41'], b'knife.png')
-
-    def test_image_added_by_the_new_art_is_removed_again(self):
-        earlier = CATALOGUE.replace(b'<value key="image" val="knife.png" />', b'')
-        published = replace_item_images(earlier, {41: 'tio_ii_41.png'})
-        original = restore_item_images(published, earlier, (41,))
-        self.assertNotIn(b'tio_ii_41.png', original)
-        self.assertNotIn(b'41', _images(original))
-
-    def test_unchanged_selection_returns_identical_bytes(self):
-        self.assertEqual(restore_item_images(CATALOGUE, CATALOGUE, (40,)), CATALOGUE)
-
-    def test_missing_reference_item_is_rejected(self):
-        with self.assertRaises(ValueError):
-            restore_item_images(self.published, CATALOGUE, (99,))
-
-    def test_ambiguous_image_is_rejected(self):
-        doubled = CATALOGUE.replace(b'<value key="weight"', b'<value key="image" val="x.png" /><value key="weight"')
-        with self.assertRaises(ValueError):
-            restore_item_images(doubled, CATALOGUE, (40,))
+    def test_launcher_preface_bits_match_the_server(self):
+        for name, value in (('LanguageFlag', LANGUAGE_FLAG), ('InterfaceFlag', INTERFACE_FLAG)):
+            match = re.search(name + r'\s*=\s*(\d+)', self.bridge)
+            self.assertIsNotNone(match, name)
+            self.assertEqual(int(match.group(1)), value, name)
 
 
 if __name__ == '__main__':

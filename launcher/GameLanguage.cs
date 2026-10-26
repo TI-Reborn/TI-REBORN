@@ -16,7 +16,7 @@ static class GameLanguage
     }
     internal static void Save(string language, string? path = null)
     {
-        Validate(language); GameFiles.SaveSetting(path ?? SettingsPath, language);
+        Validate(language); SettingsFile.Save(path ?? SettingsPath, language);
     }
     internal static void Validate(string value)
     {
@@ -37,25 +37,54 @@ static class GameLanguage
     internal static void Apply(string root, string language, bool ownedQa = false)
     {
         Validate(language);
-        GameFiles.EnsureClosed(root, ownedQa, L.Text("Закройте игру перед сменой языка."));
+        if (Updater.GameRunning())
+        {
+            bool isolated=ownedQa && File.Exists(Path.Combine(root,".tio-owned-qa"));
+            foreach(var process in System.Diagnostics.Process.GetProcessesByName("ti"))
+            using(process)
+            {
+                try
+                {
+                    string? image=process.MainModule?.FileName;
+                    if(image is null || string.Equals(Path.GetDirectoryName(image),Path.GetFullPath(root),StringComparison.OrdinalIgnoreCase))isolated=false;
+                }
+                catch(System.ComponentModel.Win32Exception){isolated=false;}
+            }
+            if(!isolated)throw new IOException(L.Text("Закройте игру перед сменой языка."));
+        }
         string locale = language == "english" ? "en" : "ru";
         var replacements = new List<(string Target, byte[] Data)>();
         foreach (string name in OverlayFiles)
         {
-            string source = GameFiles.Resolve(root, "base/locales/" + locale + "/" + name);
-            replacements.Add((GameFiles.Resolve(root, "base/" + name), File.ReadAllBytes(source)));
+            string source = Safe(root, "base/locales/" + locale + "/" + name);
+            replacements.Add((Safe(root, "base/" + name), File.ReadAllBytes(source)));
         }
-        string config = GameFiles.Resolve(root, "base/config.cfg");
+        string config = Safe(root, "base/config.cfg");
         replacements.Add((config, Config(File.Exists(config) ? File.ReadAllBytes(config) : [], language)));
         // Validate/read every resource before writing. Roll back partial writes.
         var previous = replacements.Select(x => (x.Target, Data: File.Exists(x.Target) ? File.ReadAllBytes(x.Target) : null)).ToArray();
-        try { foreach (var entry in replacements) GameFiles.WriteAtomic(entry.Target, entry.Data); }
+        try { foreach (var entry in replacements) Atomic(entry.Target, entry.Data); }
         catch
         {
             foreach (var entry in previous)
-                if (entry.Data != null) GameFiles.WriteAtomic(entry.Target, entry.Data); else if (File.Exists(entry.Target)) File.Delete(entry.Target);
+                if (entry.Data != null) Atomic(entry.Target, entry.Data); else if (File.Exists(entry.Target)) File.Delete(entry.Target);
             throw;
         }
+    }
+    static string Safe(string root, string relative)
+    {
+        root = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar);
+        string target = Path.GetFullPath(Path.Combine(root, relative));
+        if (!target.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) throw new IOException("Unsafe locale path");
+        for (string? p = target; p != null; p = Path.GetDirectoryName(p))
+            if ((File.Exists(p) || Directory.Exists(p)) && (File.GetAttributes(p) & FileAttributes.ReparsePoint) != 0) throw new IOException("Linked locale path");
+        return target;
+    }
+    static void Atomic(string path, byte[] data)
+    {
+        string pending = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try { File.WriteAllBytes(pending, data); File.Move(pending, path, true); }
+        finally { if (File.Exists(pending)) File.Delete(pending); }
     }
 }
 

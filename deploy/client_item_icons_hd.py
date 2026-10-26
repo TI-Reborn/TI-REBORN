@@ -43,42 +43,6 @@ def replace_item_images(source: bytes, images: Mapping[int, str]) -> bytes:
     return ET.tostring(root, encoding='utf-8', xml_declaration=True)
 
 
-def restore_item_images(source: bytes, reference: bytes,
-                        identities: tuple[int, ...]) -> bytes:
-    """Return the catalogue with selected images taken from an earlier one.
-
-    The launcher's original interface uses this variant; every other value
-    stays exactly as published so both variants describe the same items.
-    """
-    root = ET.fromstring(source)
-    earlier = ET.fromstring(reference)
-    if root.tag != 'items' or earlier.tag != 'items':
-        raise ValueError('Expected item catalogues')
-    changed = False
-    for identity in identities:
-        if type(identity) is not int:
-            raise ValueError('Expected item IDs')
-        path = f"item[@id='{identity}']"
-        targets, owners = root.findall(path), earlier.findall(path)
-        if len(targets) != 1 or len(owners) != 1:
-            raise ValueError(f'Missing or duplicate item: {identity}')
-        images = owners[0].findall("value[@key='image']")
-        values = targets[0].findall("value[@key='image']")
-        if len(images) > 1 or len(values) != 1:
-            raise ValueError(f'Missing or ambiguous image for item {identity}')
-        if not images:
-            # The new art gave this item its first image.
-            targets[0].remove(values[0])
-            changed = True
-        elif values[0].get('val') != images[0].get('val'):
-            values[0].set('val', images[0].get('val'))
-            changed = True
-    if not changed:
-        return source
-    ET.indent(root)
-    return ET.tostring(root, encoding='utf-8', xml_declaration=True)
-
-
 def copy_stack_flags(source: bytes, authoritative: bytes,
                      identities: tuple[int, ...]) -> bytes:
     """Copy only selected native stacking flags from the deployed catalogue."""

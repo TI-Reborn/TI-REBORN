@@ -1372,6 +1372,5 @@
   "Не удалось сохранить настройки: ": "Could not save settings: ",
   "Выбран оригинальный интерфейс. Он применится при следующем запуске игры.": "Original interface selected. It applies the next time the game starts.",
   "Выбран новый интерфейс. Он применится при следующем запуске игры.": "New interface selected. It applies the next time the game starts.",
-  "Закройте игру перед сменой интерфейса.": "Close the game before changing the interface.",
   "Этот клиент не поддерживает оригинальный интерфейс. Нажмите «Проверить файлы».": "This client does not support the original interface. Click Check files."
 }

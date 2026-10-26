@@ -23,7 +23,7 @@
   <item id="17" name="Repair Kit">
     <value key="weight" val="20" />
     <value key="durability" val="600" />
-    <value key="image" val="itm_repairkit.png" />
+    <value key="image" val="tio_ii_17.png" />
     <value key="stackable" val="1" />
   </item>
   <item id="18" name="Advanced Repair Kit">
@@ -31,7 +31,7 @@
     <value key="weight" val="35" />
     <value key="durability" val="1200" />
     <value key="spread" val="1" />
-    <value key="image" val="itm_repairkit.png" />
+    <value key="image" val="tio_ii_18.png" />
     <value key="stackable" val="1" />
   </item>
   <item id="300" name="Melee Combat">
@@ -1227,7 +1227,7 @@
     <value key="actionPoints" val="50" />
     <value key="weight" val="1" />
     <value key="durability" val="1" />
-    <value key="image" val="ammo_9mm.tga" />
+    <value key="image" val="tio_ii_3.png" />
     <value key="itype" val="ammo" />
     <value key="stackable" val="1" />
     <value key="packamount" val="50" />
@@ -1236,7 +1236,7 @@
     <value key="actionPoints" val="20" />
     <value key="weight" val="1" />
     <value key="durability" val="1" />
-    <value key="image" val="ammo_shells.tga" />
+    <value key="image" val="tio_ii_4.png" />
     <value key="itype" val="ammo" />
     <value key="stackable" val="1" />
     <value key="packamount" val="18" />
@@ -1245,7 +1245,7 @@
     <value key="actionPoints" val="100" />
     <value key="weight" val="1" />
     <value key="durability" val="1" />
-    <value key="image" val="ammo_aug.tga" />
+    <value key="image" val="tio_ii_5.png" />
     <value key="itype" val="ammo" />
     <value key="stackable" val="1" />
     <value key="packamount" val="40" />
@@ -1254,7 +1254,7 @@
     <value key="actionPoints" val="20" />
     <value key="weight" val="1" />
     <value key="durability" val="1" />
-    <value key="image" val="ammo_awp.tga" />
+    <value key="image" val="tio_ii_6.png" />
     <value key="itype" val="ammo" />
     <value key="stackable" val="1" />
     <value key="packamount" val="9" />
@@ -1263,7 +1263,7 @@
     <value key="actionPoints" val="20" />
     <value key="weight" val="1" />
     <value key="durability" val="1" />
-    <value key="image" val="ammo_ak47.tga" />
+    <value key="image" val="tio_ii_7.png" />
     <value key="itype" val="ammo" />
     <value key="stackable" val="1" />
     <value key="packamount" val="50" />
@@ -1271,7 +1271,7 @@
   <item id="8" name="Missile">
     <value key="weight" val="15" />
     <value key="durability" val="1" />
-    <value key="image" val="missile.tga" />
+    <value key="image" val="tio_ii_8.png" />
     <value key="itype" val="ammo" />
     <value key="stackable" val="0" />
     <value key="packamount" val="1" />
@@ -1280,7 +1280,7 @@
   <item id="12" name="Magnum Rounds">
     <value key="weight" val="1" />
     <value key="durability" val="1" />
-    <value key="image" val="itm_ammo_magnum.png" />
+    <value key="image" val="tio_ii_12.png" />
     <value key="itype" val="ammo" />
     <value key="stackable" val="1" />
     <value key="packamount" val="6" />
@@ -1288,7 +1288,7 @@
   <item id="13" name="5.7 x 28 mm">
     <value key="weight" val="1" />
     <value key="durability" val="1" />
-    <value key="image" val="itm_ammo_p90.png" />
+    <value key="image" val="tio_ii_13.png" />
     <value key="itype" val="ammo" />
     <value key="stackable" val="1" />
     <value key="packamount" val="30" />
@@ -1296,7 +1296,7 @@
   <item id="14" name="Vindicator Ammo">
     <value key="weight" val="1" />
     <value key="durability" val="1" />
-    <value key="image" val="itm_ammo_vindicator.png" />
+    <value key="image" val="tio_ii_14.png" />
     <value key="itype" val="ammo" />
     <value key="stackable" val="1" />
     <value key="packamount" val="100" />
@@ -1305,7 +1305,7 @@
   <item id="15" name="9 x 19 mm Parabellum">
     <value key="weight" val="1" />
     <value key="durability" val="1" />
-    <value key="image" val="itm_ammo_parabellum.png" />
+    <value key="image" val="tio_ii_15.png" />
     <value key="itype" val="ammo" />
     <value key="stackable" val="1" />
     <value key="packamount" val="15" />
@@ -1314,7 +1314,7 @@
     <value key="actionPoints" val="40" />
     <value key="weight" val="1" />
     <value key="durability" val="1" />
-    <value key="image" val="qui_ico_762silent_004.png" />
+    <value key="image" val="tio_ii_36.png" />
     <value key="itype" val="ammo" />
     <value key="stackable" val="1" />
     <value key="packamount" val="40" />
@@ -1323,7 +1323,7 @@
     <value key="actionPoints" val="30" />
     <value key="weight" val="1" />
     <value key="durability" val="1" />
-    <value key="image" val="ti_miner_png_08.png" />
+    <value key="image" val="tio_ii_37.png" />
     <value key="itype" val="ammo" />
     <value key="stackable" val="1" />
     <value key="packamount" val="30" />
@@ -1333,7 +1333,7 @@
     <value key="weight" val="10" />
     <value key="durability" val="1" />
     <value key="power" val="10" />
-    <value key="image" val="bandages.tga" />
+    <value key="image" val="tio_ii_9.png" />
     <value key="itype" val="medkit" />
     <value key="sound" val="bandages" />
     <value key="stackable" val="1" />
@@ -1343,7 +1343,7 @@
     <value key="weight" val="30" />
     <value key="durability" val="1" />
     <value key="power" val="30" />
-    <value key="image" val="medkit1.tga" />
+    <value key="image" val="tio_ii_10.png" />
     <value key="itype" val="medkit" />
     <value key="sound" val="medikit" />
   </item>
@@ -1352,7 +1352,7 @@
     <value key="weight" val="50" />
     <value key="durability" val="1" />
     <value key="power" val="50" />
-    <value key="image" val="medkit2.tga" />
+    <value key="image" val="tio_ii_11.png" />
     <value key="itype" val="medkit" />
     <value key="sound" val="medikit" />
   </item>
@@ -1361,13 +1361,14 @@
     <value key="weight" val="5" />
     <value key="durability" val="300" />
     <value key="cant_buy_in_private_store" val="1" />
+    <value key="image" val="tio_ii_205.png" />
   </item>
   <item id="208" name="Helmet">
     <value key="bodypart" val="head" />
     <value key="weight" val="5" />
     <value key="durability" val="300" />
     <value key="p_def" val="5" />
-    <value key="image" val="helmet.tga" />
+    <value key="image" val="tio_ii_208.png" />
     <value key="showface" val="1" />
     <value key="cant_buy_in_private_store" val="1" />
     <value key="itype" val="armor" />
@@ -1546,7 +1547,7 @@
     <value key="weight" val="40" />
     <value key="durability" val="300" />
     <value key="p_def" val="60" />
-    <value key="image" val="itm_combat_armor_1.png" />
+    <value key="image" val="tio_ii_210.png" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_combat_light_chest" />
     <value key="texture_1" val="armor_combat.jpg" />
@@ -1568,7 +1569,7 @@
     <value key="weight" val="20" />
     <value key="durability" val="300" />
     <value key="p_def" val="24" />
-    <value key="image" val="itm_combat_helmet_1.png" />
+    <value key="image" val="tio_ii_211.png" />
     <value key="showface" val="1" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_combat_light_head" />
@@ -1587,7 +1588,7 @@
     <value key="weight" val="25" />
     <value key="durability" val="220" />
     <value key="p_def" val="30" />
-    <value key="image" val="itm_combat_legs_1.png" />
+    <value key="image" val="tio_ii_212.png" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_combat_light_legs" />
     <value key="texture_1" val="armor_combat.jpg" />
@@ -1605,7 +1606,7 @@
     <value key="weight" val="25" />
     <value key="durability" val="300" />
     <value key="p_def" val="28" />
-    <value key="image" val="itm_combat_helmet_2.png" />
+    <value key="image" val="tio_ii_213.png" />
     <value key="showface" val="1" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_combat_medium_head" />
@@ -1624,7 +1625,7 @@
     <value key="weight" val="45" />
     <value key="durability" val="300" />
     <value key="p_def" val="70" />
-    <value key="image" val="itm_combat_armor_2.png" />
+    <value key="image" val="tio_ii_214.png" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_combat_medium_chest" />
     <value key="texture_1" val="armor_combat.jpg" />
@@ -1646,7 +1647,7 @@
     <value key="weight" val="30" />
     <value key="durability" val="260" />
     <value key="p_def" val="36" />
-    <value key="image" val="itm_combat_legs_2.png" />
+    <value key="image" val="tio_ii_215.png" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_combat_medium_legs" />
     <value key="texture_1" val="armor_combat.jpg" />
@@ -1664,7 +1665,7 @@
     <value key="weight" val="25" />
     <value key="durability" val="300" />
     <value key="p_def" val="20" />
-    <value key="image" val="itm_military_helmet_1.png" />
+    <value key="image" val="tio_ii_216.png" />
     <value key="showface" val="1" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_military_light_head" />
@@ -1683,7 +1684,7 @@
     <value key="weight" val="50" />
     <value key="durability" val="300" />
     <value key="p_def" val="50" />
-    <value key="image" val="itm_military_armor_1.png" />
+    <value key="image" val="tio_ii_217.png" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_military_light_chest" />
     <value key="texture_1" val="armor_military.jpg" />
@@ -1705,7 +1706,7 @@
     <value key="weight" val="20" />
     <value key="durability" val="220" />
     <value key="p_def" val="28" />
-    <value key="image" val="itm_military_legs_1.png" />
+    <value key="image" val="tio_ii_218.png" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_military_light_legs" />
     <value key="texture_1" val="armor_military.jpg" />
@@ -1723,7 +1724,7 @@
     <value key="weight" val="30" />
     <value key="durability" val="300" />
     <value key="p_def" val="24" />
-    <value key="image" val="itm_military_helmet_2.png" />
+    <value key="image" val="tio_ii_219.png" />
     <value key="showface" val="1" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_military_medium_head" />
@@ -1742,7 +1743,7 @@
     <value key="weight" val="60" />
     <value key="durability" val="300" />
     <value key="p_def" val="60" />
-    <value key="image" val="itm_military_armor_2.png" />
+    <value key="image" val="tio_ii_220.png" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_military_medium_chest" />
     <value key="texture_1" val="armor_military.jpg" />
@@ -1764,7 +1765,7 @@
     <value key="weight" val="26" />
     <value key="durability" val="260" />
     <value key="p_def" val="33" />
-    <value key="image" val="itm_military_legs_2.png" />
+    <value key="image" val="tio_ii_221.png" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_military_medium_legs" />
     <value key="texture_1" val="armor_military.jpg" />
@@ -1782,7 +1783,7 @@
     <value key="weight" val="10" />
     <value key="durability" val="300" />
     <value key="p_def" val="20" />
-    <value key="image" val="jacket0b.tga" />
+    <value key="image" val="tio_ii_222.png" />
     <value key="cant_buy_in_private_store" val="1" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_military_light_chest" />
@@ -1805,7 +1806,7 @@
     <value key="weight" val="5" />
     <value key="durability" val="300" />
     <value key="p_def" val="15" />
-    <value key="image" val="itm_military_armor_1.png" />
+    <value key="image" val="tio_ii_223.png" />
     <value key="cant_buy_in_private_store" val="1" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_battle_heavy_chest" />
@@ -1828,7 +1829,7 @@
     <value key="weight" val="5" />
     <value key="durability" val="300" />
     <value key="p_def" val="9" />
-    <value key="image" val="itm_military_legs_1.png" />
+    <value key="image" val="tio_ii_224.png" />
     <value key="cant_buy_in_private_store" val="1" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_battle_heavy_legs" />
@@ -1859,13 +1860,14 @@
       <add stat="pdef" val="12" />
     </for>
     <value key="type" val="armor" />
+    <value key="image" val="tio_ii_226.png" />
   </item>
   <item id="227" name="Superhero Helmet">
     <value key="bodypart" val="head" />
     <value key="weight" val="20" />
     <value key="durability" val="300" />
     <value key="p_def" val="30" />
-    <value key="image" val="helmet.tga" />
+    <value key="image" val="tio_ii_227.png" />
     <value key="showface" val="1" />
     <value key="cant_buy_in_private_store" val="1" />
     <value key="itype" val="armor" />
@@ -1885,7 +1887,7 @@
     <value key="weight" val="80" />
     <value key="durability" val="300" />
     <value key="p_def" val="30" />
-    <value key="image" val="itm_battle_armor_1.png" />
+    <value key="image" val="tio_ii_229.png" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_battle_light_chest" />
     <value key="texture_1" val="armor_battle.jpg" />
@@ -1907,7 +1909,7 @@
     <value key="weight" val="30" />
     <value key="durability" val="300" />
     <value key="p_def" val="12" />
-    <value key="image" val="itm_battle_helmet_1.png" />
+    <value key="image" val="tio_ii_230.png" />
     <value key="showface" val="1" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_battle_light_head" />
@@ -1926,7 +1928,7 @@
     <value key="weight" val="60" />
     <value key="durability" val="220" />
     <value key="p_def" val="36" />
-    <value key="image" val="itm_battle_legs_1.png" />
+    <value key="image" val="tio_ii_231.png" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_battle_light_legs" />
     <value key="texture_1" val="armor_battle.jpg" />
@@ -1944,7 +1946,7 @@
     <value key="weight" val="100" />
     <value key="durability" val="300" />
     <value key="p_def" val="55" />
-    <value key="image" val="itm_battle_armor_2.png" />
+    <value key="image" val="tio_ii_232.png" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_battle_medium_chest" />
     <value key="texture_1" val="armor_battle.jpg" />
@@ -1966,7 +1968,7 @@
     <value key="weight" val="50" />
     <value key="durability" val="300" />
     <value key="p_def" val="22" />
-    <value key="image" val="itm_battle_helmet_2.png" />
+    <value key="image" val="tio_ii_233.png" />
     <value key="showface" val="1" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_battle_medium_head" />
@@ -1985,7 +1987,7 @@
     <value key="weight" val="80" />
     <value key="durability" val="260" />
     <value key="p_def" val="42" />
-    <value key="image" val="itm_battle_legs_2.png" />
+    <value key="image" val="tio_ii_234.png" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_battle_medium_legs" />
     <value key="texture_1" val="armor_battle.jpg" />
@@ -2007,13 +2009,14 @@
     <for>
       <add stat="pdef" val="1" />
     </for>
+    <value key="image" val="tio_ii_235.png" />
   </item>
   <item id="236" name="Raider Helmet">
     <value key="bodypart" val="head" />
     <value key="weight" val="20" />
     <value key="durability" val="300" />
     <value key="p_def" val="16" />
-    <value key="image" val="itm_battle_helmet_1.png" />
+    <value key="image" val="tio_ii_236.png" />
     <value key="showface" val="1" />
     <value key="cant_buy_in_private_store" val="1" />
     <value key="itype" val="armor" />
@@ -2033,7 +2036,7 @@
     <value key="weight" val="40" />
     <value key="durability" val="300" />
     <value key="p_def" val="40" />
-    <value key="image" val="itm_battle_armor_1.png" />
+    <value key="image" val="tio_ii_237.png" />
     <value key="cant_buy_in_private_store" val="1" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_battle_heavy_chest" />
@@ -2056,7 +2059,7 @@
     <value key="weight" val="30" />
     <value key="durability" val="300" />
     <value key="p_def" val="24" />
-    <value key="image" val="itm_battle_legs_1.png" />
+    <value key="image" val="tio_ii_238.png" />
     <value key="cant_buy_in_private_store" val="1" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_battle_heavy_legs" />
@@ -2075,19 +2078,21 @@
     <value key="weight" val="15" />
     <value key="durability" val="300" />
     <value key="cant_buy_in_private_store" val="1" />
+    <value key="image" val="tio_ii_203.png" />
   </item>
   <item id="204" name="Amulet2">
     <value key="bodypart" val="accessory" />
     <value key="weight" val="15" />
     <value key="durability" val="300" />
     <value key="cant_buy_in_private_store" val="1" />
+    <value key="image" val="tio_ii_204.png" />
   </item>
   <item id="239" name="Heavy Military Helmet">
     <value key="bodypart" val="head" />
     <value key="weight" val="36" />
     <value key="durability" val="300" />
     <value key="p_def" val="28" />
-    <value key="image" val="itm_military_helmet_3.png" />
+    <value key="image" val="tio_ii_239.png" />
     <value key="showface" val="1" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_military_heavy_head" />
@@ -2106,7 +2111,7 @@
     <value key="weight" val="72" />
     <value key="durability" val="300" />
     <value key="p_def" val="69" />
-    <value key="image" val="itm_military_armor_3.png" />
+    <value key="image" val="tio_ii_240.png" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_military_heavy_chest" />
     <value key="texture_1" val="armor_military.jpg" />
@@ -2128,7 +2133,7 @@
     <value key="weight" val="32" />
     <value key="durability" val="300" />
     <value key="p_def" val="38" />
-    <value key="image" val="itm_military_legs_3.png" />
+    <value key="image" val="tio_ii_241.png" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_military_heavy_legs" />
     <value key="texture_1" val="armor_military.jpg" />
@@ -2146,7 +2151,7 @@
     <value key="weight" val="60" />
     <value key="durability" val="300" />
     <value key="p_def" val="63" />
-    <value key="image" val="itm_battle_helmet_3.png" />
+    <value key="image" val="tio_ii_242.png" />
     <value key="showface" val="1" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_battle_heavy_head" />
@@ -2165,7 +2170,7 @@
     <value key="weight" val="120" />
     <value key="durability" val="300" />
     <value key="p_def" val="85" />
-    <value key="image" val="itm_battle_armor_3.png" />
+    <value key="image" val="tio_ii_243.png" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_battle_heavy_chest" />
     <value key="texture_1" val="armor_battle.jpg" />
@@ -2187,7 +2192,7 @@
     <value key="weight" val="96" />
     <value key="durability" val="300" />
     <value key="p_def" val="48" />
-    <value key="image" val="itm_battle_legs_3.png" />
+    <value key="image" val="tio_ii_244.png" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_battle_heavy_legs" />
     <value key="texture_1" val="armor_battle.jpg" />
@@ -2205,7 +2210,7 @@
     <value key="weight" val="30" />
     <value key="durability" val="300" />
     <value key="p_def" val="32" />
-    <value key="image" val="itm_combat_helmet_3.png" />
+    <value key="image" val="tio_ii_245.png" />
     <value key="showface" val="1" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_combat_heavy_head" />
@@ -2224,7 +2229,7 @@
     <value key="weight" val="54" />
     <value key="durability" val="300" />
     <value key="p_def" val="80" />
-    <value key="image" val="itm_combat_armor_3.png" />
+    <value key="image" val="tio_ii_246.png" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_combat_heavy_chest" />
     <value key="texture_1" val="armor_combat.jpg" />
@@ -2246,7 +2251,7 @@
     <value key="weight" val="36" />
     <value key="durability" val="300" />
     <value key="p_def" val="41" />
-    <value key="image" val="itm_combat_legs_3.png" />
+    <value key="image" val="tio_ii_247.png" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_combat_heavy_legs" />
     <value key="texture_1" val="armor_combat.jpg" />
@@ -2264,7 +2269,7 @@
     <value key="weight" val="54" />
     <value key="durability" val="350" />
     <value key="p_def" val="80" />
-    <value key="image" val="itm_combat_armor_m1_3.png" />
+    <value key="image" val="tio_ii_248.png" />
     <value key="special" val="1" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_combat_heavy_chest" />
@@ -2287,7 +2292,7 @@
     <value key="weight" val="30" />
     <value key="durability" val="350" />
     <value key="p_def" val="32" />
-    <value key="image" val="itm_combat_helmet_m1_3.png" />
+    <value key="image" val="tio_ii_249.png" />
     <value key="special" val="1" />
     <value key="showface" val="1" />
     <value key="itype" val="armor" />
@@ -2307,7 +2312,7 @@
     <value key="weight" val="36" />
     <value key="durability" val="350" />
     <value key="p_def" val="41" />
-    <value key="image" val="itm_combat_legs_m1_3.png" />
+    <value key="image" val="tio_ii_250.png" />
     <value key="special" val="1" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_combat_heavy_legs" />
@@ -2326,7 +2331,7 @@
     <value key="weight" val="60" />
     <value key="durability" val="400" />
     <value key="p_def" val="63" />
-    <value key="image" val="itm_battle_helmet_se.png" />
+    <value key="image" val="tio_ii_251.png" />
     <value key="special" val="1" />
     <value key="showface" val="1" />
     <value key="itype" val="armor" />
@@ -2346,7 +2351,7 @@
     <value key="weight" val="120" />
     <value key="durability" val="400" />
     <value key="p_def" val="85" />
-    <value key="image" val="itm_battle_armor_se.png" />
+    <value key="image" val="tio_ii_252.png" />
     <value key="special" val="1" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_battlese_chest" />
@@ -2369,7 +2374,7 @@
     <value key="weight" val="96" />
     <value key="durability" val="400" />
     <value key="p_def" val="48" />
-    <value key="image" val="itm_battle_legs_se.png" />
+    <value key="image" val="tio_ii_253.png" />
     <value key="special" val="1" />
     <value key="itype" val="armor" />
     <value key="model_1" val="man_armor_battlese_legs" />
@@ -2389,7 +2394,7 @@
     <value key="weight" val="500" />
     <value key="durability" val="350" />
     <value key="p_def" val="220" />
-    <value key="image" val="itm_tank_armor.png" />
+    <value key="image" val="tio_ii_254.png" />
     <value key="effect_string" val="m191" />
     <value key="effect_value" val="25" />
     <value key="itype" val="armor" />
@@ -2410,7 +2415,7 @@
     <value key="durability" val="300" />
     <value key="weight" val="50" />
     <value key="p_def" val="75" />
-    <value key="image" val="itm_dog_armor.png" />
+    <value key="image" val="tio_ii_255.png" />
     <value key="model_1" val="dog_armor_v01" />
     <value key="texture_1" val="dog_items_v01.jpg" />
     <value key="dogs_only" val="1" />
@@ -2426,7 +2431,7 @@
     <value key="weight" val="500" />
     <value key="durability" val="500" />
     <value key="p_def" val="220" />
-    <value key="image" val="itm_tankse.png" />
+    <value key="image" val="tio_ii_256.png" />
     <value key="effect_string" val="m191" />
     <value key="effect_value" val="25" />
     <value key="special" val="1" />
@@ -2462,6 +2467,7 @@
       <add stat="pdef" val="5" />
     </for>
     <value key="type" val="armor" />
+    <value key="image" val="tio_ii_206.png" />
   </item>
   <item id="16" name="Crystal">
     <value key="actionPoints" val="1" />
@@ -2469,12 +2475,13 @@
     <value key="durability" val="1" />
     <value key="spread" val="1" />
     <value key="cant_buy_in_private_store" val="1" />
+    <value key="image" val="tio_ii_16.png" />
   </item>
   <item id="19" name="Super Repair Kit">
     <value key="actionPoints" val="1" />
     <value key="weight" val="50" />
     <value key="durability" val="3600" />
-    <value key="image" val="itm_repair3.png" />
+    <value key="image" val="tio_ii_19.png" />
     <value key="special" val="1" />
     <value key="stackable" val="1" />
   </item>
@@ -2482,14 +2489,14 @@
     <value key="weight" val="50" />
     <value key="durability" val="1" />
     <value key="itype" val="upgkit" />
-    <value key="image" val="itm_upgradekit.png" />
+    <value key="image" val="tio_ii_30.png" />
     <value key="stackable" val="1" />
   </item>
   <item id="20" name="Health Injection">
     <value key="actionPoints" val="10" />
     <value key="weight" val="100" />
     <value key="power" val="100" />
-    <value key="image" val="itm_healthinjection.png" />
+    <value key="image" val="tio_ii_20.png" />
     <value key="itype" val="medkit" />
     <value key="sound" val="injection" />
     <value key="cant_buy_in_private_store" val="1" />
@@ -2499,7 +2506,7 @@
     <value key="weight" val="35" />
     <value key="durability" val="900" />
     <value key="radius" val="5" />
-    <value key="image" val="binoculars.tga" />
+    <value key="image" val="tio_ii_24.png" />
     <value key="itype" val="binoculars" />
   </item>
   <item id="32" name="Dog Meat">
@@ -2507,7 +2514,7 @@
     <value key="weight" val="15" />
     <value key="durability" val="1" />
     <value key="power" val="15" />
-    <value key="image" val="itm_dogmeat.png" />
+    <value key="image" val="tio_ii_32.png" />
     <value key="itype" val="medkit" />
     <value key="sound" val="dogmeat" />
   </item>
@@ -2552,7 +2559,7 @@
     <value key="weight" val="1" />
     <value key="durability" val="1" />
     <value key="power" val="0" />
-    <value key="image" val="itm_buff_sight.png" />
+    <value key="image" val="tio_ii_35.png" />
     <value key="itype" val="medkit" />
     <value key="sound" val="medikit" />
     <value key="cant_buy_in_private_store" val="1" />
@@ -2562,7 +2569,7 @@
     <value key="weight" val="15" />
     <value key="durability" val="1" />
     <value key="power" val="24" />
-    <value key="image" val="itm_shampagne.png" />
+    <value key="image" val="tio_ii_33.png" />
     <value key="itype" val="medkit" />
     <value key="sound" val="medikit" />
     <value key="cant_buy_in_private_store" val="1" />
@@ -2572,7 +2579,7 @@
     <value key="weight" val="5" />
     <value key="durability" val="1" />
     <value key="power" val="13" />
-    <value key="image" val="itm_candies.png" />
+    <value key="image" val="tio_ii_34.png" />
     <value key="itype" val="medkit" />
     <value key="sound" val="medikit" />
     <value key="cant_buy_in_private_store" val="1" />
@@ -2583,7 +2590,7 @@
     <value key="weight" val="10" />
     <value key="durability" val="300" />
     <value key="p_def" val="20" />
-    <value key="image" val="itm_santa_hat.png" />
+    <value key="image" val="tio_ii_257.png" />
     <value key="showface" val="1" />
     <value key="cant_buy_in_private_store" val="1" />
     <value key="itype" val="armor" />
@@ -2602,7 +2609,7 @@
     <value key="durability" val="600" />
     <value key="p_def" val="85" />
     <value key="level_required" val="3" />
-    <value key="image" val="ti_miner_png_02.png" />
+    <value key="image" val="tio_ii_258.png" />
     <value key="model_1" val="freakminer_medium_body" />
     <value key="texture_1" val="miner.jpg" />
     <value key="mask_1" val="miner_mask.png" />
@@ -2619,7 +2626,7 @@
     <value key="durability" val="600" />
     <value key="p_def" val="45" />
     <value key="level_required" val="2" />
-    <value key="image" val="ti_miner_png_04.png" />
+    <value key="image" val="tio_ii_259.png" />
     <value key="model_1" val="freakminer_medium_legs" />
     <value key="texture_1" val="miner.jpg" />
     <value key="mask_1" val="miner_mask.png" />
@@ -2636,7 +2643,7 @@
     <value key="durability" val="600" />
     <value key="p_def" val="115" />
     <value key="level_required" val="8" />
-    <value key="image" val="ti_miner_png_01.png" />
+    <value key="image" val="tio_ii_260.png" />
     <value key="model_1" val="freakminer_heavy_body" />
     <value key="texture_1" val="miner.jpg" />
     <value key="mask_1" val="miner_mask.png" />
@@ -2653,7 +2660,7 @@
     <value key="durability" val="600" />
     <value key="p_def" val="70" />
     <value key="level_required" val="6" />
-    <value key="image" val="ti_miner_png_03.png" />
+    <value key="image" val="tio_ii_261.png" />
     <value key="model_1" val="freakminer_heavy_legs" />
     <value key="texture_1" val="miner.jpg" />
     <value key="mask_1" val="miner_mask.png" />
@@ -2673,7 +2680,7 @@
     <value key="level_required" val="5" />
     <value key="effect_string" val="m251" />
     <value key="effect_value" val="1" />
-    <value key="image" val="ti_miner_png_05.png" />
+    <value key="image" val="tio_ii_262.png" />
     <value key="model_1" val="freakminer_heavy_helmet" />
     <value key="texture_1" val="miner.jpg" />
     <value key="mask_1" val="miner_mask.png" />
@@ -2904,7 +2911,7 @@
     <value key="weight" val="325" />
     <value key="durability" val="325" />
     <value key="p_def" val="208" />
-    <value key="image" val="itm_female_exo_armor.png" />
+    <value key="image" val="tio_ii_263.png" />
     <value key="effect_string" val="m188" />
     <value key="effect_value" val="200" />
     <value key="woman_only" val="1" />
@@ -2930,7 +2937,7 @@
     <value key="p_def" val="208" />
     <value key="special" val="1" />
     <value key="bodypart" val="complexarmor" />
-    <value key="image" val="itm_female_exo_armor_se.png" />
+    <value key="image" val="tio_ii_264.png" />
     <value key="effect_string" val="m188" />
     <value key="effect_value" val="200" />
     <value key="woman_only" val="1" />
@@ -2957,7 +2964,7 @@
     <value key="durability" val="325" />
     <value key="weight" val="75" />
     <value key="p_def" val="160" />
-    <value key="image" val="itm_dog_solid_armor.png" />
+    <value key="image" val="tio_ii_265.png" />
     <value key="model_1" val="dog_solid_armor" />
     <value key="texture_1" val="dog_solid_armor.jpg" />
     <value key="mask_1" val="dog_solid_armor_mask.png" />
@@ -2974,7 +2981,7 @@
     <value key="durability" val="500" />
     <value key="weight" val="75" />
     <value key="p_def" val="160" />
-    <value key="image" val="itm_dog_solid_armor_se.png" />
+    <value key="image" val="tio_ii_266.png" />
     <value key="model_1" val="dog_solid_armor_se" />
     <value key="texture_1" val="dog_solid_armor_se.jpg" />
     <value key="mask_1" val="dog_solid_armor_se_mask.png" />
@@ -3028,13 +3035,14 @@
     <value key="weight" val="1" />
     <value key="durability" val="1" />
     <value key="cant_buy_in_private_store" val="1" />
+    <value key="image" val="tio_ii_51.png" />
   </item>
   <item id="52" name="Mining Drill">
     <value key="weight" val="100" />
     <value key="durability" val="1" />
     <value key="containedItem" val="51" />
     <value key="containedItemId" val="51" />
-    <value key="image" val="itm_gasdrill.png" />
+    <value key="image" val="tio_ii_52.png" />
     <value key="actionPoints" val="1" />
     <value key="equipable" val="true" />
     <value key="canSplit" val="false" />
@@ -3134,14 +3142,14 @@
     <value key="durability" val="0" />
     <value key="stackable" val="1" />
     <value key="packamount" val="1" />
-    <value key="image" val="infected_hide.png" />
+    <value key="image" val="tio_ii_65487.png" />
   </item>
   <item id="65488" name="Мясо заражённой собаки">
     <value key="weight" val="15" />
     <value key="durability" val="0" />
     <value key="stackable" val="1" />
     <value key="packamount" val="1" />
-    <value key="image" val="infected_meat.png" />
+    <value key="image" val="tio_ii_65488.png" />
   </item>
   <item id="5001" name="Flare">
     <value key="weaponAttack" val="Grenade" />
@@ -3187,7 +3195,7 @@
     <value key="weight" val="50" />
     <value key="durability" val="300" />
     <value key="power" val="0" />
-    <value key="image" val="itm_nightvision.png" />
+    <value key="image" val="tio_ii_5002.png" />
     <value key="itype" val="medkit" />
     <value key="sound" val="medikit" />
     <value key="cant_buy_in_private_store" val="1" />
@@ -3198,7 +3206,7 @@
     <value key="weight" val="1" />
     <value key="durability" val="1" />
     <value key="power" val="0" />
-    <value key="image" val="item_light_trainer.png" />
+    <value key="image" val="tio_ii_5003.png" />
     <value key="itype" val="medkit" />
     <value key="sound" val="medikit" />
     <value key="cant_buy_in_private_store" val="1" />
@@ -3209,7 +3217,7 @@
     <value key="weight" val="1" />
     <value key="durability" val="1" />
     <value key="power" val="0" />
-    <value key="image" val="item_improved_trainer.png" />
+    <value key="image" val="tio_ii_5004.png" />
     <value key="itype" val="medkit" />
     <value key="sound" val="medikit" />
     <value key="cant_buy_in_private_store" val="1" />
@@ -3220,7 +3228,7 @@
     <value key="weight" val="1" />
     <value key="durability" val="1" />
     <value key="power" val="0" />
-    <value key="image" val="item_ultra_trainer.png" />
+    <value key="image" val="tio_ii_5005.png" />
     <value key="itype" val="medkit" />
     <value key="sound" val="medikit" />
     <value key="cant_buy_in_private_store" val="1" />
@@ -3231,7 +3239,7 @@
     <value key="weight" val="1" />
     <value key="durability" val="1" />
     <value key="power" val="0" />
-    <value key="image" val="item_light_advisor.png" />
+    <value key="image" val="tio_ii_5006.png" />
     <value key="itype" val="medkit" />
     <value key="sound" val="medikit" />
     <value key="cant_buy_in_private_store" val="1" />
@@ -3242,7 +3250,7 @@
     <value key="weight" val="1" />
     <value key="durability" val="1" />
     <value key="power" val="0" />
-    <value key="image" val="item_improved_advisor.png" />
+    <value key="image" val="tio_ii_5007.png" />
     <value key="itype" val="medkit" />
     <value key="sound" val="medikit" />
     <value key="cant_buy_in_private_store" val="1" />
@@ -3253,7 +3261,7 @@
     <value key="weight" val="1" />
     <value key="durability" val="1" />
     <value key="power" val="0" />
-    <value key="image" val="item_ultra_advisor.png" />
+    <value key="image" val="tio_ii_5008.png" />
     <value key="itype" val="medkit" />
     <value key="sound" val="medikit" />
     <value key="cant_buy_in_private_store" val="1" />
@@ -3264,7 +3272,7 @@
     <value key="weight" val="1" />
     <value key="durability" val="1" />
     <value key="power" val="0" />
-    <value key="image" val="itm_buff_sight.png" />
+    <value key="image" val="tio_ii_5009.png" />
     <value key="itype" val="medkit" />
     <value key="sound" val="medikit" />
     <value key="cant_buy_in_private_store" val="1" />
@@ -3275,7 +3283,7 @@
     <value key="weight" val="1" />
     <value key="durability" val="1" />
     <value key="power" val="0" />
-    <value key="image" val="itm_buff_sight.png" />
+    <value key="image" val="tio_ii_5010.png" />
     <value key="itype" val="medkit" />
     <value key="sound" val="medikit" />
     <value key="cant_buy_in_private_store" val="1" />
@@ -3286,7 +3294,7 @@
     <value key="weight" val="1" />
     <value key="durability" val="1" />
     <value key="power" val="0" />
-    <value key="image" val="itm_buff_sight.png" />
+    <value key="image" val="tio_ii_5011.png" />
     <value key="itype" val="medkit" />
     <value key="sound" val="medikit" />
     <value key="cant_buy_in_private_store" val="1" />
@@ -3297,7 +3305,7 @@
     <value key="weight" val="1" />
     <value key="durability" val="1" />
     <value key="power" val="0" />
-    <value key="image" val="itm_healthinjection.png" />
+    <value key="image" val="tio_ii_5012.png" />
     <value key="itype" val="medkit" />
     <value key="sound" val="injection" />
     <value key="cant_buy_in_private_store" val="1" />
