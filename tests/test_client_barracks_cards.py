@@ -101,5 +101,23 @@ class RosterInputTests(unittest.TestCase):
             check(base, 1, True, 0, 0, 0, 120, 50, 31, scroll=520)
             check(base, 1, True, 0, 0, 0, 355, 50, 31)
 
+class CardArmourTests(unittest.TestCase):
+    def setUp(self):
+        self.draw = cards.payload(a2.REGION+0x30000, a2.STATE)[0x1000:0x3000]
+
+    def test_card_reads_the_total_armour_field(self):
+        # mov eax,[edi+6010]: the server-maintained ArmorClass of the actor.
+        self.assertIn(bytes.fromhex('8b8710600000'), self.draw)
+
+    def test_card_no_longer_shows_the_always_zero_fake_field(self):
+        self.assertNotIn(bytes.fromhex('8b870c600000'), self.draw)
+
+    def test_shield_fits_beside_the_number(self):
+        right = max(x+width for _, x, width, _ in cards.SHIELD)
+        bottom = max(row for row, _, _, _ in cards.SHIELD)
+        self.assertLessEqual(78+right, 92)
+        self.assertLessEqual(35+bottom, 57)
+
+
 if __name__ == "__main__":
     unittest.main()
