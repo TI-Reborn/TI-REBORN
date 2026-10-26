@@ -15,9 +15,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
-from tio.item_presentation import ORIGINAL, items_xml
-
 ROOT = Path(__file__).resolve().parents[2]
+CATALOG = ROOT / 'evidence/items_diagnostic.xml'
 
 # Weapon catalogue entries released with high-resolution sources on 2026-10-20.
 EXISTING_WEAPON_ICONS = frozenset((*range(300, 342), 5001, 5013, 65489))
@@ -110,12 +109,10 @@ def classify(item_id: int, name: str, values: dict[str, str]) -> ItemIcon | None
                     values.get('image', ''), canvas, tuple(notes))
 
 
-def load(path: Path | None = None) -> tuple[ItemIcon, ...]:
-    """Classify a catalogue; by default the original-interface art it replaces."""
-    root = ET.parse(path).getroot() if path is not None else ET.fromstring(items_xml(ORIGINAL))
+def load(path: Path = CATALOG) -> tuple[ItemIcon, ...]:
     result = []
     seen: set[int] = set()
-    for node in root:
+    for node in ET.parse(path).getroot():
         item_id = int(node.get('id'))
         if item_id in seen:
             raise ValueError(f'Duplicate catalogue item {item_id}')
