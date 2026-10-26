@@ -11,11 +11,13 @@ BASE = 0x400000
 SIZE = 0x8000
 TITLES = ('Информация', 'Инвентарь', 'Почта', 'Клан', 'Альянс')
 BUTTONS = ((0, 4), (1, 5), (3, 7), (5, 8), (6, 9))
+# Arrow X around the stage centre (EBX). With EAX=layout distance, the A2
+# variant computes centre+distance (right) or centre-distance (left).
 ARROWS = (
-    (0x8aa23f, '8d4317b920000000', '8d83cd000000b920000000'),
-    (0x8aa267, '8bc383e817', '8bc32dcd000000'),
-    (0x8aa2af, '8d4317b920000000', '8d83cd000000b920000000'),
-    (0x8aa381, '8bc383e81783e820', '8bc32dcd00000083e820'),
+    (0x8aa23f, '8d4317b920000000', '01d8b920000000'),
+    (0x8aa267, '8bc383e817', 'f7d801d8'),
+    (0x8aa2af, '8d4317b920000000', '01d8b920000000'),
+    (0x8aa381, '8bc383e81783e820', 'f7d801d883e820'),
 )
 FOOTER = (
     (0x9a8d38,'83c34b68dbefb1ff',55),
@@ -44,7 +46,7 @@ def _footer(origin: int, layout_state: int, index: int) -> bytes:
     return c.finish(0x100)
 
 
-def _arrows(origin: int, layout_state: int, index: int) -> bytes:
+def _arrows(origin: int, layout_state: int, index: int, arrow_dx: int) -> bytes:
     from .client_equipment_batch import Code
 
     site, old, new = ARROWS[index]
@@ -54,6 +56,8 @@ def _arrows(origin: int, layout_state: int, index: int) -> bytes:
     c.branch('0f85', 'stock')
     c.emit('8b470c 8b404c 3b83'); c.word(0xad10a0-BASE)
     c.branch('0f85', 'stock')
+    # Replace the saved EAX with the distance; EBX is restored to the centre.
+    c.emit('8b83'); c.word(arrow_dx); c.emit('89442404')
     c.emit('5b589d'); c.emit(new); c.jump(site+len(bytes.fromhex(old)))
     c.label('stock'); c.emit('5b589d'); c.emit(old)
     c.jump(site+len(bytes.fromhex(old)))
@@ -72,7 +76,8 @@ def _icon(c: Code, row: int) -> None:
     c.label(f'no_icon_{row}')
 
 
-def _tabs(origin: int, layout_state: int) -> bytes:
+def _tabs(origin: int, layout_state: int, fallback: int) -> bytes:
+    from .client_barracks_a2 import TAB_HEIGHT
     from .client_barracks_skin import _rectangle, native_colour
     from .client_equipment_batch import Code
 
@@ -95,14 +100,14 @@ def _tabs(origin: int, layout_state: int) -> bytes:
     c.emit('807e4900'); c.branch('0f84', 'done')
     c.emit('89f0'); c.call(0xa4211c); c.emit('8945fc')
     c.emit('89f0'); c.call(0xa42140); c.emit('8945f8')
-    _rectangle(c, (0, 0, ('w',1,0), 64), 0xff6d5632)
+    _rectangle(c, (0, 0, ('w',1,0), TAB_HEIGHT), 0xff6d5632)
     c.emit('80bec902000000'); c.branch('0f85', 'active')
     c.emit('80be8002000000'); c.branch('0f84', 'inactive')
     c.label('active')
-    _rectangle(c, (0, 0, ('w',1,0), 64), 0xffe8891f)
+    _rectangle(c, (0, 0, ('w',1,0), TAB_HEIGHT), 0xffe8891f)
     c.label('inactive')
-    for y in range(2, 62):
-        fraction=(y-2)/59
+    for y in range(2, TAB_HEIGHT-2):
+        fraction=(y-2)/(TAB_HEIGHT-5)
         channels=tuple(round(a+(b-a)*fraction) for a,b in
                        ((0x20,0x16),(0x26,0x1a),(0x2c,0x1e)))
         colour=0xff000000+(channels[0]<<16)+(channels[1]<<8)+channels[2]
@@ -112,19 +117,22 @@ def _tabs(origin: int, layout_state: int) -> bytes:
         _icon(c, row)
         c.emit('68'); c.word(native_colour(0xffc9b77a)); c.emit('6a00 6a00')
         c.emit('8b5638 81ea'); c.word(len(TITLES[index])*7)
-        c.emit('d1fa 0355fc 8b4df8 83c12e 8d83')
+        c.emit('d1fa 0355fc 8b4df8 83c1'+f'{TAB_HEIGHT-18:02x}'+' 8d83')
         c.word(origin+0x6000+index*0x100+12)
         c.call(0x67571c)
         c.branch('e9', 'done')
         c.label(f'next_{index}')
     c.label('done'); c.emit('619d 89ec5dc3')
-    c.label('stock'); c.emit('619d 89ec5d'); c.jump(0xa45400)
+    # Other buttons continue to the warehouse skin, then to the native draw.
+    c.label('stock'); c.emit('619d 89ec5d'); c.jump(fallback)
     return c.finish(0x4000)
 
 
 def _warehouse_caption(origin: int, layout_state: int) -> bytes:
+    from .client_barracks_warehouse import counter_offset
     from .client_equipment_batch import Code
 
+    x, above_bottom = counter_offset()
     c=Code(BASE+origin+0x1000)
     c.emit('9c60'); c.base()
     c.emit('83bb'); c.word(layout_state); c.emit('01')
@@ -133,24 +141,24 @@ def _warehouse_caption(origin: int, layout_state: int) -> bytes:
     c.emit('85f6'); c.branch('0f84','stock')
     c.emit('807e4900'); c.branch('0f84','stock')
     c.emit('89f0'); c.call(0xa4211c)
-    c.emit('05a0000000 89442414 89f0'); c.call(0xa42140)
-    c.emit('83c00e 89442418')
+    c.emit('05'); c.word(x); c.emit('89442414 89f0'); c.call(0xa42140)
+    c.emit('03463c 2d'); c.word(above_bottom); c.emit('89442418')
     c.label('stock'); c.emit('619d'); c.jump(0x67571c)
     return c.finish(0x400)
 
 
-def payload(origin: int, layout_state: int) -> bytes:
+def payload(origin: int, layout_state: int, button_fallback: int, arrow_dx: int) -> bytes:
     from .client_barracks_skin import caption_literal
     from .client_equipment_batch import Code
 
     result = bytearray(SIZE)
     for index in range(len(ARROWS)):
         offset=index*0x100
-        result[offset:offset+0x100] = _arrows(origin, layout_state, index)
+        result[offset:offset+0x100] = _arrows(origin, layout_state, index, arrow_dx)
     for index in range(len(FOOTER)):
         offset=0x400+index*0x100
         result[offset:offset+0x100] = _footer(origin, layout_state, index)
-    result[0x2000:0x6000] = _tabs(origin, layout_state)
+    result[0x2000:0x6000] = _tabs(origin, layout_state, button_fallback)
     result[0x1000:0x1400] = _warehouse_caption(origin, layout_state)
     counter = Code(BASE+origin+0x1400)
     counter.emit('9c53'); counter.base()

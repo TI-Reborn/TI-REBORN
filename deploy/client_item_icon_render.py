@@ -222,11 +222,12 @@ def _warehouse_cells(origin: int) -> bytes:
     c=Code(BASE+origin+0x9800)
     c.emit('55 89e5 83ec20 9c60 89c6')
     c.emit('89f0');c.call(0xa4211c);c.emit('8945fc 89f0')
-    c.call(0xa42140);c.emit('8945f8 c745e405000000 817e387c010000')
-    c.branch('0f83','columns')
-    c.emit('c745e403000000');c.label('columns')
-    c.emit('8b463c 31d2 b94c000000 f7f1 83f804');c.branch('0f86','rows')
-    c.emit('b804000000');c.label('rows')
+    c.call(0xa42140);c.emit('8945f8')
+    # Same wrap as the native item layout: 72 px tiles every 76 px from x=3,
+    # beside the 16 px scrollbar; every row that fits completely is framed.
+    c.emit('8b4638 2d');c.word(16+72+3);c.branch('0f8c','done')
+    c.emit('31d2 b94c000000 f7f1 40 8945e4')
+    c.emit('8b463c 31d2 f7f1')
     c.emit('0faf45e4 8945e0 85c0');c.branch('0f84','done')
     c.emit('31ff')
     c.label('cell')

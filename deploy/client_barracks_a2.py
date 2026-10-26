@@ -11,6 +11,9 @@ import hashlib
 import struct
 from typing import TYPE_CHECKING
 
+from .client_barracks_warehouse import (COLUMN_BOTTOM, COLUMN_TOP, apply_entry as warehouse_apply,
+                                        arrow_offset as warehouse_arrows, plan as warehouse_plan)
+
 if TYPE_CHECKING:
     from .client_equipment_batch import Code
 
@@ -34,6 +37,11 @@ STATE = REGION + 0xff00
 # The launcher writes 1 before the barracks exists when the player chooses
 # the original interface. Zero keeps the A2 layout as the default.
 MODE = REGION + 0xff04
+# Whether the warehouse filter list is open; kept across layouts.
+FILTER_OPEN = REGION + 0xff08
+# Horizontal distance of the rotate arrows from the stage centre.
+ARROW_DX = REGION + 0xff0c
+WAREHOUSE = REGION + 0x1a000
 SIGNATURE_OFFSET = 0xff40
 SIGNATURE = b'TIO-barracks-A2-layout-v2'
 HEADER = 0xac4bdc
@@ -77,12 +85,23 @@ def bag_viewport(width: int) -> Rect:
     return Rect(15, top, width-16, height)
 
 
+TAB_HEIGHT = 56
+
+
+def tab_width(right: int) -> int:
+    """Navigation tabs sit under the soldier, sized to the centre stage."""
+    return 100 if right >= 554 else 80
+
+
 def _spec(left: int, right: int, portrait: int) -> dict[str, tuple[Expr, ...]]:
+    from .client_barracks_warehouse import COLUMN_BOTTOM, COLUMN_TOP
+
+    tabs = 5*tab_width(right)
     return {
         'equipment': (12,112,left,('h',1,-124)),
         'model': (('w',2,(left-right-portrait)//2),112,portrait,('h',1,-234)),
-        'right': (('w',1,-right-12),186,right,('h',1,-198)),
-        'tabs': (('w',1,-right-12),112,right,64),
+        'right': (('w',1,-right-12),COLUMN_TOP,right,('h',1,-COLUMN_BOTTOM)),
+        'tabs': (('w',2,(left-right-tabs)//2),('h',1,-20-TAB_HEIGHT),tabs,TAB_HEIGHT),
     }
 
 
@@ -107,6 +126,13 @@ def layout(width: int, height: int) -> dict[str, Rect] | None:
         x, y, w, h = (_value(v, inner_width, inner_height) for v in values)
         result[name] = Rect(x+inset_x, y+inset_y, w, h)
     return result
+
+
+def taller_column(value: Expr) -> Expr:
+    """Bottom-relative values authored for the former column top at 186."""
+    if isinstance(value, int) or value[0] != 'h':
+        return value
+    return value[0], value[1], value[2]+186-COLUMN_TOP
 
 
 def _relative(value: Expr, offset: int) -> Expr:
@@ -170,15 +196,20 @@ def _arrange(c: Code, left: int, right: int, portrait: int, prefix: str) -> None
         if caption is not None:
             _caption(c,caption)
         c.label(skip)
-    place(HEADER,None,(70,8,('w',1,-100),92))
+    place(HEADER,None,(70,2,('w',1,-100),92))
     skip=f'{prefix}_card_pitch';_global(c,HEADER,skip)
     c.emit('c7808c02000004010000');c.label(skip)
     place(LEFT,None,(12,112,('w',1,-right-38),('h',1,-124)))
     place(INFO,None,spec['right'])
     place(TABLE,None,spec['right'])
     place(TABS,None,spec['tabs'])
-    # The native side selectors remain accessible beside the warehouse.
-    place(0xad1098,None,(('w',1,-right-34),183,20,('h',1,-198)))
+    store=warehouse_plan(right)
+    owners=store['owners']
+    # The native owner selectors become horizontal tabs above the grid.
+    place(0xad1098,None,(_relative(spec['right'][0],owners[0]),spec['right'][1],*owners[2:]))
+    for index in range(3):
+        owner=store['owner']
+        place(0xad1098,index,(index*store['owner_pitch'][0],*owner[1:]))
     model=spec['model']
     place(LEFT,2,(_relative(model[0],-12),_relative(model[1],-112),*model[2:]))
     skip=f'{prefix}_portrait_fields';_child(c,LEFT,2,skip)
@@ -211,36 +242,34 @@ def _arrange(c: Code, left: int, right: int, portrait: int, prefix: str) -> None
     place(0xac4bd4,0,(viewport.width-16,0,16,viewport.height))
     # The weight bar is the final concrete child in the stock panel.
     place(LEFT,26,(18,('h',1,-146),left-36,18))
-    tab_width=right//5
+    tab=tab_width(right)
     for index,column,caption in ((0,0,0),(1,1,1),(3,2,2),(5,3,3),(6,4,4)):
-        place(TABS,index,(column*tab_width,0,tab_width-4,64),caption=caption)
+        place(TABS,index,(column*tab,0,tab-4,TAB_HEIGHT),caption=caption)
         skip=f'{prefix}_caption_{index}';_child(c,TABS,index,skip)
-        c.emit('c680cc02000001 c780d0020000');c.word((tab_width-4)//2)
+        c.emit('c680cc02000001 c780d0020000');c.word((tab-4)//2)
         c.emit('c780d402000022000000');c.label(skip)
-    place(TABS,2,(2*tab_width-22,32,20,20))
-    # Reuse the existing inventory grid, filters, search and counter footer.
-    grid_top=54 if left==430 else 60
-    place(0xac4bd8,None,(150,grid_top,right-150,('h',1,-312-grid_top)),cached=True)
-    place(0xac4bd8,0,(right-166,0,16,('h',1,-312-grid_top)))
-    place(TABLE,6,(0,14,144,('h',1,-212)),cached=True)
+    # Inventory settings: a small corner control that leaves the tab readable.
+    place(TABS,2,(2*tab-4-18,3,15,15))
+    # One full-height grid; categories open from the filter button on demand.
+    place(0xac4bd8,None,store['grid'],cached=True)
+    place(0xac4bd8,0,store['grid_scroll'])
+    place(TABLE,6,store['filters'],cached=True)
     skip=f'{prefix}_category_rows';_child(c,TABLE,6,skip)
     c.emit('c78080020000');c.word(26 if left==430 else 16);c.label(skip)
-    for index in (2,3,4,5,7):
+    for index in (2,3,4,5):
         skip=f'{prefix}_column_{index}';_child(c,TABLE,index,skip)
         c.emit('c6404900');c.label(skip)
-    for index,rect in ((2,(150,3,77,18)),(3,(right-200,3,80,18)),(4,(right-120,3,120,18)),(5,(227,3,right-427,18)),
-                       (7,(right-32,('h',1,-288),32,32)),(8,(0,('h',1,-254),right,56)),
-                       (9,(5,('h',1,-227),22,22)),(10,((81 if left==430 else 61),('h',1,-226),22,22)),
-                       (11,(120,('h',1,-282),24,24)),
-                       (12,((270 if left==430 else 286),(14 if left==430 else 8),90,15)),
-                       (13,((right-140 if left==430 else 220),(10 if left==430 else 26),(126 if left==430 else 196),(30 if left==430 else 24))),
-                       (14,((right-190 if left==430 else 160),(18 if left==430 else 30),(50 if left==430 else 60),15)),
-                       (15,(right-52,('h',1,-244),0,0)),(16,(120,14,16,16))):
-        place(TABLE,index,rect)
+    for index,name in ((7,'toggle'),(8,'footer'),(9,'resource_a'),(10,'resource_b'),(11,'refresh'),
+                       (12,'tag'),(13,'search'),(14,'search_caption'),(15,'marker'),(16,'filter_tool')):
+        place(TABLE,index,store[name])
+    c.emit('c783');c.word(ARROW_DX);c.word(warehouse_arrows(right))
+    skip=f'{prefix}_toggle_visible';_child(c,TABLE,7,skip)
+    c.emit('c6404901');c.label(skip)
     # Use the stock viewport functions to refresh scroll geometry from real data.
     skip=f'{prefix}_warehouse_scroll';_global(c,0xac4bd8,skip)
     c.emit('8b5038 8b483c');c.call(0xc28600);c.label(skip)
     c.emit('c783');c.word(STATE);c.word(1)
+    c.call(warehouse_apply(WAREHOUSE))
 
 
 def payload(item_ids: tuple[int,...]) -> bytes:
@@ -253,7 +282,7 @@ def payload(item_ids: tuple[int,...]) -> bytes:
     for index in (0,1,5):
         skip=f'restore_visible_{index}';_child(c,LEFT,index,skip)
         c.emit('c6404901');c.label(skip)
-    for index in (2,3,4,5,7):
+    for index in (2,3,4,5,6,7,14,16):
         skip=f'restore_column_{index}';_child(c,TABLE,index,skip)
         c.emit('c6404901');c.label(skip)
     # STATE stays 0, so every A2 renderer and the HD item art keep stock paths.
@@ -311,8 +340,11 @@ def payload(item_ids: tuple[int,...]) -> bytes:
     bag = bag_payload(REGION+0x34000, STATE)
     result[0x34000:0x34000+len(bag)] = bag
     from .client_barracks_navigation import payload as navigation_payload
-    navigation = navigation_payload(REGION+0x38000, STATE)
+    from .client_barracks_warehouse import draw_entry, payload as warehouse_payload
+    navigation = navigation_payload(REGION+0x38000, STATE, draw_entry(WAREHOUSE), ARROW_DX)
     result[0x38000:0x38000+len(navigation)] = navigation
+    store = warehouse_payload(WAREHOUSE, STATE, FILTER_OPEN)
+    result[WAREHOUSE-REGION:WAREHOUSE-REGION+len(store)] = store
     from .client_barracks_social import payload as social_payload
     result[0x3e800:0x40000] = social_payload(REGION+0x3e800, STATE)
     return bytes(result)
@@ -339,8 +371,8 @@ def _mail_payload() -> bytes:
         prefix = f'mail_{width}'
         c.emit('89f8')
         inset_x, inset_y = (38, 6) if width == 554 else (0, 0)
-        _fields(c, (('w',1,-width-12+inset_x),186+inset_y,
-                    width,('h',1,-198)))
+        _fields(c, (('w',1,-width-12+inset_x),COLUMN_TOP+inset_y,
+                    width,('h',1,-COLUMN_BOTTOM)))
         c.emit('8b5630 015030 8b5634 015034')
         rectangles = {
             (1,): (width-190,0,180,25),
@@ -364,6 +396,7 @@ def _mail_payload() -> bytes:
             (6,10): (190,('h',1,-266),12,16),
         }
         for number, (path, rect) in enumerate(rectangles.items()):
+            rect = tuple(taller_column(value) for value in rect)
             skip = f'{prefix}_{number}'
             c.emit('89f8')
             for index in path:
@@ -384,11 +417,12 @@ def _presentation_edits() -> tuple[tuple[int,bytes,bytes], ...]:
     from .client_barracks_cards import edits as cards_edits
     from .client_barracks_bag import edits as bag_edits
     from .client_barracks_navigation import edits as navigation_edits
+    from .client_barracks_warehouse import edits as warehouse_edits
     from .client_portrait_quality import INSTALL_ENTRY, install_code
 
     return (item_edits(REGION+0x10000)+skin_edits(REGION+0x20000)
             +cards_edits(REGION+0x30000)+bag_edits(REGION+0x34000)
-            +navigation_edits(REGION+0x38000)
+            +navigation_edits(REGION+0x38000)+warehouse_edits(WAREHOUSE)
             +((INSTALL_ENTRY,install_code(),install_code(1024)),))
 
 

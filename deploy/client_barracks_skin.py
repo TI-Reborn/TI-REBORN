@@ -1,4 +1,4 @@
-"""Native drawing of the owner's A2 panels, captions and backpack cell frames.
+﻿"""Native drawing of the owner's A2 panels, captions and backpack cell frames.
 
 Geometry and item rules remain owned by the layout and native controls. This
 module emits presentation code only; it never changes files or live processes.
@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
 BASE = 0x400000
 SIZE = 0x10000
+# Run table of the holographic deck, after the slot captions.
+PLATFORM = 0xd000
 Expr = int | tuple[str, int, int]
 CAPTIONS = ('ЭКИПИРОВКА', 'РЮКЗАК — К БОЮ', 'Голова', 'Тело', 'Ноги',
             'Основное оружие', 'Второе оружие', 'Спецслот', 'СКЛАД', '/', '★')
@@ -71,12 +73,101 @@ def _panel(c: Code, x: Expr, width: Expr, *, stage: bool = False, top: int=112) 
         _rectangle(c, (x, top, width, 1), 0xffc87a22)
 
 
+def _brackets(c: Code, x: Expr, width: int, top: int) -> None:
+    """Amber corner brackets: the squad terminal frames its readouts."""
+    from .client_barracks_a2 import _relative
+
+    arm, thick = 16, 2
+    bottom: Expr = ('h', 1, -12-thick)
+    for corner in (x, _relative(x, width-arm)):
+        _rectangle(c, (corner, top, arm, thick), 0xffe8891f)
+        _rectangle(c, (corner, bottom, arm, thick), 0xffe8891f)
+    for edge in (x, _relative(x, width-thick)):
+        _rectangle(c, (edge, top, thick, arm), 0xffe8891f)
+        _rectangle(c, (edge, ('h', 1, -12-arm), thick, arm), 0xffe8891f)
+
+
+def _warehouse_frame(c: Code, right: int) -> None:
+    from .client_barracks_a2 import _relative
+    from .client_barracks_warehouse import BAR, COLUMN_TOP, FOOTER_HEIGHT, COUNTER_HEIGHT, plan
+
+    x: Expr = ('w', 1, -right-12)
+    _rectangle(c, (x, COLUMN_TOP+BAR+3, right, 1), 0xff3a4148)
+    divider = ('h', 1, -12-FOOTER_HEIGHT-COUNTER_HEIGHT-2)
+    _rectangle(c, (x, divider, right, 1), 0x80c87a22)
+    _rectangle(c, (x, divider, 64, 2), 0xffe8891f)
+    # The native tag selector ('Метка') reads as a drop-down beside the tabs.
+    tag_x, _, tag_width, _ = plan(right)['tag_frame']
+    frame = _relative(x, tag_x)
+    _rectangle(c, (frame, COLUMN_TOP, tag_width, BAR), 0xff3a4148)
+    _rectangle(c, (_relative(frame, 1), COLUMN_TOP+1, tag_width-2, BAR-2), 0xff161a1e)
+    for row, width in enumerate((9, 7, 5, 3, 1)):
+        _rectangle(c, (_relative(frame, tag_width-20+row), COLUMN_TOP+11+row, width, 1), 0xffc9b77a)
+
+
+def platform_runs() -> tuple[tuple[int, int, int, int, int], ...]:
+    """Holographic deck under the soldier: segmented rings, ticks and a core.
+
+    Each run is (dx, dy, width, height, ARGB) around the deck centre.
+    """
+    runs: list[tuple[int, int, int, int, int]] = []
+
+    def ring(rx: int, ry: int, colour: int, gaps: int, gap_degrees: float) -> None:
+        for dy in range(-ry, ry+1):
+            outer = rx*math.sqrt(max(0.0, 1-(dy/ry)**2))
+            inner = rx*math.sqrt(max(0.0, 1-((abs(dy)+1)/ry)**2)) if abs(dy) < ry else 0.0
+            start, stop = round(inner), round(outer)
+            width = max(1, stop-start)
+            for sign in (-1, 1):
+                x = start if sign > 0 else -start-width
+                angle = math.degrees(math.atan2(dy*rx/ry, (start+width/2)*sign)) % 360
+                if gaps and (angle % (360/gaps)) < gap_degrees:
+                    continue
+                runs.append((x, dy, width, 1, colour))
+
+    for dy in range(-10, 11):
+        span = round(110*math.sqrt(max(0.0, 1-(dy/11)**2)))
+        runs.append((-span, dy, 2*span, 1, 0x22e8891f))
+    ring(212, 25, 0x90c87a22, 12, 7)
+    ring(160, 19, 0xe0e8891f, 4, 10)
+    ring(108, 12, 0x80f0b060, 0, 0)
+    for dx in (-236, 228):
+        runs.append((dx, 0, 8, 1, 0xa0e8891f))
+    for dy in (-31, 30):
+        runs.append((-1, dy, 3, 1, 0xa0e8891f))
+    runs.append((-34, -1, 68, 2, 0xd0f0b060))
+    return tuple(runs)
+
+
+def _platform(c: Code, centre: int, table: int, count: int) -> None:
+    """Draw the precomputed run table in a loop; ESI/EDI stay intact."""
+    _value(c, ('w', 2, centre), 'edx'); c.emit('8955ec')
+    _value(c, ('h', 1, -104), 'edx'); c.emit('8955e8')
+    c.emit('56 57 8db3'); c.word(table); c.emit('bf'); c.word(count)
+    loop = f'platform_{len(c.data)}'
+    c.label(loop)
+    c.emit('0fb74606 50 6a00 ff7608 6802010000 0fb74e04')
+    c.emit('0fbf06 0345ec 0345fc 0fbf5602 0355e8 0355f8')
+    c.call(0x4f2888)
+    c.emit('83c60c 4f'); c.branch('0f85', loop)
+    c.emit('5f 5e')
+
+
 def _design(c: Code, origin: int, left: int, right: int) -> None:
-    from .client_barracks_a2 import bag_cells, equipment_slots
+    from .client_barracks_a2 import TABLE, bag_cells, equipment_slots
+    from .client_barracks_warehouse import COLUMN_TOP
 
     _panel(c, 12, left)
     _panel(c, left+26, ('w',1,-left-right-50), stage=True)
-    _panel(c, ('w',1,-right-12), right, top=186)
+    _panel(c, ('w',1,-right-12), right, top=COLUMN_TOP)
+    # Warehouse chrome only while the warehouse page is the visible tab.
+    skip = f'warehouse_frame_{right}'
+    c.emit('8b83'); c.word(TABLE-BASE); c.emit('85c0'); c.branch('0f84', skip)
+    c.emit('80784900'); c.branch('0f84', skip)
+    _warehouse_frame(c, right)
+    c.label(skip)
+    for x, width in ((12, left), (('w',1,-right-12), right)):
+        _brackets(c, x, width, 112)
     _text(c,origin,0,30,130)
     _text(c,origin,1,30,428 if left==430 else 340)
     device=equipment_slots(left)[5]
@@ -86,41 +177,8 @@ def _design(c: Code, origin: int, left: int, right: int) -> None:
     for cell in bag_cells(left):
         _rectangle(c,(12+cell.x,112+cell.y,cell.width,cell.height),0xff30383c)
         _rectangle(c,(13+cell.x,113+cell.y,cell.width-2,cell.height-2),0xff14191d)
-    # Warm elliptical platform. Native 1-pixel strips keep the panel scalable
-    # without an image atlas or changes to the actor's model/materials.
-    centre: Expr = ('w',2,(left-right)//2)
-    for dy in range(-22,23):
-        span=round(195*math.sqrt(max(0,1-(dy/23)**2)))
-        _rectangle(c,(('w',2,centre[2]-span),('h',1,-106+dy),span*2,1),0x1cc87a22)
-        for edge in (centre[2]-span, centre[2]+span-1):
-            _rectangle(c,(('w',2,edge),('h',1,-106+dy),1,1),0x8cc87a22)
-    _hp(c,origin,centre[2],str(left))
-
-
-def _hp(c: Code, origin: int, centre: int, suffix: str) -> None:
-    done=f'hp_done_{suffix}'
-    _rectangle(c,(('w',2,centre-180),('h',1,-60),360,22),0xff14181b)
-    c.emit('8b83');c.word(0xac64b4-BASE);c.emit('85c0');c.branch('0f84',done)
-    c.emit('8b00 83f820');c.branch('0f83',done)
-    c.emit('8b93');c.word(0xac618c-BASE);c.emit('85d2');c.branch('0f84',done)
-    c.emit('8b3c82 85ff');c.branch('0f84',done)
-    c.emit('897df4 0fb78f08600000 85c9');c.branch('0f84',done)
-    c.emit('0fb78706600000 3bc1');c.branch('0f86',done+'_bounded')
-    c.emit('89c8');c.label(done+'_bounded')
-    c.emit('69c068010000 31d2 f7f1 8945f0 6a16 6a00 6852665cff 6802010000 8b4df0')
-    _value(c,('w',2,centre-180),'eax');c.emit('0345fc')
-    _value(c,('h',1,-60),'edx');c.emit('0355f8');c.call(0x4f2888)
-    for offset,x in ((0x6006,centre-30),(0x6008,centre+20)):
-        c.emit('8b7df4 0fb787');c.word(offset)
-        c.emit('8d95a0ffffff');c.call(BASE+origin+0x10000+0x3000)
-        c.emit('68ece5b8ff 6a00 6a00')
-        _value(c,('w',2,x),'edx');c.emit('0355fc')
-        _value(c,('h',1,-56),'ecx');c.emit('034df8')
-        # _value uses EDX, so set X after calculating Y.
-        _value(c,('w',2,x),'edx');c.emit('0355fc')
-        c.call(0x67571c)
-    _text(c,origin,9,('w',2,centre+4),('h',1,-56))
-    c.label(done)
+    # The soldier stands on a holographic deck; HP lives on the roster card.
+    _platform(c,(left-right)//2,origin+PLATFORM,len(platform_runs()))
 
 
 def payload(origin: int, layout_state: int) -> bytes:
@@ -151,6 +209,11 @@ def payload(origin: int, layout_state: int) -> bytes:
         raw=caption_literal(caption)
         result[at:at+len(raw)]=raw
     result[0xc000:0xd000] = _slot_captions(origin,layout_state)
+    table = b''.join(struct.pack('<hhHHI', dx, dy, width, height, native_colour(colour))
+                     for dx, dy, width, height, colour in platform_runs())
+    if len(table) > 0x1000:
+        raise ValueError('Platform runs exceed their table')
+    result[PLATFORM:PLATFORM+len(table)] = table
     return bytes(result)
 
 

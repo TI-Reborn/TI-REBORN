@@ -5,6 +5,17 @@ import struct
 
 BASE = 0x400000
 SIZE = 0x4000
+ARMOR_FIELD = 0x6010
+# A small plated shield: steel body, bright rim, amber boss (row, x, width).
+SHIELD = tuple(
+    [(0, 0, 11, 0xffb8c8d4), (1, 0, 1, 0xffb8c8d4), (1, 10, 1, 0xffb8c8d4)]
+    + [(row, 1, 9, 0xff5f7d92) for row in range(1, 6)]
+    + [(row, 0, 1, 0xffb8c8d4) for row in range(2, 6)]
+    + [(row, 10, 1, 0xffb8c8d4) for row in range(2, 6)]
+    + [(6, 1, 9, 0xffb8c8d4), (7, 2, 7, 0xff5f7d92), (8, 3, 5, 0xffb8c8d4),
+       (9, 4, 3, 0xff5f7d92), (10, 5, 1, 0xffb8c8d4)]
+    + [(3, 4, 3, 0xffe8891f), (4, 5, 1, 0xffe8891f)]
+)
 
 
 def _input(origin: int, layout_state: int, *, release: bool) -> bytes:
@@ -149,12 +160,11 @@ def payload(origin: int, layout_state: int) -> bytes:
     c.emit('8b7df4 8b87fc5f0000 8d95a0ffffff');c.call(BASE+origin+0x3000)
     c.emit('89c6 8b48fc d1e9 8b7dec f366a5 66c7075d00 83c702 66c7070000 8d850cffffff 29c7 89bd08ffffff')
     _draw_text(c,78,10,font=3)
-    # The current native font lacks a star glyph. Draw the small rank symbol
-    # from GUI primitives so it is visible with every published font atlas.
-    for y,x,width in ((0,4,1),(1,4,1),(2,3,3),(3,0,9),(4,1,7),
-                      (5,2,5),(6,2,5),(7,1,3),(7,5,3),(8,1,2),(8,6,2)):
-        _rectangle(c,(78+x,36+y,width,1),0xffc9b77a)
-    _number(c,origin,0x600c,89,36)
+    # Total armour (ArmorClass at actor+6010, kept current by the server; see
+    # ARMOR_DISPLAY.md). +600C is the unused ArmorClassFake and always reads 0.
+    for y,x,width,colour in SHIELD:
+        _rectangle(c,(78+x,35+y,width,1),colour)
+    _number(c,origin,ARMOR_FIELD,92,36)
     _rectangle(c,(78,58,160,18),0xff14181b)
     # HP values remain native fields, never percentages inferred from pixels.
     c.emit('8b7df4 0fb78708600000 85c0');c.branch('0f84','hp_done')

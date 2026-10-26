@@ -11,10 +11,11 @@ internal static class NativePasswordLimit
  // adapter site differs from the tooltip image (deploy/client_barracks_a2.py).
  internal const string BarracksSha256="9df0325aa332b332a85c0fae5f67674509b0fe76f34a0a0ad6030c4b91f4fd76";
  internal const string InterfaceModeSha256="8ec07dd8c2bdc80e05cb883f83dc1a1b01735dbc5d121ce9c144b962101aa7f2";
+ internal const string WarehouseSha256="5c87d334ad3e7e8018339243132b65525030487188bd1c9d8535a4638d11b408";
  internal static string CompatibilityHash(byte[] image)
  {
   string hash=Convert.ToHexStringLower(SHA256.HashData(image));
-  return hash is UpdatedSha256 or TooltipSha256 or BarracksSha256 or InterfaceModeSha256 ? OriginalSha256 : hash;
+  return hash is UpdatedSha256 or TooltipSha256 or BarracksSha256 or InterfaceModeSha256 or WarehouseSha256 ? OriginalSha256 : hash;
  }
  internal static void Test(string image,string output)
  {
