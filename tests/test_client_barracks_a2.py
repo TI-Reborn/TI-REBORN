@@ -24,7 +24,14 @@ class BarracksLayoutTests(unittest.TestCase):
         plan = layout(1728, 768)
         self.assertEqual(tuple(vars(plan['equipment']).values()), (50, 118, 430, 558))
         self.assertEqual(plan['model'].width, 600)
-        self.assertEqual(plan['tabs'].height, 64)
+        self.assertEqual(plan['tabs'].height, 56)
+
+    def test_right_column_spans_the_full_content_height(self):
+        for size in ((1728, 768), (1344, 544)):
+            plan = layout(*size)
+            self.assertEqual(plan['right'].y, plan['equipment'].y)
+            self.assertEqual(plan['right'].y+plan['right'].height,
+                             plan['equipment'].y+plan['equipment'].height)
 
     def test_reference_bag_has_twelve_bounded_cells_in_four_columns(self):
         cells = bag_cells(430)
@@ -60,9 +67,13 @@ class BarracksLayoutTests(unittest.TestCase):
     def test_small_canvas_keeps_the_existing_native_layout(self):
         self.assertIsNone(layout(800,448))
 
-    def test_no_overlap_between_tabs_and_right_content(self):
-        plan=layout(1728,768)
-        self.assertLessEqual(plan['tabs'].y+plan['tabs'].height,plan['right'].y)
+    def test_tabs_sit_under_the_soldier_inside_the_centre_stage(self):
+        for size in ((1728, 768), (1344, 544), (1516, 640), (2368, 1120)):
+            plan = layout(*size)
+            tabs, model = plan['tabs'], plan['model']
+            self.assertGreaterEqual(tabs.y, model.y+model.height, size)
+            self.assertGreaterEqual(tabs.x, plan['equipment'].x+plan['equipment'].width, size)
+            self.assertLessEqual(tabs.x+tabs.width, plan['right'].x, size)
 
 
 if __name__=='__main__':

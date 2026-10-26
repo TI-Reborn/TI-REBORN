@@ -37,6 +37,7 @@ MODULES = (
     'test_client_item_icons_hd',
     'test_client_barracks_a2',
     'test_client_barracks_skin',
+    'test_client_barracks_warehouse',
     'test_client_interface_mode.LauncherContractTests',
     'test_interface_catalogue',
     'test_training_arena',

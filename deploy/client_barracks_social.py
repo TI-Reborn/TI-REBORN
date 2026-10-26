@@ -12,7 +12,8 @@ NAMES = ('window_clans', 'window_clans_switch', 'window_alliance_switch')
 
 
 def payload(origin: int, layout_state: int) -> bytes:
-    from .client_barracks_a2 import HEADER, _calculate, _fields, _global
+    from .client_barracks_a2 import HEADER, _calculate, _fields, _global, taller_column
+    from .client_barracks_warehouse import COLUMN_TOP
     from .client_equipment_batch import Code
 
     c = Code(BASE+origin)
@@ -37,7 +38,7 @@ def payload(origin: int, layout_state: int) -> bytes:
             c.emit('817a08'); c.word(child); c.branch('0f8e', skip)
             c.emit('8b5204 8b82'); c.word(child*4)
             c.emit('85c0'); c.branch('0f84', skip)
-        _fields(c, rect)
+        _fields(c, tuple(taller_column(value) for value in rect))
         c.label(skip)
 
     for index in range(len(NAMES)):
@@ -49,7 +50,7 @@ def payload(origin: int, layout_state: int) -> bytes:
             relative_x = 198 if index == 0 else 0
             panel_width = width-198 if index == 0 else 190 if index == 1 else width
             place((), (('w', 1, -width-12+inset+relative_x),
-                       192 if inset else 186, panel_width, ('h', 1, -198)))
+                       COLUMN_TOP+(6 if inset else 0), panel_width, ('h', 1, -198)))
             c.emit('8b5630 015730 8b5634 015734')
             if index == 0:
                 place((1,), (panel_width-32, 8, 24, 24))
