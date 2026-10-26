@@ -321,7 +321,9 @@ def startup_code():
     return c.finish(0x100)
 
 
-def install_code():
+def install_code(side=512):
+    if side not in (512, 1024):
+        raise ValueError('Unsupported reviewed portrait render size')
     c = Code(INSTALL_ENTRY); c.emit('9c60'); c.base()
     c.emit('83bb'); c.word(STATE); c.emit('00'); c.branch('0f85', 'done')
     # The launcher pins TI on disk. Additional executable guards reject an
@@ -343,34 +345,54 @@ def install_code():
     # unexpected owned surface rather than release an unsupported contract.
     c.emit('837e1000'); c.branch('0f85', 'unavailable')
     # Idempotent binding: do not release an already valid 512 target.
-    c.emit('817e2000020000'); c.branch('0f85', 'original')
-    c.emit('817e1c00020000'); c.branch('0f85', 'unavailable')
-    c.emit('817e1400020000'); c.branch('0f85', 'unavailable')
-    c.emit('817e1800020000'); c.branch('0f85', 'unavailable')
+    c.emit('817e20'); c.word(side); c.branch('0f85', 'original')
+    c.emit('817e1c'); c.word(side); c.branch('0f85', 'unavailable')
+    c.emit('817e14'); c.word(side); c.branch('0f85', 'unavailable')
+    c.emit('817e18'); c.word(side); c.branch('0f85', 'unavailable')
     c.branch('e9', 'success')
     c.label('original')
-    for field in (0x20, 0x1c, 0x14, 0x18):
-        c.emit('817e'+f'{field:02x}'+'00010000'); c.branch('0f85', 'unavailable')
+    if side == 1024:
+        # A locally previewed candidate can encounter the current 512 target.
+        # Save its dimensions so an allocation failure restores that target.
+        c.emit('8b4620 3d00010000'); c.branch('0f84', 'previous_size')
+        c.emit('3d00020000'); c.branch('0f85', 'unavailable')
+        c.label('previous_size')
+        for field in (0x1c, 0x14, 0x18):
+            c.emit('3946'+f'{field:02x}'); c.branch('0f85', 'unavailable')
+        state_store(c, 0x10)
+    else:
+        for field in (0x20, 0x1c, 0x14, 0x18):
+            c.emit('817e'+f'{field:02x}'+'00010000'); c.branch('0f85', 'unavailable')
     c.emit('89f0'); state_store(c, 8)
     c.emit('0fb64661'); state_store(c, 0xc)
     # The original factory uses Format21 and restores depthWanted after the
     # same method. Its shared target object and manager ownership stay intact.
-    c.emit('6a15 89f0 ba00020000 b900020000'); host_call(c, 0x6108f0)
+    c.emit('6a15 89f0 ba'); c.word(side)
+    c.emit('b9'); c.word(side); host_call(c, 0x6108f0)
     c.emit('8b83'); c.word(STATE + 0xc); c.emit('884661')
     c.emit('807e6001'); c.branch('0f85', 'rollback')
     c.emit('837e0c00'); c.branch('0f84', 'rollback')
     for field in (0x20, 0x1c, 0x14, 0x18):
-        c.emit('817e'+f'{field:02x}'+'00020000'); c.branch('0f85', 'rollback')
+        c.emit('817e'+f'{field:02x}'); c.word(side); c.branch('0f85', 'rollback')
     c.label('success'); state_set(c, 0, 1); c.branch('e9', 'done')
     c.label('rollback')
     state_set(c, 4, 2)
-    c.emit('6a15 89f0 ba00010000 b900010000'); host_call(c, 0x6108f0)
+    if side == 1024:
+        c.emit('6a15 89f0 8b93'); c.word(STATE+0x10); c.emit('89d1')
+    else:
+        c.emit('6a15 89f0 ba00010000 b900010000')
+    host_call(c, 0x6108f0)
     c.emit('8b83'); c.word(STATE + 0xc); c.emit('884661')
     state_set(c, 0, -1)
     c.emit('807e6001'); c.branch('0f85', 'rollback_failed')
     c.emit('837e0c00'); c.branch('0f84', 'rollback_failed')
-    for field in (0x20, 0x1c, 0x14, 0x18):
-        c.emit('817e'+f'{field:02x}'+'00010000'); c.branch('0f85', 'rollback_failed')
+    if side == 1024:
+        c.emit('8b93'); c.word(STATE+0x10)
+        for field in (0x20, 0x1c, 0x14, 0x18):
+            c.emit('3956'+f'{field:02x}'); c.branch('0f85', 'rollback_failed')
+    else:
+        for field in (0x20, 0x1c, 0x14, 0x18):
+            c.emit('817e'+f'{field:02x}'+'00010000'); c.branch('0f85', 'rollback_failed')
     c.branch('e9', 'done')
     c.label('rollback_failed'); state_set(c, 4, 3); c.branch('e9', 'done')
     c.label('unavailable'); state_set(c, 0, -1); state_set(c, 4, 1)
