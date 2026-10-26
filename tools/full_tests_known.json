@@ -1,150 +1,621 @@
 {
- "description": "Known failing tests outside CI, each with a reason. tools/run_full_tests.py reports them separately and flags entries that start passing.",
- "entries": [
-  {
-   "test": "test_bank_economy.",
-   "category": "retired-gold",
-   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
-  },
-  {
-   "test": "test_bank_gateway.",
-   "category": "retired-gold",
-   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
-  },
-  {
-   "test": "test_economy_antifarm.",
-   "category": "retired-gold",
-   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
-  },
-  {
-   "test": "test_economy_runtime.EconomyRuntimeTests.test_paid_gold_refresh_and_empty_account_login",
-   "category": "retired-gold",
-   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
-  },
-  {
-   "test": "test_original_shop_prices.",
-   "category": "retired-gold",
-   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
-  },
-  {
-   "test": "test_premium_account.PremiumShopTests.test_gold_discount_rounding_matches_catalog_and_no_resale_arbitrage",
-   "category": "retired-gold",
-   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
-  },
-  {
-   "test": "test_shop_clan_benefits.",
-   "category": "retired-gold",
-   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
-  },
-  {
-   "test": "test_shop_completion.",
-   "category": "retired-gold",
-   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
-  },
-  {
-   "test": "test_stage2_admission_capacity.",
-   "category": "retired-gold",
-   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
-  },
-  {
-   "test": "test_item_stacking.StackTests.test_gold_purchase_stacks_candies_but_not_rockets",
-   "category": "retired-gold",
-   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
-  },
-  {
-   "test": "test_warehouse_completion.WarehouseCompletionTests.test_rental_remote_expiry_preserves_city_rows_and",
-   "category": "retired-gold",
-   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
-  },
-  {
-   "test": "test_multi_account.MultiAccountTests.test_premium_purchase_and_personal_shop_prices",
-   "category": "retired-gold",
-   "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
-  },
-  {
-   "test": "test_native_arena_group_rows.",
-   "category": "superseded-client-status",
-   "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
-  },
-  {
-   "test": "test_native_team_lobby_list.",
-   "category": "superseded-client-status",
-   "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
-  },
-  {
-   "test": "test_native_wager_lobby_captions.",
-   "category": "superseded-client-status",
-   "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
-  },
-  {
-   "test": "test_backup_tools_deployment.",
-   "category": "local-artifact",
-   "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
-  },
-  {
-   "test": "test_special_items.",
-   "category": "local-artifact",
-   "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
-  },
-  {
-   "test": "test_hosted_clan_warfare.",
-   "category": "local-artifact",
-   "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
-  },
-  {
-   "test": "test_shared_mines_qa.",
-   "category": "local-artifact",
-   "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
-  },
-  {
-   "test": "test_stage7_hosted_qa.",
-   "category": "local-artifact",
-   "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
-  },
-  {
-   "test": "test_verify_hosted_gameplay_modes.",
-   "category": "local-artifact",
-   "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
-  },
-  {
-   "test": "test_game_tls_deploy.",
-   "category": "local-artifact",
-   "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
-  },
-  {
-   "test": "test_login_economy_boundary.",
-   "category": "not-merged",
-   "note": "Tests a function that is not in main (feature prepared but not merged). MultiServer.initialize_character_economy does not exist."
-  },
-  {
-   "test": "unittest.loader._FailedTest.test_hub_contention_performance",
-   "category": "not-merged",
-   "note": "Tests a function that is not in main (feature prepared but not merged). tio.performance.timed_block does not exist."
-  },
-  {
-   "test": "unittest.loader._FailedTest.test_recovery_roster_updates",
-   "category": "not-merged",
-   "note": "Tests a function that is not in main (feature prepared but not merged). tio.battle_recovery.treat_updates does not exist (tools/check_recovery_roster.py would add it)."
-  },
-  {
-   "test": "unittest.loader._FailedTest.test_launcher_archive",
-   "category": "local-artifact",
-   "note": "launcher/build_archive.py is not in the repository."
-  },
-  {
-   "test": "unittest.loader._FailedTest.test_menu_interface",
-   "category": "local-artifact",
-   "note": "launcher/build_menu_interface_update.py is not in the repository."
-  },
-  {
-   "test": "unittest.loader._FailedTest.test_portal_backup",
-   "category": "local-artifact",
-   "note": "web/ is not in the repository."
-  },
-  {
-   "test": "unittest.loader._FailedTest.test_base_fund_completion",
-   "category": "local-artifact",
-   "note": "Reads reports/gameplay-followup (gitignored)."
-  }
- ]
+  "description": "Exact observed legacy failures. Match test ID, kind, exception type and complete message; a changed or new failure remains real. Loader/environment failures are not suppressed here.",
+  "entries": [
+    {
+      "test": "test_backup_tools_deployment.BackupToolsDeploymentTests.test_apply_backs_up_before_atomic_writes_and_does_not_restart_services",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "Missing package source",
+      "category": "local-artifact",
+      "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
+    },
+    {
+      "test": "test_backup_tools_deployment.BackupToolsDeploymentTests.test_changed_baseline_or_active_job_prevents_any_installation",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "Missing package source",
+      "category": "local-artifact",
+      "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
+    },
+    {
+      "test": "test_backup_tools_deployment.BackupToolsDeploymentTests.test_existing_package_and_invalid_dump_are_not_modified",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "Missing package source",
+      "category": "local-artifact",
+      "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
+    },
+    {
+      "test": "test_backup_tools_deployment.BackupToolsDeploymentTests.test_package_contains_exact_operational_files_and_safe_stdin_scripts",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "Missing package source",
+      "category": "local-artifact",
+      "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
+    },
+    {
+      "test": "test_backup_tools_deployment.BackupToolsDeploymentTests.test_partial_failure_restores_old_code_and_removes_only_its_new_file",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "Missing package source",
+      "category": "local-artifact",
+      "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
+    },
+    {
+      "test": "test_backup_tools_deployment.BackupToolsDeploymentTests.test_unknown_members_links_wrong_hash_and_database_target_are_refused",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "Missing package source",
+      "category": "local-artifact",
+      "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
+    },
+    {
+      "test": "test_bank_economy.EconomyTests.test_bonds_sale_window_redemption_day_carryover_and_native_balances",
+      "kind": "error",
+      "error": "BankRejected",
+      "message": "Котировка изменилась: обновите её",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_bank_economy.EconomyTests.test_concurrent_conversion_and_overflow_or_audit_failure_roll_back",
+      "kind": "error",
+      "error": "BankRejected",
+      "message": "Золото выведено из экономики; обмен закрыт",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_bank_economy.EconomyTests.test_gold_conversion_exact_atomic_owned_and_retry",
+      "kind": "error",
+      "error": "BankRejected",
+      "message": "Золото выведено из экономики; обмен закрыт",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_bank_economy.StripeLedgerTests.test_approved_eur_cent_price_minimum_before_provider_io",
+      "kind": "error",
+      "error": "BankRejected",
+      "message": "Покупка игровой валюты за реальные деньги отключена",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_bank_economy.StripeLedgerTests.test_concurrent_checkout_and_confirm_race_keep_one_order_one_award",
+      "kind": "error",
+      "error": "BankRejected",
+      "message": "Покупка игровой валюты за реальные деньги отключена",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_bank_economy.StripeLedgerTests.test_paid_overflow_preserved_collect_later_and_event_failure_rolls_back",
+      "kind": "error",
+      "error": "BankRejected",
+      "message": "Покупка игровой валюты за реальные деньги отключена",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_bank_economy.StripeLedgerTests.test_real_adapter_fields_idempotency_and_account_order_isolation",
+      "kind": "error",
+      "error": "BankRejected",
+      "message": "Покупка игровой валюты за реальные деньги отключена",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_bank_economy.StripeLedgerTests.test_signed_live_paid_callback_credits_once_per_order_not_event",
+      "kind": "error",
+      "error": "BankRejected",
+      "message": "Покупка игровой валюты за реальные деньги отключена",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_bank_economy.StripeLedgerTests.test_unresolved_old_provider_call_and_outer_gameplay_lock_cannot_retry_io",
+      "kind": "error",
+      "error": "BankRejected",
+      "message": "Покупка игровой валюты за реальные деньги отключена",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_bank_economy.StripeLedgerTests.test_unsigned_stale_wrong_amount_currency_session_or_testmode_never_credit",
+      "kind": "error",
+      "error": "BankRejected",
+      "message": "Покупка игровой валюты за реальные деньги отключена",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_economy_antifarm.EconomyAntifarmTests.test_anti_experience_subscription_still_suppresses_xp",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "Цена премиума изменилась: войдите в игру заново",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_economy_antifarm.EconomyAntifarmTests.test_premium_is_combined_before_final_floor_and_audited",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "Цена премиума изменилась: войдите в игру заново",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_economy_runtime.EconomyRuntimeTests.test_paid_gold_refresh_and_empty_account_login",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "4294967285 != 4294967292",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_hosted_clan_warfare.HostedWarfareToolTests.test_real_local_tls_normal_onboarding_readonly_pages_profiles_and_room_denial",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "[FileNotFoundError(2, 'The system cannot find the file specified')] is not false",
+      "category": "local-artifact",
+      "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
+    },
+    {
+      "test": "test_item_stacking.StackTests.test_gold_purchase_stacks_candies_but_not_rockets",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "SC accepts credits only",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_login_economy_boundary.LoginEconomyBoundaryTests.test_account_without_character_never_opens_bank_or_seeds_economy",
+      "kind": "error",
+      "error": "AttributeError",
+      "message": "'MultiServer' object has no attribute 'initialize_character_economy'",
+      "category": "not-merged",
+      "note": "Tests a function that is not in main (feature prepared but not merged). MultiServer.initialize_character_economy does not exist."
+    },
+    {
+      "test": "test_login_economy_boundary.LoginEconomyBoundaryTests.test_existing_character_with_missing_wallet_rejects_before_ensure",
+      "kind": "error",
+      "error": "AttributeError",
+      "message": "'MultiServer' object has no attribute 'initialize_character_economy'",
+      "category": "not-merged",
+      "note": "Tests a function that is not in main (feature prepared but not merged). MultiServer.initialize_character_economy does not exist."
+    },
+    {
+      "test": "test_login_economy_boundary.LoginEconomyBoundaryTests.test_native_creation_grants_once_then_login_preserves_saved_balance",
+      "kind": "error",
+      "error": "AttributeError",
+      "message": "'MultiServer' object has no attribute 'initialize_character_economy'",
+      "category": "not-merged",
+      "note": "Tests a function that is not in main (feature prepared but not merged). MultiServer.initialize_character_economy does not exist."
+    },
+    {
+      "test": "test_login_economy_boundary.NativeTCPLoginEconomyBoundaryTests.test_real_login_rejects_lost_wallet_without_creating_a_replacement",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "(<class 'EOFError'>, <class 'ConnectionResetError'>) not raised",
+      "category": "not-merged",
+      "note": "Tests a function that is not in main (feature prepared but not merged). MultiServer.initialize_character_economy does not exist."
+    },
+    {
+      "test": "test_login_economy_boundary.NativeTCPLoginEconomyBoundaryTests.test_real_native_login_and_empty_character_screen_seed_nothing_before_create",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "Lists differ: [('new_user', 3000, 0)] != []\n\nFirst list contains 1 additional elements.\nFirst extra element 0:\n('new_user', 3000, 0)\n\n- [('new_user', 3000, 0)]\n+ [] : wallets",
+      "category": "not-merged",
+      "note": "Tests a function that is not in main (feature prepared but not merged). MultiServer.initialize_character_economy does not exist."
+    },
+    {
+      "test": "test_multi_account.MultiAccountTests.test_premium_purchase_and_personal_shop_prices",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "10000 != 9990",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_native_arena_group_rows.NativeArenaGroupRowsTests.test_cp1251_name_truncation_keeps_exact_complete_status",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "False is not true",
+      "category": "superseded-client-status",
+      "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+    },
+    {
+      "test": "test_native_arena_group_rows.NativeArenaGroupRowsTests.test_full_team_stays_visible_with_occupied_caption",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "b'alice' != b'alice \\xb7 \\xe7\\xe0\\xed\\xff\\xf2\\xee 2/2'",
+      "category": "superseded-client-status",
+      "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+    },
+    {
+      "test": "test_native_arena_group_rows.NativeArenaGroupRowsTests.test_leaving_a_full_team_releases_the_displayed_slot",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "False is not true",
+      "category": "superseded-client-status",
+      "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+    },
+    {
+      "test": "test_native_arena_group_rows.NativeArenaGroupRowsTests.test_ordinary_team_and_wall_have_human_capacity_and_one_fighter",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "b'alice' != b'alice \\xb7 \\xf1\\xe2\\xee\\xe1\\xee\\xe4\\xed\\xee 1/2'",
+      "category": "superseded-client-status",
+      "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+    },
+    {
+      "test": "test_native_arena_group_rows.NativeArenaGroupRowsTests.test_search_stays_visible_with_starting_status_and_reopens_on_cancel",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "b'alice' != b'alice \\xb7 \\xef\\xee\\xe8\\xf1\\xea 1/2'",
+      "category": "superseded-client-status",
+      "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+    },
+    {
+      "test": "test_native_arena_group_rows.NativeArenaGroupRowsTests.test_wager_countdown_is_visible_starting_and_cancel_resets_status",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "False is not true",
+      "category": "superseded-client-status",
+      "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+    },
+    {
+      "test": "test_native_arena_group_rows.NativeArenaGroupRowsTests.test_wager_team_has_correct_players_soldiers_and_capacity",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "b'alice' != b'alice \\xb7 \\xe7\\xe0\\xed\\xff\\xf2\\xee 2/2'",
+      "category": "superseded-client-status",
+      "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+    },
+    {
+      "test": "test_native_arena_group_rows.NativeArenaGroupRowsTests.test_wager_wall_uses_eight_human_slots_and_one_fighter",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "False is not true",
+      "category": "superseded-client-status",
+      "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+    },
+    {
+      "test": "test_native_team_lobby_list.NativeTeamLobbyListTests.test_full_lobby_is_visible_occupied_and_stale_join_is_rejected",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "'занято 2/2' not found in 'alice'",
+      "category": "superseded-client-status",
+      "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+    },
+    {
+      "test": "test_native_team_lobby_list.NativeTeamLobbyListTests.test_long_captain_name_keeps_status_suffix_within_native_string_limit",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "False is not true",
+      "category": "superseded-client-status",
+      "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+    },
+    {
+      "test": "test_native_team_lobby_list.NativeTeamLobbyListTests.test_main_table_contains_both_modes_with_exact_starter_bounds_and_slots",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "'свободно 1/2' not found in 'alice'",
+      "category": "superseded-client-status",
+      "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+    },
+    {
+      "test": "test_native_team_lobby_list.NativeTeamLobbyListTests.test_native_kick_requires_captain_and_releases_slot",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "'свободно 1/2' not found in 'alice'",
+      "category": "superseded-client-status",
+      "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+    },
+    {
+      "test": "test_native_team_lobby_list.NativeTeamLobbyListTests.test_searching_lobby_stays_visible_and_ready_cancel_reopens_it",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "'поиск 1/2' not found in 'alice'",
+      "category": "superseded-client-status",
+      "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+    },
+    {
+      "test": "test_native_wager_lobby_captions.NativeWagerCaptionTests.test_eight_real_wall_members_and_countdown_stay_visible",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "False is not true",
+      "category": "superseded-client-status",
+      "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+    },
+    {
+      "test": "test_native_wager_lobby_captions.NativeWagerCaptionTests.test_free_team_caption_uses_authoritative_counts_and_preserves_settings",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "b'alice' != b'alice \\xb7 \\xf1\\xe2\\xee\\xe1\\xee\\xe4\\xed\\xee 1/2'",
+      "category": "superseded-client-status",
+      "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+    },
+    {
+      "test": "test_native_wager_lobby_captions.NativeWagerCaptionTests.test_full_team_remains_visible_and_stale_third_join_is_rejected",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "b'alice' != b'alice \\xb7 \\xe7\\xe0\\xed\\xff\\xf2\\xee 2/2'",
+      "category": "superseded-client-status",
+      "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+    },
+    {
+      "test": "test_native_wager_lobby_captions.NativeWagerCaptionTests.test_long_cp1251_captain_name_preserves_complete_status_suffix",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "False is not true",
+      "category": "superseded-client-status",
+      "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+    },
+    {
+      "test": "test_native_wager_lobby_captions.NativeWagerCaptionTests.test_team_countdown_is_visible_starting_and_cancel_reopens_without_roster_changes",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "False is not true",
+      "category": "superseded-client-status",
+      "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+    },
+    {
+      "test": "test_native_wager_lobby_captions.NativeWagerCaptionTests.test_wall_caption_uses_real_eight_player_capacity",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "False is not true",
+      "category": "superseded-client-status",
+      "note": "Lobby rows now carry plain captain names; occupied/search status is drawn by the client patch deploy/client_arena_lobby_search_status.py. Port to the colour contract or delete."
+    },
+    {
+      "test": "test_original_shop_prices.OriginalPricesTests.test_gold_concurrency_cannot_overspend",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "0 != 1",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_original_shop_prices.OriginalPricesTests.test_gold_pack_and_reconnect",
+      "kind": "error",
+      "error": "PurchaseRejected",
+      "message": "Premium catalog changed; reopen shop",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_original_shop_prices.OriginalPricesTests.test_gold_validation_and_atomic_failure",
+      "kind": "error",
+      "error": "PurchaseRejected",
+      "message": "Premium catalog changed; reopen shop",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_original_shop_prices.OriginalPricesTests.test_price_coverage_and_currency_exclusivity",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "True != False",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_premium_account.PremiumShopTests.test_gold_discount_rounding_matches_catalog_and_no_resale_arbitrage",
+      "kind": "error",
+      "error": "PurchaseRejected",
+      "message": "Premium catalog changed; reopen shop",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_shared_mines_qa.SharedMinesThreeTlsClients.test_three_normal_accounts_tls_onboarding_and_only_own_level4_fixture",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "[FileNotFoundError(2, 'The system cannot find the file specified')] is not false",
+      "category": "local-artifact",
+      "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
+    },
+    {
+      "test": "test_shop_clan_benefits.ShopClanTests.test_native_gold_debit_discount_actual_contribution_and_premium_achievement",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "Цена премиума изменилась: войдите в игру заново",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_shop_clan_benefits.ShopClanTests.test_no_nonce_native_identical_orders_each_charge_and_have_distinct_receipts",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "Lists differ: [(36,)] != [(24,)]\n\nFirst differing element 0:\n(36,)\n(24,)\n\n- [(36,)]\n+ [(24,)]",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_shop_clan_benefits.ShopClanTests.test_ordinary_purchase_subscription_and_conversion_do_not_earn_gold_shop_contribution",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "Цена премиума изменилась: войдите в игру заново",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_shop_completion.ShopCompletionTests.test_city_gate_normal_armor_only_and_documented_level_band",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "PurchaseRejected not raised",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_shop_completion.ShopCompletionTests.test_existing_legacy_cart_honors_price_and_gets_ammo_without_new_base_offer",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "SC accepts credits only",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_shop_completion.ShopCompletionTests.test_miners_town_native_ordinary_premium_sc_purchases_and_restart_replays",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "SC accepts credits only",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_shop_completion.ShopCompletionTests.test_non_enhanceable_sc_supplies_keep_provisional_terms_and_ignore_old_sold_limit",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "SC accepts credits only",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_shop_completion.ShopCompletionTests.test_premium_weapon_bundle_uses_gold_price_and_shared_capacity",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "0 != 1",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_shop_completion.ShopCompletionTests.test_sc_catalog_four_tiers_gold_only_unlimited_and_enhanced_records",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "437 != 190",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_shop_completion.ShopCompletionTests.test_sc_frozen_cart_survives_policy_version_restart_and_preserves_other_account",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "587858221 unexpectedly found in {587202768: SCOffer(lot_id=587202768, item_id=208, enhancement=0, available=65535, base_credits=50, base_gold=0, credits=50, gold=0, discount=0, durability=300), 587858128: SCOffer(lot_id=587858128, item_id=208, enhancement=10, available=65535, base_credits=297300, base_gold=0, credits=297300, gold=0, discount=0, durability=950), 588185808: SCOffer(lot_id=588185808, item_id=208, enhancement=15, available=65535, base_credits=3539300, base_gold=0, credits=3539300, gold=0, discount=0, durability=1275), 588513488: SCOffer(lot_id=588513488, item_id=208, enhancement=20, available=65535, base_credits=40808700, base_gold=0, credits=40808700, gold=0, discount=0, durability=1600), 588841168: SCOffer(lot_id=588841168, item_id=208, enhancement=25, available=65535, base_credits=462653900, base_gold=0, credits=462653900, gold=0, discount=0, durability=1925), 587202770: SCOffer(lot_id=587202770, item_id=210, enhancement=0, available=65535, base_credits=800, base_gold=0, credits=800, gold=0, discount=0, durability=300), 587858130: SCOffer(lot_id=587858130, item_id=210, enhancement=10, available=65535, base_credits=342600, base_gold=0, credits=342600, gold=0, discount=0, durability=950), 588185810: SCOffer(lot_id=588185810, item_id=210, enhancement=15, available=65535, base_credits=4072300, base_gold=0, credits=4072300, gold=0, discount=0, durability=1275), 588513490: SCOffer(lot_id=588513490, item_id=210, enhancement=20, available=65535, base_credits=46945800, base_gold=0, credits=46945800, gold=0, discount=0, durability=1600), 588841170: SCOffer(lot_id=588841170, item_id=210, enhancement=25, available=65535, base_credits=532222200, base_gold=0, credits=532222200, gold=0, discount=0, durability=1925), 587202771: SCOffer(lot_id=587202771, item_id=211, enhancement=0, available=65535, base_credits=400, base_gold=0, credits=400, gold=0, discount=0, durability=300), 587858131: SCOffer(lot_id=587858131, item_id=211, enhancement=10, available=65535, base_credits=318400, base_gold=0, credits=318400, gold=0, discount=0, durability=950), 588185811: SCOffer(lot_id=588185811, item_id=211, enhancement=15, available=65535, base_credits=3788000, base_gold=0, credits=3788000, gold=0, discount=0, durability=1275), 588513491: SCOffer(lot_id=588513491, item_id=211, enhancement=20, available=65535, base_credits=43672600, base_gold=0, credits=43672600, gold=0, discount=0, durability=1600), 588841171: SCOffer(lot_id=588841171, item_id=211, enhancement=25, available=65535, base_credits=495119100, base_gold=0, credits=495119100, gold=0, discount=0, durability=1925), 587202772: SCOffer(lot_id=587202772, item_id=212, enhancement=0, available=65535, base_credits=750, base_gold=0, credits=750, gold=0, discount=0, durability=220), 587858132: SCOffer(lot_id=587858132, item_id=212, enhancement=10, available=65535, base_credits=339600, base_gold=0, credits=339600, gold=0, discount=0, durability=870), 588185812: SCOffer(lot_id=588185812, item_id=212, enhancement=15, available=65535, base_credits=4036700, base_gold=0, credits=4036700, gold=0, discount=0, durability=1195), 588513492: SCOffer(lot_id=588513492, item_id=212, enhancement=20, available=65535, base_credits=46536600, base_gold=0, credits=46536600, gold=0, discount=0, durability=1520), 588841172: SCOffer(lot_id=588841172, item_id=212, enhancement=25, available=65535, base_credits=527584300, base_gold=0, credits=527584300, gold=0, discount=0, durability=1845), 587202773: SCOffer(lot_id=587202773, item_id=213, enhancement=0, available=65535, base_credits=450, base_gold=0, credits=450, gold=0, discount=0, durability=300), 587858133: SCOffer(lot_id=587858133, item_id=213, enhancement=10, available=65535, base_credits=321500, base_gold=0, credits=321500, gold=0, discount=0, durability=950), 588185813: SCOffer(lot_id=588185813, item_id=213, enhancement=15, available=65535, base_credits=3823600, base_gold=0, credits=3823600, gold=0, discount=0, durability=1275), 588513493: SCOffer(lot_id=588513493, item_id=213, enhancement=20, available=65535, base_credits=44081800, base_gold=0, credits=44081800, gold=0, discount=0, durability=1600), 588841173: SCOffer(lot_id=588841173, item_id=213, enhancement=25, available=65535, base_credits=499757000, base_gold=0, credits=499757000, gold=0, discount=0, durability=1925), 587202774: SCOffer(lot_id=587202774, item_id=214, enhancement=0, available=65535, base_credits=930, base_gold=0, credits=930, gold=0, discount=0, durability=300), 587858134: SCOffer(lot_id=587858134, item_id=214, enhancement=10, available=65535, base_credits=350500, base_gold=0, credits=350500, gold=0, discount=0, durability=950), 588185814: SCOffer(lot_id=588185814, item_id=214, enhancement=15, available=65535, base_credits=4164600, base_gold=0, credits=4164600, gold=0, discount=0, durability=1275), 588513494: SCOffer(lot_id=588513494, item_id=214, enhancement=20, available=65535, base_credits=48009500, base_gold=0, credits=48009500, gold=0, discount=0, durability=1600), 588841174: SCOffer(lot_id=588841174, item_id=214, enhancement=25, available=65535, base_credits=544280700, base_gold=0, credits=544280700, gold=0, discount=0, durability=1925), 587202775: SCOffer(lot_id=587202775, item_id=215, enhancement=0, available=65535, base_credits=850, base_gold=0, credits=850, gold=0, discount=0, durability=260), 587858135: SCOffer(lot_id=587858135, item_id=215, enhancement=10, available=65535, base_credits=345600, base_gold=0, credits=345600, gold=0, discount=0, durability=910), 588185815: SCOffer(lot_id=588185815, item_id=215, enhancement=15, available=65535, base_credits=4107800, base_gold=0, credits=4107800, gold=0, discount=0, durability=1235), 588513495: SCOffer(lot_id=588513495, item_id=215, enhancement=20, available=65535, base_credits=47354900, base_gold=0, credits=47354900, gold=0, discount=0, durability=1560), 588841175: SCOffer(lot_id=588841175, item_id=215, enhancement=25, available=65535, base_credits=536860100, base_gold=0, credits=536860100, gold=0, discount=0, durability=1885), 587202776: SCOffer(lot_id=587202776, item_id=216, enhancement=0, available=65535, base_credits=320, base_gold=0, credits=320, gold=0, discount=0, durability=300), 587858136: SCOffer(lot_id=587858136, item_id=216, enhancement=10, available=65535, base_credits=313600, base_gold=0, credits=313600, gold=0, discount=0, durability=950), 588185816: SCOffer(lot_id=588185816, item_id=216, enhancement=15, available=65535, base_credits=3731200, base_gold=0, credits=3731200, gold=0, discount=0, durability=1275), 588513496: SCOffer(lot_id=588513496, item_id=216, enhancement=20, available=65535, base_credits=43018000, base_gold=0, credits=43018000, gold=0, discount=0, durability=1600), 588841176: SCOffer(lot_id=588841176, item_id=216, enhancement=25, available=65535, base_credits=487698500, base_gold=0, credits=487698500, gold=0, discount=0, durability=1925), 587202777: SCOffer(lot_id=587202777, item_id=217, enhancement=0, available=65535, base_credits=700, base_gold=0, credits=700, gold=0, discount=0, durability=300), 587858137: SCOffer(lot_id=587858137, item_id=217, enhancement=10, available=65535, base_credits=336600, base_gold=0, credits=336600, gold=0, discount=0, durability=950), 588185817: SCOffer(lot_id=588185817, item_id=217, enhancement=15, available=65535, base_credits=4001200, base_gold=0, credits=4001200, gold=0, discount=0, durability=1275), 588513497: SCOffer(lot_id=588513497, item_id=217, enhancement=20, available=65535, base_credits=46127500, base_gold=0, credits=46127500, gold=0, discount=0, durability=1600), 588841177: SCOffer(lot_id=588841177, item_id=217, enhancement=25, available=65535, base_credits=522946400, base_gold=0, credits=522946400, gold=0, discount=0, durability=1925), 587202778: SCOffer(lot_id=587202778, item_id=218, enhancement=0, available=65535, base_credits=700, base_gold=0, credits=700, gold=0, discount=0, durability=220), 587858138: SCOffer(lot_id=587858138, item_id=218, enhancement=10, available=65535, base_credits=336600, base_gold=0, credits=336600, gold=0, discount=0, durability=870), 588185818: SCOffer(lot_id=588185818, item_id=218, enhancement=15, available=65535, base_credits=4001200, base_gold=0, credits=4001200, gold=0, discount=0, durability=1195), 588513498: SCOffer(lot_id=588513498, item_id=218, enhancement=20, available=65535, base_credits=46127500, base_gold=0, credits=46127500, gold=0, discount=0, durability=1520), 588841178: SCOffer(lot_id=588841178, item_id=218, enhancement=25, available=65535, base_credits=522946400, base_gold=0, credits=522946400, gold=0, discount=0, durability=1845), 587202779: SCOffer(lot_id=587202779, item_id=219, enhancement=0, available=65535, base_credits=450, base_gold=0, credits=450, gold=0, discount=0, durability=300), 587858139: SCOffer(lot_id=587858139, item_id=219, enhancement=10, available=65535, base_credits=321500, base_gold=0, credits=321500, gold=0, discount=0, durability=950), 588185819: SCOffer(lot_id=588185819, item_id=219, enhancement=15, available=65535, base_credits=3823600, base_gold=0, credits=3823600, gold=0, discount=0, durability=1275), 588513499: SCOffer(lot_id=588513499, item_id=219, enhancement=20, available=65535, base_credits=44081800, base_gold=0, credits=44081800, gold=0, discount=0, durability=1600), 588841179: SCOffer(lot_id=588841179, item_id=219, enhancement=25, available=65535, base_credits=499757000, base_gold=0, credits=499757000, gold=0, discount=0, durability=1925), 587202780: SCOffer(lot_id=587202780, item_id=220, enhancement=0, available=65535, base_credits=800, base_gold=0, credits=800, gold=0, discount=0, durability=300), 587858140: SCOffer(lot_id=587858140, item_id=220, enhancement=10, available=65535, base_credits=342600, base_gold=0, credits=342600, gold=0, discount=0, durability=950), 588185820: SCOffer(lot_id=588185820, item_id=220, enhancement=15, available=65535, base_credits=4072300, base_gold=0, credits=4072300, gold=0, discount=0, durability=1275), 588513500: SCOffer(lot_id=588513500, item_id=220, enhancement=20, available=65535, base_credits=46945800, base_gold=0, credits=46945800, gold=0, discount=0, durability=1600), 588841180: SCOffer(lot_id=588841180, item_id=220, enhancement=25, available=65535, base_credits=532222200, base_gold=0, credits=532222200, gold=0, discount=0, durability=1925), 587202781: SCOffer(lot_id=587202781, item_id=221, enhancement=0, available=65535, base_credits=800, base_gold=0, credits=800, gold=0, discount=0, durability=260), 587858141: SCOffer(lot_id=587858141, item_id=221, enhancement=10, available=65535, base_credits=342600, base_gold=0, credits=342600, gold=0, discount=0, durability=910), 588185821: SCOffer(lot_id=588185821, item_id=221, enhancement=15, available=65535, base_credits=4072300, base_gold=0, credits=4072300, gold=0, discount=0, durability=1235), 588513501: SCOffer(lot_id=588513501, item_id=221, enhancement=20, available=65535, base_credits=46945800, base_gold=0, credits=46945800, gold=0, discount=0, durability=1560), 588841181: SCOffer(lot_id=588841181, item_id=221, enhancement=25, available=65535, base_credits=532222200, base_gold=0, credits=532222200, gold=0, discount=0, durability=1885), 587202782: SCOffer(lot_id=587202782, item_id=222, enhancement=0, available=65535, base_credits=250, base_gold=0, credits=250, gold=0, discount=0, durability=300), 587858142: SCOffer(lot_id=587858142, item_id=222, enhancement=10, available=65535, base_credits=309400, base_gold=0, credits=309400, gold=0, discount=0, durability=950), 588185822: SCOffer(lot_id=588185822, item_id=222, enhancement=15, available=65535, base_credits=3681400, base_gold=0, credits=3681400, gold=0, discount=0, durability=1275), 588513502: SCOffer(lot_id=588513502, item_id=222, enhancement=20, available=65535, base_credits=42445200, base_gold=0, credits=42445200, gold=0, discount=0, durability=1600), 588841182: SCOffer(lot_id=588841182, item_id=222, enhancement=25, available=65535, base_credits=481205500, base_gold=0, credits=481205500, gold=0, discount=0, durability=1925), 587202783: SCOffer(lot_id=587202783, item_id=223, enhancement=0, available=65535, base_credits=180, base_gold=0, credits=180, gold=0, discount=0, durability=300), 587858143: SCOffer(lot_id=587858143, item_id=223, enhancement=10, available=65535, base_credits=305100, base_gold=0, credits=305100, gold=0, discount=0, durability=950), 588185823: SCOffer(lot_id=588185823, item_id=223, enhancement=15, available=65535, base_credits=3631700, base_gold=0, credits=3631700, gold=0, discount=0, durability=1275), 588513503: SCOffer(lot_id=588513503, item_id=223, enhancement=20, available=65535, base_credits=41872400, base_gold=0, credits=41872400, gold=0, discount=0, durability=1600), 588841183: SCOffer(lot_id=588841183, item_id=223, enhancement=25, available=65535, base_credits=474712400, base_gold=0, credits=474712400, gold=0, discount=0, durability=1925), 587202784: SCOffer(lot_id=587202784, item_id=224, enhancement=0, available=65535, base_credits=120, base_gold=0, credits=120, gold=0, discount=0, durability=300), 587858144: SCOffer(lot_id=587858144, item_id=224, enhancement=10, available=65535, base_credits=301500, base_gold=0, credits=301500, gold=0, discount=0, durability=950), 588185824: SCOffer(lot_id=588185824, item_id=224, enhancement=15, available=65535, base_credits=3589100, base_gold=0, credits=3589100, gold=0, discount=0, durability=1275), 588513504: SCOffer(lot_id=588513504, item_id=224, enhancement=20, available=65535, base_credits=41381500, base_gold=0, credits=41381500, gold=0, discount=0, durability=1600), 588841184: SCOffer(lot_id=588841184, item_id=224, enhancement=25, available=65535, base_credits=469147000, base_gold=0, credits=469147000, gold=0, discount=0, durability=1925), 587202787: SCOffer(lot_id=587202787, item_id=227, enhancement=0, available=65535, base_credits=450, base_gold=0, credits=450, gold=0, discount=0, durability=300), 587858147: SCOffer(lot_id=587858147, item_id=227, enhancement=10, available=65535, base_credits=321500, base_gold=0, credits=321500, gold=0, discount=0, durability=950), 588185827: SCOffer(lot_id=588185827, item_id=227, enhancement=15, available=65535, base_credits=3823600, base_gold=0, credits=3823600, gold=0, discount=0, durability=1275), 588513507: SCOffer(lot_id=588513507, item_id=227, enhancement=20, available=65535, base_credits=44081800, base_gold=0, credits=44081800, gold=0, discount=0, durability=1600), 588841187: SCOffer(lot_id=588841187, item_id=227, enhancement=25, available=65535, base_credits=499757000, base_gold=0, credits=499757000, gold=0, discount=0, durability=1925), 587202789: SCOffer(lot_id=587202789, item_id=229, enhancement=0, available=65535, base_credits=500, base_gold=0, credits=500, gold=0, discount=0, durability=300), 587858149: SCOffer(lot_id=587858149, item_id=229, enhancement=10, available=65535, base_credits=324500, base_gold=0, credits=324500, gold=0, discount=0, durability=950), 588185829: SCOffer(lot_id=588185829, item_id=229, enhancement=15, available=65535, base_credits=3859100, base_gold=0, credits=3859100, gold=0, discount=0, durability=1275), 588513509: SCOffer(lot_id=588513509, item_id=229, enhancement=20, available=65535, base_credits=44490900, base_gold=0, credits=44490900, gold=0, discount=0, durability=1600), 588841189: SCOffer(lot_id=588841189, item_id=229, enhancement=25, available=65535, base_credits=504394900, base_gold=0, credits=504394900, gold=0, discount=0, durability=1925), 587202790: SCOffer(lot_id=587202790, item_id=230, enhancement=0, available=65535, base_credits=250, base_gold=0, credits=250, gold=0, discount=0, durability=300), 587858150: SCOffer(lot_id=587858150, item_id=230, enhancement=10, available=65535, base_credits=309400, base_gold=0, credits=309400, gold=0, discount=0, durability=950), 588185830: SCOffer(lot_id=588185830, item_id=230, enhancement=15, available=65535, base_credits=3681400, base_gold=0, credits=3681400, gold=0, discount=0, durability=1275), 588513510: SCOffer(lot_id=588513510, item_id=230, enhancement=20, available=65535, base_credits=42445200, base_gold=0, credits=42445200, gold=0, discount=0, durability=1600), 588841190: SCOffer(lot_id=588841190, item_id=230, enhancement=25, available=65535, base_credits=481205500, base_gold=0, credits=481205500, gold=0, discount=0, durability=1925), 587202791: SCOffer(lot_id=587202791, item_id=231, enhancement=0, available=65535, base_credits=850, base_gold=0, credits=850, gold=0, discount=0, durability=220), 587858151: SCOffer(lot_id=587858151, item_id=231, enhancement=10, available=65535, base_credits=345600, base_gold=0, credits=345600, gold=0, discount=0, durability=870), 588185831: SCOffer(lot_id=588185831, item_id=231, enhancement=15, available=65535, base_credits=4107800, base_gold=0, credits=4107800, gold=0, discount=0, durability=1195), 588513511: SCOffer(lot_id=588513511, item_id=231, enhancement=20, available=65535, base_credits=47354900, base_gold=0, credits=47354900, gold=0, discount=0, durability=1520), 588841191: SCOffer(lot_id=588841191, item_id=231, enhancement=25, available=65535, base_credits=536860100, base_gold=0, credits=536860100, gold=0, discount=0, durability=1845), 587202792: SCOffer(lot_id=587202792, item_id=232, enhancement=0, available=65535, base_credits=750, base_gold=0, credits=750, gold=0, discount=0, durability=300), 587858152: SCOffer(lot_id=587858152, item_id=232, enhancement=10, available=65535, base_credits=339600, base_gold=0, credits=339600, gold=0, discount=0, durability=950), 588185832: SCOffer(lot_id=588185832, item_id=232, enhancement=15, available=65535, base_credits=4036700, base_gold=0, credits=4036700, gold=0, discount=0, durability=1275), 588513512: SCOffer(lot_id=588513512, item_id=232, enhancement=20, available=65535, base_credits=46536600, base_gold=0, credits=46536600, gold=0, discount=0, durability=1600), 588841192: SCOffer(lot_id=588841192, item_id=232, enhancement=25, available=65535, base_credits=527584300, base_gold=0, credits=527584300, gold=0, discount=0, durability=1925), 587202793: SCOffer(lot_id=587202793, item_id=233, enhancement=0, available=65535, base_credits=360, base_gold=0, credits=360, gold=0, discount=0, durability=300), 587858153: SCOffer(lot_id=587858153, item_id=233, enhancement=10, available=65535, base_credits=316000, base_gold=0, credits=316000, gold=0, discount=0, durability=950), 588185833: SCOffer(lot_id=588185833, item_id=233, enhancement=15, available=65535, base_credits=3759600, base_gold=0, credits=3759600, gold=0, discount=0, durability=1275), 588513513: SCOffer(lot_id=588513513, item_id=233, enhancement=20, available=65535, base_credits=43345300, base_gold=0, credits=43345300, gold=0, discount=0, durability=1600), 588841193: SCOffer(lot_id=588841193, item_id=233, enhancement=25, available=65535, base_credits=491408800, base_gold=0, credits=491408800, gold=0, discount=0, durability=1925), 587202794: SCOffer(lot_id=587202794, item_id=234, enhancement=0, available=65535, base_credits=1070, base_gold=0, credits=1070, gold=0, discount=0, durability=260), 587858154: SCOffer(lot_id=587858154, item_id=234, enhancement=10, available=65535, base_credits=358900, base_gold=0, credits=358900, gold=0, discount=0, durability=910), 588185834: SCOffer(lot_id=588185834, item_id=234, enhancement=15, available=65535, base_credits=4264100, base_gold=0, credits=4264100, gold=0, discount=0, durability=1235), 588513514: SCOffer(lot_id=588513514, item_id=234, enhancement=20, available=65535, base_credits=49155100, base_gold=0, credits=49155100, gold=0, discount=0, durability=1560), 588841194: SCOffer(lot_id=588841194, item_id=234, enhancement=25, available=65535, base_credits=557266800, base_gold=0, credits=557266800, gold=0, discount=0, durability=1885), 587202796: SCOffer(lot_id=587202796, item_id=236, enhancement=0, available=65535, base_credits=180, base_gold=0, credits=180, gold=0, discount=0, durability=300), 587858156: SCOffer(lot_id=587858156, item_id=236, enhancement=10, available=65535, base_credits=305100, base_gold=0, credits=305100, gold=0, discount=0, durability=950), 588185836: SCOffer(lot_id=588185836, item_id=236, enhancement=15, available=65535, base_credits=3631700, base_gold=0, credits=3631700, gold=0, discount=0, durability=1275), 588513516: SCOffer(lot_id=588513516, item_id=236, enhancement=20, available=65535, base_credits=41872400, base_gold=0, credits=41872400, gold=0, discount=0, durability=1600), 588841196: SCOffer(lot_id=588841196, item_id=236, enhancement=25, available=65535, base_credits=474712400, base_gold=0, credits=474712400, gold=0, discount=0, durability=1925), 587202797: SCOffer(lot_id=587202797, item_id=237, enhancement=0, available=65535, base_credits=450, base_gold=0, credits=450, gold=0, discount=0, durability=300), 587858157: SCOffer(lot_id=587858157, item_id=237, enhancement=10, available=65535, base_credits=321500, base_gold=0, credits=321500, gold=0, discount=0, durability=950), 588185837: SCOffer(lot_id=588185837, item_id=237, enhancement=15, available=65535, base_credits=3823600, base_gold=0, credits=3823600, gold=0, discount=0, durability=1275), 588513517: SCOffer(lot_id=588513517, item_id=237, enhancement=20, available=65535, base_credits=44081800, base_gold=0, credits=44081800, gold=0, discount=0, durability=1600), 588841197: SCOffer(lot_id=588841197, item_id=237, enhancement=25, available=65535, base_credits=499757000, base_gold=0, credits=499757000, gold=0, discount=0, durability=1925), 587202798: SCOffer(lot_id=587202798, item_id=238, enhancement=0, available=65535, base_credits=350, base_gold=0, credits=350, gold=0, discount=0, durability=300), 587858158: SCOffer(lot_id=587858158, item_id=238, enhancement=10, available=65535, base_credits=315400, base_gold=0, credits=315400, gold=0, discount=0, durability=950), 588185838: SCOffer(lot_id=588185838, item_id=238, enhancement=15, available=65535, base_credits=3752500, base_gold=0, credits=3752500, gold=0, discount=0, durability=1275), 588513518: SCOffer(lot_id=588513518, item_id=238, enhancement=20, available=65535, base_credits=43263500, base_gold=0, credits=43263500, gold=0, discount=0, durability=1600), 588841198: SCOffer(lot_id=588841198, item_id=238, enhancement=25, available=65535, base_credits=490481200, base_gold=0, credits=490481200, gold=0, discount=0, durability=1925), 587202799: SCOffer(lot_id=587202799, item_id=239, enhancement=0, available=65535, base_credits=450, base_gold=0, credits=450, gold=0, discount=0, durability=300), 587858159: SCOffer(lot_id=587858159, item_id=239, enhancement=10, available=65535, base_credits=321500, base_gold=0, credits=321500, gold=0, discount=0, durability=950), 588185839: SCOffer(lot_id=588185839, item_id=239, enhancement=15, available=65535, base_credits=3823600, base_gold=0, credits=3823600, gold=0, discount=0, durability=1275), 588513519: SCOffer(lot_id=588513519, item_id=239, enhancement=20, available=65535, base_credits=44081800, base_gold=0, credits=44081800, gold=0, discount=0, durability=1600), 588841199: SCOffer(lot_id=588841199, item_id=239, enhancement=25, available=65535, base_credits=499757000, base_gold=0, credits=499757000, gold=0, discount=0, durability=1925), 587202800: SCOffer(lot_id=587202800, item_id=240, enhancement=0, available=65535, base_credits=900, base_gold=0, credits=900, gold=0, discount=0, durability=300), 587858160: SCOffer(lot_id=587858160, item_id=240, enhancement=10, available=65535, base_credits=348700, base_gold=0, credits=348700, gold=0, discount=0, durability=950), 588185840: SCOffer(lot_id=588185840, item_id=240, enhancement=15, available=65535, base_credits=4143300, base_gold=0, credits=4143300, gold=0, discount=0, durability=1275), 588513520: SCOffer(lot_id=588513520, item_id=240, enhancement=20, available=65535, base_credits=47764000, base_gold=0, credits=47764000, gold=0, discount=0, durability=1600), 588841200: SCOffer(lot_id=588841200, item_id=240, enhancement=25, available=65535, base_credits=541498000, base_gold=0, credits=541498000, gold=0, discount=0, durability=1925), 587202801: SCOffer(lot_id=587202801, item_id=241, enhancement=0, available=65535, base_credits=900, base_gold=0, credits=900, gold=0, discount=0, durability=300), 587858161: SCOffer(lot_id=587858161, item_id=241, enhancement=10, available=65535, base_credits=348700, base_gold=0, credits=348700, gold=0, discount=0, durability=950), 588185841: SCOffer(lot_id=588185841, item_id=241, enhancement=15, available=65535, base_credits=4143300, base_gold=0, credits=4143300, gold=0, discount=0, durability=1275), 588513521: SCOffer(lot_id=588513521, item_id=241, enhancement=20, available=65535, base_credits=47764000, base_gold=0, credits=47764000, gold=0, discount=0, durability=1600), 588841201: SCOffer(lot_id=588841201, item_id=241, enhancement=25, available=65535, base_credits=541498000, base_gold=0, credits=541498000, gold=0, discount=0, durability=1925), 587202802: SCOffer(lot_id=587202802, item_id=242, enhancement=0, available=65535, base_credits=1350, base_gold=0, credits=1350, gold=0, discount=0, durability=300), 587858162: SCOffer(lot_id=587858162, item_id=242, enhancement=10, available=65535, base_credits=375900, base_gold=0, credits=375900, gold=0, discount=0, durability=950), 588185842: SCOffer(lot_id=588185842, item_id=242, enhancement=15, available=65535, base_credits=4463100, base_gold=0, credits=4463100, gold=0, discount=0, durability=1275), 588513522: SCOffer(lot_id=588513522, item_id=242, enhancement=20, available=65535, base_credits=51446300, base_gold=0, credits=51446300, gold=0, discount=0, durability=1600), 588841202: SCOffer(lot_id=588841202, item_id=242, enhancement=25, available=65535, base_credits=583238900, base_gold=0, credits=583238900, gold=0, discount=0, durability=1925), 587202803: SCOffer(lot_id=587202803, item_id=243, enhancement=0, available=65535, base_credits=1800, base_gold=0, credits=1800, gold=0, discount=0, durability=300), 587858163: SCOffer(lot_id=587858163, item_id=243, enhancement=10, available=65535, base_credits=403100, base_gold=0, credits=403100, gold=0, discount=0, durability=950), 588185843: SCOffer(lot_id=588185843, item_id=243, enhancement=15, available=65535, base_credits=4782800, base_gold=0, credits=4782800, gold=0, discount=0, durability=1275), 588513523: SCOffer(lot_id=588513523, item_id=243, enhancement=20, available=65535, base_credits=55128500, base_gold=0, credits=55128500, gold=0, discount=0, durability=1600), 588841203: SCOffer(lot_id=588841203, item_id=243, enhancement=25, available=65535, base_credits=624979900, base_gold=0, credits=624979900, gold=0, discount=0, durability=1925), 587202804: SCOffer(lot_id=587202804, item_id=244, enhancement=0, available=65535, base_credits=1200, base_gold=0, credits=1200, gold=0, discount=0, durability=300), 587858164: SCOffer(lot_id=587858164, item_id=244, enhancement=10, available=65535, base_credits=366800, base_gold=0, credits=366800, gold=0, discount=0, durability=950), 588185844: SCOffer(lot_id=588185844, item_id=244, enhancement=15, available=65535, base_credits=4356500, base_gold=0, credits=4356500, gold=0, discount=0, durability=1275), 588513524: SCOffer(lot_id=588513524, item_id=244, enhancement=20, available=65535, base_credits=50218900, base_gold=0, credits=50218900, gold=0, discount=0, durability=1600), 588841204: SCOffer(lot_id=588841204, item_id=244, enhancement=25, available=65535, base_credits=569325300, base_gold=0, credits=569325300, gold=0, discount=0, durability=1925), 587202805: SCOffer(lot_id=587202805, item_id=245, enhancement=0, available=65535, base_credits=600, base_gold=0, credits=600, gold=0, discount=0, durability=300), 587858165: SCOffer(lot_id=587858165, item_id=245, enhancement=10, available=65535, base_credits=330500, base_gold=0, credits=330500, gold=0, discount=0, durability=950), 588185845: SCOffer(lot_id=588185845, item_id=245, enhancement=15, available=65535, base_credits=3930100, base_gold=0, credits=3930100, gold=0, discount=0, durability=1275), 588513525: SCOffer(lot_id=588513525, item_id=245, enhancement=20, available=65535, base_credits=45309200, base_gold=0, credits=45309200, gold=0, discount=0, durability=1600), 588841205: SCOffer(lot_id=588841205, item_id=245, enhancement=25, available=65535, base_credits=513670700, base_gold=0, credits=513670700, gold=0, discount=0, durability=1925), 587202806: SCOffer(lot_id=587202806, item_id=246, enhancement=0, available=65535, base_credits=1650, base_gold=0, credits=1650, gold=0, discount=0, durability=300), 587858166: SCOffer(lot_id=587858166, item_id=246, enhancement=10, available=65535, base_credits=394000, base_gold=0, credits=394000, gold=0, discount=0, durability=950), 588185846: SCOffer(lot_id=588185846, item_id=246, enhancement=15, available=65535, base_credits=4676200, base_gold=0, credits=4676200, gold=0, discount=0, durability=1275), 588513526: SCOffer(lot_id=588513526, item_id=246, enhancement=20, available=65535, base_credits=53901100, base_gold=0, credits=53901100, gold=0, discount=0, durability=1600), 588841206: SCOffer(lot_id=588841206, item_id=246, enhancement=25, available=65535, base_credits=611066200, base_gold=0, credits=611066200, gold=0, discount=0, durability=1925), 587202807: SCOffer(lot_id=587202807, item_id=247, enhancement=0, available=65535, base_credits=1050, base_gold=0, credits=1050, gold=0, discount=0, durability=300), 587858167: SCOffer(lot_id=587858167, item_id=247, enhancement=10, available=65535, base_credits=357700, base_gold=0, credits=357700, gold=0, discount=0, durability=950), 588185847: SCOffer(lot_id=588185847, item_id=247, enhancement=15, available=65535, base_credits=4249900, base_gold=0, credits=4249900, gold=0, discount=0, durability=1275), 588513527: SCOffer(lot_id=588513527, item_id=247, enhancement=20, available=65535, base_credits=48991400, base_gold=0, credits=48991400, gold=0, discount=0, durability=1600), 588841207: SCOffer(lot_id=588841207, item_id=247, enhancement=25, available=65535, base_credits=555411600, base_gold=0, credits=555411600, gold=0, discount=0, durability=1925), 587202808: SCOffer(lot_id=587202808, item_id=248, enhancement=0, available=65535, base_credits=6000, base_gold=0, credits=6000, gold=0, discount=0, durability=350), 587858168: SCOffer(lot_id=587858168, item_id=248, enhancement=10, available=65535, base_credits=54400, base_gold=0, credits=54400, gold=0, discount=0, durability=1000), 588185848: SCOffer(lot_id=588185848, item_id=248, enhancement=15, available=65535, base_credits=98700, base_gold=0, credits=98700, gold=0, discount=0, durability=1325), 588513528: SCOffer(lot_id=588513528, item_id=248, enhancement=20, available=65535, base_credits=153100, base_gold=0, credits=153100, gold=0, discount=0, durability=1650), 588841208: SCOffer(lot_id=588841208, item_id=248, enhancement=25, available=65535, base_credits=217700, base_gold=0, credits=217700, gold=0, discount=0, durability=1975), 587202809: SCOffer(lot_id=587202809, item_id=249, enhancement=0, available=65535, base_credits=2200, base_gold=0, credits=2200, gold=0, discount=0, durability=350), 587858169: SCOffer(lot_id=587858169, item_id=249, enhancement=10, available=65535, base_credits=48700, base_gold=0, credits=48700, gold=0, discount=0, durability=1000), 588185849: SCOffer(lot_id=588185849, item_id=249, enhancement=15, available=65535, base_credits=92000, base_gold=0, credits=92000, gold=0, discount=0, durability=1325), 588513529: SCOffer(lot_id=588513529, item_id=249, enhancement=20, available=65535, base_credits=145500, base_gold=0, credits=145500, gold=0, discount=0, durability=1650), 588841209: SCOffer(lot_id=588841209, item_id=249, enhancement=25, available=65535, base_credits=209100, base_gold=0, credits=209100, gold=0, discount=0, durability=1975), 587202810: SCOffer(lot_id=587202810, item_id=250, enhancement=0, available=65535, base_credits=3800, base_gold=0, credits=3800, gold=0, discount=0, durability=350), 587858170: SCOffer(lot_id=587858170, item_id=250, enhancement=10, available=65535, base_credits=51100, base_gold=0, credits=51100, gold=0, discount=0, durability=1000), 588185850: SCOffer(lot_id=588185850, item_id=250, enhancement=15, available=65535, base_credits=94800, base_gold=0, credits=94800, gold=0, discount=0, durability=1325), 588513530: SCOffer(lot_id=588513530, item_id=250, enhancement=20, available=65535, base_credits=148700, base_gold=0, credits=148700, gold=0, discount=0, durability=1650), 588841210: SCOffer(lot_id=588841210, item_id=250, enhancement=25, available=65535, base_credits=212700, base_gold=0, credits=212700, gold=0, discount=0, durability=1975), 587202811: SCOffer(lot_id=587202811, item_id=251, enhancement=0, available=65535, base_credits=5500, base_gold=0, credits=5500, gold=0, discount=0, durability=400), 587858171: SCOffer(lot_id=587858171, item_id=251, enhancement=10, available=65535, base_credits=53600, base_gold=0, credits=53600, gold=0, discount=0, durability=1050), 588185851: SCOffer(lot_id=588185851, item_id=251, enhancement=15, available=65535, base_credits=97800, base_gold=0, credits=97800, gold=0, discount=0, durability=1375), 588513531: SCOffer(lot_id=588513531, item_id=251, enhancement=20, available=65535, base_credits=152100, base_gold=0, credits=152100, gold=0, discount=0, durability=1700), 588841211: SCOffer(lot_id=588841211, item_id=251, enhancement=25, available=65535, base_credits=216600, base_gold=0, credits=216600, gold=0, discount=0, durability=2025), 587202812: SCOffer(lot_id=587202812, item_id=252, enhancement=0, available=65535, base_credits=7500, base_gold=0, credits=7500, gold=0, discount=0, durability=400), 587858172: SCOffer(lot_id=587858172, item_id=252, enhancement=10, available=65535, base_credits=56600, base_gold=0, credits=56600, gold=0, discount=0, durability=1050), 588185852: SCOffer(lot_id=588185852, item_id=252, enhancement=15, available=65535, base_credits=101300, base_gold=0, credits=101300, gold=0, discount=0, durability=1375), 588513532: SCOffer(lot_id=588513532, item_id=252, enhancement=20, available=65535, base_credits=156100, base_gold=0, credits=156100, gold=0, discount=0, durability=1700), 588841212: SCOffer(lot_id=588841212, item_id=252, enhancement=25, available=65535, base_credits=221100, base_gold=0, credits=221100, gold=0, discount=0, durability=2025), 587202813: SCOffer(lot_id=587202813, item_id=253, enhancement=0, available=65535, base_credits=4800, base_gold=0, credits=4800, gold=0, discount=0, durability=400), 587858173: SCOffer(lot_id=587858173, item_id=253, enhancement=10, available=65535, base_credits=52600, base_gold=0, credits=52600, gold=0, discount=0, durability=1050), 588185853: SCOffer(lot_id=588185853, item_id=253, enhancement=15, available=65535, base_credits=96600, base_gold=0, credits=96600, gold=0, discount=0, durability=1375), 588513533: SCOffer(lot_id=588513533, item_id=253, enhancement=20, available=65535, base_credits=150700, base_gold=0, credits=150700, gold=0, discount=0, durability=1700), 588841213: SCOffer(lot_id=588841213, item_id=253, enhancement=25, available=65535, base_credits=215000, base_gold=0, credits=215000, gold=0, discount=0, durability=2025), 587202814: SCOffer(lot_id=587202814, item_id=254, enhancement=0, available=65535, base_credits=7500, base_gold=0, credits=7500, gold=0, discount=0, durability=350), 587858174: SCOffer(lot_id=587858174, item_id=254, enhancement=10, available=65535, base_credits=747600, base_gold=0, credits=747600, gold=0, discount=0, durability=1000), 588185854: SCOffer(lot_id=588185854, item_id=254, enhancement=15, available=65535, base_credits=8833100, base_gold=0, credits=8833100, gold=0, discount=0, durability=1325), 588513534: SCOffer(lot_id=588513534, item_id=254, enhancement=20, available=65535, base_credits=101770300, base_gold=0, credits=101770300, gold=0, discount=0, durability=1650), 588841214: SCOffer(lot_id=588841214, item_id=254, enhancement=25, available=65535, base_credits=1153698700, base_gold=0, credits=1153698700, gold=0, discount=0, durability=1975), 587202815: SCOffer(lot_id=587202815, item_id=255, enhancement=0, available=65535, base_credits=1200, base_gold=0, credits=1200, gold=0, discount=0, durability=300), 587858175: SCOffer(lot_id=587858175, item_id=255, enhancement=10, available=65535, base_credits=366800, base_gold=0, credits=366800, gold=0, discount=0, durability=950), 588185855: SCOffer(lot_id=588185855, item_id=255, enhancement=15, available=65535, base_credits=4356500, base_gold=0, credits=4356500, gold=0, discount=0, durability=1275), 588513535: SCOffer(lot_id=588513535, item_id=255, enhancement=20, available=65535, base_credits=50218900, base_gold=0, credits=50218900, gold=0, discount=0, durability=1600), 588841215: SCOffer(lot_id=588841215, item_id=255, enhancement=25, available=65535, base_credits=569325300, base_gold=0, credits=569325300, gold=0, discount=0, durability=1925), 587202816: SCOffer(lot_id=587202816, item_id=256, enhancement=0, available=65535, base_credits=18000, base_gold=0, credits=18000, gold=0, discount=0, durability=500), 587858176: SCOffer(lot_id=587858176, item_id=256, enhancement=10, available=65535, base_credits=72400, base_gold=0, credits=72400, gold=0, discount=0, durability=1150), 588185856: SCOffer(lot_id=588185856, item_id=256, enhancement=15, available=65535, base_credits=119700, base_gold=0, credits=119700, gold=0, discount=0, durability=1475), 588513536: SCOffer(lot_id=588513536, item_id=256, enhancement=20, available=65535, base_credits=177100, base_gold=0, credits=177100, gold=0, discount=0, durability=1800), 588841216: SCOffer(lot_id=588841216, item_id=256, enhancement=25, available=65535, base_credits=244700, base_gold=0, credits=244700, gold=0, discount=0, durability=2125), 587202817: SCOffer(lot_id=587202817, item_id=257, enhancement=0, available=65535, base_credits=300, base_gold=0, credits=300, gold=0, discount=0, durability=300), 587858177: SCOffer(lot_id=587858177, item_id=257, enhancement=10, available=65535, base_credits=312400, base_gold=0, credits=312400, gold=0, discount=0, durability=950), 588185857: SCOffer(lot_id=588185857, item_id=257, enhancement=15, available=65535, base_credits=3717000, base_gold=0, credits=3717000, gold=0, discount=0, durability=1275), 588513537: SCOffer(lot_id=588513537, item_id=257, enhancement=20, available=65535, base_credits=42854400, base_gold=0, credits=42854400, gold=0, discount=0, durability=1600), 588841217: SCOffer(lot_id=588841217, item_id=257, enhancement=25, available=65535, base_credits=485843400, base_gold=0, credits=485843400, gold=0, discount=0, durability=1925), 587202818: SCOffer(lot_id=587202818, item_id=258, enhancement=0, available=65535, base_credits=1200, base_gold=0, credits=1200, gold=0, discount=0, durability=600), 587858178: SCOffer(lot_id=587858178, item_id=258, enhancement=10, available=65535, base_credits=366800, base_gold=0, credits=366800, gold=0, discount=0, durability=1250), 588185858: SCOffer(lot_id=588185858, item_id=258, enhancement=15, available=65535, base_credits=4356500, base_gold=0, credits=4356500, gold=0, discount=0, durability=1575), 588513538: SCOffer(lot_id=588513538, item_id=258, enhancement=20, available=65535, base_credits=50218900, base_gold=0, credits=50218900, gold=0, discount=0, durability=1900), 588841218: SCOffer(lot_id=588841218, item_id=258, enhancement=25, available=65535, base_credits=569325300, base_gold=0, credits=569325300, gold=0, discount=0, durability=2225), 587202819: SCOffer(lot_id=587202819, item_id=259, enhancement=0, available=65535, base_credits=1050, base_gold=0, credits=1050, gold=0, discount=0, durability=600), 587858179: SCOffer(lot_id=587858179, item_id=259, enhancement=10, available=65535, base_credits=357700, base_gold=0, credits=357700, gold=0, discount=0, durability=1250), 588185859: SCOffer(lot_id=588185859, item_id=259, enhancement=15, available=65535, base_credits=4249900, base_gold=0, credits=4249900, gold=0, discount=0, durability=1575), 588513539: SCOffer(lot_id=588513539, item_id=259, enhancement=20, available=65535, base_credits=48991400, base_gold=0, credits=48991400, gold=0, discount=0, durability=1900), 588841219: SCOffer(lot_id=588841219, item_id=259, enhancement=25, available=65535, base_credits=555411600, base_gold=0, credits=555411600, gold=0, discount=0, durability=2225), 587202820: SCOffer(lot_id=587202820, item_id=260, enhancement=0, available=65535, base_credits=2550, base_gold=0, credits=2550, gold=0, discount=0, durability=600), 587858180: SCOffer(lot_id=587858180, item_id=260, enhancement=10, available=65535, base_credits=448400, base_gold=0, credits=448400, gold=0, discount=0, durability=1250), 588185860: SCOffer(lot_id=588185860, item_id=260, enhancement=15, available=65535, base_credits=5315800, base_gold=0, credits=5315800, gold=0, discount=0, durability=1575), 588513540: SCOffer(lot_id=588513540, item_id=260, enhancement=20, available=65535, base_credits=61265600, base_gold=0, credits=61265600, gold=0, discount=0, durability=1900), 588841220: SCOffer(lot_id=588841220, item_id=260, enhancement=25, available=65535, base_credits=694548100, base_gold=0, credits=694548100, gold=0, discount=0, durability=2225), 587202821: SCOffer(lot_id=587202821, item_id=261, enhancement=0, available=65535, base_credits=2200, base_gold=0, credits=2200, gold=0, discount=0, durability=600), 587858181: SCOffer(lot_id=587858181, item_id=261, enhancement=10, available=65535, base_credits=427200, base_gold=0, credits=427200, gold=0, discount=0, durability=1250), 588185861: SCOffer(lot_id=588185861, item_id=261, enhancement=15, available=65535, base_credits=5067100, base_gold=0, credits=5067100, gold=0, discount=0, durability=1575), 588513541: SCOffer(lot_id=588513541, item_id=261, enhancement=20, available=65535, base_credits=58401600, base_gold=0, credits=58401600, gold=0, discount=0, durability=1900), 588841221: SCOffer(lot_id=588841221, item_id=261, enhancement=25, available=65535, base_credits=662082900, base_gold=0, credits=662082900, gold=0, discount=0, durability=2225), 587202822: SCOffer(lot_id=587202822, item_id=262, enhancement=0, available=65535, base_credits=1200, base_gold=0, credits=1200, gold=0, discount=0, durability=600), 587858182: SCOffer(lot_id=587858182, item_id=262, enhancement=10, available=65535, base_credits=366800, base_gold=0, credits=366800, gold=0, discount=0, durability=1250), 588185862: SCOffer(lot_id=588185862, item_id=262, enhancement=15, available=65535, base_credits=4356500, base_gold=0, credits=4356500, gold=0, discount=0, durability=1575), 588513542: SCOffer(lot_id=588513542, item_id=262, enhancement=20, available=65535, base_credits=50218900, base_gold=0, credits=50218900, gold=0, discount=0, durability=1900), 588841222: SCOffer(lot_id=588841222, item_id=262, enhancement=25, available=65535, base_credits=569325300, base_gold=0, credits=569325300, gold=0, discount=0, durability=2225), 587202823: SCOffer(lot_id=587202823, item_id=263, enhancement=0, available=65535, base_credits=6000, base_gold=0, credits=6000, gold=0, discount=0, durability=325), 587858183: SCOffer(lot_id=587858183, item_id=263, enhancement=10, available=65535, base_credits=656900, base_gold=0, credits=656900, gold=0, discount=0, durability=975), 588185863: SCOffer(lot_id=588185863, item_id=263, enhancement=15, available=65535, base_credits=7767300, base_gold=0, credits=7767300, gold=0, discount=0, durability=1300), 588513543: SCOffer(lot_id=588513543, item_id=263, enhancement=20, available=65535, base_credits=89496100, base_gold=0, credits=89496100, gold=0, discount=0, durability=1625), 588841223: SCOffer(lot_id=588841223, item_id=263, enhancement=25, available=65535, base_credits=1014562100, base_gold=0, credits=1014562100, gold=0, discount=0, durability=1950), 587202824: SCOffer(lot_id=587202824, item_id=264, enhancement=0, available=65535, base_credits=15000, base_gold=0, credits=15000, gold=0, discount=0, durability=500), 587858184: SCOffer(lot_id=587858184, item_id=264, enhancement=10, available=65535, base_credits=67900, base_gold=0, credits=67900, gold=0, discount=0, durability=1150), 588185864: SCOffer(lot_id=588185864, item_id=264, enhancement=15, available=65535, base_credits=114400, base_gold=0, credits=114400, gold=0, discount=0, durability=1475), 588513544: SCOffer(lot_id=588513544, item_id=264, enhancement=20, available=65535, base_credits=171100, base_gold=0, credits=171100, gold=0, discount=0, durability=1800), 588841224: SCOffer(lot_id=588841224, item_id=264, enhancement=25, available=65535, base_credits=237900, base_gold=0, credits=237900, gold=0, discount=0, durability=2125), 587202825: SCOffer(lot_id=587202825, item_id=265, enhancement=0, available=65535, base_credits=2100, base_gold=0, credits=2100, gold=0, discount=0, durability=325), 587858185: SCOffer(lot_id=587858185, item_id=265, enhancement=10, available=65535, base_credits=421200, base_gold=0, credits=421200, gold=0, discount=0, durability=975), 588185865: SCOffer(lot_id=588185865, item_id=265, enhancement=15, available=65535, base_credits=4996000, base_gold=0, credits=4996000, gold=0, discount=0, durability=1300), 588513545: SCOffer(lot_id=588513545, item_id=265, enhancement=20, available=65535, base_credits=57583400, base_gold=0, credits=57583400, gold=0, discount=0, durability=1625), 588841225: SCOffer(lot_id=588841225, item_id=265, enhancement=25, available=65535, base_credits=652807200, base_gold=0, credits=652807200, gold=0, discount=0, durability=1950), 587202826: SCOffer(lot_id=587202826, item_id=266, enhancement=0, available=65535, base_credits=6000, base_gold=0, credits=6000, gold=0, discount=0, durability=500), 587858186: SCOffer(lot_id=587858186, item_id=266, enhancement=10, available=65535, base_credits=54400, base_gold=0, credits=54400, gold=0, discount=0, durability=1150), 588185866: SCOffer(lot_id=588185866, item_id=266, enhancement=15, available=65535, base_credits=98700, base_gold=0, credits=98700, gold=0, discount=0, durability=1475), 588513546: SCOffer(lot_id=588513546, item_id=266, enhancement=20, available=65535, base_credits=153100, base_gold=0, credits=153100, gold=0, discount=0, durability=1800), 588841226: SCOffer(lot_id=588841226, item_id=266, enhancement=25, available=65535, base_credits=217700, base_gold=0, credits=217700, gold=0, discount=0, durability=2125), 587202861: SCOffer(lot_id=587202861, item_id=301, enhancement=0, available=65535, base_credits=150, base_gold=0, credits=150, gold=0, discount=0, durability=300), 587858221: SCOffer(lot_id=587858221, item_id=301, enhancement=10, available=65535, base_credits=303300, base_gold=0, credits=303300, gold=0, discount=0, durability=950), 588185901: SCOffer(lot_id=588185901, item_id=301, enhancement=15, available=65535, base_credits=3610400, base_gold=0, credits=3610400, gold=0, discount=0, durability=1275), 588513581: SCOffer(lot_id=588513581, item_id=301, enhancement=20, available=65535, base_credits=41627000, base_gold=0, credits=41627000, gold=0, discount=0, durability=1600), 588841261: SCOffer(lot_id=588841261, item_id=301, enhancement=25, available=65535, base_credits=471929700, base_gold=0, credits=471929700, gold=0, discount=0, durability=1925), 587202862: SCOffer(lot_id=587202862, item_id=302, enhancement=0, available=65535, base_credits=600, base_gold=0, credits=600, gold=0, discount=0, durability=300), 587858222: SCOffer(lot_id=587858222, item_id=302, enhancement=10, available=65535, base_credits=330500, base_gold=0, credits=330500, gold=0, discount=0, durability=950), 588185902: SCOffer(lot_id=588185902, item_id=302, enhancement=15, available=65535, base_credits=3930100, base_gold=0, credits=3930100, gold=0, discount=0, durability=1275), 588513582: SCOffer(lot_id=588513582, item_id=302, enhancement=20, available=65535, base_credits=45309200, base_gold=0, credits=45309200, gold=0, discount=0, durability=1600), 588841262: SCOffer(lot_id=588841262, item_id=302, enhancement=25, available=65535, base_credits=513670700, base_gold=0, credits=513670700, gold=0, discount=0, durability=1925), 587202863: SCOffer(lot_id=587202863, item_id=303, enhancement=0, available=65535, base_credits=450, base_gold=0, credits=450, gold=0, discount=0, durability=300), 587858223: SCOffer(lot_id=587858223, item_id=303, enhancement=10, available=65535, base_credits=321500, base_gold=0, credits=321500, gold=0, discount=0, durability=950), 588185903: SCOffer(lot_id=588185903, item_id=303, enhancement=15, available=65535, base_credits=3823600, base_gold=0, credits=3823600, gold=0, discount=0, durability=1275), 588513583: SCOffer(lot_id=588513583, item_id=303, enhancement=20, available=65535, base_credits=44081800, base_gold=0, credits=44081800, gold=0, discount=0, durability=1600), 588841263: SCOffer(lot_id=588841263, item_id=303, enhancement=25, available=65535, base_credits=499757000, base_gold=0, credits=499757000, gold=0, discount=0, durability=1925), 587202864: SCOffer(lot_id=587202864, item_id=304, enhancement=0, available=65535, base_credits=900, base_gold=0, credits=900, gold=0, discount=0, durability=300), 587858224: SCOffer(lot_id=587858224, item_id=304, enhancement=10, available=65535, base_credits=348700, base_gold=0, credits=348700, gold=0, discount=0, durability=950), 588185904: SCOffer(lot_id=588185904, item_id=304, enhancement=15, available=65535, base_credits=4143300, base_gold=0, credits=4143300, gold=0, discount=0, durability=1275), 588513584: SCOffer(lot_id=588513584, item_id=304, enhancement=20, available=65535, base_credits=47764000, base_gold=0, credits=47764000, gold=0, discount=0, durability=1600), 588841264: SCOffer(lot_id=588841264, item_id=304, enhancement=25, available=65535, base_credits=541498000, base_gold=0, credits=541498000, gold=0, discount=0, durability=1925), 587202865: SCOffer(lot_id=587202865, item_id=305, enhancement=0, available=65535, base_credits=300, base_gold=0, credits=300, gold=0, discount=0, durability=300), 587858225: SCOffer(lot_id=587858225, item_id=305, enhancement=10, available=65535, base_credits=312400, base_gold=0, credits=312400, gold=0, discount=0, durability=950), 588185905: SCOffer(lot_id=588185905, item_id=305, enhancement=15, available=65535, base_credits=3717000, base_gold=0, credits=3717000, gold=0, discount=0, durability=1275), 588513585: SCOffer(lot_id=588513585, item_id=305, enhancement=20, available=65535, base_credits=42854400, base_gold=0, credits=42854400, gold=0, discount=0, durability=1600), 588841265: SCOffer(lot_id=588841265, item_id=305, enhancement=25, available=65535, base_credits=485843400, base_gold=0, credits=485843400, gold=0, discount=0, durability=1925), 587202866: SCOffer(lot_id=587202866, item_id=306, enhancement=0, available=65535, base_credits=750, base_gold=0, credits=750, gold=0, discount=0, durability=300), 587858226: SCOffer(lot_id=587858226, item_id=306, enhancement=10, available=65535, base_credits=339600, base_gold=0, credits=339600, gold=0, discount=0, durability=950), 588185906: SCOffer(lot_id=588185906, item_id=306, enhancement=15, available=65535, base_credits=4036700, base_gold=0, credits=4036700, gold=0, discount=0, durability=1275), 588513586: SCOffer(lot_id=588513586, item_id=306, enhancement=20, available=65535, base_credits=46536600, base_gold=0, credits=46536600, gold=0, discount=0, durability=1600), 588841266: SCOffer(lot_id=588841266, item_id=306, enhancement=25, available=65535, base_credits=527584300, base_gold=0, credits=527584300, gold=0, discount=0, durability=1925), 587202867: SCOffer(lot_id=587202867, item_id=307, enhancement=0, available=65535, base_credits=750, base_gold=0, credits=750, gold=0, discount=0, durability=300), 587858227: SCOffer(lot_id=587858227, item_id=307, enhancement=10, available=65535, base_credits=339600, base_gold=0, credits=339600, gold=0, discount=0, durability=950), 588185907: SCOffer(lot_id=588185907, item_id=307, enhancement=15, available=65535, base_credits=4036700, base_gold=0, credits=4036700, gold=0, discount=0, durability=1275), 588513587: SCOffer(lot_id=588513587, item_id=307, enhancement=20, available=65535, base_credits=46536600, base_gold=0, credits=46536600, gold=0, discount=0, durability=1600), 588841267: SCOffer(lot_id=588841267, item_id=307, enhancement=25, available=65535, base_credits=527584300, base_gold=0, credits=527584300, gold=0, discount=0, durability=1925), 587202868: SCOffer(lot_id=587202868, item_id=308, enhancement=0, available=65535, base_credits=750, base_gold=0, credits=750, gold=0, discount=0, durability=300), 587858228: SCOffer(lot_id=587858228, item_id=308, enhancement=10, available=65535, base_credits=339600, base_gold=0, credits=339600, gold=0, discount=0, durability=950), 588185908: SCOffer(lot_id=588185908, item_id=308, enhancement=15, available=65535, base_credits=4036700, base_gold=0, credits=4036700, gold=0, discount=0, durability=1275), 588513588: SCOffer(lot_id=588513588, item_id=308, enhancement=20, available=65535, base_credits=46536600, base_gold=0, credits=46536600, gold=0, discount=0, durability=1600), 588841268: SCOffer(lot_id=588841268, item_id=308, enhancement=25, available=65535, base_credits=527584300, base_gold=0, credits=527584300, gold=0, discount=0, durability=1925), 587202869: SCOffer(lot_id=587202869, item_id=309, enhancement=0, available=65535, base_credits=600, base_gold=0, credits=600, gold=0, discount=0, durability=300), 587858229: SCOffer(lot_id=587858229, item_id=309, enhancement=10, available=65535, base_credits=330500, base_gold=0, credits=330500, gold=0, discount=0, durability=950), 588185909: SCOffer(lot_id=588185909, item_id=309, enhancement=15, available=65535, base_credits=3930100, base_gold=0, credits=3930100, gold=0, discount=0, durability=1275), 588513589: SCOffer(lot_id=588513589, item_id=309, enhancement=20, available=65535, base_credits=45309200, base_gold=0, credits=45309200, gold=0, discount=0, durability=1600), 588841269: SCOffer(lot_id=588841269, item_id=309, enhancement=25, available=65535, base_credits=513670700, base_gold=0, credits=513670700, gold=0, discount=0, durability=1925), 587202870: SCOffer(lot_id=587202870, item_id=310, enhancement=0, available=65535, base_credits=750, base_gold=0, credits=750, gold=0, discount=0, durability=350), 587858230: SCOffer(lot_id=587858230, item_id=310, enhancement=10, available=65535, base_credits=339600, base_gold=0, credits=339600, gold=0, discount=0, durability=1000), 588185910: SCOffer(lot_id=588185910, item_id=310, enhancement=15, available=65535, base_credits=4036700, base_gold=0, credits=4036700, gold=0, discount=0, durability=1325), 588513590: SCOffer(lot_id=588513590, item_id=310, enhancement=20, available=65535, base_credits=46536600, base_gold=0, credits=46536600, gold=0, discount=0, durability=1650), 588841270: SCOffer(lot_id=588841270, item_id=310, enhancement=25, available=65535, base_credits=527584300, base_gold=0, credits=527584300, gold=0, discount=0, durability=1975), 587202871: SCOffer(lot_id=587202871, item_id=311, enhancement=0, available=65535, base_credits=1050, base_gold=0, credits=1050, gold=0, discount=0, durability=300), 587858231: SCOffer(lot_id=587858231, item_id=311, enhancement=10, available=65535, base_credits=357700, base_gold=0, credits=357700, gold=0, discount=0, durability=950), 588185911: SCOffer(lot_id=588185911, item_id=311, enhancement=15, available=65535, base_credits=4249900, base_gold=0, credits=4249900, gold=0, discount=0, durability=1275), 588513591: SCOffer(lot_id=588513591, item_id=311, enhancement=20, available=65535, base_credits=48991400, base_gold=0, credits=48991400, gold=0, discount=0, durability=1600), 588841271: SCOffer(lot_id=588841271, item_id=311, enhancement=25, available=65535, base_credits=555411600, base_gold=0, credits=555411600, gold=0, discount=0, durability=1925), 587202872: SCOffer(lot_id=587202872, item_id=312, enhancement=0, available=65535, base_credits=1200, base_gold=0, credits=1200, gold=0, discount=0, durability=300), 587858232: SCOffer(lot_id=587858232, item_id=312, enhancement=10, available=65535, base_credits=366800, base_gold=0, credits=366800, gold=0, discount=0, durability=950), 588185912: SCOffer(lot_id=588185912, item_id=312, enhancement=15, available=65535, base_credits=4356500, base_gold=0, credits=4356500, gold=0, discount=0, durability=1275), 588513592: SCOffer(lot_id=588513592, item_id=312, enhancement=20, available=65535, base_credits=50218900, base_gold=0, credits=50218900, gold=0, discount=0, durability=1600), 588841272: SCOffer(lot_id=588841272, item_id=312, enhancement=25, available=65535, base_credits=569325300, base_gold=0, credits=569325300, gold=0, discount=0, durability=1925), 587202873: SCOffer(lot_id=587202873, item_id=313, enhancement=0, available=65535, base_credits=1200, base_gold=0, credits=1200, gold=0, discount=0, durability=300), 587858233: SCOffer(lot_id=587858233, item_id=313, enhancement=10, available=65535, base_credits=366800, base_gold=0, credits=366800, gold=0, discount=0, durability=950), 588185913: SCOffer(lot_id=588185913, item_id=313, enhancement=15, available=65535, base_credits=4356500, base_gold=0, credits=4356500, gold=0, discount=0, durability=1275), 588513593: SCOffer(lot_id=588513593, item_id=313, enhancement=20, available=65535, base_credits=50218900, base_gold=0, credits=50218900, gold=0, discount=0, durability=1600), 588841273: SCOffer(lot_id=588841273, item_id=313, enhancement=25, available=65535, base_credits=569325300, base_gold=0, credits=569325300, gold=0, discount=0, durability=1925), 587202874: SCOffer(lot_id=587202874, item_id=314, enhancement=0, available=65535, base_credits=5000, base_gold=0, credits=5000, gold=0, discount=0, durability=300), 587858234: SCOffer(lot_id=587858234, item_id=314, enhancement=10, available=65535, base_credits=596500, base_gold=0, credits=596500, gold=0, discount=0, durability=950), 588185914: SCOffer(lot_id=588185914, item_id=314, enhancement=15, available=65535, base_credits=7056700, base_gold=0, credits=7056700, gold=0, discount=0, durability=1275), 588513594: SCOffer(lot_id=588513594, item_id=314, enhancement=20, available=65535, base_credits=81313400, base_gold=0, credits=81313400, gold=0, discount=0, durability=1600), 588841274: SCOffer(lot_id=588841274, item_id=314, enhancement=25, available=65535, base_credits=921804500, base_gold=0, credits=921804500, gold=0, discount=0, durability=1925), 587202875: SCOffer(lot_id=587202875, item_id=315, enhancement=0, available=65535, base_credits=7500, base_gold=0, credits=7500, gold=0, discount=0, durability=300), 587858235: SCOffer(lot_id=587858235, item_id=315, enhancement=10, available=65535, base_credits=747600, base_gold=0, credits=747600, gold=0, discount=0, durability=950), 588185915: SCOffer(lot_id=588185915, item_id=315, enhancement=15, available=65535, base_credits=8833100, base_gold=0, credits=8833100, gold=0, discount=0, durability=1275), 588513595: SCOffer(lot_id=588513595, item_id=315, enhancement=20, available=65535, base_credits=101770300, base_gold=0, credits=101770300, gold=0, discount=0, durability=1600), 588841275: SCOffer(lot_id=588841275, item_id=315, enhancement=25, available=65535, base_credits=1153698700, base_gold=0, credits=1153698700, gold=0, discount=0, durability=1925), 587202876: SCOffer(lot_id=587202876, item_id=316, enhancement=0, available=65535, base_credits=4500, base_gold=0, credits=4500, gold=0, discount=0, durability=300), 587858236: SCOffer(lot_id=587858236, item_id=316, enhancement=10, available=65535, base_credits=566300, base_gold=0, credits=566300, gold=0, discount=0, durability=950), 588185916: SCOffer(lot_id=588185916, item_id=316, enhancement=15, available=65535, base_credits=6701400, base_gold=0, credits=6701400, gold=0, discount=0, durability=1275), 588513596: SCOffer(lot_id=588513596, item_id=316, enhancement=20, available=65535, base_credits=77222000, base_gold=0, credits=77222000, gold=0, discount=0, durability=1600), 588841276: SCOffer(lot_id=588841276, item_id=316, enhancement=25, available=65535, base_credits=875425600, base_gold=0, credits=875425600, gold=0, discount=0, durability=1925), 587202883: SCOffer(lot_id=587202883, item_id=323, enhancement=0, available=65535, base_credits=3200, base_gold=0, credits=3200, gold=0, discount=0, durability=300), 587858243: SCOffer(lot_id=587858243, item_id=323, enhancement=10, available=65535, base_credits=487700, base_gold=0, credits=487700, gold=0, discount=0, durability=950), 588185923: SCOffer(lot_id=588185923, item_id=323, enhancement=15, available=65535, base_credits=5777600, base_gold=0, credits=5777600, gold=0, discount=0, durability=1275), 588513603: SCOffer(lot_id=588513603, item_id=323, enhancement=20, available=65535, base_credits=66584400, base_gold=0, credits=66584400, gold=0, discount=0, durability=1600), 588841283: SCOffer(lot_id=588841283, item_id=323, enhancement=25, available=65535, base_credits=754840600, base_gold=0, credits=754840600, gold=0, discount=0, durability=1925), 587202884: SCOffer(lot_id=587202884, item_id=324, enhancement=0, available=65535, base_credits=3000, base_gold=0, credits=3000, gold=0, discount=0, durability=300), 587858244: SCOffer(lot_id=587858244, item_id=324, enhancement=10, available=65535, base_credits=475600, base_gold=0, credits=475600, gold=0, discount=0, durability=950), 588185924: SCOffer(lot_id=588185924, item_id=324, enhancement=15, available=65535, base_credits=5635500, base_gold=0, credits=5635500, gold=0, discount=0, durability=1275), 588513604: SCOffer(lot_id=588513604, item_id=324, enhancement=20, available=65535, base_credits=64947800, base_gold=0, credits=64947800, gold=0, discount=0, durability=1600), 588841284: SCOffer(lot_id=588841284, item_id=324, enhancement=25, available=65535, base_credits=736289100, base_gold=0, credits=736289100, gold=0, discount=0, durability=1925), 587202886: SCOffer(lot_id=587202886, item_id=326, enhancement=0, available=65535, base_credits=200, base_gold=0, credits=200, gold=0, discount=0, durability=300), 587858246: SCOffer(lot_id=587858246, item_id=326, enhancement=10, available=65535, base_credits=306400, base_gold=0, credits=306400, gold=0, discount=0, durability=950), 588185926: SCOffer(lot_id=588185926, item_id=326, enhancement=15, available=65535, base_credits=3645900, base_gold=0, credits=3645900, gold=0, discount=0, durability=1275), 588513606: SCOffer(lot_id=588513606, item_id=326, enhancement=20, available=65535, base_credits=42036100, base_gold=0, credits=42036100, gold=0, discount=0, durability=1600), 588841286: SCOffer(lot_id=588841286, item_id=326, enhancement=25, available=65535, base_credits=476567600, base_gold=0, credits=476567600, gold=0, discount=0, durability=1925), 587202887: SCOffer(lot_id=587202887, item_id=327, enhancement=0, available=65535, base_credits=150, base_gold=0, credits=150, gold=0, discount=0, durability=300), 587858247: SCOffer(lot_id=587858247, item_id=327, enhancement=10, available=65535, base_credits=303300, base_gold=0, credits=303300, gold=0, discount=0, durability=950), 588185927: SCOffer(lot_id=588185927, item_id=327, enhancement=15, available=65535, base_credits=3610400, base_gold=0, credits=3610400, gold=0, discount=0, durability=1275), 588513607: SCOffer(lot_id=588513607, item_id=327, enhancement=20, available=65535, base_credits=41627000, base_gold=0, credits=41627000, gold=0, discount=0, durability=1600), 588841287: SCOffer(lot_id=588841287, item_id=327, enhancement=25, available=65535, base_credits=471929700, base_gold=0, credits=471929700, gold=0, discount=0, durability=1925), 587202888: SCOffer(lot_id=587202888, item_id=328, enhancement=0, available=65535, base_credits=120, base_gold=0, credits=120, gold=0, discount=0, durability=300), 587858248: SCOffer(lot_id=587858248, item_id=328, enhancement=10, available=65535, base_credits=301500, base_gold=0, credits=301500, gold=0, discount=0, durability=950), 588185928: SCOffer(lot_id=588185928, item_id=328, enhancement=15, available=65535, base_credits=3589100, base_gold=0, credits=3589100, gold=0, discount=0, durability=1275), 588513608: SCOffer(lot_id=588513608, item_id=328, enhancement=20, available=65535, base_credits=41381500, base_gold=0, credits=41381500, gold=0, discount=0, durability=1600), 588841288: SCOffer(lot_id=588841288, item_id=328, enhancement=25, available=65535, base_credits=469147000, base_gold=0, credits=469147000, gold=0, discount=0, durability=1925), 587202889: SCOffer(lot_id=587202889, item_id=329, enhancement=0, available=65535, base_credits=150, base_gold=0, credits=150, gold=0, discount=0, durability=300), 587858249: SCOffer(lot_id=587858249, item_id=329, enhancement=10, available=65535, base_credits=303300, base_gold=0, credits=303300, gold=0, discount=0, durability=950), 588185929: SCOffer(lot_id=588185929, item_id=329, enhancement=15, available=65535, base_credits=3610400, base_gold=0, credits=3610400, gold=0, discount=0, durability=1275), 588513609: SCOffer(lot_id=588513609, item_id=329, enhancement=20, available=65535, base_credits=41627000, base_gold=0, credits=41627000, gold=0, discount=0, durability=1600), 588841289: SCOffer(lot_id=588841289, item_id=329, enhancement=25, available=65535, base_credits=471929700, base_gold=0, credits=471929700, gold=0, discount=0, durability=1925), 587202890: SCOffer(lot_id=587202890, item_id=330, enhancement=0, available=65535, base_credits=750, base_gold=0, credits=750, gold=0, discount=0, durability=300), 587858250: SCOffer(lot_id=587858250, item_id=330, enhancement=10, available=65535, base_credits=339600, base_gold=0, credits=339600, gold=0, discount=0, durability=950), 588185930: SCOffer(lot_id=588185930, item_id=330, enhancement=15, available=65535, base_credits=4036700, base_gold=0, credits=4036700, gold=0, discount=0, durability=1275), 588513610: SCOffer(lot_id=588513610, item_id=330, enhancement=20, available=65535, base_credits=46536600, base_gold=0, credits=46536600, gold=0, discount=0, durability=1600), 588841290: SCOffer(lot_id=588841290, item_id=330, enhancement=25, available=65535, base_credits=527584300, base_gold=0, credits=527584300, gold=0, discount=0, durability=1925), 587202891: SCOffer(lot_id=587202891, item_id=331, enhancement=0, available=65535, base_credits=150, base_gold=0, credits=150, gold=0, discount=0, durability=300), 587858251: SCOffer(lot_id=587858251, item_id=331, enhancement=10, available=65535, base_credits=303300, base_gold=0, credits=303300, gold=0, discount=0, durability=950), 588185931: SCOffer(lot_id=588185931, item_id=331, enhancement=15, available=65535, base_credits=3610400, base_gold=0, credits=3610400, gold=0, discount=0, durability=1275), 588513611: SCOffer(lot_id=588513611, item_id=331, enhancement=20, available=65535, base_credits=41627000, base_gold=0, credits=41627000, gold=0, discount=0, durability=1600), 588841291: SCOffer(lot_id=588841291, item_id=331, enhancement=25, available=65535, base_credits=471929700, base_gold=0, credits=471929700, gold=0, discount=0, durability=1925), 587202892: SCOffer(lot_id=587202892, item_id=332, enhancement=0, available=65535, base_credits=300, base_gold=0, credits=300, gold=0, discount=0, durability=300), 587858252: SCOffer(lot_id=587858252, item_id=332, enhancement=10, available=65535, base_credits=312400, base_gold=0, credits=312400, gold=0, discount=0, durability=950), 588185932: SCOffer(lot_id=588185932, item_id=332, enhancement=15, available=65535, base_credits=3717000, base_gold=0, credits=3717000, gold=0, discount=0, durability=1275), 588513612: SCOffer(lot_id=588513612, item_id=332, enhancement=20, available=65535, base_credits=42854400, base_gold=0, credits=42854400, gold=0, discount=0, durability=1600), 588841292: SCOffer(lot_id=588841292, item_id=332, enhancement=25, available=65535, base_credits=485843400, base_gold=0, credits=485843400, gold=0, discount=0, durability=1925), 587202894: SCOffer(lot_id=587202894, item_id=334, enhancement=0, available=65535, base_credits=1800, base_gold=0, credits=1800, gold=0, discount=0, durability=300), 587858254: SCOffer(lot_id=587858254, item_id=334, enhancement=10, available=65535, base_credits=403100, base_gold=0, credits=403100, gold=0, discount=0, durability=950), 588185934: SCOffer(lot_id=588185934, item_id=334, enhancement=15, available=65535, base_credits=4782800, base_gold=0, credits=4782800, gold=0, discount=0, durability=1275), 588513614: SCOffer(lot_id=588513614, item_id=334, enhancement=20, available=65535, base_credits=55128500, base_gold=0, credits=55128500, gold=0, discount=0, durability=1600), 588841294: SCOffer(lot_id=588841294, item_id=334, enhancement=25, available=65535, base_credits=624979900, base_gold=0, credits=624979900, gold=0, discount=0, durability=1925), 587202895: SCOffer(lot_id=587202895, item_id=335, enhancement=0, available=65535, base_credits=1350, base_gold=0, credits=1350, gold=0, discount=0, durability=600), 587858255: SCOffer(lot_id=587858255, item_id=335, enhancement=10, available=65535, base_credits=375900, base_gold=0, credits=375900, gold=0, discount=0, durability=1250), 588185935: SCOffer(lot_id=588185935, item_id=335, enhancement=15, available=65535, base_credits=4463100, base_gold=0, credits=4463100, gold=0, discount=0, durability=1575), 588513615: SCOffer(lot_id=588513615, item_id=335, enhancement=20, available=65535, base_credits=51446300, base_gold=0, credits=51446300, gold=0, discount=0, durability=1900), 588841295: SCOffer(lot_id=588841295, item_id=335, enhancement=25, available=65535, base_credits=583238900, base_gold=0, credits=583238900, gold=0, discount=0, durability=2225), 587202896: SCOffer(lot_id=587202896, item_id=336, enhancement=0, available=65535, base_credits=1050, base_gold=0, credits=1050, gold=0, discount=0, durability=600), 587858256: SCOffer(lot_id=587858256, item_id=336, enhancement=10, available=65535, base_credits=357700, base_gold=0, credits=357700, gold=0, discount=0, durability=1250), 588185936: SCOffer(lot_id=588185936, item_id=336, enhancement=15, available=65535, base_credits=4249900, base_gold=0, credits=4249900, gold=0, discount=0, durability=1575), 588513616: SCOffer(lot_id=588513616, item_id=336, enhancement=20, available=65535, base_credits=48991400, base_gold=0, credits=48991400, gold=0, discount=0, durability=1900), 588841296: SCOffer(lot_id=588841296, item_id=336, enhancement=25, available=65535, base_credits=555411600, base_gold=0, credits=555411600, gold=0, discount=0, durability=2225), 587202898: SCOffer(lot_id=587202898, item_id=338, enhancement=0, available=65535, base_credits=1500, base_gold=0, credits=1500, gold=0, discount=0, durability=300), 587858258: SCOffer(lot_id=587858258, item_id=338, enhancement=10, available=65535, base_credits=384900, base_gold=0, credits=384900, gold=0, discount=0, durability=950), 588185938: SCOffer(lot_id=588185938, item_id=338, enhancement=15, available=65535, base_credits=4569700, base_gold=0, credits=4569700, gold=0, discount=0, durability=1275), 588513618: SCOffer(lot_id=588513618, item_id=338, enhancement=20, available=65535, base_credits=52673700, base_gold=0, credits=52673700, gold=0, discount=0, durability=1600), 588841298: SCOffer(lot_id=588841298, item_id=338, enhancement=25, available=65535, base_credits=597152600, base_gold=0, credits=597152600, gold=0, discount=0, durability=1925), 587202899: SCOffer(lot_id=587202899, item_id=339, enhancement=0, available=65535, base_credits=1350, base_gold=0, credits=1350, gold=0, discount=0, durability=300), 587858259: SCOffer(lot_id=587858259, item_id=339, enhancement=10, available=65535, base_credits=375900, base_gold=0, credits=375900, gold=0, discount=0, durability=950), 588185939: SCOffer(lot_id=588185939, item_id=339, enhancement=15, available=65535, base_credits=4463100, base_gold=0, credits=4463100, gold=0, discount=0, durability=1275), 588513619: SCOffer(lot_id=588513619, item_id=339, enhancement=20, available=65535, base_credits=51446300, base_gold=0, credits=51446300, gold=0, discount=0, durability=1600), 588841299: SCOffer(lot_id=588841299, item_id=339, enhancement=25, available=65535, base_credits=583238900, base_gold=0, credits=583238900, gold=0, discount=0, durability=1925), 587202901: SCOffer(lot_id=587202901, item_id=341, enhancement=0, available=65535, base_credits=1200, base_gold=0, credits=1200, gold=0, discount=0, durability=600), 587858261: SCOffer(lot_id=587858261, item_id=341, enhancement=10, available=65535, base_credits=366800, base_gold=0, credits=366800, gold=0, discount=0, durability=1250), 588185941: SCOffer(lot_id=588185941, item_id=341, enhancement=15, available=65535, base_credits=4356500, base_gold=0, credits=4356500, gold=0, discount=0, durability=1575), 588513621: SCOffer(lot_id=588513621, item_id=341, enhancement=20, available=65535, base_credits=50218900, base_gold=0, credits=50218900, gold=0, discount=0, durability=1900), 588841301: SCOffer(lot_id=588841301, item_id=341, enhancement=25, available=65535, base_credits=569325300, base_gold=0, credits=569325300, gold=0, discount=0, durability=2225), 100008: SCOffer(lot_id=100008, item_id=8, enhancement=0, available=65535, base_credits=180, base_gold=0, credits=180, gold=0, discount=0, durability=1), 100014: SCOffer(lot_id=100014, item_id=14, enhancement=0, available=65535, base_credits=300, base_gold=0, credits=300, gold=0, discount=0, durability=1), 100019: SCOffer(lot_id=100019, item_id=19, enhancement=0, available=65535, base_credits=2400, base_gold=0, credits=2400, gold=0, discount=0, durability=3600), 100030: SCOffer(lot_id=100030, item_id=30, enhancement=0, available=65535, base_credits=1050, base_gold=0, credits=1050, gold=0, discount=0, durability=1), 100033: SCOffer(lot_id=100033, item_id=33, enhancement=0, available=65535, base_credits=140, base_gold=0, credits=140, gold=0, discount=0, durability=1), 100034: SCOffer(lot_id=100034, item_id=34, enhancement=0, available=65535, base_credits=75, base_gold=0, credits=75, gold=0, discount=0, durability=1), 100035: SCOffer(lot_id=100035, item_id=35, enhancement=0, available=65535, base_credits=180, base_gold=0, credits=180, gold=0, discount=0, durability=1), 100318: SCOffer(lot_id=100318, item_id=318, enhancement=0, available=65535, base_credits=180, base_gold=0, credits=180, gold=0, discount=0, durability=300), 100319: SCOffer(lot_id=100319, item_id=319, enhancement=0, available=65535, base_credits=120, base_gold=0, credits=120, gold=0, discount=0, durability=300), 100321: SCOffer(lot_id=100321, item_id=321, enhancement=0, available=65535, base_credits=180, base_gold=0, credits=180, gold=0, discount=0, durability=300), 100020: SCOffer(lot_id=100020, item_id=20, enhancement=0, available=65535, base_credits=300, base_gold=0, credits=300, gold=0, discount=0, durability=1), 105002: SCOffer(lot_id=105002, item_id=5002, enhancement=0, available=65535, base_credits=1800, base_gold=0, credits=1800, gold=0, discount=0, durability=300)}",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_shop_completion.ShopCompletionTests.test_sc_ownership_battle_gate_gold_failure_and_database_failure_are_atomic",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "ValueError not raised",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_shop_completion.ShopCompletionTests.test_sc_same_identity_concurrent_purchase_and_current_snapshot_retry",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "SC accepts credits only",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_shop_completion.ShopCompletionTests.test_sc_warehouse_sequence_and_capacity_include_free_box",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "SC accepts credits only",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_shop_completion.ShopCompletionTests.test_shared_outer_transaction_rolls_back_both_shops_and_refuses_unleased_helpers",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "SC accepts credits only",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_special_items.SpecialItemsTests.test_native_codec_cases_and_strict_lengths",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "Native ABI proof must be run before acceptance",
+      "category": "local-artifact",
+      "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
+    },
+    {
+      "test": "test_stage2_admission_capacity.CapacityTests.test_full_bag_accepts_compatible_stack_but_rejects_stack_overflow",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "SC accepts credits only",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_stage2_admission_capacity.CapacityTests.test_legacy_overfull_bag_can_deposit_without_deleting_other_items",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "\"Inventory is full\" does not match \"SC accepts credits only\"",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_stage2_admission_capacity.CapacityTests.test_overfull_delivery_warehouse_can_shrink_but_cannot_grow",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "ValueError not raised",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_stage2_admission_capacity.CapacityTests.test_parallel_purchases_cannot_both_claim_last_slot",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "Lists differ: [False, False] != [False, True]\n\nFirst differing element 1:\nFalse\nTrue\n\n- [False, False]\n+ [False, True]",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_stage2_admission_capacity.CapacityTests.test_rental_limit_rolls_back_currency_and_lease",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "\"Inventory is full\" does not match \"Rental catalog accepts credits only\"",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_stage2_admission_capacity.CapacityTests.test_sc_cart_failure_preserves_cart_and_whole_purchase",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "\"Inventory is full\" does not match \"SC accepts credits only\"",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_stage2_admission_capacity.CapacityTests.test_sc_direct_19th_item_rolls_back_money_stock_sequence_and_achievements",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "SC accepts credits only",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    },
+    {
+      "test": "test_stage7_hosted_qa.HostedStage7ToolTests.test_real_local_strict_tls_fresh_two_slots_offline_mail_repeat_relogin_and_standings",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "[FileNotFoundError(2, 'The system cannot find the file specified')] is not false",
+      "category": "local-artifact",
+      "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
+    },
+    {
+      "test": "test_verify_hosted_gameplay_modes.LocalGameplayToolTests.test_entire_prepared_hosted_scenario_with_four_native_tls_accounts",
+      "kind": "failure",
+      "error": "AssertionError",
+      "message": "[FileNotFoundError(2, 'The system cannot find the file specified')] is not false",
+      "category": "local-artifact",
+      "note": "Needs a local-only artefact (package source, native ABI proof, hosted QA report folder) that is not in the repository."
+    },
+    {
+      "test": "test_warehouse_completion.WarehouseCompletionTests.test_rental_remote_expiry_preserves_city_rows_and_emits_only_visible_snapshot",
+      "kind": "error",
+      "error": "ValueError",
+      "message": "Rental catalog accepts credits only",
+      "category": "retired-gold",
+      "note": "Gold economy and real-money purchases are retired (tio/credit_economy.py); credits behaviour is covered by test_credits_only, test_sc_* and test_sc_shop. Port or delete."
+    }
+  ]
 }

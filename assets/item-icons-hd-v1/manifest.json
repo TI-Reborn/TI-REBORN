@@ -17,7 +17,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "ammo_9mm.tga",
+   "current_image": "tio_ii_3.png",
    "canvas": [
     1024,
     1024
@@ -33,7 +33,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "ammo_shells.tga",
+   "current_image": "tio_ii_4.png",
    "canvas": [
     1024,
     1024
@@ -49,7 +49,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "ammo_aug.tga",
+   "current_image": "tio_ii_5.png",
    "canvas": [
     1024,
     1024
@@ -65,7 +65,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "ammo_awp.tga",
+   "current_image": "tio_ii_6.png",
    "canvas": [
     1024,
     1024
@@ -81,7 +81,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "ammo_ak47.tga",
+   "current_image": "tio_ii_7.png",
    "canvas": [
     1024,
     1024
@@ -97,7 +97,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "missile.tga",
+   "current_image": "tio_ii_8.png",
    "canvas": [
     1024,
     1024
@@ -113,7 +113,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "bandages.tga",
+   "current_image": "tio_ii_9.png",
    "canvas": [
     1024,
     1024
@@ -129,7 +129,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "medkit1.tga",
+   "current_image": "tio_ii_10.png",
    "canvas": [
     1024,
     1024
@@ -145,7 +145,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "medkit2.tga",
+   "current_image": "tio_ii_11.png",
    "canvas": [
     1024,
     1024
@@ -161,7 +161,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "itm_ammo_magnum.png",
+   "current_image": "tio_ii_12.png",
    "canvas": [
     1024,
     1024
@@ -177,7 +177,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "itm_ammo_p90.png",
+   "current_image": "tio_ii_13.png",
    "canvas": [
     1024,
     1024
@@ -193,7 +193,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "itm_ammo_vindicator.png",
+   "current_image": "tio_ii_14.png",
    "canvas": [
     1024,
     1024
@@ -209,7 +209,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "itm_ammo_parabellum.png",
+   "current_image": "tio_ii_15.png",
    "canvas": [
     1024,
     1024
@@ -225,7 +225,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "",
+   "current_image": "tio_ii_16.png",
    "canvas": [
     1024,
     1024
@@ -241,7 +241,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "itm_repairkit.png",
+   "current_image": "tio_ii_17.png",
    "canvas": [
     1024,
     1024
@@ -257,7 +257,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "itm_repairkit.png",
+   "current_image": "tio_ii_18.png",
    "canvas": [
     1024,
     1024
@@ -273,7 +273,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "itm_repair3.png",
+   "current_image": "tio_ii_19.png",
    "canvas": [
     1024,
     1024
@@ -289,7 +289,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "itm_healthinjection.png",
+   "current_image": "tio_ii_20.png",
    "canvas": [
     1024,
     1024
@@ -305,7 +305,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "binoculars.tga",
+   "current_image": "tio_ii_24.png",
    "canvas": [
     1024,
     1024
@@ -321,7 +321,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "itm_upgradekit.png",
+   "current_image": "tio_ii_30.png",
    "canvas": [
     1024,
     1024
@@ -337,7 +337,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "itm_dogmeat.png",
+   "current_image": "tio_ii_32.png",
    "canvas": [
     1024,
     1024
@@ -353,7 +353,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "itm_shampagne.png",
+   "current_image": "tio_ii_33.png",
    "canvas": [
     1024,
     1024
@@ -369,7 +369,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "itm_candies.png",
+   "current_image": "tio_ii_34.png",
    "canvas": [
     1024,
     1024
@@ -385,7 +385,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "itm_buff_sight.png",
+   "current_image": "tio_ii_35.png",
    "canvas": [
     1024,
     1024
@@ -401,7 +401,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "qui_ico_762silent_004.png",
+   "current_image": "tio_ii_36.png",
    "canvas": [
     1024,
     1024
@@ -417,7 +417,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "ti_miner_png_08.png",
+   "current_image": "tio_ii_37.png",
    "canvas": [
     1024,
     1024
@@ -433,7 +433,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "",
+   "current_image": "tio_ii_51.png",
    "canvas": [
     1024,
     1024
@@ -455,7 +455,7 @@
    "masks": [
     ""
    ],
-   "current_image": "itm_gasdrill.png",
+   "current_image": "tio_ii_52.png",
    "canvas": [
     1024,
     1024
@@ -473,7 +473,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "",
+   "current_image": "tio_ii_203.png",
    "canvas": [
     1024,
     1024
@@ -489,7 +489,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "",
+   "current_image": "tio_ii_204.png",
    "canvas": [
     1024,
     1024
@@ -505,7 +505,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "",
+   "current_image": "tio_ii_205.png",
    "canvas": [
     1024,
     1024
@@ -527,7 +527,7 @@
    "masks": [
     ""
    ],
-   "current_image": "",
+   "current_image": "tio_ii_206.png",
    "canvas": [
     1024,
     1024
@@ -549,7 +549,7 @@
    "masks": [
     "armor_combat_mask.png"
    ],
-   "current_image": "helmet.tga",
+   "current_image": "tio_ii_208.png",
    "canvas": [
     1024,
     1024
@@ -571,7 +571,7 @@
    "masks": [
     "armor_combat_mask.png"
    ],
-   "current_image": "itm_combat_armor_1.png",
+   "current_image": "tio_ii_210.png",
    "canvas": [
     1024,
     1024
@@ -593,7 +593,7 @@
    "masks": [
     "armor_combat_mask.png"
    ],
-   "current_image": "itm_combat_helmet_1.png",
+   "current_image": "tio_ii_211.png",
    "canvas": [
     1024,
     1024
@@ -615,7 +615,7 @@
    "masks": [
     "armor_combat_mask.png"
    ],
-   "current_image": "itm_combat_legs_1.png",
+   "current_image": "tio_ii_212.png",
    "canvas": [
     1024,
     1024
@@ -637,7 +637,7 @@
    "masks": [
     "armor_combat_mask.png"
    ],
-   "current_image": "itm_combat_helmet_2.png",
+   "current_image": "tio_ii_213.png",
    "canvas": [
     1024,
     1024
@@ -659,7 +659,7 @@
    "masks": [
     "armor_combat_mask.png"
    ],
-   "current_image": "itm_combat_armor_2.png",
+   "current_image": "tio_ii_214.png",
    "canvas": [
     1024,
     1024
@@ -681,7 +681,7 @@
    "masks": [
     "armor_combat_mask.png"
    ],
-   "current_image": "itm_combat_legs_2.png",
+   "current_image": "tio_ii_215.png",
    "canvas": [
     1024,
     1024
@@ -703,7 +703,7 @@
    "masks": [
     "armor_military_mask.png"
    ],
-   "current_image": "itm_military_helmet_1.png",
+   "current_image": "tio_ii_216.png",
    "canvas": [
     1024,
     1024
@@ -725,7 +725,7 @@
    "masks": [
     "armor_military_mask.png"
    ],
-   "current_image": "itm_military_armor_1.png",
+   "current_image": "tio_ii_217.png",
    "canvas": [
     1024,
     1024
@@ -747,7 +747,7 @@
    "masks": [
     "armor_military_mask.png"
    ],
-   "current_image": "itm_military_legs_1.png",
+   "current_image": "tio_ii_218.png",
    "canvas": [
     1024,
     1024
@@ -769,7 +769,7 @@
    "masks": [
     "armor_military_mask.png"
    ],
-   "current_image": "itm_military_helmet_2.png",
+   "current_image": "tio_ii_219.png",
    "canvas": [
     1024,
     1024
@@ -791,7 +791,7 @@
    "masks": [
     "armor_military_mask.png"
    ],
-   "current_image": "itm_military_armor_2.png",
+   "current_image": "tio_ii_220.png",
    "canvas": [
     1024,
     1024
@@ -813,7 +813,7 @@
    "masks": [
     "armor_military_mask.png"
    ],
-   "current_image": "itm_military_legs_2.png",
+   "current_image": "tio_ii_221.png",
    "canvas": [
     1024,
     1024
@@ -835,7 +835,7 @@
    "masks": [
     "armor_military_mask.png"
    ],
-   "current_image": "jacket0b.tga",
+   "current_image": "tio_ii_222.png",
    "canvas": [
     1024,
     1024
@@ -857,7 +857,7 @@
    "masks": [
     "armor_battle_mask.png"
    ],
-   "current_image": "itm_military_armor_1.png",
+   "current_image": "tio_ii_223.png",
    "canvas": [
     1024,
     1024
@@ -879,7 +879,7 @@
    "masks": [
     "armor_battle_mask.png"
    ],
-   "current_image": "itm_military_legs_1.png",
+   "current_image": "tio_ii_224.png",
    "canvas": [
     1024,
     1024
@@ -901,7 +901,7 @@
    "masks": [
     "armor_battle_mask.png"
    ],
-   "current_image": "",
+   "current_image": "tio_ii_226.png",
    "canvas": [
     1024,
     1024
@@ -923,7 +923,7 @@
    "masks": [
     "armor_battle_mask.png"
    ],
-   "current_image": "helmet.tga",
+   "current_image": "tio_ii_227.png",
    "canvas": [
     1024,
     1024
@@ -945,7 +945,7 @@
    "masks": [
     "armor_battle_mask.png"
    ],
-   "current_image": "itm_battle_armor_1.png",
+   "current_image": "tio_ii_229.png",
    "canvas": [
     1024,
     1024
@@ -967,7 +967,7 @@
    "masks": [
     "armor_battle_mask.png"
    ],
-   "current_image": "itm_battle_helmet_1.png",
+   "current_image": "tio_ii_230.png",
    "canvas": [
     1024,
     1024
@@ -989,7 +989,7 @@
    "masks": [
     "armor_battle_mask.png"
    ],
-   "current_image": "itm_battle_legs_1.png",
+   "current_image": "tio_ii_231.png",
    "canvas": [
     1024,
     1024
@@ -1011,7 +1011,7 @@
    "masks": [
     "armor_battle_mask.png"
    ],
-   "current_image": "itm_battle_armor_2.png",
+   "current_image": "tio_ii_232.png",
    "canvas": [
     1024,
     1024
@@ -1033,7 +1033,7 @@
    "masks": [
     "armor_battle_mask.png"
    ],
-   "current_image": "itm_battle_helmet_2.png",
+   "current_image": "tio_ii_233.png",
    "canvas": [
     1024,
     1024
@@ -1055,7 +1055,7 @@
    "masks": [
     "armor_battle_mask.png"
    ],
-   "current_image": "itm_battle_legs_2.png",
+   "current_image": "tio_ii_234.png",
    "canvas": [
     1024,
     1024
@@ -1071,7 +1071,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "",
+   "current_image": "tio_ii_235.png",
    "canvas": [
     1024,
     1024
@@ -1093,7 +1093,7 @@
    "masks": [
     "armor_battle_mask.png"
    ],
-   "current_image": "itm_battle_helmet_1.png",
+   "current_image": "tio_ii_236.png",
    "canvas": [
     1024,
     1024
@@ -1115,7 +1115,7 @@
    "masks": [
     "armor_battle_mask.png"
    ],
-   "current_image": "itm_battle_armor_1.png",
+   "current_image": "tio_ii_237.png",
    "canvas": [
     1024,
     1024
@@ -1137,7 +1137,7 @@
    "masks": [
     "armor_battle_mask.png"
    ],
-   "current_image": "itm_battle_legs_1.png",
+   "current_image": "tio_ii_238.png",
    "canvas": [
     1024,
     1024
@@ -1159,7 +1159,7 @@
    "masks": [
     "armor_military_mask.png"
    ],
-   "current_image": "itm_military_helmet_3.png",
+   "current_image": "tio_ii_239.png",
    "canvas": [
     1024,
     1024
@@ -1181,7 +1181,7 @@
    "masks": [
     "armor_military_mask.png"
    ],
-   "current_image": "itm_military_armor_3.png",
+   "current_image": "tio_ii_240.png",
    "canvas": [
     1024,
     1024
@@ -1203,7 +1203,7 @@
    "masks": [
     "armor_military_mask.png"
    ],
-   "current_image": "itm_military_legs_3.png",
+   "current_image": "tio_ii_241.png",
    "canvas": [
     1024,
     1024
@@ -1225,7 +1225,7 @@
    "masks": [
     "armor_battle_mask.png"
    ],
-   "current_image": "itm_battle_helmet_3.png",
+   "current_image": "tio_ii_242.png",
    "canvas": [
     1024,
     1024
@@ -1247,7 +1247,7 @@
    "masks": [
     "armor_battle_mask.png"
    ],
-   "current_image": "itm_battle_armor_3.png",
+   "current_image": "tio_ii_243.png",
    "canvas": [
     1024,
     1024
@@ -1269,7 +1269,7 @@
    "masks": [
     "armor_battle_mask.png"
    ],
-   "current_image": "itm_battle_legs_3.png",
+   "current_image": "tio_ii_244.png",
    "canvas": [
     1024,
     1024
@@ -1291,7 +1291,7 @@
    "masks": [
     "armor_combat_mask.png"
    ],
-   "current_image": "itm_combat_helmet_3.png",
+   "current_image": "tio_ii_245.png",
    "canvas": [
     1024,
     1024
@@ -1313,7 +1313,7 @@
    "masks": [
     "armor_combat_mask.png"
    ],
-   "current_image": "itm_combat_armor_3.png",
+   "current_image": "tio_ii_246.png",
    "canvas": [
     1024,
     1024
@@ -1335,7 +1335,7 @@
    "masks": [
     "armor_combat_mask.png"
    ],
-   "current_image": "itm_combat_legs_3.png",
+   "current_image": "tio_ii_247.png",
    "canvas": [
     1024,
     1024
@@ -1357,7 +1357,7 @@
    "masks": [
     "armor_combatse_mask.png"
    ],
-   "current_image": "itm_combat_armor_m1_3.png",
+   "current_image": "tio_ii_248.png",
    "canvas": [
     1024,
     1024
@@ -1379,7 +1379,7 @@
    "masks": [
     "armor_combatse_mask.png"
    ],
-   "current_image": "itm_combat_helmet_m1_3.png",
+   "current_image": "tio_ii_249.png",
    "canvas": [
     1024,
     1024
@@ -1401,7 +1401,7 @@
    "masks": [
     "armor_combatse_mask.png"
    ],
-   "current_image": "itm_combat_legs_m1_3.png",
+   "current_image": "tio_ii_250.png",
    "canvas": [
     1024,
     1024
@@ -1423,7 +1423,7 @@
    "masks": [
     "armor_battlese_mask.png"
    ],
-   "current_image": "itm_battle_helmet_se.png",
+   "current_image": "tio_ii_251.png",
    "canvas": [
     1024,
     1024
@@ -1445,7 +1445,7 @@
    "masks": [
     "armor_battlese_mask.png"
    ],
-   "current_image": "itm_battle_armor_se.png",
+   "current_image": "tio_ii_252.png",
    "canvas": [
     1024,
     1024
@@ -1467,7 +1467,7 @@
    "masks": [
     "armor_battlese_mask.png"
    ],
-   "current_image": "itm_battle_legs_se.png",
+   "current_image": "tio_ii_253.png",
    "canvas": [
     1024,
     1024
@@ -1489,7 +1489,7 @@
    "masks": [
     "armor_tank_mask.png"
    ],
-   "current_image": "itm_tank_armor.png",
+   "current_image": "tio_ii_254.png",
    "canvas": [
     1024,
     1024
@@ -1511,7 +1511,7 @@
    "masks": [
     ""
    ],
-   "current_image": "itm_dog_armor.png",
+   "current_image": "tio_ii_255.png",
    "canvas": [
     1024,
     1024
@@ -1533,7 +1533,7 @@
    "masks": [
     "armor_tankse_mask.png"
    ],
-   "current_image": "itm_tankse.png",
+   "current_image": "tio_ii_256.png",
    "canvas": [
     1024,
     1024
@@ -1555,7 +1555,7 @@
    "masks": [
     ""
    ],
-   "current_image": "itm_santa_hat.png",
+   "current_image": "tio_ii_257.png",
    "canvas": [
     1024,
     1024
@@ -1577,7 +1577,7 @@
    "masks": [
     "miner_mask.png"
    ],
-   "current_image": "ti_miner_png_02.png",
+   "current_image": "tio_ii_258.png",
    "canvas": [
     1024,
     1024
@@ -1599,7 +1599,7 @@
    "masks": [
     "miner_mask.png"
    ],
-   "current_image": "ti_miner_png_04.png",
+   "current_image": "tio_ii_259.png",
    "canvas": [
     1024,
     1024
@@ -1621,7 +1621,7 @@
    "masks": [
     "miner_mask.png"
    ],
-   "current_image": "ti_miner_png_01.png",
+   "current_image": "tio_ii_260.png",
    "canvas": [
     1024,
     1024
@@ -1643,7 +1643,7 @@
    "masks": [
     "miner_mask.png"
    ],
-   "current_image": "ti_miner_png_03.png",
+   "current_image": "tio_ii_261.png",
    "canvas": [
     1024,
     1024
@@ -1665,7 +1665,7 @@
    "masks": [
     "miner_mask.png"
    ],
-   "current_image": "ti_miner_png_05.png",
+   "current_image": "tio_ii_262.png",
    "canvas": [
     1024,
     1024
@@ -1687,7 +1687,7 @@
    "masks": [
     "armor_fea_mask.png"
    ],
-   "current_image": "itm_female_exo_armor.png",
+   "current_image": "tio_ii_263.png",
    "canvas": [
     1024,
     1024
@@ -1709,7 +1709,7 @@
    "masks": [
     "armor_fease_mask.png"
    ],
-   "current_image": "itm_female_exo_armor_se.png",
+   "current_image": "tio_ii_264.png",
    "canvas": [
     1024,
     1024
@@ -1731,7 +1731,7 @@
    "masks": [
     "dog_solid_armor_mask.png"
    ],
-   "current_image": "itm_dog_solid_armor.png",
+   "current_image": "tio_ii_265.png",
    "canvas": [
     1024,
     1024
@@ -1753,7 +1753,7 @@
    "masks": [
     "dog_solid_armor_se_mask.png"
    ],
-   "current_image": "itm_dog_solid_armor_se.png",
+   "current_image": "tio_ii_266.png",
    "canvas": [
     1024,
     1024
@@ -2655,7 +2655,7 @@
    "masks": [
     ""
    ],
-   "current_image": "itm_nightvision.png",
+   "current_image": "tio_ii_5002.png",
    "canvas": [
     1024,
     1024
@@ -2673,7 +2673,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "item_light_trainer.png",
+   "current_image": "tio_ii_5003.png",
    "canvas": [
     1024,
     1024
@@ -2689,7 +2689,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "item_improved_trainer.png",
+   "current_image": "tio_ii_5004.png",
    "canvas": [
     1024,
     1024
@@ -2705,7 +2705,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "item_ultra_trainer.png",
+   "current_image": "tio_ii_5005.png",
    "canvas": [
     1024,
     1024
@@ -2721,7 +2721,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "item_light_advisor.png",
+   "current_image": "tio_ii_5006.png",
    "canvas": [
     1024,
     1024
@@ -2737,7 +2737,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "item_improved_advisor.png",
+   "current_image": "tio_ii_5007.png",
    "canvas": [
     1024,
     1024
@@ -2753,7 +2753,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "item_ultra_advisor.png",
+   "current_image": "tio_ii_5008.png",
    "canvas": [
     1024,
     1024
@@ -2769,7 +2769,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "itm_buff_sight.png",
+   "current_image": "tio_ii_5009.png",
    "canvas": [
     1024,
     1024
@@ -2785,7 +2785,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "itm_buff_sight.png",
+   "current_image": "tio_ii_5010.png",
    "canvas": [
     1024,
     1024
@@ -2801,7 +2801,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "itm_buff_sight.png",
+   "current_image": "tio_ii_5011.png",
    "canvas": [
     1024,
     1024
@@ -2817,7 +2817,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "itm_healthinjection.png",
+   "current_image": "tio_ii_5012.png",
    "canvas": [
     1024,
     1024
@@ -2855,7 +2855,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "infected_hide.png",
+   "current_image": "tio_ii_65487.png",
    "canvas": [
     1024,
     1024
@@ -2871,7 +2871,7 @@
    "models": [],
    "textures": [],
    "masks": [],
-   "current_image": "infected_meat.png",
+   "current_image": "tio_ii_65488.png",
    "canvas": [
     1024,
     1024
