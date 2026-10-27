@@ -1,4 +1,4 @@
-"""Native HD item drawing within the A2 warehouse and equipment controls.
+﻿"""Native HD item drawing within the A2 warehouse and equipment controls.
 
 The original item renderer retains counts, upgrades, hints and condition
 overlays. Only its base illustration receives a high-resolution resource.
@@ -107,7 +107,7 @@ def _scope(origin: int, offset: int, layout_state: int, state: int, paper: bool,
     return c.finish(0x500)
 
 
-def _item(origin: int, rows: int, state: int, count: int) -> bytes:
+def _item(origin: int, rows: int, state: int, count: int, overlay_box: int | None = None) -> bytes:
     from .client_equipment_batch import Code
     c=Code(BASE+origin+0xa00)
     c.emit('55 89e5 81ecb0000000 53 56 57')
@@ -123,6 +123,9 @@ def _item(origin: int, rows: int, state: int, count: int) -> bytes:
         c.emit('8b45fc 83e8'+f'{32-inset:02x}'+' 8b55f8 83ea'+f'{16-inset:02x}')
         c.call(0x4f2888)
     c.emit('619d');c.label('frame_done')
+    if overlay_box is not None:
+        # Overlays (client_item_overlays) are measured from this cell box.
+        c.emit('8b45fc 8b55f8');c.call(overlay_box)
     c.emit('8b7108 8d93');c.word(rows);c.emit('b9');c.word(count)
     c.label('find');c.emit('3b32');c.branch('0f84','found')
     c.emit('83c220 49');c.branch('0f85','find');c.branch('e9','stock')
@@ -149,32 +152,12 @@ def _item(origin: int, rows: int, state: int, count: int) -> bytes:
     c.call(BASE+origin+0x1c00);c.emit('8945e4 8b55f0 31c9')
     c.label('restore_tile');c.emit('8bb48d50ffffff 897208 83c20c 41 3b4dec');c.branch('0f82','restore_tile')
     c.emit('8b55e8 8993');c.word(state+12)
-    c.call(BASE+origin+0x2700)
     c.emit('8b45e4 5f5e5b 89ec5d c21c00')
     c.label('stock');c.emit('8b45fc 8b55f8 8b4df4')
     for offset in (0x20,0x1c,0x18,0x14,0x10,0xc,8):c.emit('ff75'+f'{offset:02x}')
     c.call(BASE+origin+0x1c00);c.emit('8945e4')
-    c.call(BASE+origin+0x2700)
     c.emit('8b45e4 5f5e5b 89ec5d c21c00')
     return c.finish(0xe00)
-
-
-def _quantity(origin: int, state: int) -> bytes:
-    """The stock warehouse used a separate quantity column, now a cell badge."""
-    from .client_equipment_batch import Code
-    from .client_barracks_skin import native_colour
-
-    c = Code(BASE+origin+0x2700)
-    c.base()
-    c.emit('83bb'); c.word(state); c.emit('01')
-    c.branch('0f85', 'done')
-    c.emit('8b45f4 8b401c 83f802'); c.branch('0f82', 'done')
-    c.emit('8d9560ffffff'); c.call(BASE+origin+0x23000)
-    c.emit('8b50fc d1ea 6bd207 8b4dfc 83c124 29d1')
-    c.emit('68'); c.word(native_colour(0xffece5b8)); c.emit('6a00 6a00')
-    c.emit('89ca 8b4df8 83c124'); c.call(0x67571c)
-    c.label('done'); c.emit('c3')
-    return c.finish(0x800)
 
 
 def _load(origin: int) -> bytes:
@@ -264,17 +247,21 @@ GRID = (
 )
 
 
-def payload(origin: int, layout_state: int, item_ids: tuple[int,...]) -> bytes:
+def render_state(origin: int) -> int:
+    """Scope state of the A2 item renderer (scope, width, height, HD, box)."""
+    return origin+0x9000
+
+
+def payload(origin: int, layout_state: int, item_ids: tuple[int,...], overlay_box: int | None = None) -> bytes:
     from .client_equipment_batch import Code
-    ids=validate_ids(item_ids);rows=origin+0x3000;names=origin+0x5000;state=origin+0x9000
+    ids=validate_ids(item_ids);rows=origin+0x3000;names=origin+0x5000;state=render_state(origin)
     result=bytearray(SIZE)
     for offset,raw in ((0,_scope(origin,0,layout_state,state,False)),(0x500,_scope(origin,0x500,layout_state,state,True)),
-                       (0xa00,_item(origin,rows,state,len(ids))),(0x1800,_art(origin,state)),(0x1d00,_load(origin))):
+                       (0xa00,_item(origin,rows,state,len(ids),overlay_box)),(0x1800,_art(origin,state)),(0x1d00,_load(origin))):
         result[offset:offset+len(raw)]=raw
     trampoline=Code(BASE+origin+0x1c00);trampoline.emit('558bec51b96e000000');trampoline.jump(0xa777e9)
     result[0x1c00:0x1c40]=trampoline.finish(0x40)
     result[0x2f00:0x3000] = _base_picture(origin, state)
-    result[0x2700:0x2f00] = _quantity(origin, state)
     result[0x9200:0x9700] = _scope(origin,0x9200,layout_state,state,False,True)
     result[0x9800:0x9f00] = _warehouse_cells(origin)
     for index,(site,stock,replacement) in enumerate(GRID):

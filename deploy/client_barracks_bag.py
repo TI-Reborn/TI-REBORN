@@ -43,7 +43,10 @@ HITS = (
     (0x9bcb19, '83e8403bf8', 'scroll_width'),
     (0x9bcb25, 'c645fb008345fc25', 'scroll_row'),
     (0x9bcb37, '807dfb0074048345fc258b45fc', 'scroll_last'),
+    (0x9bc77b, 'e87c60b3ff', 'background'),
+    (0x9bc842, 'e8b55fb3ff', 'background'),
 )
+NATIVE_DRAW, SCALED_DRAW = 0x4f27fc, 0x4f2910
 
 
 def _guard(c: Code, state: int) -> None:
@@ -107,6 +110,24 @@ def _replacement(kind: str, width: int) -> str:
     return replacements[kind]
 
 
+def _background(c: Code, label: str, width: int) -> None:
+    """Stretch the native 64x32 cell background over the reference cell.
+
+    The native call passes flags, frame and colour; the scaled draw takes the
+    same arguments behind the destination width and height.
+    """
+    if label == 'stock':
+        c.call(NATIVE_DRAW)
+        return
+    height = 56 if width == 94 else 42
+    c.emit('558bec 68'); c.word(width)
+    c.emit('68'); c.word(height)
+    # The site is a JMP: [ebp+4] flags, [ebp+8] frame, [ebp+0xc] colour.
+    c.emit('ff7508 ff750c ff7504')
+    c.call(SCALED_DRAW)
+    c.emit('5d 83c40c')
+
+
 def payload(origin: int, layout_state: int) -> bytes:
     from .client_equipment_batch import Code
 
@@ -133,6 +154,8 @@ def payload(origin: int, layout_state: int) -> bytes:
                 code.emit('807dfb00'); code.branch('0f84', label+'_last')
                 code.emit('8345fc'+('25' if label=='stock' else ('3e' if width==94 else '30')))
                 code.label(label+'_last'); code.emit('8b45fc')
+            elif kind == 'background':
+                _background(code, label, width)
             else:
                 code.emit(original if label == 'stock' else _replacement(kind, width))
             code.jump(site+len(bytes.fromhex(original)))
