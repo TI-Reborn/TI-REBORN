@@ -87,6 +87,46 @@ class BackpackNativeGeometryTests(unittest.TestCase):
                 self.assertEqual(self.get(self.frame-4),
                                  3+int(partial_row)*(62 if enabled else 37))
 
+    def draw_background(self, index, width=414, enabled=True):
+        """Enter a background draw with its native colour, frame and flags."""
+        machine, address = self.machine(width, enabled)
+        sp = 0x3000f000-12
+        for offset, value in enumerate((0, 7, 0xff3090ff)):
+            self.put(sp+4*offset, value)
+        machine.reg_write(UC_X86_REG_ESP, sp)
+        return machine, address+0x1000+index*0x100
+
+    def backgrounds(self):
+        rows = [i for i, row in enumerate(bag.HITS) if row[2] == 'background']
+        self.assertEqual(len(rows), 2)
+        return rows
+
+    def test_backpack_backgrounds_fill_the_reference_cell(self):
+        for index in self.backgrounds():
+            for width, size in ((414, (94, 56)), (314, (69, 42))):
+                with self.subTest(site=hex(bag.HITS[index][0]), width=width):
+                    machine, entry = self.draw_background(index, width)
+                    machine.emu_start(entry, bag.SCALED_DRAW, count=1000)
+                    top = machine.reg_read(UC_X86_REG_ESP)
+                    pushed = [self.get(top+4*i) for i in range(1, 6)]
+                    self.assertEqual(pushed, [0, 0xff3090ff, 7, size[1], size[0]])
+                    self.assertEqual(machine.reg_read(UC_X86_REG_EBX), self.control)
+
+    def test_backpack_backgrounds_stay_native_elsewhere(self):
+        for index in self.backgrounds():
+            with self.subTest(site=hex(bag.HITS[index][0])):
+                machine, entry = self.draw_background(index, enabled=False)
+                machine.emu_start(entry, bag.NATIVE_DRAW, count=1000)
+                top = machine.reg_read(UC_X86_REG_ESP)
+                self.assertEqual([self.get(top+4*i) for i in range(1, 4)],
+                                 [0, 7, 0xff3090ff])
+
+    def test_background_sites_call_the_native_draw(self):
+        for index in self.backgrounds():
+            site, original, _ = bag.HITS[index]
+            raw = bytes.fromhex(original)
+            self.assertEqual(site+5+struct.unpack('<i', raw[1:])[0], bag.NATIVE_DRAW)
+
 
 if __name__ == '__main__':
     unittest.main()

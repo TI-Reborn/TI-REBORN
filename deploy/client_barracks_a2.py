@@ -1,4 +1,4 @@
-"""Guarded native barracks presentation, composed over the published client.
+﻿"""Guarded native barracks presentation, composed over the published client.
 
 Native controls retain their owners, callbacks and item data. The transformer
 only appends presentation code and redirects exact constructor/resize/draw
@@ -42,6 +42,8 @@ FILTER_OPEN = REGION + 0xff08
 # Horizontal distance of the rotate arrows from the stage centre.
 ARROW_DX = REGION + 0xff0c
 WAREHOUSE = REGION + 0x1a000
+# Item overlay box and coordinate thunks, after the warehouse block.
+OVERLAYS = REGION + 0x1f400
 SIGNATURE_OFFSET = 0xff40
 SIGNATURE = b'TIO-barracks-A2-layout-v2'
 HEADER = 0xac4bdc
@@ -328,7 +330,8 @@ def payload(item_ids: tuple[int,...]) -> bytes:
     result[0xe200:0xfe00] = _mail_payload().ljust(0x1c00, b'\0')
     name = 'window_mail_packages'.encode('utf-16le') + b'\0\0'
     result[0xd300:0xd300+len(name)] = name
-    item_art=item_payload(REGION+0x10000,STATE,item_ids)
+    from .client_item_overlays import box_entry, payload as overlay_payload
+    item_art=item_payload(REGION+0x10000,STATE,item_ids,box_entry(OVERLAYS))
     result[0x10000:0x10000+len(item_art)]=item_art
     from .client_barracks_skin import payload as skin_payload
     skin = skin_payload(REGION+0x20000,STATE)
@@ -345,6 +348,9 @@ def payload(item_ids: tuple[int,...]) -> bytes:
     result[0x38000:0x38000+len(navigation)] = navigation
     store = warehouse_payload(WAREHOUSE, STATE, FILTER_OPEN)
     result[WAREHOUSE-REGION:WAREHOUSE-REGION+len(store)] = store
+    from .client_item_icon_render import render_state
+    overlays = overlay_payload(OVERLAYS, render_state(REGION+0x10000))
+    result[OVERLAYS-REGION:OVERLAYS-REGION+len(overlays)] = overlays
     from .client_barracks_social import payload as social_payload
     result[0x3e800:0x40000] = social_payload(REGION+0x3e800, STATE)
     return bytes(result)
@@ -418,11 +424,12 @@ def _presentation_edits() -> tuple[tuple[int,bytes,bytes], ...]:
     from .client_barracks_bag import edits as bag_edits
     from .client_barracks_navigation import edits as navigation_edits
     from .client_barracks_warehouse import edits as warehouse_edits
+    from .client_item_overlays import edits as overlay_edits
     from .client_portrait_quality import INSTALL_ENTRY, install_code
 
     return (item_edits(REGION+0x10000)+skin_edits(REGION+0x20000)
             +cards_edits(REGION+0x30000)+bag_edits(REGION+0x34000)
-            +navigation_edits(REGION+0x38000)+warehouse_edits(WAREHOUSE)
+            +navigation_edits(REGION+0x38000)+warehouse_edits(WAREHOUSE)+overlay_edits(OVERLAYS)
             +((INSTALL_ENTRY,install_code(),install_code(1024)),))
 
 

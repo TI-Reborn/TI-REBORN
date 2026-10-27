@@ -1,4 +1,4 @@
-"""A2 warehouse column: full-height item grid with a drop-down filter list.
+﻿"""A2 warehouse column: full-height item grid with a drop-down filter list.
 
 Geometry is pure data consumed by the A2 layout. The native code here only
 toggles the existing TGUIItemsFilters list and draws the owner tabs and the
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from .client_equipment_batch import Code
 
 BASE = 0x400000
-SIZE = 0x6000
+SIZE = 0x5400
 Expr = int | tuple[str, int, int]
 TABLE = 0xad10a4
 OWNERS = 0xad1098
