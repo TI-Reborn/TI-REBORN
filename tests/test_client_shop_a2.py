@@ -85,11 +85,19 @@ class PatchTests(unittest.TestCase):
             self.assertEqual(target, shop.BASE+ORIGIN+shop.OWNER_ENTRY+index*0x100)
 
     def test_refresh_sites_wrap_their_native_calls(self):
-        edits = shop.edits(ORIGIN)[len(shop.OWNER_SITES):]
+        start = len(shop.OWNER_SITES)
+        edits = shop.edits(ORIGIN)[start:start+len(shop.REFRESH_SITES)]
         for (site, before, after), (expected, native) in zip(edits, shop.REFRESH_SITES, strict=True):
             self.assertEqual(site, expected)
             self.assertEqual(site+5+struct.unpack('<i', before[1:5])[0], native)
             self.assertEqual(after[0], 0xe8)
+
+    def test_native_layout_jumps_to_its_wrapper(self):
+        site, before, after = shop.edits(ORIGIN)[-1]
+        self.assertEqual((site, before), (shop.NATIVE_LAYOUT, bytes.fromhex(shop.NATIVE_LAYOUT_PROLOGUE)))
+        self.assertEqual(after[0], 0xe9)
+        self.assertEqual(site+5+struct.unpack('<i', after[1:5])[0], shop.BASE+ORIGIN+shop.LAYOUT_WRAPPER)
+        self.assertTrue(all(byte == 0x90 for byte in after[5:]))
 
     def test_sites_are_distinct(self):
         spans = sorted((site, site+len(before)) for site, before, _ in shop.edits(ORIGIN))

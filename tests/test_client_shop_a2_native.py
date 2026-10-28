@@ -227,32 +227,66 @@ class RefreshTests(unittest.TestCase):
         self.assertEqual(machine.state(shop.DIRTY) & 0xff, 0)
         self.assertEqual(machine.called(shop.BUTTON_DRAW), [])
 
-    def test_draw_restores_the_native_shop_when_the_page_shrinks(self):
+    def test_window_draw_restores_the_native_shop_when_the_page_shrinks(self):
         machine = Machine()
         machine.run(at(shop.SHOW), eax=WINDOW)
         machine.run(at(shop.CLICK_ENTRY), eax=child(shop.SWITCH))
         machine.put(PAGE+0x38, 1100)
-        machine.calls.clear()
-        machine.run(at(shop.DRAW_ENTRY), eax=child(shop.SWITCH))
+        machine.run(at(shop.FIT), eax=WINDOW)
         self.assertEqual((machine.get(WINDOW+0x38), machine.get(WINDOW+0x3c)), shop.NATIVE_SIZE)
         self.assertEqual((machine.state(shop.MODE), machine.state(shop.LAID_OUT) & 0xff), (0, 0))
         self.assertEqual(machine.visible(shop.PREVIOUS), 1)
-        self.assertEqual(machine.called(shop.BUTTON_DRAW)[0][0], child(shop.SWITCH))
 
-    def test_draw_restores_the_native_shop_when_a2_turns_off(self):
+    def test_window_draw_restores_the_native_shop_when_a2_turns_off(self):
         machine = Machine()
         machine.run(at(shop.SHOW), eax=WINDOW)
         machine.put(0x400000+STATE, 0)
-        machine.run(at(shop.DRAW_ENTRY), eax=child(shop.SWITCH))
+        machine.run(at(shop.FIT), eax=WINDOW)
         self.assertEqual((machine.get(WINDOW+0x38), machine.get(WINDOW+0x3c)), shop.NATIVE_SIZE)
-        self.assertEqual(machine.called(shop.BUTTON_DRAW)[0][0], child(shop.SWITCH))
 
-    def test_draw_follows_a_recentred_window(self):
+    def test_window_draw_follows_a_recentred_window_without_refilling(self):
+        machine = Machine()
+        machine.run(at(shop.SHOW), eax=WINDOW)
+        machine.run(at(shop.CLICK_ENTRY), eax=child(shop.SWITCH))
+        machine.put(WINDOW+0x38, 832)
+        machine.calls.clear()
+        machine.run(at(shop.FIT), eax=WINDOW)
+        self.assertEqual(machine.get(WINDOW+0x38), 1728)
+        self.assertEqual(machine.called(shop.REQUEST_STOCK), [])
+        self.assertEqual(machine.called(shop.SET_ITEMS), [])
+        for index in shop.SOLDIER_ONLY:
+            self.assertEqual(machine.visible(index), 0, index)
+
+    def test_other_windows_are_not_fitted(self):
         machine = Machine()
         machine.run(at(shop.SHOW), eax=WINDOW)
         machine.put(WINDOW+0x38, 832)
-        machine.run(at(shop.DRAW_ENTRY), eax=child(shop.SWITCH))
+        machine.run(at(shop.FIT), eax=child(shop.BAG))
+        self.assertEqual(machine.get(WINDOW+0x38), 832)
+
+    def test_native_category_layout_is_followed_by_the_page_layout(self):
+        machine = Machine()
+        machine.run(at(shop.SHOW), eax=WINDOW)
+        list_box = child(shop.LIST)
+        # Stand-in for the native body: re-centre at 832 and move the catalogue.
+        body = shop.NATIVE_LAYOUT + len(bytes.fromhex(shop.NATIVE_LAYOUT_PROLOGUE))
+        stub = bytes.fromhex('c705') + struct.pack('<II', WINDOW+0x38, 832) + bytes.fromhex('c705') + \
+            struct.pack('<II', list_box+0x38, 360) + bytes.fromhex('5f5e5b89ec5dc3')
+        machine.uc.mem_write(body, bytes.fromhex('535657') + stub)
+        machine.calls.clear()
+        machine.run(at(shop.LAYOUT_WRAPPER))
         self.assertEqual(machine.get(WINDOW+0x38), 1728)
+        self.assertEqual(machine.get(list_box+0x38), shop.LIST_WIDTH)
+        self.assertEqual(machine.called(shop.SET_ITEMS), [])
+
+    def test_laid_out_shop_cannot_be_dragged_until_native_again(self):
+        machine = Machine()
+        machine.uc.mem_write(WINDOW+shop.MOVABLE, b'\x01\x01')
+        machine.run(at(shop.SHOW), eax=WINDOW)
+        self.assertEqual(bytes(machine.uc.mem_read(WINDOW+shop.MOVABLE, 2)), b'\x00\x00')
+        machine.put(PAGE+0x38, 1100)
+        machine.run(at(shop.FIT), eax=WINDOW)
+        self.assertEqual(bytes(machine.uc.mem_read(WINDOW+shop.MOVABLE, 2)), b'\x01\x01')
 
 
 class PayloadTests(unittest.TestCase):

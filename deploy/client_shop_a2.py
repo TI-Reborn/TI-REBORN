@@ -46,13 +46,20 @@ OWNER_CODE = '8b402889460c'
 # Calls that change the client's copy of the personal warehouse (6A reply:
 # clear and add for kind 0) or refill the shop backpack with soldier items.
 REFRESH_SITES = ((0x99266e, 0x917fd4), (0x9928c7, 0x917690), (0x9b33ce, SET_ITEMS))
+# Each category change runs the native shop layout: it resizes the window to
+# 832x448 (re-centred) and moves the catalogue and the buy row. Its prologue
+# jumps to a wrapper that lays the A2 page out again before anything is drawn.
+NATIVE_LAYOUT, NATIVE_LAYOUT_PROLOGUE = 0x9767fc, '558bec83c4f8'
+# TGUIWindow flags: dragged by the caption, resized from the corner.
+MOVABLE, RESIZABLE = 0x28c, 0x28d
 
 # Entry offsets inside this module.
 SHOW, APPLY, RESTORE = 0x0, 0x100, 0x3000
 CLICK_ENTRY, FILL_STOCK, FILL_SOLDIER, OWNER_ENTRY, REFRESH_ENTRY = 0x4800, 0x4900, 0x4a00, 0x4b00, 0x4d00
-DRAW_ENTRY = 0x5000
+DRAW_ENTRY, RELAYOUT, FIT, LAYOUT_WRAPPER = 0x5000, 0x5c00, 0x5d00, 0x5e00
 STRINGS = 0x6000
-MODE, DIRTY, SAVED_VALID, LAID_OUT, SAVED = 0x7f00, 0x7f04, 0x7f08, 0x7f0c, 0x7f40
+MODE, DIRTY, SAVED_VALID, LAID_OUT, NO_REFILL, MOVE_VALID = 0x7f00, 0x7f04, 0x7f08, 0x7f0c, 0x7f10, 0x7f14
+MOVE_SAVED, SAVED = 0x7f18, 0x7f40
 
 BUY_CAPTIONS = ('Купить бойцу', 'Купить на склад', 'Купить')
 LABELS = ('БОЕЦ', 'СКЛАД')
@@ -305,14 +312,43 @@ def _caption(c: Code, origin: int, index: int, skip: str) -> None:
     c.call(SET_CAPTION)
 
 
+def hold_still(c: Code, valid: int, saved: int, prefix: str) -> None:
+    """ESI = a page window: remember its drag/resize flags once, then clear them.
+
+    The page window follows the A2 page every frame, so a drag would only
+    snap back; the original flags return with the native layout.
+    """
+    c.emit('80bb'); c.word(valid); c.emit('00'); c.branch('0f85', f'{prefix}_still')
+    for index, flag in enumerate((MOVABLE, RESIZABLE)):
+        c.emit('8a86'); c.word(flag); c.emit('8883'); c.word(saved+index)
+    c.emit('c683'); c.word(valid); c.emit('01')
+    c.label(f'{prefix}_still')
+    for flag in (MOVABLE, RESIZABLE):
+        c.emit('c686'); c.word(flag); c.emit('00')
+
+
+def let_move(c: Code, valid: int, saved: int, prefix: str) -> None:
+    """ESI = the page window: give back the remembered drag/resize flags."""
+    c.emit('80bb'); c.word(valid); c.emit('00'); c.branch('0f84', f'{prefix}_moved')
+    for index, flag in enumerate((MOVABLE, RESIZABLE)):
+        c.emit('8a83'); c.word(saved+index); c.emit('8886'); c.word(flag)
+    c.emit('c683'); c.word(valid); c.emit('00')
+    c.label(f'{prefix}_moved')
+
+
 def _apply(origin: int) -> bytes:
-    """Lay the open shop out for the current MODE and fill its backpack."""
+    """Lay the open shop out for the current MODE and fill its backpack.
+
+    With NO_REFILL set only the layout is redone (after a native relayout):
+    the backpack keeps its records and no warehouse list is requested.
+    """
     from .client_equipment_batch import Code
 
     c = Code(BASE+origin+APPLY)
     c.emit('9c60'); c.base()
     _window(c, 'done')
     c.emit('c683'); c.word(_state(origin, LAID_OUT)); c.emit('01')
+    hold_still(c, _state(origin, MOVE_VALID), _state(origin, MOVE_SAVED), 'shop')
     c.emit('83bb'); c.word(_state(origin, MODE)); c.emit('00'); c.branch('0f85', 'warehouse')
     c.emit('817e38'); c.word(wide_from()); c.branch('0f8c', 'narrow')
     _arrange(c, origin, 'wide', 'wide'); c.branch('e9', 'soldier')
@@ -320,12 +356,14 @@ def _apply(origin: int) -> bytes:
     c.label('soldier')
     _visibility(c, origin, hide=False, prefix='soldier')
     _caption(c, origin, 0, 'soldier_caption'); c.label('soldier_caption')
+    c.emit('80bb'); c.word(_state(origin, NO_REFILL)); c.emit('00'); c.branch('0f85', 'done')
     c.call(BASE+origin+FILL_SOLDIER)
     c.branch('e9', 'done')
     c.label('warehouse')
     _arrange(c, origin, 'warehouse', 'stock')
     _visibility(c, origin, hide=True, prefix='stock')
     _caption(c, origin, 1, 'stock_caption'); c.label('stock_caption')
+    c.emit('80bb'); c.word(_state(origin, NO_REFILL)); c.emit('00'); c.branch('0f85', 'done')
     # Ask the server for a fresh personal list; its 6A reply marks DIRTY.
     c.emit('b000 b201'); c.call(REQUEST_STOCK)
     c.call(BASE+origin+FILL_STOCK)
@@ -342,6 +380,7 @@ def _restore(origin: int) -> bytes:
     _window(c, 'done')
     c.emit('c683'); c.word(_state(origin, LAID_OUT)); c.emit('00')
     c.emit('c783'); c.word(_state(origin, MODE)); c.word(0)
+    let_move(c, _state(origin, MOVE_VALID), _state(origin, MOVE_SAVED), 'shop')
     c.emit('c74638'); c.word(NATIVE_SIZE[0])
     c.emit('c7463c'); c.word(NATIVE_SIZE[1])
     for index, rect in NATIVE.items():
@@ -519,7 +558,7 @@ def _fit(c: Code, origin: int, shrink: str) -> None:
     c.label('refit')
     for offset in (0x30, 0x34, 0x38, 0x3c):
         c.emit('8b50'+f'{offset:02x}'+' 8957'+f'{offset:02x}')
-    c.call(BASE+origin+APPLY)
+    c.call(BASE+origin+RELAYOUT)
     c.label('fitted')
 
 
@@ -535,10 +574,7 @@ def _draw(origin: int, layout_state: int, forward: int) -> bytes:
     c.emit('89cf 8b492c 85c9'); c.branch('0f84', 'native')
     c.emit('83790808'); c.branch('0f8e', 'native')
     c.emit('8b4904 397120'); c.branch('0f85', 'native')
-    # A laid-out shop whose canvas left A2 or shrank goes back to native now,
-    # not on the next opening.
-    c.emit('83bb'); c.word(layout_state); c.emit('01'); c.branch('0f85', 'shrink')
-    _fit(c, origin, 'shrink')
+    c.emit('83bb'); c.word(layout_state); c.emit('01'); c.branch('0f85', 'native')
     # A 6A reply or a native soldier refill changed the backpack: show the stock again.
     c.emit('80bb'); c.word(_state(origin, DIRTY)); c.emit('00'); c.branch('0f84', 'paint')
     c.emit('c683'); c.word(_state(origin, DIRTY)); c.emit('00')
@@ -551,9 +587,65 @@ def _draw(origin: int, layout_state: int, forward: int) -> bytes:
     _segment(c, origin, 0); c.branch('e9', 'done')
     c.label('stock'); _segment(c, origin, 1)
     c.label('done'); c.emit('619d 89ec5dc3')
-    c.label('shrink'); c.call(BASE+origin+RESTORE)
     c.label('native'); c.emit('619d 89ec5d'); c.jump(forward)
-    return c.finish(0x1000)
+    return c.finish(RELAYOUT-DRAW_ENTRY)
+
+
+def _relayout(origin: int) -> bytes:
+    """Lay out again without refilling the backpack or asking for the warehouse."""
+    from .client_equipment_batch import Code
+
+    c = Code(BASE+origin+RELAYOUT)
+    c.emit('9c53'); c.base()
+    c.emit('c683'); c.word(_state(origin, NO_REFILL)); c.emit('01')
+    c.call(BASE+origin+APPLY)
+    c.emit('c683'); c.word(_state(origin, NO_REFILL)); c.emit('00')
+    c.emit('5b9dc3')
+    return c.finish(FIT-RELAYOUT)
+
+
+def _fit_entry(origin: int, layout_state: int) -> bytes:
+    """EAX = a window about to be drawn. A laid-out shop follows the page, or
+    goes back to native once the canvas left A2 or shrank, before it is drawn."""
+    from .client_equipment_batch import Code
+
+    c = Code(BASE+origin+FIT)
+    c.emit('9c60 89c6'); c.base()
+    c.emit('80bb'); c.word(_state(origin, LAID_OUT)); c.emit('00'); c.branch('0f84', 'done')
+    _panel_window(c, 'done')
+    c.emit('39f1'); c.branch('0f85', 'done')
+    c.emit('89f7')
+    c.emit('83bb'); c.word(layout_state); c.emit('01'); c.branch('0f85', 'shrink')
+    _fit(c, origin, 'shrink')
+    c.branch('e9', 'done')
+    c.label('shrink'); c.call(BASE+origin+RESTORE)
+    c.label('done'); c.emit('619dc3')
+    return c.finish(LAYOUT_WRAPPER-FIT)
+
+
+def _layout_wrapper(origin: int, layout_state: int) -> bytes:
+    """Native shop layout, then at once the A2 page again (no drawn native frame)."""
+    from .client_equipment_batch import Code
+
+    trampoline = BASE+origin+LAYOUT_WRAPPER+0x100
+    c = Code(BASE+origin+LAYOUT_WRAPPER)
+    c.call(trampoline)
+    c.emit('9c60'); c.base()
+    c.emit('83bb'); c.word(layout_state); c.emit('01'); c.branch('0f85', 'out')
+    c.emit('80bb'); c.word(_state(origin, LAID_OUT)); c.emit('00'); c.branch('0f84', 'out')
+    _panel_window(c, 'out')
+    c.emit('80794900'); c.branch('0f84', 'out')
+    c.emit('89cf')
+    _page(c, 'out')
+    for offset in (0x30, 0x34, 0x38, 0x3c):
+        c.emit('8b50'+f'{offset:02x}'+' 8957'+f'{offset:02x}')
+    c.call(BASE+origin+RELAYOUT)
+    c.label('out'); c.emit('619dc3')
+    body = c.finish(0x100)
+    t = Code(trampoline)
+    t.emit(NATIVE_LAYOUT_PROLOGUE)
+    t.jump(NATIVE_LAYOUT+len(bytes.fromhex(NATIVE_LAYOUT_PROLOGUE)))
+    return body + t.finish(0x100)
 
 
 def _strings() -> bytes:
@@ -580,6 +672,8 @@ def payload(origin: int, layout_state: int, draw_forward: int) -> bytes:
                          (CLICK_ENTRY, _click(origin, layout_state)),
                          (FILL_STOCK, _fill_stock(origin)), (FILL_SOLDIER, _fill_soldier(origin)),
                          (DRAW_ENTRY, _draw(origin, layout_state, draw_forward)),
+                         (RELAYOUT, _relayout(origin)), (FIT, _fit_entry(origin, layout_state)),
+                         (LAYOUT_WRAPPER, _layout_wrapper(origin, layout_state)),
                          (STRINGS, _strings())):
         result[offset:offset+len(code)] = code
     for index in range(len(OWNER_SITES)):
@@ -613,6 +707,13 @@ def edits(origin: int) -> tuple[tuple[int, bytes, bytes], ...]:
     for index, (site, target) in enumerate(REFRESH_SITES):
         result.append((site, b'\xe8'+struct.pack('<i', target-site-5),
                        b'\xe8'+struct.pack('<i', BASE+origin+REFRESH_ENTRY+index*0x100-site-5)))
+    before = bytes.fromhex(NATIVE_LAYOUT_PROLOGUE)
+    after = b'\xe9' + struct.pack('<i', BASE+origin+LAYOUT_WRAPPER-NATIVE_LAYOUT-5)
+    result.append((NATIVE_LAYOUT, before, after.ljust(len(before), b'\x90')))
     return tuple(result)
+
+
+def fit_entry(origin: int) -> int:
+    return BASE + origin + FIT
 
 
