@@ -24,7 +24,7 @@ ORIGINAL_SIZE = 0x886000
 # Align the extension to a Windows reservation boundary. The same reviewed
 # code can then be exercised in an isolated QA process before publication.
 REGION = 0x890000
-SIZE = 0x40000
+SIZE = 0x48000
 LAYOUT = BASE + REGION
 CONSTRUCT = LAYOUT + 0xc000
 RESIZE = LAYOUT + 0xc100
@@ -44,6 +44,8 @@ ARROW_DX = REGION + 0xff0c
 WAREHOUSE = REGION + 0x1a000
 # Item overlay box and coordinate thunks, after the warehouse block.
 OVERLAYS = REGION + 0x1f400
+# Full-page shop with the Fighter/Warehouse destination switch.
+SHOP = REGION + 0x40000
 SIGNATURE_OFFSET = 0xff40
 SIGNATURE = b'TIO-barracks-A2-layout-v2'
 HEADER = 0xac4bdc
@@ -321,6 +323,9 @@ def payload(item_ids: tuple[int,...]) -> bytes:
     show.call(MAIL)
     show.emit('8b45fc')
     show.call(LAYOUT+0x3e800)
+    from .client_shop_a2 import show_entry
+    show.emit('8b45fc')
+    show.call(show_entry(SHOP))
     show.emit('619d 89ec5dc3')
     result[0xe000:0xe100] = show.finish(0x100)
     trampoline = Code(SHOW_TRAMPOLINE)
@@ -346,8 +351,13 @@ def payload(item_ids: tuple[int,...]) -> bytes:
     from .client_barracks_warehouse import draw_entry, payload as warehouse_payload
     navigation = navigation_payload(REGION+0x38000, STATE, draw_entry(WAREHOUSE), ARROW_DX)
     result[0x38000:0x38000+len(navigation)] = navigation
-    store = warehouse_payload(WAREHOUSE, STATE, FILTER_OPEN)
+    from .client_shop_a2 import click_entry, draw_entry as shop_draw, payload as shop_payload
+    from .client_barracks_warehouse import BUTTON_DRAW
+    store = warehouse_payload(WAREHOUSE, STATE, FILTER_OPEN, click_forward=click_entry(SHOP),
+                              draw_forward=shop_draw(SHOP))
     result[WAREHOUSE-REGION:WAREHOUSE-REGION+len(store)] = store
+    shop = shop_payload(SHOP, STATE, BUTTON_DRAW)
+    result[SHOP-REGION:SHOP-REGION+len(shop)] = shop
     from .client_item_icon_render import render_state
     overlays = overlay_payload(OVERLAYS, render_state(REGION+0x10000))
     result[OVERLAYS-REGION:OVERLAYS-REGION+len(overlays)] = overlays
@@ -425,12 +435,13 @@ def _presentation_edits() -> tuple[tuple[int,bytes,bytes], ...]:
     from .client_barracks_navigation import edits as navigation_edits
     from .client_barracks_warehouse import edits as warehouse_edits
     from .client_item_overlays import edits as overlay_edits
+    from .client_shop_a2 import edits as shop_edits
     from .client_portrait_quality import INSTALL_ENTRY, install_code
 
     return (item_edits(REGION+0x10000)+skin_edits(REGION+0x20000)
             +cards_edits(REGION+0x30000)+bag_edits(REGION+0x34000)
             +navigation_edits(REGION+0x38000)+warehouse_edits(WAREHOUSE)+overlay_edits(OVERLAYS)
-            +((INSTALL_ENTRY,install_code(),install_code(1024)),))
+            +shop_edits(SHOP)+((INSTALL_ENTRY,install_code(),install_code(1024)),))
 
 
 def patch(source: bytes, *, item_ids: tuple[int,...]) -> bytes:

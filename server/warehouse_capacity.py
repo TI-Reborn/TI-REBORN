@@ -17,6 +17,7 @@ from tio.db_transaction import current, transaction
 from tio.character_identity import owner_for_slot, alias
 from tio import warehouse_completion as completion
 from tio.clans import ClansStore, require, VIEW_WAREHOUSE, VIEW_SAFE, MONEY_IDS
+from tio.protocol.asset_count import encode_asset_count
 from tio.protocol.binary import PacketError
 from tio.protocol.warehouse import (encode_private_warehouse_snapshot,
     encode_warehouse_list, warehouse_item_from_inventory, WarehouseItem,
@@ -241,6 +242,20 @@ def transfer(session, packet, *, capacity):
                 if not inserted: result.extend(fresh); inserted = True
             else: result.append(packet)
         return tuple(result)
+
+
+def purchase_replies(session, result) -> tuple[bytes, ...]:
+    """Answer a committed warehouse purchase like a 69/0 refresh plus the wallet.
+
+    The refresh records the list signature, so the passive poll does not push
+    the same list again. The purchase has already committed: if the session can
+    no longer project a capacity view, the plain stored list still goes out.
+    """
+    try:
+        fresh = query(session, b'\x69\x00')
+    except (ValueError, sqlite3.Error):
+        return result.packets()
+    return (*fresh, encode_asset_count(result.assets))
 
 
 def encode_transfer_replies(

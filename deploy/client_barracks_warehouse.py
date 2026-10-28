@@ -221,7 +221,8 @@ def filters_draw_code(address: int, layout_state: int, open_flag: int) -> bytes:
     return c.finish(0x200)
 
 
-def click_code(address: int, layout_state: int, open_flag: int, apply: int) -> bytes:
+def click_code(address: int, layout_state: int, open_flag: int, apply: int,
+               forward: int = CLICK) -> bytes:
     """Toggle the list for the A2 filter button; forward every other click."""
     from .client_equipment_batch import Code
 
@@ -234,7 +235,7 @@ def click_code(address: int, layout_state: int, open_flag: int, apply: int) -> b
     c.emit('83b3'); c.word(open_flag); c.emit('01')
     c.call(apply)
     c.emit('619dc3')
-    c.label('native'); c.emit('619d'); c.jump(CLICK)
+    c.label('native'); c.emit('619d'); c.jump(forward)
     return c.finish(0x100)
 
 
@@ -276,7 +277,8 @@ def _runs(rows: tuple[str, ...]) -> tuple[tuple[int, int, int], ...]:
     return tuple(result)
 
 
-def draw_code(address: int, layout_state: int, open_flag: int, captions: int) -> bytes:
+def draw_code(address: int, layout_state: int, open_flag: int, captions: int,
+              forward: int = BUTTON_DRAW) -> bytes:
     """Owner tabs, filter button and settings cog; others keep the native draw."""
     from .client_barracks_skin import _rectangle, native_colour
     from .client_equipment_batch import Code
@@ -347,16 +349,18 @@ def draw_code(address: int, layout_state: int, open_flag: int, captions: int) ->
     for x, y, width in _runs(COG):
         _rectangle(c, (x+2, y+2, width, 1), 0xffe8891f)
     c.label('done'); c.emit('619d 89ec5dc3')
-    c.label('native'); c.emit('619d 89ec5d'); c.jump(BUTTON_DRAW)
+    c.label('native'); c.emit('619d 89ec5d'); c.jump(forward)
     return c.finish(0x2000)
 
 
-def payload(origin: int, layout_state: int, open_flag: int) -> bytes:
+def payload(origin: int, layout_state: int, open_flag: int, *,
+            click_forward: int = CLICK, draw_forward: int = BUTTON_DRAW) -> bytes:
+    """Other buttons continue to click_forward / draw_forward (the next module)."""
     from .client_barracks_skin import caption_literal
 
     result = bytearray(SIZE)
     apply = BASE+origin+0x200
-    result[0:0x100] = click_code(BASE+origin, layout_state, open_flag, apply)
+    result[0:0x100] = click_code(BASE+origin, layout_state, open_flag, apply, click_forward)
     result[0x200:0x300] = apply_code(apply, layout_state, open_flag)
     for offset, build in ((0x300, lambda at: toggle_down_code(at, layout_state)),
                           (0x400, lambda at: grid_move_code(at, layout_state, open_flag)),
@@ -364,7 +368,8 @@ def payload(origin: int, layout_state: int, open_flag: int) -> bytes:
                           (0x600, lambda at: filters_down_code(at, layout_state, open_flag, apply))):
         result[offset:offset+0x100] = build(BASE+origin+offset)
     result[0x800:0xa00] = filters_draw_code(BASE+origin+0x800, layout_state, open_flag)
-    result[0x1000:0x3000] = draw_code(BASE+origin+0x1000, layout_state, open_flag, origin+0x5000)
+    result[0x1000:0x3000] = draw_code(BASE+origin+0x1000, layout_state, open_flag, origin+0x5000,
+                                      draw_forward)
     for index, caption in enumerate(OWNER_CAPTIONS+(FILTER_CAPTION,)):
         raw = caption_literal(caption)
         at = 0x5000+index*0x40

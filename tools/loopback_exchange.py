@@ -30,7 +30,7 @@ from tio.city_catalogs import CityCatalogs
 from tio.owned_pets import OwnedPetStore
 from tio.wallets import WalletStore, STARTING_CREDITS, STARTING_GOLD
 from tio.protocol.asset_count import AssetCount, encode_asset_count
-from tio.shop import ShopStore
+from tio.shop import PurchaseResult, ShopStore, WarehousePurchaseResult
 from tio.equipment import equip_primary_weapon
 from tio.shop_errors import shop_error_reply
 from tio.roster_progression import RecruitmentStore as HireStore
@@ -1542,15 +1542,20 @@ class LoopbackExchange:
                             game.sendall(encode_reply(reply,outbound))
                             self.events.append({'direction':'S2C','stage':'shop_error','plain_hex':reply.hex()})
                         else:
-                            self.owned_inventory=result.inventory
+                            if isinstance(result,PurchaseResult):self.owned_inventory=result.inventory
                             from tio.premium import current
                             from tio.protocol.premium_shop import decode_premium_purchase
                             category=(decode_premium_purchase(packet)[1] if packet[:1]==b'\x78'
                                       else decode_shop_purchase(packet).category)
                             refreshed=store.catalog(self.account,category,gold=packet[:1]==b'\x78',
                                                     discounted=bool(current(self.database,self.account)[0]))
-                            for reply in (result.inventory,encode_asset_count(result.assets),refreshed):
-                                game.sendall(encode_reply(reply,outbound))
+                            if isinstance(result,WarehousePurchaseResult):
+                                replies=(*warehouse_capacity.purchase_replies(self,result),refreshed)
+                                game.sendall(warehouse_capacity.encode_transfer_replies(self.database,replies,outbound,encode_reply))
+                            else:
+                                replies=(*result.packets(),refreshed)
+                                for reply in replies:game.sendall(encode_reply(reply,outbound))
+                            for reply in replies:
                                 self.events.append({'direction':'S2C','stage':'shop_purchase_update','plain_hex':reply.hex()})
                             self.events.append({'event':'shop_purchase_committed','charged_credits':result.charged_credits,
                                                 'charged_gold':result.charged_gold})

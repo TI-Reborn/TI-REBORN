@@ -1,20 +1,28 @@
 """Atomic native item shop purchases/sales on the shared account database."""
 
 from .db_transaction import connect
+from collections.abc import Callable
 from contextlib import closing
 from dataclasses import dataclass, replace
+from functools import partial
 import sqlite3
 import json
 from .owned_pets import OwnedPetStore
 from .wallets import WalletStore
-from .protocol.asset_count import AssetCount
+from .warehouse import WarehouseStore
+from . import warehouse_completion as completion
+from .protocol.asset_count import AssetCount, encode_asset_count
 from .protocol.item_list import ItemRecord, decode_item_list, encode_item_list
 from .protocol.shop_purchase import encode_shop_purchase
 from .protocol.shop_sale import encode_sale_request
+from .protocol.warehouse import encode_private_warehouse_snapshot
 from .item_stacking import merge_stacks, stack_key
 from .inventory_capacity import validate_capacity
 from .shop_completion import ShopCompletion
 from .item_ids import next_item_id
+
+# The A2 shop sends owner 0 for "buy to warehouse"; mercenary IDs start at 1.
+WAREHOUSE = 0
 
 
 class PurchaseRejected(ValueError):
@@ -29,6 +37,21 @@ class PurchaseResult:
     charged_gold: int = 0
     operation_id: str | None = None
 
+    def packets(self) -> tuple[bytes, ...]:
+        return (self.inventory, encode_asset_count(self.assets))
+
+
+@dataclass(frozen=True)
+class WarehousePurchaseResult:
+    warehouse: tuple[ItemRecord, ...]
+    assets: AssetCount
+    charged_credits: int
+    charged_gold: int = 0
+    operation_id: str | None = None
+
+    def packets(self) -> tuple[bytes, ...]:
+        return (*encode_private_warehouse_snapshot(self.warehouse), encode_asset_count(self.assets))
+
 
 class ShopStore:
     def __init__(self, path, catalogs):
@@ -37,6 +60,7 @@ class ShopStore:
         self.completion = ShopCompletion(path, catalogs)
         OwnedPetStore(path)
         WalletStore(path)
+        WarehouseStore(path)
         with closing(connect(self.path)) as db, db:
             db.execute('CREATE TABLE IF NOT EXISTS item_sequences (account TEXT PRIMARY KEY, next_id INTEGER NOT NULL)')
             db.execute('''CREATE TABLE IF NOT EXISTS shop_receipts (
@@ -72,6 +96,11 @@ class ShopStore:
         if row is None:return None
         if row[7]!=operation or row[1]!=request:raise PurchaseRejected('Conflicting shop operation retry')
         if row[2] is None:raise PurchaseRejected('Incomplete shop receipt')
+        if operation=='purchase' and owner==WAREHOUSE:
+            wallet=db.execute('SELECT credits,gold FROM wallets WHERE account=?',(account,)).fetchone()
+            if wallet is None:raise PurchaseRejected('Shop recipient no longer exists')
+            stored=tuple(completion.read_scope(db,account).values())
+            return WarehousePurchaseResult(stored,AssetCount(*wallet),row[5],row[6],f'shop:{row[0]}')
         current=db.execute('SELECT inventory_packet FROM owned_pets WHERE account=? AND pet_id=?',(account,owner)).fetchone()
         wallet=db.execute('SELECT credits,gold FROM wallets WHERE account=?',(account,)).fetchone()
         if current is None or wallet is None:raise PurchaseRejected('Shop recipient no longer exists')
@@ -87,10 +116,11 @@ class ShopStore:
                           (account,operation,identity,request)).lastrowid
 
     @staticmethod
-    def _finish(db,receipt_id,inventory,balances,charged_credits,charged_gold=0):
+    def _finish(db,receipt_id,inventory,balances,charged_credits,charged_gold=0,*,result=None):
         db.execute('''UPDATE shop_receipts SET inventory=?,credits=?,gold=?,charged_credits=?,charged_gold=?
             WHERE id=? AND inventory IS NULL''',(inventory,*balances,charged_credits,charged_gold,receipt_id))
-        return PurchaseResult(inventory,AssetCount(*balances),charged_credits,charged_gold,f'shop:{receipt_id}')
+        make=result or partial(PurchaseResult,inventory)
+        return make(AssetCount(*balances),charged_credits,charged_gold,f'shop:{receipt_id}')
 
     @staticmethod
     def _sale_town(db,account,town):
@@ -176,6 +206,8 @@ class ShopStore:
         encode_shop_purchase(request)  # Reject invalid widths before any mutation.
         if not 1 <= request.quantity <= 1000:
             raise PurchaseRejected('Quantity must be 1..1000 (local policy)')
+        if _gold and request.owner_id == WAREHOUSE:
+            raise PurchaseRejected('Premium purchases require a mercenary')
         with closing(connect(self.path)) as db, db:
             db.execute('BEGIN IMMEDIATE')
             operation='premium' if _gold else 'purchase'
@@ -194,9 +226,7 @@ class ShopStore:
             if len(offers) != 1:raise PurchaseRejected('Unknown or ambiguous offer')
             offer = offers[0]
             wallet = db.execute('SELECT credits,gold FROM wallets WHERE account=?', (account,)).fetchone()
-            row = db.execute('SELECT human,pet_packet,inventory_packet FROM owned_pets WHERE account=? AND pet_id=?',
-                             (account, request.owner_id)).fetchone()
-            if wallet is None or row is None:
+            if wallet is None:
                 raise PurchaseRejected('Wallet or owned recipient missing')
             currency = 0  # both native shop tabs debit credits
             from .premium import discount
@@ -204,17 +234,13 @@ class ShopStore:
             cost=discount(db,account,offer.unknown_u32_03)*request.quantity
             if wallet[currency] < cost:
                 raise PurchaseRejected('Insufficient credits')
-            OwnedPetStore.validate(row[1], row[2], bool(row[0]))
-            owner, items, unknown = decode_item_list(row[2])
-            # IDs are unique across this account's pets, including persisted seeds.
             # IDs are unique across this account's pets, warehouse and sequence.
             highest = next_item_id(db, account) - 1
             additions, next_id = self._completed('additions',offer.item_id,offer.unknown_u32_02,
                                                    offer.durability,request.quantity,highest+1)
             # Serialization/capacity errors happen before either balance or inventory changes.
-            merged=merge_stacks(items + additions)
-            validate_capacity(items,merged,error=PurchaseRejected)
-            inventory = encode_item_list(owner, merged, unknown)
+            deliver = _to_warehouse if request.owner_id == WAREHOUSE else _to_soldier
+            delivery = deliver(db, account, request.owner_id, additions)
             self._completed('consume',db,account,offer,request.quantity,gold=_gold)
             receipt_id=self._begin(db,account,operation,identity,payload)
             db.execute('INSERT INTO item_sequences VALUES (?,?) ON CONFLICT(account) DO UPDATE SET next_id=excluded.next_id',
@@ -222,8 +248,7 @@ class ShopStore:
             balances = list(wallet)
             balances[currency] -= cost
             db.execute('UPDATE wallets SET credits=?,gold=? WHERE account=?', (*balances, account))
-            db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=?',
-                       (inventory, account, owner))
+            delivery.persist()
             from .achievements import update,event,influence_received
             if _gold:
                 from .clan_benefits import premium_gold_spent
@@ -231,5 +256,44 @@ class ShopStore:
                 influence_received(db,account,f'gold:shop:{receipt_id}',contribution['amount'])
             event(db,account,f'shop:{receipt_id}',add={'premium_purchase' if _gold else 'shop_purchase':1})
             update(db,account,maximum={'credits_peak':wallet[0]})
-            result=self._finish(db,receipt_id,inventory,balances,cost,0)
+            result=self._finish(db,receipt_id,delivery.receipt,balances,cost,0,result=delivery.result)
         return result
+
+
+@dataclass(frozen=True)
+class _Delivery:
+    """Validated destination change; persisted only after the charge is recorded."""
+    receipt: bytes
+    persist: Callable[[], None]
+    result: Callable[..., 'PurchaseResult | WarehousePurchaseResult']
+
+
+def _to_soldier(db, account: str, owner: int, additions) -> _Delivery:
+    row = db.execute('SELECT human,pet_packet,inventory_packet FROM owned_pets WHERE account=? AND pet_id=?',
+                     (account, owner)).fetchone()
+    if row is None:
+        raise PurchaseRejected('Wallet or owned recipient missing')
+    OwnedPetStore.validate(row[1], row[2], bool(row[0]))
+    pet, items, unknown = decode_item_list(row[2])
+    merged = merge_stacks(items + additions)
+    validate_capacity(items, merged, error=PurchaseRejected)
+    inventory = encode_item_list(pet, merged, unknown)
+
+    def persist():
+        db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=?', (inventory, account, pet))
+    return _Delivery(inventory, persist, partial(PurchaseResult, inventory))
+
+
+def _to_warehouse(db, account: str, owner: int, additions) -> _Delivery:
+    try:
+        before = completion.read_scope(db, account, required=True)
+        stored, assignments = completion.merge_scope(db, account, (*before.values(), *additions), before,
+                                                     origin='shop-purchase')
+        stored = tuple(sorted(stored, key=lambda item: item.instance_id))
+        encode_private_warehouse_snapshot(stored)
+    except ValueError as exc:
+        raise PurchaseRejected(str(exc)) from exc
+
+    def persist():
+        completion.persist_scope(db, account, before, stored, assignments)
+    return _Delivery(encode_item_list(WAREHOUSE, stored), persist, partial(WarehousePurchaseResult, stored))

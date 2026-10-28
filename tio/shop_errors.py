@@ -26,5 +26,8 @@ def shop_error_reply(error):
         'Worn, equipped or modified item sale not yet supported': 'продажи: этот предмет пока не поддерживается',
         'Inventory template not implemented': 'товара: этот предмет пока не поддерживается',
         'Credit balance overflow': 'баланса: превышен предел кредитов',
+        'Недостаточно места на складе': 'покупки: на складе недостаточно свободных мест',
+        'Склад доступен только в городе или у входа в шахту': 'покупки: склад здесь недоступен, купите бойцу',
+        'Premium purchases require a mercenary': 'получателя: премиум-товары покупаются только бойцу',
     }
     return encode_shop_error(reasons.get(str(error), 'операции магазина: запрос не выполнен'))
