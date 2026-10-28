@@ -40,6 +40,7 @@ MODULES = (
     'test_client_barracks_warehouse',
     'test_client_item_overlays',
     'test_client_shop_a2',
+    'test_client_page_windows',
     'test_shop_warehouse_delivery',
     'test_shop_warehouse_replies',
     'test_warehouse_service_errors',

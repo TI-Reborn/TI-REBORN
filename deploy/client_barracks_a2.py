@@ -46,6 +46,9 @@ WAREHOUSE = REGION + 0x1a000
 OVERLAYS = REGION + 0x1f400
 # Full-page shop with the Fighter/Warehouse destination switch.
 SHOP = REGION + 0x40000
+# Full-page SC goods and rental shops in the free tail of the shop block;
+# every TGUIWindow draw fits them first.
+PAGES, PAGE_STATE = SHOP + 0x7000, SHOP + 0x7f80
 SIGNATURE_OFFSET = 0xff40
 SIGNATURE = b'TIO-barracks-A2-layout-v2'
 HEADER = 0xac4bdc
@@ -326,6 +329,9 @@ def payload(item_ids: tuple[int,...]) -> bytes:
     from .client_shop_a2 import show_entry
     show.emit('8b45fc')
     show.call(show_entry(SHOP))
+    from .client_page_windows import show_entry as pages_show
+    show.emit('8b45fc')
+    show.call(pages_show(PAGES))
     show.emit('619d 89ec5dc3')
     result[0xe000:0xe100] = show.finish(0x100)
     trampoline = Code(SHOW_TRAMPOLINE)
@@ -358,6 +364,10 @@ def payload(item_ids: tuple[int,...]) -> bytes:
     result[WAREHOUSE-REGION:WAREHOUSE-REGION+len(store)] = store
     shop = shop_payload(SHOP, STATE, BUTTON_DRAW)
     result[SHOP-REGION:SHOP-REGION+len(shop)] = shop
+    from .client_page_windows import payload as pages_payload
+    from .client_shop_a2 import fit_entry
+    pages = pages_payload(PAGES, PAGE_STATE, STATE, fit_entry(SHOP))
+    result[PAGES-REGION:PAGES-REGION+len(pages)] = pages
     from .client_item_icon_render import render_state
     overlays = overlay_payload(OVERLAYS, render_state(REGION+0x10000))
     result[OVERLAYS-REGION:OVERLAYS-REGION+len(overlays)] = overlays
@@ -436,12 +446,13 @@ def _presentation_edits() -> tuple[tuple[int,bytes,bytes], ...]:
     from .client_barracks_warehouse import edits as warehouse_edits
     from .client_item_overlays import edits as overlay_edits
     from .client_shop_a2 import edits as shop_edits
+    from .client_page_windows import edits as pages_edits
     from .client_portrait_quality import INSTALL_ENTRY, install_code
 
     return (item_edits(REGION+0x10000)+skin_edits(REGION+0x20000)
             +cards_edits(REGION+0x30000)+bag_edits(REGION+0x34000)
             +navigation_edits(REGION+0x38000)+warehouse_edits(WAREHOUSE)+overlay_edits(OVERLAYS)
-            +shop_edits(SHOP)+((INSTALL_ENTRY,install_code(),install_code(1024)),))
+            +shop_edits(SHOP)+pages_edits(PAGES)+((INSTALL_ENTRY,install_code(),install_code(1024)),))
 
 
 def patch(source: bytes, *, item_ids: tuple[int,...]) -> bytes:
