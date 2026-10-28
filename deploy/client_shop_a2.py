@@ -508,10 +508,11 @@ def _page(c: Code, skip: str) -> None:
     c.emit('81783c'); c.word(MINIMUM_PAGE[1]); c.branch('0f8c', skip)
 
 
-def _fit(c: Code, origin: int) -> None:
+def _fit(c: Code, origin: int, shrink: str) -> None:
     """EDI = shop window. The native show re-centres it after SHOW, and the
-    canvas may change while it is open: follow the page and lay out again."""
-    _page(c, 'fitted')
+    canvas may change while it is open: follow the page and lay out again,
+    or go to shrink when the page became too small for the A2 shop."""
+    _page(c, shrink)
     for offset in (0x30, 0x34, 0x38, 0x3c):
         c.emit('8b50'+f'{offset:02x}'+' 3957'+f'{offset:02x}'); c.branch('0f85', 'refit')
     c.branch('e9', 'fitted')
@@ -528,14 +529,16 @@ def _draw(origin: int, layout_state: int, forward: int) -> bytes:
 
     c = Code(BASE+origin+DRAW_ENTRY)
     c.emit('55 89e5 83ec10 9c60 89c6'); c.base()
-    c.emit('83bb'); c.word(layout_state); c.emit('01'); c.branch('0f85', 'native')
     c.emit('80bb'); c.word(_state(origin, LAID_OUT)); c.emit('00'); c.branch('0f84', 'native')
     c.emit('807e4900'); c.branch('0f84', 'native')
     _panel_window(c, 'native')
     c.emit('89cf 8b492c 85c9'); c.branch('0f84', 'native')
     c.emit('83790808'); c.branch('0f8e', 'native')
     c.emit('8b4904 397120'); c.branch('0f85', 'native')
-    _fit(c, origin)
+    # A laid-out shop whose canvas left A2 or shrank goes back to native now,
+    # not on the next opening.
+    c.emit('83bb'); c.word(layout_state); c.emit('01'); c.branch('0f85', 'shrink')
+    _fit(c, origin, 'shrink')
     # A 6A reply or a native soldier refill changed the backpack: show the stock again.
     c.emit('80bb'); c.word(_state(origin, DIRTY)); c.emit('00'); c.branch('0f84', 'paint')
     c.emit('c683'); c.word(_state(origin, DIRTY)); c.emit('00')
@@ -548,6 +551,7 @@ def _draw(origin: int, layout_state: int, forward: int) -> bytes:
     _segment(c, origin, 0); c.branch('e9', 'done')
     c.label('stock'); _segment(c, origin, 1)
     c.label('done'); c.emit('619d 89ec5dc3')
+    c.label('shrink'); c.call(BASE+origin+RESTORE)
     c.label('native'); c.emit('619d 89ec5d'); c.jump(forward)
     return c.finish(0x1000)
 
