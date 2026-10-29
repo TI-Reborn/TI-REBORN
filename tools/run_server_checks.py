@@ -17,6 +17,8 @@ MODULES = (
     'test_player_trade',
     'test_rating_visibility',
     'test_wallets',
+    'test_securities_protocol',
+    'test_securities_service',
     'test_settlement_health',
     'test_server_performance',
     'test_pool_listing_performance',

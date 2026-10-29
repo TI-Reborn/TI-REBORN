@@ -128,7 +128,7 @@ def stock_quote(db,*,now=None):
 def bond_quote(db,*,now=None):
     price,date=_quote(db,'bonds',now);p=policy()['bonds'];month=date.replace(day=1,hour=0,minute=0,second=0,microsecond=0)
     return dict(price_gold=p['gold_each'],price_credits=p['gold_each'],redemption_credits=price,sale_open=date.day<=p['sale_last_day'],redemption_open=date.day==p['redemption_day'],
-                sale_ends=int(month.replace(day=p['sale_last_day']+1).timestamp()),redemption_starts=int(month.replace(day=p['redemption_day']).timestamp()),redemption_ends=int(month.replace(day=p['redemption_day']+1).timestamp()))
+                sale_starts=int(month.timestamp()),sale_ends=int(month.replace(day=p['sale_last_day']+1).timestamp()),redemption_starts=int(month.replace(day=p['redemption_day']).timestamp()),redemption_ends=int(month.replace(day=p['redemption_day']+1).timestamp()))
 
 
 def securities_trade(db,account,kind,operation,count,key,*,quote,now=None):
