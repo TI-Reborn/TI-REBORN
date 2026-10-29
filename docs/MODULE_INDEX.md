@@ -989,6 +989,7 @@
 | [tools/verify_inventory_slots_native.py](../tools/verify_inventory_slots_native.py) | Original inventory slot normalization99082a..9908b4 plus RTTI names. |
 | [tools/verify_item_action_route_native.py](../tools/verify_item_action_route_native.py) | Original997260 action routes to920068 and bypasses legacy6B block. |
 | [tools/verify_item_batch_native.py](../tools/verify_item_batch_native.py) | Original992294 writer6B; list allocation/refcounts/UI isolated, writers run. |
+| [tools/verify_item_mark_window_native.py](../tools/verify_item_mark_window_native.py) | Original item-mark window builders (B8 01/02/03) and MarkedItems writer C829. |
 | [tools/verify_item_marks_native.py](../tools/verify_item_marks_native.py) | Execute original ItemRecord reader and owner/TTL getters in pinned silver.dll. |
 | [tools/verify_item_policy_native.py](../tools/verify_item_policy_native.py) | Run a6516c with isolated UI/lifetime and synthetic ordinary-item metadata. |
 | [tools/verify_item_record_native.py](../tools/verify_item_record_native.py) | Execute original item-record63bd38 with both optional-u32 branches. |
