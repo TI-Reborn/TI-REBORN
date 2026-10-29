@@ -105,7 +105,7 @@ class BankOperationTests(unittest.TestCase):
 
     def test_bonds_use_credits_and_preserve_calendar_and_replay(self):
         before=self.wallet()
-        price=bank.policy()['bonds']['gold_each']
+        price=bank.policy()['bonds']['credits_each']
         first=self.ops.action(self.request('bonds_buy',count=2,quote=price))
         self.assertEqual(self.wallet(),(before[0]-2*price,before[1]))
         self.assertEqual(first['receipt']['creditsDelta'],-2*price)

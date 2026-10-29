@@ -30,7 +30,7 @@ def policy():
     p=json.loads((ROOT/'config/bank_economy.json').read_text(encoding='utf-8'))
     if p['version']!=1 or p['gold_to_credits']!=100 or p['marks']['credits_per_day']!=100:raise ValueError('Invalid recovered economy policy')
     if not 1<=p['bonds']['sale_last_day']<p['bonds']['redemption_day']<=28:raise ValueError('Invalid monthly bond calendar')
-    for section,keys in (('stocks',('initial_credits','daily_rise_credits','history_points')),('bonds',('gold_each','initial_redemption_credits','monthly_rise_credits','history_points')),('marks',('maximum_days','pin_iterations','pin_failures','pin_lock_seconds'))):
+    for section,keys in (('stocks',('initial_credits','daily_rise_credits','history_points')),('bonds',('credits_each','initial_redemption_credits','monthly_rise_credits','history_points')),('marks',('maximum_days','pin_iterations','pin_failures','pin_lock_seconds'))):
         if any(type(p[section][k]) is not int or not 1<=p[section][k]<=MAX for k in keys):raise ValueError('Invalid bounded economy quantity')
     return p
 
@@ -127,7 +127,7 @@ def stock_quote(db,*,now=None):
 
 def bond_quote(db,*,now=None):
     price,date=_quote(db,'bonds',now);p=policy()['bonds'];month=date.replace(day=1,hour=0,minute=0,second=0,microsecond=0)
-    return dict(price_gold=p['gold_each'],price_credits=p['gold_each'],redemption_credits=price,sale_open=date.day<=p['sale_last_day'],redemption_open=date.day==p['redemption_day'],
+    return dict(price_credits=p['credits_each'],redemption_credits=price,sale_open=date.day<=p['sale_last_day'],redemption_open=date.day==p['redemption_day'],
                 sale_starts=int(month.timestamp()),sale_ends=int(month.replace(day=p['sale_last_day']+1).timestamp()),redemption_starts=int(month.replace(day=p['redemption_day']).timestamp()),redemption_ends=int(month.replace(day=p['redemption_day']+1).timestamp()))
 
 
@@ -142,7 +142,7 @@ def securities_trade(db,account,kind,operation,count,key,*,quote,now=None):
     if kind=='bonds':
         calendar=bond_quote(db,now=now)
         if not calendar['sale_open' if operation=='buy' else 'redemption_open']:raise BankRejected('Период продажи или погашения векселей закрыт')
-        price=calendar['price_gold'] if operation=='buy' else calendar['redemption_credits']
+        price=calendar['price_credits'] if operation=='buy' else calendar['redemption_credits']
     if quote!=price:raise BankRejected('Котировка изменилась: обновите её')
     amount=count*price
     if operation=='buy':
