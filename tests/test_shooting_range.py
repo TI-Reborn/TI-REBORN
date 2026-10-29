@@ -174,7 +174,7 @@ class RangeTests(unittest.TestCase):
         import xml.etree.ElementTree as ET
         from tio.locations import TOWNS
         tree=ET.parse(ROOT/'evidence/zones_diagnostic.xml')
-        for identity,point in ((13,(-170,-274)),(16,(265,-160)),(17,(-12,-255))):
+        for identity,point in ((13,(-95,-195)),(16,(299,331)),(17,(26,-166))):
             self.assertEqual(center(identity),point)
             self.assertEqual(town_at(*point),identity)
             node=tree.find(f"town[@id='{identity}']")

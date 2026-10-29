@@ -1,4 +1,6 @@
 from wallet_fixture import fund_wallet
+from tio.protocol.map_route import route_words
+from tio.roads import ROADS
 from contextlib import closing
 from dataclasses import replace
 import json,sqlite3,struct,tempfile,unittest
@@ -155,7 +157,10 @@ class MinerTests(unittest.TestCase):
         self.now[0]+=10
         point=self.locations.position('alice')
         reply=self.locations.travel('alice',struct.pack('<Bii',0x1b,120,0),42)
-        self.assertEqual(len(reply),1)  # No repeated leave-city reset.
+        # No repeated leave-city reset: only the new route, announced in 1D packets.
+        self.assertEqual({p[0] for p in reply},{0x1d})
+        header=struct.unpack_from('<I',reply[0],13)[0]
+        self.assertEqual(len(reply),(header&0xffff)+1)
         self.assertEqual(struct.unpack_from('<ii',reply[0],5),point)
         self.now[0]+=1000
         reply=self.locations.refresh('alice',42)
@@ -172,7 +177,8 @@ class MinerTests(unittest.TestCase):
         self.assertEqual(other.position('alice'),self.locations.position('alice'))
         self.assertIsNone(other.current('alice'))
         resumed=other.resume('alice',42)
-        self.assertEqual([p[0] for p in resumed],[0xf0,0x1d])
+        self.assertEqual(resumed[0][0],0xf0)
+        self.assertEqual({p[0] for p in resumed[1:]},{0x1d})  # Current turn and the dashed route.
         self.assertEqual(resumed[-1][-1],0)
         self.now[0]+=1000
         self.assertEqual(len(other.refresh('alice',42)),4)
@@ -192,13 +198,13 @@ class MinerTests(unittest.TestCase):
         self.assertEqual(decode_pet_info(p,human_equipment=True).fields['0x8c4489'],b'Shrek')
         self.assertEqual(WalletStore(self.path).ensure('alice').credits,6500)
 
-    def test_old_city_schema_uses_original_miner_coordinates(self):
+    def test_old_city_schema_parks_at_miners_town_road(self):
         legacy=Path(self.temp.name)/'legacy.db'
         with closing(sqlite3.connect(legacy)) as db,db:
             db.execute('CREATE TABLE character_locations (account TEXT PRIMARY KEY,town_id INTEGER NOT NULL)')
             db.execute('INSERT INTO character_locations VALUES (?,9)',('alice',))
         store=LocationStore(legacy)
-        self.assertEqual(store.position('alice'),(-77,-447))
+        self.assertEqual(store.position('alice'),(-62,-351))
         self.assertEqual(store.current('alice'),9)
 
     def test_live_session_routes_map_catalog_and_hire(self):
@@ -224,8 +230,8 @@ class MinerTests(unittest.TestCase):
                 while len(packets)<count:packets.extend(reader.feed(client.recv(65535)))
                 return packets
             request(struct.pack('<Bii',0x1b,*center(9)))
-            started=receive(2)
-            self.assertEqual([p[0] for p in started],[0xf0,0x1d])
+            started=receive(1+len(route_words(ROADS.plan(center(3),center(9)))))
+            self.assertEqual([p[0] for p in started[:2]],[0xf0,0x1d])
             self.assertEqual(started[-1][-1],0)
             request(b'\x61')
             self.assertEqual(receive(1)[0][0],0xf0)  # No shop access in transit.

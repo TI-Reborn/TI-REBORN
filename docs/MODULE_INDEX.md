@@ -140,7 +140,7 @@
 | [tio/item_stacking.py](../tio/item_stacking.py) | User-selected stack policy; merge only identical, loose item instances. |
 | [tio/level_progression.py](../tio/level_progression.py) | Original cumulative level thresholds; explicitly local damage-XP policy. |
 | [tio/localization.py](../tio/localization.py) | Offline translations for built-in messages, selected per receiving session. |
-| [tio/locations.py](../tio/locations.py) | Persistent world-map travel using original1B/1D/1E and native interpolation. |
+| [tio/locations.py](../tio/locations.py) | Persistent world-map travel along roads using original1B/1D/1E. |
 | [tio/mail.py](../tio/mail.py) | Atomic offline character mail with credit/item escrow and durable receipts. |
 | [tio/map_generation.py](../tio/map_generation.py) | Bounded procedural assembly of original client fragments. |
 | [tio/market_inventory.py](../tio/market_inventory.py) | Shared-market transfers: native item metadata, account-local IDs, atomic money. |
@@ -163,6 +163,7 @@
 | [tio/premium.py](../tio/premium.py) | Original C8/3A subscription purchase, C8/39 status, account-bound benefits. |
 | [tio/private_shops.py](../tio/private_shops.py) | Persistent private-market sales and funded purchase requests (manual pp30-31). |
 | [tio/protocol/__init__.py](../tio/protocol/__init__.py) | Application payloads only; ORANGE wire framing is not established yet. |
+| [tio/protocol/map_route.py](../tio/protocol/map_route.py) | Dashed journey route for the patched global map, inside 1D packets. |
 | [tio/protocol/abilities.py](../tio/protocol/abilities.py) | Skill list layouts from silver.dll readers8c1bd8 and8c2624. |
 | [tio/protocol/ability_cast.py](../tio/protocol/ability_cast.py) | 81 from original8c0730; callers8b5550/8b5cc9 establish field order. |
 | [tio/protocol/ability_status.py](../tio/protocol/ability_status.py) | 7F/01 skill state, original serializer62f038 and consumer8c0790. |
@@ -249,6 +250,7 @@
 | [tio/protocol/weather.py](../tio/protocol/weather.py) | FB/v1 cosmetic rain extension; independent of the F7 item snapshot. |
 | [tio/protocol/world_bootstrap.py](../tio/protocol/world_bootstrap.py) | Confirmed SILVER18/1A wire layouts; unknown fields preserved. |
 | [tio/pve_contracts.py](../tio/pve_contracts.py) | Durable, private cooperative clearance contracts. |
+| [tio/roads.py](../tio/roads.py) | Drivable routes of the global map along config/world_roads.json. |
 | [tio/ranked.py](../tio/ranked.py) | Two-side TrueSkill inference and transactional, match-wide rating receipts. |
 | [tio/ranks.py](../tio/ranks.py) | Soldier ranks: manual pp.52–54, original PetInfo66 rank fields. |
 | [tio/rating_completion.py](../tio/rating_completion.py) | Durable rating of fixed four-account Wall squads, separate from duel ratings. |
@@ -291,6 +293,7 @@
 | [tio/weather.py](../tio/weather.py) | Shared cosmetic weather; never grants visibility or mutates battle actors. |
 | [tio/weight.py](../tio/weight.py) | Carried mass and overload; equipped items are included exactly once. |
 | [tio/world_completion.py](../tio/world_completion.py) | Shared world rules, frozen coefficients, online prison and public top100. |
+| [tio/world_layout.py](../tio/world_layout.py) | Saved map positions after the road layout moved every location (2026-10-29). |
 | [tio/world_encounters.py](../tio/world_encounters.py) | Distance-based, account-owned world encounters on the authoritative server. |
 
 ## registration/
@@ -355,6 +358,8 @@
 | [tools/build_english_localization.py](../tools/build_english_localization.py) | Build an offline English resource pack from the inspected hosted client. |
 | [tools/build_equipment_texture_release.py](../tools/build_equipment_texture_release.py) | Build an asset-only release from the hosted manifest and verified AI exports. |
 | [tools/build_generated_avatars.py](../tools/build_generated_avatars.py) | Package original AI portraits for the native 4096-byte JPEG protocol. |
+| [tools/build_global_map_v3.py](../tools/build_global_map_v3.py) | Build the road-layout global map (v3) from the installed v2 map assets. |
+| [tools/build_global_map_roads_release.py](../tools/build_global_map_roads_release.py) | Build client release 2026.10.29.1: the road-layout global map (v3). |
 | [tools/build_global_map_assets.py](../tools/build_global_map_assets.py) | Package original ImageGen PNGs and an authoritative map layout. |
 | [tools/build_item_fixture.py](../tools/build_item_fixture.py) | Import original local CFG records and build a local-priced ordinary shop. |
 | [tools/build_legacy_degrain_assets.py](../tools/build_legacy_degrain_assets.py) | Export reviewed imagegen cleanups into unchanged native texture layouts. |
@@ -1527,6 +1532,7 @@
 | [deploy/client_generated_avatars.py](../deploy/client_generated_avatars.py) | Extend the exact hosted FC avatar reader while preserving every other byte. |
 | [deploy/client_global_map.py](../deploy/client_global_map.py) | Checked native full-viewport global-map presentation for release 2026.10.10.4. |
 | [deploy/client_global_map_filter.py](../deploy/client_global_map_filter.py) | Map-only GPU mip generation and reversible native sampler state. |
+| [deploy/client_global_map_roads.py](../deploy/client_global_map_roads.py) | Road-layout global map (v3) inside the existing native map region. |
 | [deploy/client_global_map_visual.py](../deploy/client_global_map_visual.py) | Scoped native filled-disc removal and label adjustments. |
 | [deploy/client_menu_interface.py](../deploy/client_menu_interface.py) | A bounded native presentation patch against the published October 7 client. |
 | [deploy/client_mine_hover_scale.py](../deploy/client_mine_hover_scale.py) | Restore physical mouse coordinates only during native deposit hit testing. |

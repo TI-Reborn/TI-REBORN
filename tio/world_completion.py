@@ -268,7 +268,7 @@ def require_travel(
     if state and state['remaining'] > 0:
         raise TravelRestriction('Наказание отбывается онлайн в Prison')
     if destination == 10:
-        raise TravelRestriction('Prison доступна только по назначенному наказанию')
+        raise TravelRestriction('В Prison попадают только по приговору')
 
 
 def _detroit_dimensions(width,height,map_size):

@@ -1295,7 +1295,7 @@
   "у цели": "on target",
   "PIN временно заблокирован": "PIN temporarily blocked",
   "PIN должен состоять из 4–12 цифр": "PIN must be 4-12 digits",
-  "Prison доступна только по назначенному наказанию": "Prison is only available for assigned punishment",
+  "В Prison попадают только по приговору": "Prison is entered only by a sentence",
   "SC-аукцион доступен после возвращения в город": "SC auction available after returning to the city",
   "SC-аукцион: !sc bid ID; !sc bot ID ОТ ДО СТАВОК; !sc delete ID; !sc buy ID; !sc history ID.": "SC-auction: !sc bid ID; !sc bot ID FROM TO BID; !sc delete ID; !sc buy ID; !sc history ID.",
   "Spectra Crystals — сигнал": "Spectra Crystals - signal",

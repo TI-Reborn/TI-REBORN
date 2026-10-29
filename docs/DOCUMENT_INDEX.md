@@ -67,6 +67,7 @@
 - [Общие игровые операции — приоритет 3](../docs/GAME_OPERATIONS.md)
 - [Private website integration](../docs/GAME_WEB_API.md)
 - [Глобальная карта во всю область окна](../docs/GLOBAL_MAP_NATIVE.md)
+- [Глобальная карта по дорогам — клиент 2026.10.29.1](../docs/GLOBAL_MAP_ROADS_20261029.md)
 - [Анализ передачи, 17.10.2026](../docs/HANDOFF_AUDIT.md)
 - [HD-иконки предметов — задание для Codex](../docs/ITEM_ICONS_HD.md)
 - [Сжатые пакеты клиента и лаунчер 0.1.10](../docs/LAUNCHER_ARCHIVES.md)

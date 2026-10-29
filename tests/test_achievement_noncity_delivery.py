@@ -56,7 +56,7 @@ class NoncityDeliveryTests(unittest.TestCase):
         self.location(3)
         # A persisted city ID while a journey is active is still unavailable.
         with closing(sqlite3.connect(self.path)) as db, db:
-            db.execute('INSERT INTO map_journeys VALUES (?,?,?,?,?,?,?)',
+            db.execute('INSERT INTO map_journeys(account,x,y,tx,ty,started,arrives) VALUES (?,?,?,?,?,?,?)',
                        ('alice', 0, 0, 1, 1, 1, 2))
         before = self.dump()
         self.assertEqual(self.store.flush('alice'), ())

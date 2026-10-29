@@ -103,6 +103,8 @@ MODULES = (
     'test_armor_equipment',
     'test_enhancement',
     'test_map_speed',
+    'test_roads',
+    'test_map_route',
     'test_pve_contracts',
     'test_contracts_service',
     'test_contracts_ui',

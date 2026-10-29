@@ -40,7 +40,7 @@ class EncounterTests(unittest.TestCase):
         return self.locations.travel(name,struct.pack('<Bii',0x1b,*target),character)
 
     def encounter(self):
-        self.travel();self.now[0]+=120/MAP_SPEED
+        self.travel();self.now[0]+=100/MAP_SPEED
         started=self.service.tick('alice',42,b'Alice');self.assertIsNotNone(started)
         return started[0]
 
@@ -50,7 +50,7 @@ class EncounterTests(unittest.TestCase):
         for _ in range(10):self.travel(target=(399,299))
         self.now[0]+=24/MAP_SPEED
         self.assertIsNone(self.service.tick('alice',42,b'Alice'))
-        self.now[0]+=20
+        self.now[0]+=76/MAP_SPEED
         self.assertIsNone(self.service.tick('alice',42,b'Alice',busy=True))
         self.assertFalse(self.arena.rooms.snapshot())
         self.assertIsNotNone(self.service.tick('alice',42,b'Alice'))
@@ -62,7 +62,7 @@ class EncounterTests(unittest.TestCase):
         with closing(sqlite3.connect(self.path)) as db:
             distance=db.execute('SELECT distance FROM world_encounter_state WHERE account=?',('alice',)).fetchone()[0]
         self.assertAlmostEqual(distance,5*MAP_SPEED)
-        self.now[0]+=15;self.assertIsNotNone(self.service.tick('alice',42,b'Alice'))
+        self.now[0]+=1;self.assertIsNotNone(self.service.tick('alice',42,b'Alice'))
 
     def test_infected_npcs_native_dog_profile_and_regular_dogs_unchanged(self):
         room,scene=self.encounter();field=scene.field;combat=field.combat
@@ -117,7 +117,7 @@ class EncounterTests(unittest.TestCase):
         room,scene=self.encounter()
         other=ArenaService(clock=lambda:self.now[0])
         service=EncounterService(self.path,other,self.locations,clock=lambda:self.now[0],rng=FixedRandom())
-        self.travel('bob',77);self.now[0]+=20
+        self.travel('bob',77);self.now[0]+=100/MAP_SPEED
         started=service.tick('bob',77,b'Bob');self.assertIsNotNone(started)
         self.assertIsNot(started[0][1].field,scene.field)
         with closing(sqlite3.connect(self.path)) as db:
@@ -139,7 +139,7 @@ class EncounterTests(unittest.TestCase):
     def test_failed_scene_rolls_back_journey_claim_and_arena(self):
         from server.battle_journal import PrivateJournal
         PrivateJournal(self.arena,self.path,'alice')
-        self.travel();self.now[0]+=20
+        self.travel();self.now[0]+=100/MAP_SPEED
         with patch('tools.encounter_scene.prepare_encounter',side_effect=ValueError('fixture fail')):
             with self.assertRaises(ValueError):self.service.tick('alice',42,b'Alice')
         self.assertTrue(self.locations.travelling('alice'))
@@ -164,7 +164,8 @@ class EncounterTests(unittest.TestCase):
         from tio.locations import center,nearest_city,town_packets
         with closing(sqlite3.connect(self.path)) as db:
             alive=db.execute('SELECT pet_id,pet_packet FROM owned_pets WHERE account=?',('alice',)).fetchall()
-        for town,point in ((2,(-367,-485)),(3,(-230,-315)),(5,(190,100)),(8,(430,-225)),(9,(-77,-505))):
+        for town in (2,3,5,8,9):
+            point=(center(town)[0]+2,center(town)[1]+2)
             with self.subTest(town=town):
                 with closing(sqlite3.connect(self.path)) as db,db:
                     for identity,packet in alive:db.execute('UPDATE owned_pets SET pet_packet=? WHERE account=? AND pet_id=?',(packet,'alice',identity))
@@ -190,7 +191,7 @@ class EncounterTests(unittest.TestCase):
                 self.assertEqual(self.locations.position('bob'),bob)
                 from tio.battle_rewards import settle
                 # A replay after subsequent travel must not move the account again.
-                self.travel(target=(400,300));position=self.locations.position('alice')
+                self.travel(target=center(17));position=self.locations.position('alice')
                 settle(self.path,'alice',match,0,encounter_report=scene.field.encounter_report,health={i:0 for i in scene.actor_ids})
                 self.assertEqual(self.locations.position('alice'),position)
                 self.assertTrue(self.locations.travelling('alice'))

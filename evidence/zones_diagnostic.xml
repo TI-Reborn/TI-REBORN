@@ -15,11 +15,11 @@
   <town id="2" name="Denver">
     <value key="enabled" val="1" />
     <value key="background" val="loc_forest" />
-    <value key="x1" val="-390" />
-    <value key="y1" val="-447" />
-    <value key="x2" val="-345" />
-    <value key="y2" val="-402" />
-    <value key="size" val="45" />
+    <value key="x1" val="-411" />
+    <value key="y1" val="-499" />
+    <value key="x2" val="-312" />
+    <value key="y2" val="-292" />
+    <value key="size" val="99" />
     <value key="minlevel" val="4" />
     <value key="maxlevel" val="20" />
     <value key="drop" val="false" />
@@ -27,11 +27,11 @@
   <town id="3" name="Reservation">
     <value key="enabled" val="1" />
     <value key="background" val="loc_reserve" />
-    <value key="x1" val="-171" />
+    <value key="x1" val="-215" />
     <value key="y1" val="-335" />
-    <value key="x2" val="-136" />
-    <value key="y2" val="-300" />
-    <value key="size" val="35" />
+    <value key="x2" val="-137" />
+    <value key="y2" val="-156" />
+    <value key="size" val="78" />
     <value key="minlevel" val="1" />
     <value key="maxlevel" val="3" />
     <value key="drop" val="false" />
@@ -39,11 +39,11 @@
   <town id="4" name="Military Outpost">
     <value key="enabled" val="1" />
     <value key="type" val="town" />
-    <value key="x1" val="225" />
-    <value key="y1" val="-437" />
-    <value key="x2" val="305" />
-    <value key="y2" val="-357" />
-    <value key="size" val="80" />
+    <value key="x1" val="227" />
+    <value key="y1" val="-512" />
+    <value key="x2" val="338" />
+    <value key="y2" val="-325" />
+    <value key="size" val="111" />
     <value key="minlevel" val="4" />
     <value key="maxlevel" val="20" />
     <value key="drop" val="false" />
@@ -58,11 +58,11 @@
   <town id="5" name="New York">
     <value key="enabled" val="1" />
     <value key="type" val="town" />
-    <value key="x1" val="140" />
-    <value key="y1" val="-70" />
-    <value key="x2" val="240" />
-    <value key="y2" val="30" />
-    <value key="size" val="100" />
+    <value key="x1" val="141" />
+    <value key="y1" val="-199" />
+    <value key="x2" val="302" />
+    <value key="y2" val="139" />
+    <value key="size" val="161" />
     <value key="minlevel" val="4" />
     <value key="maxlevel" val="20" />
     <value key="drop" val="false" />
@@ -72,11 +72,11 @@
   <town id="6" name="Denver Base">
     <value key="enabled" val="1" />
     <value key="type" val="base" />
-    <value key="x1" val="-434" />
-    <value key="y1" val="-370" />
-    <value key="x2" val="-414" />
-    <value key="y2" val="-350" />
-    <value key="size" val="20" />
+    <value key="x1" val="-482" />
+    <value key="y1" val="-341" />
+    <value key="x2" val="-433" />
+    <value key="y2" val="-245" />
+    <value key="size" val="49" />
     <value key="minlevel" val="11" />
     <value key="maxlevel" val="15" />
     <value key="drop" val="false" />
@@ -89,11 +89,11 @@
   <town id="7" name="Military Outpost Base">
     <value key="enabled" val="1" />
     <value key="type" val="base" />
-    <value key="x1" val="315" />
-    <value key="y1" val="-410" />
-    <value key="x2" val="335" />
-    <value key="y2" val="-390" />
-    <value key="size" val="20" />
+    <value key="x1" val="309" />
+    <value key="y1" val="-312" />
+    <value key="x2" val="354" />
+    <value key="y2" val="-209" />
+    <value key="size" val="45" />
     <value key="minlevel" val="4" />
     <value key="maxlevel" val="20" />
     <value key="drop" val="false" />
@@ -112,11 +112,11 @@
   <town id="8" name="Military Zone">
     <value key="enabled" val="1" />
     <value key="type" val="town" />
-    <value key="x1" val="286" />
-    <value key="x2" val="366" />
-    <value key="y1" val="-265" />
-    <value key="y2" val="-185" />
-    <value key="size" val="80" />
+    <value key="x1" val="392" />
+    <value key="x2" val="499" />
+    <value key="y1" val="-267" />
+    <value key="y2" val="-9" />
+    <value key="size" val="107" />
     <value key="minlevel" val="4" />
     <value key="maxlevel" val="20" />
     <value key="drop" val="false" />
@@ -126,11 +126,11 @@
   <town id="9" name="Miner's Town">
     <value key="enabled" val="1" />
     <value key="type" val="town" />
-    <value key="x1" val="-90" />
-    <value key="x2" val="-64" />
-    <value key="y1" val="-460" />
-    <value key="y2" val="-434" />
-    <value key="size" val="26" />
+    <value key="x1" val="-121" />
+    <value key="x2" val="-47" />
+    <value key="y1" val="-449" />
+    <value key="y2" val="-317" />
+    <value key="size" val="74" />
     <value key="minlevel" val="1" />
     <value key="maxlevel" val="20" />
     <value key="drop" val="false" />
@@ -142,11 +142,11 @@
     <value key="enabled" val="1" />
     <value key="type" val="town" />
     <value key="background" val="loc_prison" />
-    <value key="x1" val="-330" />
-    <value key="y1" val="59" />
-    <value key="x2" val="-304" />
-    <value key="y2" val="85" />
-    <value key="size" val="26" />
+    <value key="x1" val="-320" />
+    <value key="y1" val="79" />
+    <value key="x2" val="-235" />
+    <value key="y2" val="258" />
+    <value key="size" val="85" />
     <value key="minlevel" val="1" />
     <value key="maxlevel" val="20" />
     <value key="arena" val="false" />
@@ -164,11 +164,11 @@
     <value key="enabled" val="1" />
     <value key="type" val="base" />
     <value key="background" val="loc_ny" />
-    <value key="x1" val="63" />
-    <value key="y1" val="-3" />
-    <value key="x2" val="83" />
-    <value key="y2" val="18" />
-    <value key="size" val="20" />
+    <value key="x1" val="210" />
+    <value key="y1" val="158" />
+    <value key="x2" val="258" />
+    <value key="y2" val="251" />
+    <value key="size" val="48" />
     <value key="minlevel" val="4" />
     <value key="maxlevel" val="6" />
     <value key="drop" val="false" />
@@ -181,11 +181,11 @@
     <value key="enabled" val="1" />
     <value key="type" val="base" />
     <value key="background" val="loc_outpost" />
-    <value key="x1" val="241" />
-    <value key="y1" val="-175" />
-    <value key="x2" val="261" />
-    <value key="y2" val="-155" />
-    <value key="size" val="20" />
+    <value key="x1" val="334" />
+    <value key="y1" val="168" />
+    <value key="x2" val="382" />
+    <value key="y2" val="265" />
+    <value key="size" val="48" />
     <value key="minlevel" val="16" />
     <value key="maxlevel" val="20" />
     <value key="drop" val="false" />
@@ -198,11 +198,11 @@
     <value key="enabled" val="1" />
     <value key="type" val="checkpoint" />
     <value key="background" val="loc_mine" />
-    <value key="x1" val="-180" />
-    <value key="y1" val="-284" />
-    <value key="x2" val="-160" />
-    <value key="y2" val="-264" />
-    <value key="size" val="20" />
+    <value key="x1" val="-119" />
+    <value key="y1" val="-211" />
+    <value key="x2" val="-73" />
+    <value key="y2" val="-115" />
+    <value key="size" val="46" />
     <value key="minlevel" val="4" />
     <value key="maxlevel" val="6" />
     <value key="arena" val="false" />
@@ -216,11 +216,11 @@
     <value key="enabled" val="1" />
     <value key="type" val="checkpoint" />
     <value key="background" val="loc_mine" />
-    <value key="x1" val="175" />
-    <value key="y1" val="-346" />
-    <value key="x2" val="195" />
-    <value key="y2" val="-326" />
-    <value key="size" val="20" />
+    <value key="x1" val="170" />
+    <value key="y1" val="-378" />
+    <value key="x2" val="214" />
+    <value key="y2" val="-295" />
+    <value key="size" val="44" />
     <value key="minlevel" val="7" />
     <value key="maxlevel" val="10" />
     <value key="arena" val="false" />
@@ -234,11 +234,11 @@
     <value key="enabled" val="1" />
     <value key="type" val="checkpoint" />
     <value key="background" val="loc_mine" />
-    <value key="x1" val="88" />
-    <value key="y1" val="-10" />
-    <value key="x2" val="108" />
-    <value key="y2" val="10" />
-    <value key="size" val="20" />
+    <value key="x1" val="146" />
+    <value key="y1" val="268" />
+    <value key="x2" val="194" />
+    <value key="y2" val="355" />
+    <value key="size" val="48" />
     <value key="minlevel" val="11" />
     <value key="maxlevel" val="15" />
     <value key="arena" val="false" />
@@ -252,11 +252,11 @@
     <value key="enabled" val="1" />
     <value key="type" val="checkpoint" />
     <value key="background" val="loc_mine" />
-    <value key="x1" val="255" />
-    <value key="y1" val="-170" />
-    <value key="x2" val="275" />
-    <value key="y2" val="-150" />
-    <value key="size" val="20" />
+    <value key="x1" val="277" />
+    <value key="y1" val="234" />
+    <value key="x2" val="323" />
+    <value key="y2" val="333" />
+    <value key="size" val="46" />
     <value key="minlevel" val="16" />
     <value key="maxlevel" val="20" />
     <value key="arena" val="false" />
@@ -270,11 +270,11 @@
     <value key="enabled" val="1" />
     <value key="type" val="shootingrange" />
     <value key="background" val="loc_shooting" />
-    <value key="x1" val="-25" />
-    <value key="y1" val="-268" />
-    <value key="x2" val="1" />
-    <value key="y2" val="-242" />
-    <value key="size" val="26" />
+    <value key="x1" val="3" />
+    <value key="y1" val="-179" />
+    <value key="x2" val="52" />
+    <value key="y2" val="-85" />
+    <value key="size" val="49" />
     <value key="minlevel" val="1" />
     <value key="maxlevel" val="20" />
     <value key="arena" val="false" />
@@ -287,11 +287,11 @@
   <town id="18" name="Detroit">
     <value key="enabled" val="1" />
     <value key="type" val="town" />
-    <value key="x1" val="-150" />
-    <value key="x2" val="-90" />
-    <value key="y1" val="50" />
-    <value key="y2" val="110" />
-    <value key="size" val="60" />
+    <value key="x1" val="-165" />
+    <value key="x2" val="-56" />
+    <value key="y1" val="187" />
+    <value key="y2" val="414" />
+    <value key="size" val="109" />
     <value key="minlevel" val="4" />
     <value key="maxlevel" val="20" />
     <value key="drop" val="false" />
@@ -307,11 +307,11 @@
     <value key="enabled" val="1" />
     <value key="type" val="base4" />
     <value key="background" val="loc_outpost" />
-    <value key="x1" val="-240" />
-    <value key="y1" val="-320" />
-    <value key="x2" val="-220" />
-    <value key="y2" val="-300" />
-    <value key="size" val="20" />
+    <value key="x1" val="-180" />
+    <value key="y1" val="69" />
+    <value key="x2" val="-136" />
+    <value key="y2" val="148" />
+    <value key="size" val="44" />
     <value key="minlevel" val="4" />
     <value key="maxlevel" val="6" />
     <value key="drop" val="false" />
@@ -330,11 +330,11 @@
     <value key="enabled" val="1" />
     <value key="type" val="base4" />
     <value key="background" val="loc_outpost" />
-    <value key="x1" val="-240" />
-    <value key="y1" val="-420" />
-    <value key="x2" val="-220" />
-    <value key="y2" val="-400" />
-    <value key="size" val="20" />
+    <value key="x1" val="-269" />
+    <value key="y1" val="-440" />
+    <value key="x2" val="-224" />
+    <value key="y2" val="-353" />
+    <value key="size" val="45" />
     <value key="minlevel" val="7" />
     <value key="maxlevel" val="10" />
     <value key="drop" val="false" />
@@ -352,11 +352,11 @@
   <town id="21" name="Training Base 11-15">
     <value key="enabled" val="1" />
     <value key="type" val="base4" />
-    <value key="x1" val="-245" />
-    <value key="y1" val="-370" />
-    <value key="x2" val="-225" />
-    <value key="y2" val="-350" />
-    <value key="size" val="20" />
+    <value key="x1" val="68" />
+    <value key="y1" val="226" />
+    <value key="x2" val="127" />
+    <value key="y2" val="313" />
+    <value key="size" val="59" />
     <value key="minlevel" val="11" />
     <value key="maxlevel" val="15" />
     <value key="drop" val="false" />
@@ -376,11 +376,11 @@
     <value key="enabled" val="1" />
     <value key="type" val="base4" />
     <value key="background" val="loc_outpost" />
-    <value key="x1" val="110" />
-    <value key="y1" val="-320" />
-    <value key="x2" val="130" />
-    <value key="y2" val="-300" />
-    <value key="size" val="20" />
+    <value key="x1" val="107" />
+    <value key="y1" val="-394" />
+    <value key="x2" val="152" />
+    <value key="y2" val="-302" />
+    <value key="size" val="45" />
     <value key="minlevel" val="16" />
     <value key="maxlevel" val="20" />
     <value key="drop" val="false" />

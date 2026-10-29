@@ -1,7 +1,7 @@
 """Distance-based, account-owned world encounters on the authoritative server."""
 from contextlib import closing
 from pathlib import Path
-import json, logging, math, random, time
+import json, logging, random, time
 from .db_transaction import connect, transaction
 
 POLICY=json.loads((Path(__file__).resolve().parents[1]/'config/world_encounters.json').read_text(encoding='utf-8'))
@@ -42,14 +42,13 @@ def return_defeated(db,account,match_id,health):
     db.execute('DELETE FROM map_journeys WHERE account=?',(account,))
 
 
-def accumulate(db,account,route,now):
-    """Consume actual elapsed route distance once, including before rerouting."""
-    if route is None:return
+def accumulate(db,account,journey,now):
+    """Consume actual elapsed road distance once, including before rerouting."""
+    if journey is None:return
     if not db.execute("SELECT 1 FROM sqlite_master WHERE name='world_encounter_state'").fetchone():return
     db.execute('INSERT OR IGNORE INTO world_encounter_state(account) VALUES (?)',(account,))
     start,previous=db.execute('SELECT route_start,progress FROM world_encounter_state WHERE account=?',(account,)).fetchone()
-    x,y,tx,ty,began,arrives=route
-    progress=math.hypot(tx-x,ty-y)*min(1,max(0,(now-began)/(arrives-began)))
+    began=journey.started;progress=journey.driven(now)
     delta=max(0,progress-(previous if start==began else 0))
     db.execute('UPDATE world_encounter_state SET distance=distance+?,route_start=?,progress=? WHERE account=?',
                (delta,began,progress,account))

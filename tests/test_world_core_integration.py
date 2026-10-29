@@ -69,7 +69,12 @@ class WorldTravelCoreTests(unittest.TestCase):
 
     def test_prison_gate_has_no_new_sentence_or_partial_route_mutation(self):
         before=self.path.read_bytes()
-        with self.assertRaises(ValueError):self.store.travel('alice',self.packet(10),41)
+        from tio.world_completion import TravelRestriction
+        from tio.localization import english
+        # The map click shows this reason to the player (both languages).
+        with self.assertRaisesRegex(TravelRestriction,'^В Prison попадают только по приговору$'):
+            self.store.travel('alice',self.packet(10),41)
+        self.assertEqual(english('В Prison попадают только по приговору'),'Prison is entered only by a sentence')
         self.assertEqual(self.path.read_bytes(),before)
         self.assertEqual(self.store.current('alice'),3)
         with closing(sqlite3.connect(self.path)) as db:
@@ -91,7 +96,7 @@ class WorldTravelCoreTests(unittest.TestCase):
     def test_old_route_inside_prison_finishes_on_map_without_prison_admission(self):
         with closing(sqlite3.connect(self.path)) as db,db:
             LocationStore._save(db,'alice',None,*center(3))
-            db.execute('INSERT INTO map_journeys VALUES (?,?,?,?,?,?,?)',('alice',*center(3),*center(10),0,10))
+            db.execute('INSERT INTO map_journeys(account,x,y,tx,ty,started,arrives) VALUES (?,?,?,?,?,?,?)',('alice',*center(3),*center(10),0,10))
         packets=self.store.refresh('alice',41)
         self.assertEqual([p[0] for p in packets],[0x1e])
         self.assertIsNone(self.store.current('alice'))
