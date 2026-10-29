@@ -164,6 +164,7 @@
 - [Аудит запросов — обновление 2026-09-28](../UNANSWERED_REQUESTS.md)
 - [Отключение после загрузки «стенки» — 04.10.2026](../WALL_DISCONNECT_FIX.md)
 - [Дополнительные запросы склада — 2026-09-28](../WAREHOUSE_QUERIES.md)
+- [Оружие: аудит реализации — 2026-10-29](../WEAPON_AUDIT_20261029.md)
 - [Эффекты оружия, предметов и умения — 2026-09-28](../WEAPON_EFFECTS.md)
 - [City weapon hand exchange](../WEAPON_SLOTS_FIX.md)
 - [Вес и перегруз](../WEIGHT.md)
