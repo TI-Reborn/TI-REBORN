@@ -40,7 +40,8 @@ class AbilityLearning:
         catalog=AbilityCatalog(AbilityLevel(r['id'],r['level'],r['fields']) for r in data['records'])
         from .miner_abilities import catalog_for_play
         from .dog_abilities import catalog_for_play as dog_catalog
-        return cls(path,dog_catalog(catalog_for_play(catalog)),json.loads((root/'config/ability_learning.json').read_text()))
+        from .restored_abilities import catalog_with_restored
+        return cls(path,dog_catalog(catalog_for_play(catalog_with_restored(catalog))),json.loads((root/'config/ability_learning.json').read_text()))
 
     def _allowed(self,db,account,owner):
         self.state._owned(db,account,owner)
@@ -55,6 +56,8 @@ class AbilityLearning:
     def required_level(ability,rank,*,dog=False):
         from .miner_abilities import MINER_SKILLS,required_level
         from .dog_abilities import required_level as dog_level
+        from .restored_abilities import restored_ids,required_level as restored_level
+        if ability in restored_ids():return restored_level(ability,rank)
         if dog or ability in (12,14,15,16,18,19,23,26):return dog_level(ability,rank)
         # Original manual p46: human critical ranks3/4 require levels4/7;
         # melee mastery ranks1/2 require levels3/5. Other human gates are rank.
@@ -132,7 +135,7 @@ class AbilityLearning:
                        (account,owner,revision+1,packet))
             _,_,available=self._lists(db,account,owner)
             replies=(packet,self._tree(db,account,owner,learned),encode_asset_count(AssetCount(wallet[0]-selected.unknown_u32,wallet[1])))
-            if ability in (1,2,6,15,16,20,21,24):
+            if ability in (1,2,6,15,16,20,21,24,35):
                 from .passive_stats import project_saved_pet
                 human,base=db.execute('SELECT human,pet_packet FROM owned_pets WHERE account=? AND pet_id=?',(account,owner)).fetchone()
                 replies+=(project_saved_pet(db,account,owner,base,bool(human)),)

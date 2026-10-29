@@ -1,0 +1,22 @@
+{
+  "status": "RESTORED_FROM_CLIENT_AND_MANUAL_NOT_IN_LEGACY_CFG",
+  "abilities": {
+    "35": {
+      "name": "Cybernetics",
+      "values": [1, 2, 3, 4],
+      "effect_text": "m805",
+      "required_levels": [4, 5, 6, 7],
+      "sources": [
+        "russian.lng p35n/p35d (Кибернетика: каждый уровень открывает 1 новый слот), m805 '+%s слот для имплантов'",
+        "silver.dll 8c4a42 reads PetInfo u8 into fighter+0x45; implant install check 7b50d0 compares installed implants with it (implants_no_empty_slots)",
+        "base/pda/skills.png cell 35 holds the original cyborg icon",
+        "manual.tionline.ru/skills.htm (2017): ranks 1-4 open 1-4 implant slots",
+        "manual.tionline.ru/implants.htm (2017): Кибернетика доступна с 4 уровня; every implant requires actor level 4"
+      ],
+      "limitations": [
+        "The 2017 perk table prints ranks at actor levels 1/2/3/4 while the implants page says the perk opens at level 4. User direction: available from level 4; ranks 2-4 at levels 5/6/7 are a local choice so each rank gets its own native tree row.",
+        "Implant items, installation, charge and repair are not implemented yet; the perk only opens client slots."
+      ]
+    }
+  }
+}

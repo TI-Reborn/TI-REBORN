@@ -58,7 +58,8 @@ def main():
     source=Path(r'C:\Program Files (x86)\TIOnline\base\ability.cfg')
     from tio.miner_abilities import catalog_for_play,rules
     from tio.dog_abilities import catalog_for_play as dog_catalog
-    xml,included,excluded=build(dog_catalog(catalog_for_play(AbilityCatalog.from_cfg(source))))
+    from tio.restored_abilities import catalog_with_restored,rules as restored_rules
+    xml,included,excluded=build(dog_catalog(catalog_for_play(catalog_with_restored(AbilityCatalog.from_cfg(source)))))
     (ROOT/'evidence/skills_diagnostic.xml').write_bytes(xml)
     report={'source':str(source),'source_sha256':hashlib.sha256(source.read_bytes()).hexdigest(),
             'included':included,'excluded':excluded,'status':'MINER_AND_DOG_RULES_CONNECTED_OTHER_SKILLS_PARTIAL',
@@ -66,6 +67,7 @@ def main():
             'policy':'Unspecified or nonuniform parameters omitted; client defaults are not historical values. Do not use this catalog alone to enable combat or learning.'}
     from tio.dog_abilities import rules as dog_rules
     report['dog_overrides']=dog_rules()
+    report['restored_abilities']=restored_rules()
     (ROOT/'evidence/skills_provenance.json').write_text(json.dumps(report,indent=2)+'\n')
     print(f'Built {len(included)} skills/{sum(r["levels"] for r in included)} levels; {len(excluded)} incomplete definitions excluded.')
 

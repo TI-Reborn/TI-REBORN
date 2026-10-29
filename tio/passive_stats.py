@@ -40,8 +40,24 @@ def project_saved_pet(db,account,owner,packet,human):
 
 
 def _catalog():
+    from .restored_abilities import catalog_with_restored
     source=json.loads((Path(__file__).resolve().parents[1]/'config/abilities.json').read_text())
-    return AbilityCatalog(AbilityLevel(r['id'],r['level'],r['fields']) for r in source['records'])
+    return catalog_with_restored(AbilityCatalog(AbilityLevel(r['id'],r['level'],r['fields']) for r in source['records']))
+
+
+def project_implant_slots(packet,human,learned,catalog):
+    """Cybernetics rank opens client implant slots (reader 8c4a42 -> +0x45).
+
+    The slot count is derived, never trusted from a stored snapshot.
+    """
+    pet=decode_pet_info(packet,human_equipment=human)
+    if not human or pet.fields['0x8c446f'] not in (1,2):return packet
+    entries=[e for e in learned if e.ability_id==35]
+    if len(entries)>1:raise ValueError('Duplicate cybernetics ability')
+    slots=catalog.get(35,entries[0].level).number('value') if entries else 0
+    if slots is None or not 0<=slots<=127:raise ValueError('Invalid implant slot count')
+    if pet.fields['0x8c4a42']==slots:return packet
+    return encode_pet_info(PetInfo(human,{**pet.fields,'0x8c4a42':slots}))
 
 
 def _project_profile(owner,packet,human,inventory,row,catalog):
@@ -80,6 +96,7 @@ def project_passives(packet,human,learned,catalog,*,inventory=None):
     from .weight import project_base_weight
     packet=project_base_weight(packet,human,inventory)
     packet=project_health(packet,human,learned,catalog)
+    packet=project_implant_slots(packet,human,learned,catalog)
     from .equipment_bonuses import project
     packet=project(packet,human,inventory)
     pet=decode_pet_info(packet,human_equipment=human)

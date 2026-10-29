@@ -116,6 +116,7 @@
 - [ORANGE loader recovery — 2026-09-12](../ORANGE_LOADER.md)
 - [Packet registry — TI build из FILE_INVENTORY](../PACKET_REGISTRY.md)
 - [Цены перков людей и собак](../PERK_PRICES.md)
+- [Восстановленные перки: Кибернетика](../RESTORED_ABILITIES.md)
 - [Собственные наёмники: PetInfo66](../PET_INFO.md)
 - [Статистика игроков — 1 октября 2026](../PLAYER_STATISTICS.md)
 - [Штатный Top100 игроков](../PLAYER_TOP100.md)

@@ -27,6 +27,7 @@ MODULES = (
     'test_ability_protocol',
     'test_ability_prices',
     'test_ability_learning',
+    'test_cybernetics',
     'test_ranked',
     'test_ranked_squads',
     'test_ranked_bots',
