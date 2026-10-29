@@ -8,6 +8,7 @@ from .db_transaction import connect
 import json,sqlite3
 from contextlib import closing
 from .abilities import AbilityCatalog,AbilityLevel
+from .ability_prices import PricePolicy
 from .ability_state import AbilityStateStore
 from .wallets import WalletStore
 from .protocol.abilities import AbilityEntry,encode_abilities,decode_ability_request,encode_skill_tree
@@ -19,8 +20,7 @@ from .protocol.binary import Reader
 class AbilityLearning:
     def __init__(self,path,catalog,policy):
         self.path=path;self.catalog=catalog;self.policy=policy
-        self.price=policy['price_credits_per_level']
-        if type(self.price) is not int or not 0<self.price<=0xffffffff:raise ValueError('Invalid learning price')
+        self.prices=PricePolicy.from_config(policy['learning_prices'])
         for key in ('human_skills','dog_skills','miner_skills'):
             ids=policy.get(key,())
             if len(ids)!=len(set(ids)):raise ValueError('Duplicate learning rule')
@@ -29,6 +29,8 @@ class AbilityLearning:
                 maximum=catalog.get(ability,1).number('levels')
                 if sorted(r.level for r in rows)!=list(range(1,maximum+1)) or any(r.number('value') is None for r in rows):
                     raise ValueError('Incomplete learning definition')
+                if key!='miner_skills':
+                    for rank in range(1,maximum+1):self.prices.price(ability,rank,0)
         self.state=AbilityStateStore(path,catalog);WalletStore(path)
         self.offers={}
 
@@ -63,7 +65,7 @@ class AbilityLearning:
         from .miner_abilities import MINER_SKILLS,learning_price
         if ability in MINER_SKILLS:
             return learning_price(ability,rank,learned)
-        return self.price
+        return self.prices.price(ability,rank,sum(e.level for e in learned))
 
     def _lists(self,db,account,owner):
         allowed=self._allowed(db,account,owner)

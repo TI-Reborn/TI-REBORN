@@ -25,6 +25,8 @@ MODULES = (
     'test_read_projection_performance',
     'test_idle_write_performance',
     'test_ability_protocol',
+    'test_ability_prices',
+    'test_ability_learning',
     'test_ranked',
     'test_ranked_squads',
     'test_ranked_bots',

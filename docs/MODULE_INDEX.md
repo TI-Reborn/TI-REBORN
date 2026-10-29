@@ -71,6 +71,7 @@
 | [tio/__main__.py](../tio/__main__.py) | Offline application packet inspection; does not assume wire framing. |
 | [tio/abilities.py](../tio/abilities.py) | Source-backed legacy ability definitions; absent parameters stay unknown. |
 | [tio/ability_learning.py](../tio/ability_learning.py) | Atomic learning with explicit price policies and derived passive stats. |
+| [tio/ability_prices.py](../tio/ability_prices.py) | Growing perk learning price shared by humans, dogs and miners. |
 | [tio/ability_progression.py](../tio/ability_progression.py) | Authoritative native90 forgetting and native console skill decreases. |
 | [tio/ability_state.py](../tio/ability_state.py) | Versioned server-owned learned-skill snapshots, not a learning policy. |
 | [tio/achievement_benefits.py](../tio/achievement_benefits.py) | Read-only bonuses from earned immutable achievement reward snapshots. |
@@ -1160,6 +1161,7 @@
 | [tests/test_ability_cast.py](../tests/test_ability_cast.py) | См. код и вызывающие модули. |
 | [tests/test_ability_learning.py](../tests/test_ability_learning.py) | См. код и вызывающие модули. |
 | [tests/test_ability_progression.py](../tests/test_ability_progression.py) | См. код и вызывающие модули. |
+| [tests/test_ability_prices.py](../tests/test_ability_prices.py) | См. код и вызывающие модули. |
 | [tests/test_ability_protocol.py](../tests/test_ability_protocol.py) | См. код и вызывающие модули. |
 | [tests/test_ability_state.py](../tests/test_ability_state.py) | См. код и вызывающие модули. |
 | [tests/test_ability_status.py](../tests/test_ability_status.py) | См. код и вызывающие модули. |
