@@ -182,7 +182,7 @@ class BankGameSession:
                     bonds = bank.bond_quote(db, now=now)
                     return self._reply(db, (
                         f"Акции: {stocks['price']} кредитов за штуку, покупка и продажа по одной котировке.",
-                        f"Векселя: {bonds['price_gold']} кредитов за штуку; погашение {bonds['redemption_credits']} кредитов.",
+                        f"Векселя: {bonds['price_credits']} кредитов за штуку; погашение {bonds['redemption_credits']} кредитов.",
                         f"Продажа векселей {'открыта' if bonds['sale_open'] else 'закрыта'}; погашение {'открыто' if bonds['redemption_open'] else 'закрыто'} (UTC).",
                         'Единственная игровая валюта — кредиты. Покупка валюты за деньги отключена.',
                     ))

@@ -99,6 +99,17 @@ SCOPES['medical-optics'] = frozenset((
     'config/sc_catalog.json', 'config/medical_items.json',
     'tio/medical_items.py', 'tio/combat.py', 'tio/battle_item_effects.py',
 ))
+SCOPES['securities-perks'] = frozenset((
+    'config/ability_learning.json', 'config/bank_economy.json',
+    'config/restored_abilities.json', 'evidence/skills_diagnostic.xml',
+    'server/bank_gameplay.py', 'server/city_operations.py',
+    'server/securities_service.py', 'tio/ability_learning.py',
+    'tio/ability_prices.py', 'tio/bank_economy.py', 'tio/combat.py',
+    'tio/miner_abilities.py', 'tio/passive_stats.py',
+    'tio/protocol/securities.py', 'tio/restored_abilities.py',
+    'tools/battle_roster_fixture.py', 'tools/build_skills_fixture.py',
+    'tools/loopback_exchange.py', 'tools/survival_scene.py',
+))
 
 
 def digest(path):

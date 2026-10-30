@@ -29,6 +29,13 @@ class AbilityLearningTests(unittest.TestCase):
         with closing(sqlite3.connect(self.path)) as db:
             return db.execute("SELECT credits FROM wallets WHERE account='alice'").fetchone()[0]
 
+    def fund(self,credits):
+        with closing(sqlite3.connect(self.path)) as db,db:
+            db.execute("UPDATE wallets SET credits=? WHERE account='alice'",(credits,))
+
+    def offer_prices(self,account,owner):
+        return {e.ability_id:e.unknown_u32 for e in decode_abilities(self.service.lists(account,owner)[1])[1]}
+
     def test_human_level_gate_and_dog_consecutive_ranks(self):
         for owner,ability in ((1,1),(2,23)):
             replies=self.service.lists('alice',owner)
@@ -39,7 +46,8 @@ class AbilityLearningTests(unittest.TestCase):
             self.assertEqual(decode_abilities(result[0])[1][0].level,1)
             if owner==1:
                 with self.assertRaises(ValueError):self.service.handle('alice',encode_ability_request(owner,ability))
-        self.assertEqual(self.credits(),9800)
+        self.assertEqual(self.credits(),10000-150-300)
+        self.fund(100_000)
         reopened=AbilityLearning.from_workspace(self.path,ROOT)
         self.assertEqual(decode_abilities(reopened.lists('alice',2)[0])[1][0].ability_id,23)
         self.assertEqual(decode_abilities(reopened.lists('bob',1)[0])[1],())
@@ -62,13 +70,21 @@ class AbilityLearningTests(unittest.TestCase):
             pet=decode_pet_info(packet,human_equipment=True);pet.fields['0x8c4aef']=4
             db.execute("UPDATE owned_pets SET pet_packet=? WHERE account='alice' AND pet_id=1",(encode_pet_info(pet),))
         self.service.handle('alice',b'\xa9\1\0\0\0')
-        for rank in range(1,5):
+        # 150 x rank multiplier 1/3/8/20 x (100 + 5% per rank already learned).
+        for rank,spent in zip(range(1,5),(150,623,1943,5393)):
             replies=self.service.handle('alice',encode_ability_request(1,1))
             self.assertEqual(decode_abilities(replies[0])[1][0].level,rank)
             self.assertEqual(replies[1][0],0xaa)
-            self.assertEqual(self.credits(),10000-100*rank)
+            self.assertEqual(self.credits(),10000-spent)
         with self.assertRaises(ValueError):self.service.handle('alice',encode_ability_request(1,1))
-        self.assertEqual(self.credits(),9600)
+        self.assertEqual(self.credits(),10000-5393)
+
+    def test_learned_rank_raises_only_that_mercenarys_prices(self):
+        self.assertEqual(self.offer_prices('alice',1)[2],150)
+        self.service.learn('alice',1,1)
+        self.assertEqual(self.offer_prices('alice',1)[2],158)
+        self.assertEqual(self.offer_prices('bob',1)[2],150)
+        self.assertEqual(self.offer_prices('alice',2)[16],100)
 
     def test_insufficient_funds_and_rollback(self):
         self.service.lists('alice',1)
@@ -88,9 +104,10 @@ class AbilityLearningTests(unittest.TestCase):
         self.service.lists('alice',1);second.lists('alice',1)
         self.service.learn('alice',1,1)
         with self.assertRaises(ValueError):second.learn('alice',1,1)
-        self.assertEqual(self.credits(),9900)
+        self.assertEqual(self.credits(),10000-150)
 
     def test_manual_human_mastery_and_critical_level_gates(self):
+        self.fund(100_000)
         self.assertNotIn(10,{e.ability_id for e in decode_abilities(self.service.lists('alice',1)[1])[1]})
         def level(value):
             with closing(sqlite3.connect(self.path)) as db,db:

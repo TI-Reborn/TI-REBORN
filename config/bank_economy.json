@@ -8,7 +8,7 @@
     "history_points": 144
   },
   "bonds": {
-    "gold_each": 150,
+    "credits_each": 150,
     "initial_redemption_credits": 150,
     "monthly_rise_credits": 5,
     "sale_last_day": 20,
@@ -42,10 +42,10 @@
   },
   "emulator_policy": {
     "stocks": "Manual gives no historical prices or formula. Shared quote starts100credits/share on first observation, rises1credit per elapsed UTC day; buy and sell use the same current quote. All quantities are integer. These are server economy rules, not reconstructed historical rates.",
-    "bonds": "Manual specifies Gold purchase, a monthly sale window, a redemption day and carryover if missed. Explicit schedule: sale days1..20 UTC, redemption day25,1Gold/unit, initial150credits/unit rising5 each calendar month after first observation. Unredeemed bonds remain owned for the next month; no forced expiry.",
+    "bonds": "Manual specifies a Gold purchase, a monthly sale window, a redemption day and carryover if missed. Reborn has no donated currency: bonds are bought for credits. Explicit schedule: sale days1..20 UTC, redemption day25, purchase150credits/unit, redemption initial150credits/unit rising5 each calendar month after first observation. Unredeemed bonds remain owned for the next month; no forced expiry.",
     "marks": "Manual fee100credits per day and owner PIN removal/early return. PIN4..12digits and PBKDF2,365daylimit,5failed attempts/300second lock are policy. Dedicated owner-authorized lending bypasses ordinary marked-item market bans. Expiry returns the physical surviving item to owner warehouse, deferred while either account is in battle. Wear remains; destroyed items never respawn. Marks cannot be applied to stacks, currencies, rented/special items or boosters.",
     "payments": "Gold retired; real-money currency purchases disabled. Donations are independent and award no game assets.",
-    "wire": "Conversion, stocks/bonds and mark actions are server APIs/explicit emulator commands until original request ABI is recovered. ItemList30/WarehouseList6A ownername/remainingseconds projection uses the actual original readers; no new historical opcode is asserted."
+    "wire": "Stocks/bonds also use the recovered native C1 quotation-window ABI (SECURITIES_WINDOWS.md). Conversion and mark actions are server APIs/explicit emulator commands until original request ABI is recovered. ItemList30/WarehouseList6A ownername/remainingseconds projection uses the actual original readers; no new historical opcode is asserted."
   },
   "provider_sources": [
     "https://docs.stripe.com/api/checkout/sessions/create",

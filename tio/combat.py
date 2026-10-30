@@ -257,7 +257,8 @@ class Combat:
         empty=encode_item_list(actor_id,(),flag)
         local_empty=encode_item_list(stored_id,(),flag)
         learned=self.learned.get(actor_id,())
-        catalog=catalog_for_play(catalog)
+        from .restored_abilities import catalog_with_restored
+        catalog=catalog_for_play(catalog_with_restored(catalog))
         profile=project_passives(self.proficiency_rules.normalize(pet_packet,human),human,learned,catalog,
                                  inventory=local_empty)
         # register/configure write dictionaries only; stage them on a shallow
