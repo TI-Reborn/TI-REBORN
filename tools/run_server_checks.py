@@ -115,6 +115,7 @@ MODULES = (
     'test_map_publication',
     'test_world_map_catalog',
     'test_pve_contracts',
+    'test_contract_world_namespace',
     'test_contracts_service',
     'test_contracts_ui',
     'test_contracts_combat',
