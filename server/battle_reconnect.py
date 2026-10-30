@@ -69,11 +69,11 @@ class BattleReconnect:
             view=VisibilityView(field,owner,dict(view.templates));battle['views'][owner]=view
         if hasattr(field,'mining'):field.mining.sent_deposits.pop(owner,None)
         settings=BattleSettings(1,len(room.members),room.request.mode,room.request.unknown_u32_01,2,
-            battle['captain_name'],bytes((0,0,room.request.soldiers_count_01,0,0)),0,0)
+            battle['captain_name'],bytes((0,0,room.request.soldiers_count_01,0,1)),0,0)
         if battle.get('kind')=='wager':
             r=battle['wager_request']
             settings=BattleSettings(1,len(room.members),r.mode,r.unknown_u32_01,2,
-                battle['captain_name'],bytes((0,0,r.soldiers_count_01,r.map_size,0)),r.stake,0)
+                battle['captain_name'],bytes((0,0,r.soldiers_count_01,r.map_size,1)),r.stake,0)
         from tio.protocol.abilities import encode_abilities
         from tio.weapon_effects import battle_skills
         skills=tuple(encode_abilities(i,battle_skills(field.combat.learned.get(i,()),field.combat.inventories[i],field.combat.human[i]))

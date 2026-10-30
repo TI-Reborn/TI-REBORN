@@ -235,7 +235,7 @@ class ContractsServiceTests(unittest.TestCase):
     def test_city_button_queries_do_not_create_group_and_replies_are_private(self):
         contracts = self.send(0, '!contracts list')
         group = self.send(0, '!party status')
-        self.assertEqual(len([packet for packet in contracts if ': '.encode('utf-16-le') in packet]), 3)
+        self.assertEqual(len([packet for packet in contracts if ': '.encode('utf-16-le') in packet]), 6)
         self.assertIn('!party create'.encode('utf-16-le'), contracts[-1])
         self.assertIn('!party create'.encode('utf-16-le'), group[0])
         self.assertIsNone(self.service.member(self.sessions[0]))

@@ -197,7 +197,7 @@ class ContractsLocalTcpTests(unittest.TestCase):
 
         bob_start, carol_start = len(self.frames['bob']), len(self.frames['carol'])
         replies = self.command('alice', '!contracts list')
-        self.assertEqual(sum(name == 'Контракты' and ': ' in text for name, text in replies), 3)
+        self.assertEqual(sum(name == 'Контракты' and ': ' in text for name, text in replies), 6)
         self.flush(self.peers['bob'])
         self.flush(self.peers['carol'])
         for login, start in (('bob', bob_start), ('carol', carol_start)):

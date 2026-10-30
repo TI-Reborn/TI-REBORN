@@ -60,10 +60,11 @@ class PartyTravel:
                 raise ValueError('Маршрутом группы управляет лидер')
             if busy or party['state'] not in ('city', 'travelling', 'at_target'):
                 raise ValueError('Сначала завершите бой')
-            if party['state'] == 'city':
-                party = self.parties.validate_departure(party['id'], connection=db)
             # A private marker is resolved only against this party's instance.
             contract = self.contracts.active(party['id'])
+            if party['state'] == 'city':
+                solo = bool(contract and contract['template']['recommended_party_size'] == [1, 1])
+                party = self.parties.validate_departure(party['id'], connection=db, solo=solo)
             target = contract['target'] if contract else None
             bounds = target['bounds'] if target else ()
             private = bool(bounds and bounds[0] <= x <= bounds[2] and bounds[1] <= y <= bounds[3])

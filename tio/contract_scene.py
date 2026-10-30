@@ -24,7 +24,7 @@ from .item_catalog import items_root
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY_PATH = ROOT / 'config/contracts_map_profiles.json'
-ROLE_ORDER = ('scout', 'rifleman', 'heavy')
+ROLE_ORDER = ('scout', 'rifleman', 'heavy', 'dog', 'mutant', 'raider')
 BOT_OWNER = 0x7fffffff
 NPC_ACTOR_BASE = 0x71000000
 
@@ -42,7 +42,7 @@ def _asset_rules():
 
 
 def _validate(template, snapshot):
-    if not isinstance(template, dict) or template.get('id') not in ('camp', 'depot', 'checkpoint'):
+    if not isinstance(template, dict) or template.get('map_profile') not in ('contract_camp', 'contract_depot', 'contract_checkpoint'):
         raise ValueError('Unknown contract template')
     if type(snapshot) is not dict or snapshot.get('version') != 1:
         raise ValueError('Frozen contract scene policy is required')
@@ -62,11 +62,14 @@ def _validate(template, snapshot):
     from .weapons import WeaponCatalog
     from .armor import ArmorCatalog
     weapons, armor = WeaponCatalog(), ArmorCatalog()
+    from .weapons import WeaponStats
+    weapons.weapons[353] = WeaponStats(353, 'Sick Miner Attack', 'Melee', 12, 6, 4, None, None, 1, 1, 1)
+    weapons.sources[353] = dict(weaponAttack='None', weaponType='Melee', accuracy='100')
     roles = snapshot.get('roles')
     if not isinstance(roles, dict) or set(roles) != set(enemies):
         raise ValueError('Frozen NPC roles differ from contract roster')
     for role in roles.values():
-        if (not isinstance(role, dict) or role.get('resource_id') not in (1, 2)
+        if (not isinstance(role, dict) or role.get('resource_id') not in (1, 2, 100, 103)
                 or not isinstance(role.get('name'), str) or not role['name'] or len(role['name'].encode('cp1251')) > 100):
             raise ValueError('NPC requires an existing human resource and bounded name')
         for key, lo, hi in (('level', 1, 20), ('health', 1, 65535), ('action_points', 1, 255),
@@ -75,9 +78,9 @@ def _validate(template, snapshot):
             if type(role.get(key)) is not int or not lo <= role[key] <= hi:
                 raise ValueError('Invalid NPC role statistic: ' + key)
         weapon = weapons.weapons.get(role.get('weapon_id'))
-        if (weapon is None or weapon.ammo_id is None or weapon.attack_ap > role['action_points']
-                or weapons.sources[weapon.template_id].get('freaks_only') == '1'):
-            raise ValueError('NPC requires a verified usable human firearm')
+        if (weapon is None or weapon.attack_ap > role['action_points']
+                or role['resource_id'] in (1, 2) and weapon.ammo_id is None):
+            raise ValueError('NPC requires a verified usable weapon')
         occupied = set()
         if not isinstance(role.get('armor_ids'), list):
             raise ValueError('Invalid NPC armor list')
@@ -130,8 +133,9 @@ def _verify_frozen(template):
 
 def _profile(actor_id, role, weapon):
     """An explicit in-memory profile, independent of any saved account."""
-    fields = {key: (b'' if reader == 'CString' else 0) for key, _, reader in SCHEMAS[(True, False, False)]}
-    fields.update({'0x8c43eb': actor_id, '0x8c446f': role['resource_id'],
+    human = role['resource_id'] != 103
+    fields = {key: (b'' if reader == 'CString' else 0) for key, _, reader in SCHEMAS[(human, False, False)]}
+    fields.update({'0x8c43eb': actor_id, '0x8c446f': (1 if human else 3),
                    '0x8c4489': role['name'].encode('cp1251'), '0x8c4aef': role['level'],
                    '0x8c4a07': role['health'], '0x8c4ab1': role['health'],
                    '0x8c4a1b': role['sight_radius'], '0x8c4a2f': role['action_points'],
@@ -140,13 +144,14 @@ def _profile(actor_id, role, weapon):
         fields[saved] = fields[base] = bits(0)
     index = NAMES.index(weapon.weapon_type)
     fields[SAVED[index]] = fields[BASE[index]] = bits(role['weapon_proficiency'])
-    return encode_pet_info(PetInfo(True, fields))
+    return encode_pet_info(PetInfo(human, fields))
 
 
 def _inventory(actor_id, role, weapons, armor, instance_start, metadata):
     weapon = weapons.weapons[role['weapon_id']]
-    choices = [(weapon.template_id, 1, 16), *[(i, 1, armor.items[i][0]) for i in role['armor_ids']],
-               (weapon.ammo_id, role['ammunition'], 0)]
+    choices = [(weapon.template_id, 1, 16), *[(i, 1, armor.items[i][0]) for i in role['armor_ids']]]
+    if weapon.ammo_id is not None:
+        choices.append((weapon.ammo_id, role['ammunition'], 0))
     items = []
     for offset, (identity, count, slot) in enumerate(choices):
         durability = int(metadata[identity].get('durability', 0))
@@ -191,10 +196,13 @@ def prepare(seats, contract):
     from .team_scene import prepare as prepare_team
     # PvE admits a selected mixed-level squad; no PvP wager rewards are enabled.
     field, views, ground, skills = prepare_team(seats, 7, seed=contract['seed'],
-        profile=snapshot['profile_name'], arena_map=generated.arena, selected_ids=True, wager=True)
+        profile=snapshot['profile_name'], arena_map=generated.arena, selected_ids=True, wager=True,
+        require_full_health=False)
     field.teams[BOT_OWNER] = 1
     field.combat.rng = random.Random(contract['seed'] ^ 0x434F4E5452414354)
     weapons, armor = _validate(template, snapshot)
+    field.combat.catalog.weapons[353] = weapons.weapons[353]
+    field.combat.catalog.sources[353] = weapons.sources[353]
     templates = dict(next(iter(views.values())).templates)
     metadata = {int(node.get('id')): {v.get('key'): v.get('val') for v in node.findall('value')}
                 for node in items_root()}
@@ -204,11 +212,16 @@ def prepare(seats, contract):
     permissions = dict(field.doors.permissions)
     npc_roles = {}
     npc_item_ids = set()
+    boss = None
     from tools.battle_actor_fixture import actor_packet
     for role_name in ROLE_ORDER:
         for _ in range(enemies.get(role_name, 0)):
             role = snapshot['roles'][role_name]
+            human = role['resource_id'] != 103
             actor_id = NPC_ACTOR_BASE + len(npc_roles) + 1
+            if len(npc_roles) == count - 1:
+                boss = actor_id
+                role = {**role, 'name': role['name'] + ' — босс', 'health': role['health'] * 2}
             x, y = generated.arena.bot_spawns[len(npc_roles)]
             weapon = weapons.weapons[role['weapon_id']]
             if item_id + len(role['armor_ids']) + 1 > 0xffffffff:
@@ -222,10 +235,12 @@ def prepare(seats, contract):
                 role['health'], role['health'], role['sight_radius'], (weapon,))
             field._turn_points[actor_id] = role['action_points']
             field._ability_turns[actor_id] = 0
-            field.combat.register(actor_id, inventory, human=True, pet_packet=profile)
-            templates[actor_id] = decode_battle_soldier(actor_packet(profile, BOT_OWNER, inventory,
-                actor_id=actor_id, name=role['name'].encode('cp1251'), x=x, y=y, team=1, color=len(seats)), human_equipment=True)
-            permissions[actor_id] = frozenset((True, False))
+            field.combat.register(actor_id, inventory, human=human, pet_packet=profile)
+            field.combat.resources[actor_id] = role['resource_id']
+            native = decode_battle_soldier(actor_packet(profile, BOT_OWNER, inventory, human=human,
+                actor_id=actor_id, name=role['name'].encode('cp1251'), x=x, y=y, team=1, color=len(seats)), human_equipment=human)
+            templates[actor_id] = replace(native, fields={**native.fields, '0x8c50fb': role['resource_id']})
+            permissions[actor_id] = frozenset((True, False)) if human else frozenset()
             # BattleLoot treats temporary_items as transferable corpse loot.
             # NPC equipment must remain battle-local and never become loot.
             npc_item_ids.update(i.instance_id for i in decode_item_list(inventory)[1])
@@ -245,7 +260,7 @@ def prepare(seats, contract):
         crates=0, visual_containers=len(generated.arena.containers), doors=len(generated.arena.doors))
     field.contract_metadata = dict(instance_id=contract.get('id'), template_id=template['id'],
         seed=contract['seed'], policy_sha256=snapshot['content_sha256'], npc_roles=npc_roles,
-        human_actors=humans, npc_actors=count, provisional_balance=True)
+        human_actors=humans, npc_actors=count, boss=boss, provisional_balance=True)
     field.contract_transient_items = frozenset(npc_item_ids)
     views = {owner: VisibilityView(field, owner, dict(templates)) for owner in sorted(owners)}
     return field, views, ground, skills, BOT_OWNER

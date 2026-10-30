@@ -367,6 +367,11 @@ def shared_method(method):
                       or turn is not None and hub.clock()<turn[2] and len(field.living_sides())>1
                       and any(field.actor(i).action_points>0 for i in field.living_actor_ids(turn[0])))
                 if battle.get('kind')=='mine' and any(not field.living_actor_ids(o) for o in battle['mine_active']):idle=False
+                if battle.get('kind') == 'contract':
+                    metadata = field.contract_metadata
+                    boss = metadata.get('boss')
+                    if boss is not None and not field.actor(boss).health and 'boss_item' not in metadata:
+                        idle = False
                 if battle.get('kind')=='assault' and hub.assault_wall()>=battle['assault_ends']:idle=False
                 if battle['finished'] or idle:return method(hub,*args,**kwargs)
             try:

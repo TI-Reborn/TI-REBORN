@@ -221,7 +221,7 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
     def notify(self, room, *, entering=()):
         captain=self.players[room.captain]
         settings=BattleSettings(1,room.capacity,room.mode,turn_seconds(room.soldiers),2,
-            captain.probe_character_name,bytes((*TEAM_LEVEL_RANGES[room.band],room.soldiers,0,0)),0,0)
+            captain.probe_character_name,bytes((*TEAM_LEVEL_RANGES[room.band],room.soldiers,0,1)),0,0)
         records=self.member_records(room)
         for owner in room.members:
             if owner in entering:self.put(owner,b'\x6c'+encode_battle_settings_body(settings))
@@ -317,6 +317,8 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
                     if self.battles[owner].get('faulted'):
                         self.put(owner,encode_shop_error('Бой остановлен. Сохраняется результат.'))
                         return True
+                    if packet == b'\x2a\x01':
+                        self.battles[owner]['arena'].require_exit(owner)
                     self.battle_action(owner,packet)
                     return True
                 if packet==b'\xba\x01':
@@ -647,7 +649,7 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
             s._battle_treatment_ids=None
             settings=BattleSettings(1,len(order),first.mode,request.unknown_u32_01,2,
                 self.players[first.captain].probe_character_name,
-                bytes((max(1,first.creator_level-wager_request.level_range_index),min(20,first.creator_level+wager_request.level_range_index),first.soldiers,wager_request.map_size,0)) if wagering else bytes((0,0,first.soldiers,0,0)),
+                bytes((max(1,first.creator_level-wager_request.level_range_index),min(20,first.creator_level+wager_request.level_range_index),first.soldiers,wager_request.map_size,1)) if wagering else bytes((0,0,first.soldiers,0,1)),
                 wager_request.stake if wagering else 0,0)
             records=tuple(BattleMemberRecord(s.probe_character_id if m==owner else m,
                 b'AI bot' if m in bots else self.players[m].probe_character_name,0,
@@ -711,6 +713,9 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
         action_view=VisibilityView(field,owner,dict(source.templates))
         action_view.visible=visible_actors(field,owner)
         result=method(owner,packet) if packet[0] in (0x3a,0x3c) else method(owner,packet,view=action_view)
+        if battle.get('kind') == 'contract':
+            from tio.contract_loot import stage_boss_loot
+            stage_boss_loot(field)
         if packet[0]==0xf6 and (len(packet)<3 or packet[2]!=1):
             # Stage/cancel replies carry private previews, never authoritative
             # templates, actor equipment, fog or another account's inventory.
@@ -863,7 +868,11 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
         if battle['finished']:return
         if battle.get('kind')=='wager' and battle.get('wager_report',{}).get('refund_reason'):
             self.abort_wager(battle,battle['wager_report']['refund_reason']);return
-        if len(field.living_sides())<=1:
+        pending_loot = False
+        if battle.get('kind') == 'contract':
+            from tio.contract_loot import stage_boss_loot
+            pending_loot = stage_boss_loot(field) and any(field.living_actor_ids(o) for o in battle['humans'])
+        if len(field.living_sides())<=1 and not pending_loot:
             self.finish(battle);return
         points=battle.get('points')
         if points is not None and (battle.get('ranked_winner') is not None or points.outcome(field) is not None):
@@ -943,6 +952,8 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
             return
         if packet==b'\x2a\x01':
             if battle.get('kind') == 'contract':
+                if not any(battle['field'].living_actor_ids(bot) for bot in battle['bots']):
+                    self.finish_contract(battle, abandon_loot=True); return
                 self.abort_contract(battle, 'participant_left'); return
             if battle.get('kind')=='wager' and not battle.get('wager_active'):
                 self.abort_wager(battle,'participant_left_loading');return

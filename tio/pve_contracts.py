@@ -74,7 +74,7 @@ def validate_catalog(source):
     if not isinstance(records, list) or not 1 <= len(records) <= 64:
         raise ValueError('Invalid contract templates')
     from .locations import TOWNS
-    seen_ids, seen_zones, rectangles = set(), set(), []
+    seen_ids, seen_zones, seen_modes, rectangles = set(), {}, set(), []
     fields = {'id', 'version', 'name', 'objective', 'zone_id', 'bounds', 'levels',
               'recommended_party_size', 'map_profile', 'map_size', 'enemies', 'reward'}
     for record in records:
@@ -92,22 +92,29 @@ def validate_catalog(source):
         # local IDs18..20 remain valid when a new public town reuses an ID at
         # different coordinates. The geometry/safe-zone check below still
         # reserves every actual public rectangle, including the matching ID.
-        if zone in seen_zones:
+        geometry = (record['bounds'], record['map_profile'], record['map_size'], record['levels'])
+        shared_zone = zone in seen_zones
+        mode = (zone, record['recommended_party_size'] == [1, 1])
+        if mode in seen_modes or shared_zone and seen_zones[zone] != geometry:
             raise ValueError('Duplicate contract zone')
-        seen_zones.add(zone)
+        seen_modes.add(mode)
+        seen_zones[zone] = deepcopy(geometry)
         bounds = record['bounds']
         if not isinstance(bounds, (list, tuple)) or len(bounds) != 4:
             raise ValueError('Invalid contract bounds')
         x1, y1, x2, y2 = (_integer(v, 'contract coordinate', -512, 511) for v in bounds)
         if not (x1 < x2 and y1 < y2 and x2 - x1 <= 64 and y2 - y1 <= 64):
             raise ValueError('Invalid contract bounds')
-        for a, b, c, d in (*TOWNS.values(), *rectangles):
+        for a, b, c, d in (*TOWNS.values(), *(() if shared_zone else rectangles)):
             if x1 <= c + margin and x2 >= a - margin and y1 <= d + margin and y2 >= b - margin:
                 raise ValueError('Contract bounds overlap an existing or safe zone')
-        rectangles.append((x1, y1, x2, y2))
+        if not shared_zone:
+            rectangles.append((x1, y1, x2, y2))
         record['bounds'] = [x1, y1, x2, y2]
         record['levels'] = _pair(record['levels'], 'contract levels', 1, 20)
-        record['recommended_party_size'] = _pair(record['recommended_party_size'], 'party size', 2, 4)
+        record['recommended_party_size'] = _pair(record['recommended_party_size'], 'party size', 1, 4)
+        if record['recommended_party_size'] not in ([1, 1], [2, 4]):
+            raise ValueError('Contract requires solo or group party size')
         profile = _text(record['map_profile'], 'map profile', 64)
         if not _SLUG.fullmatch(profile):
             raise ValueError('Invalid contract map profile')
@@ -116,7 +123,7 @@ def validate_catalog(source):
             raise ValueError('Invalid contract map size')
         record['map_size'] = [_integer(v, 'contract map size', 16, 64) for v in size]
         enemies = record['enemies']
-        if not isinstance(enemies, dict) or not enemies or set(enemies) - {'scout', 'rifleman', 'heavy'}:
+        if not isinstance(enemies, dict) or not enemies or set(enemies) - {'scout', 'rifleman', 'heavy', 'dog', 'mutant', 'raider'}:
             raise ValueError('Invalid contract enemies')
         if sum(_integer(v, 'enemy count', 1, 16) for v in enemies.values()) > 24:
             raise ValueError('Invalid total enemy count')
@@ -178,8 +185,8 @@ def _party(snapshot):
     if party['state'] not in ('city', 'travelling', 'at_target', 'loading', 'battle'):
         raise ValueError('Invalid party state')
     _integer(party['revision'], 'party revision', 0, 2**63 - 1)
-    if not isinstance(party['members'], (list, tuple)) or not 2 <= len(party['members']) <= 4:
-        raise ValueError('Contracts require two to four real accounts')
+    if not isinstance(party['members'], (list, tuple)) or not 1 <= len(party['members']) <= 4:
+        raise ValueError('Contracts require one to four real accounts')
     members, owners, logins = [], set(), set()
     for raw in party['members']:
         if not isinstance(raw, dict):
@@ -341,6 +348,9 @@ class ContractStore:
                 return self._record(db, previous[1])
             if template_id not in self.templates:
                 raise ValueError('Unknown contract template')
+            minimum, maximum = self.templates[template_id]['recommended_party_size']
+            if not minimum <= len(party['members']) <= maximum:
+                raise ValueError(f'Для этого контракта требуется игроков: {minimum}–{maximum}')
             if party['state'] != 'city' or party['town_id'] is None:
                 raise ValueError('Accept a contract while gathered in a city')
             from .cities import CITIES

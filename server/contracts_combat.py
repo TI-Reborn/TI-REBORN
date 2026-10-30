@@ -40,7 +40,8 @@ class ContractsCombat:
         contract = service.contracts.active(party['id'])
         if not contract or contract['state'] != 'arrived' or party['state'] != 'at_target':
             raise ValueError('Сначала доберитесь всей группой до цели контракта')
-        if not 2 <= len(party['members']) <= 4 or not all(m['online'] and m['ready'] for m in party['members']):
+        minimum, maximum = contract['template']['recommended_party_size']
+        if not minimum <= len(party['members']) <= maximum or not all(m['online'] and m['ready'] for m in party['members']):
             raise ValueError('Все участники группы должны быть в сети и готовы')
         bounds = contract['target']['bounds']
         seats, sessions = [], {}
@@ -131,7 +132,7 @@ class ContractsCombat:
             raise ValueError('Для завершения контракта требуется журнал боёв')
         return journal.unit(battle)
 
-    def finish_contract(self, battle):
+    def finish_contract(self, battle, *, abandon_loot: bool = False):
         if battle.get('kind') != 'contract':
             raise ValueError('Ожидался бой контракта')
         if battle['finished']:
@@ -143,6 +144,9 @@ class ContractsCombat:
             if bots_alive and humans_alive:
                 raise ValueError('Зачистка ещё не завершена')
             victory = bool(humans_alive and not bots_alive)
+            from tio.contract_loot import stage_boss_loot
+            if victory and stage_boss_loot(field) and not abandon_loot:
+                return
             store = ContractStore(battle['contract_path'])
             receipt = store.transition(battle['contract_id'], 'active', 'completed' if victory else 'failed',
                                        match_id=battle['match_id'], outcome='victory' if victory else 'defeat')

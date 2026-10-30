@@ -11,6 +11,7 @@ import sqlite3
 import struct
 import unittest
 from unittest.mock import patch
+from battle_exit_fixture import place_squad_at_edge
 
 import test_shared_team_arena as fixtures
 from server.battle_journal import BattleJournal
@@ -370,13 +371,16 @@ class SharedMineArenaTests(unittest.TestCase):
         with closing(sqlite3.connect(self.path)) as db:
             self.assertEqual(db.execute('SELECT gross,tax FROM mine_crystal_extractions ORDER BY extractor').fetchall(),[(0,0),(101,0),(0,0)])
 
-    def test_escape_interior_with_carried_crystals_grants_no_extraction(self):
+    def test_interior_escape_rejected_then_edge_departure_grants_no_extraction(self):
         battle=self.enter();field=battle['field'];identity=field.actor_ids(self.owners[1])[0]
         mine=field.mining;position=next(p for p in mine.deposits if p not in mine.layout.raider_exits)
         with self.hub.journal.unit(battle):
             field._actors[identity]=replace(field.actor(identity),x=position[0],y=position[1])
             drill=next(iter(field.loot.boxes.values()))[0]
             field.combat.inventories[identity]=encode_item_list(identity,(replace(drill,unknown_u32_01=100),))
+        self.send(1,b'\x2a\1')
+        self.assertIn(self.owners[1], self.hub.battles)
+        place_squad_at_edge(field, self.owners[1])
         self.send(1,b'\x2a\1')
         self.assertEqual(CrystalMarket(self.path).balance('bob'),0)
         self.assertNotIn(self.owners[1],self.hub.results)

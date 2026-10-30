@@ -32,6 +32,7 @@ from tio.protocol.pet_info import decode_pet_info, encode_pet_info
 from tio.survival_service import SurvivalService
 from tio.wallets import WalletStore
 from wallet_fixture import fund_wallet
+from battle_exit_fixture import place_squad_at_edge
 
 
 class Session(SimpleNamespace):
@@ -115,6 +116,27 @@ class ContractsCombatTests(unittest.TestCase):
             for owner in battle['bots']:
                 for identity in field.actor_ids(owner):
                     field._actors[identity] = replace(field.actor(identity), health=0)
+
+    def collect_boss(self, battle, hub=None):
+        from tio.contract_loot import stage_boss_loot
+        from tio.protocol.battle_position import BattlePositionRequest, encode_position_request
+        from tio.protocol.battle_loot import LootTransfer, encode_loot_transfer
+        hub = hub or self.hub
+        with hub.journal.unit(battle):
+            field = battle['field']
+            stage_boss_loot(field)
+            position = field.contract_metadata['boss_position']
+            item, = field.loot.boxes[position]
+            owner = min(battle['humans'])
+            actor = field.actor(field.actor_ids(owner)[0])
+            field._actors[actor.actor_id] = replace(actor, x=position[0], y=position[1], action_points=20)
+            battle['arena']._turns[battle['room'].room_id] = (owner, frozenset((actor.actor_id,)), self.now+60)
+            hub.perform_action(battle, owner, encode_position_request(BattlePositionRequest(actor.actor_id, *position)))
+            hub.perform_action(battle, owner, encode_loot_transfer(LootTransfer(actor.actor_id, *position, (), ((item.instance_id, 1),))))
+
+    def clear_and_collect(self, battle):
+        self.clear_enemies(battle)
+        self.collect_boss(battle)
 
     def rows(self, table):
         with closing(sqlite3.connect(self.path)) as db:
@@ -202,22 +224,22 @@ class ContractsCombatTests(unittest.TestCase):
     def test_victory_paid_once_to_each_frozen_account_and_returns_party_city(self):
         battle = self.start(selected=(1, 2))
         before = {account: WalletStore(self.path).ensure(account).credits for account in ('alice', 'bravo')}
-        self.clear_enemies(battle)
+        self.clear_and_collect(battle)
         self.hub.finish(battle)
         self.assertTrue(battle['finished'])
         self.assertEqual(battle['contract_receipt']['state'], 'completed')
         for account in ('alice', 'bravo'):
-            self.assertEqual(WalletStore(self.path).ensure(account).credits-before[account], 150)
+            self.assertEqual(WalletStore(self.path).ensure(account).credits-before[account], 1500)
         self.assertFalse(self.service.contracts.pending_awards(battle['contract_id']))
         self.assertEqual(sum(row[4] for row in self.rows('pve_contract_awards')), 2)
         for owner in self.owners[:2]:
             report = battle['settlement_inputs'][owner][1]
-            self.assertEqual(sum(report['experience_report'].values()), 60)
+            self.assertEqual(sum(report['experience_report'].values()), 600)
             self.assertNotIn('rank_report', report)
             self.assertNotIn('statistics_report', report)
             self.assertNotIn('ranked_report', report)
             self.assertNotIn('team_ranked_report', report)
-            self.assertEqual(report['experience_report'], {1: 30, 2: 30})
+            self.assertEqual(report['experience_report'], {1: 300, 2: 300})
             summary = battle['result_packets'][owner][-1]
             self.assertEqual(summary[0], 0x4c)
             self.assertEqual(summary[28], 2)
@@ -238,7 +260,7 @@ class ContractsCombatTests(unittest.TestCase):
 
     def test_settlement_failure_rolls_back_wallet_intents_terminal_state_and_memory(self):
         battle = self.start()
-        self.clear_enemies(battle)
+        self.clear_and_collect(battle)
         before = self.rows('wallets')
         with patch('tio.battle_rewards.settle', side_effect=ValueError('fixture wallet failed')):
             with self.assertRaises(Exception):
@@ -251,7 +273,7 @@ class ContractsCombatTests(unittest.TestCase):
         self.hub.finish_contract(live)
         self.assertTrue(live['finished'])
 
-    def test_premium_scales_combat_experience_but_keeps_contract_quote_fixed(self):
+    def test_premium_does_not_scale_contract_or_combat_experience(self):
         from tio.premium import purchase, encode_purchase, OFFERS
         purchase(self.path, 'alice', encode_purchase(1, OFFERS[1][1]), now=int(time.time()))
         battle = self.start(selected=(1, 2))
@@ -264,18 +286,18 @@ class ContractsCombatTests(unittest.TestCase):
         earned = field.combat.experience.report(field.combat, owner)[attacker.actor_id]
         self.assertGreater(earned, 0)
         before = WalletStore(self.path).ensure('alice').credits
-        self.clear_enemies(battle)
+        self.clear_and_collect(battle)
         self.hub.finish_contract(battle)
-        self.assertEqual(WalletStore(self.path).ensure('alice').credits-before, 150)
+        self.assertEqual(WalletStore(self.path).ensure('alice').credits-before, 1500)
         with closing(sqlite3.connect(self.path)) as db:
             gains = dict(db.execute('SELECT pet_id,gain FROM experience_battle_audit WHERE account=? AND match_id=?',
                                     ('alice', battle['match_id'])))
-        self.assertEqual(gains[1], earned*3//2+30)
-        self.assertEqual(gains[2], 30)
+        self.assertEqual(gains[1], earned+300)
+        self.assertEqual(gains[2], 300)
 
     def staged_winning_intents(self):
         battle = self.start()
-        self.clear_enemies(battle)
+        self.clear_and_collect(battle)
         with self.hub.journal.unit(battle):
             self.service.contracts.transition(battle['contract_id'], 'active', 'completed', match_id=battle['match_id'])
             battle['contract_result'] = 1
@@ -299,7 +321,7 @@ class ContractsCombatTests(unittest.TestCase):
             self.assertEqual(self.service.contracts.pending_awards(battle['contract_id']), intents)
             self.assertFalse(self.rows('battle_rewards'))
         settle(self.path, 'alice', battle['match_id'], 1, **values)
-        self.assertEqual(WalletStore(self.path).ensure('alice').credits, 10150)
+        self.assertEqual(WalletStore(self.path).ensure('alice').credits, 11500)
         self.assertEqual([row['owner'] for row in self.service.contracts.pending_awards(battle['contract_id'])], ['bravo'])
 
     def test_wrong_match_or_owner_cannot_claim_another_participants_intent(self):
@@ -319,6 +341,7 @@ class ContractsCombatTests(unittest.TestCase):
         before = self.rows('wallets')
         with self.assertRaises(ValueError):
             self.hub.contract_to_city(battle, self.owners[0])
+        place_squad_at_edge(battle['field'], self.owners[1])
         self.hub.handle(self.sessions[1], b'\x2a\x01')
         self.assertTrue(battle['finished'])
         self.assertEqual(battle['contract_receipt']['outcome'], 'aborted')
@@ -384,7 +407,7 @@ class ContractsCombatTests(unittest.TestCase):
 
     def test_victory_returns_group_to_contract_origin_after_visiting_another_city(self):
         battle = self.mission_via_another_city()
-        self.clear_enemies(battle)
+        self.clear_and_collect(battle)
         self.hub.finish_contract(battle)
         for session in self.sessions[:2]:
             self.hub.handle(session, b'\x2a\x01')
@@ -416,6 +439,7 @@ class ContractsCombatTests(unittest.TestCase):
             for owner in restored['bots']:
                 for identity in restored['field'].actor_ids(owner):
                     restored['field']._actors[identity] = replace(restored['field'].actor(identity), health=0)
+        self.collect_boss(restored, recovered)
         recovered.finish_contract(restored)
         self.assertEqual(len(self.rows('battle_rewards')), 2)
         self.assertFalse(service.contracts.pending_awards(restored['contract_id']))

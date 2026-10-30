@@ -241,10 +241,7 @@ class MineArena(MineRequests):
         return True
 
     def mine_exit_position(self, battle, owner):
-        field = battle['field']; mine = field.mining
-        exits = mine.layout.raider_exits if mine.roles[owner] == 2 else mine.layout.lift
-        actors = [field.actor(i) for i in field.living_actor_ids(owner)]
-        return bool(actors) and all((a.x, a.y) in exits for a in actors)
+        return battle['field'].mining.at_exit(owner)
 
     def mine_after_action(self, battle, owner):
         if owner not in battle['mine_active']:

@@ -36,7 +36,7 @@ def snapshot(service, session):
     invitations = [dict(id=i['id'], leader=service.name(i['leader']), expires_at=i['expires_at'])
                    for i in service.parties.invitations(owner)]
     templates = [dict(id=t['id'], name=t['name'], objective=t['objective'], levels=t['levels'], reward=t['reward'],
-                      enemies=sum(t['enemies'].values()))
+                      enemies=sum(t['enemies'].values()), party_size=t['recommended_party_size'])
                  for t in service.contracts.catalog()]
     selected = next((m['selected'] for m in members if m['self']), [])
     busy = bool(service.hub.busy(session) or session.arena._fields or
@@ -44,16 +44,17 @@ def snapshot(service, session):
     frozen = bool(contract)
     leader = bool(party and party['leader'] == owner)
     city = bool(party and party['state'] == 'city')
-    ready = bool(party and len(members) >= 2 and all(m['online'] and m['ready'] for m in members))
+    ready = bool(party and all(m['online'] and m['ready'] for m in members))
     data = dict(schema=1, name=service.name(owner), server_time=service.clock(),
         party=dict(id=party['id'], revision=party['revision'], state=party['state'], members=members) if party else None,
         invitations=invitations, pets=pets, selected=selected, catalog=templates,
         contract=dict(id=contract['id'], name=contract['template']['name'], state=contract['state'],
+                      party_size=contract['template']['recommended_party_size'],
                       reward=contract['template']['reward'], target=contract['target']) if contract else None,
         result=dict(name=json.loads(result[0])['name'], outcome=result[1], finished_at=result[2],
                     reward=json.loads(result[3]) if result[3] else None, paid=bool(result[4])) if result else None,
         permissions=dict(create=not party and not busy, invite=leader and city and not frozen and not busy,
-            edit=city and not frozen and not busy, take=leader and city and len(members) >= 2 and not frozen and not busy,
+            edit=city and not frozen and not busy, take=(not party or leader and city) and not frozen and not busy,
             ready=bool(party and party['state'] in ('city','at_target') and not busy),
             depart=leader and city and frozen and ready and not busy,
             start=leader and bool(party and party['state']=='at_target') and frozen and ready and not busy,

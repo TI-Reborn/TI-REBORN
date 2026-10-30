@@ -13,11 +13,17 @@ from .item_stacking import merge_stacks
 from .inventory_capacity import validate_capacity
 from .item_catalog import items_root
 from functools import lru_cache
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .combat import Combat
 
 ROOT=Path(__file__).resolve().parents[1]
 
 
-def match_id_floor(combat):
+def match_id_floor(combat: 'Combat', *,
+                   accounts: Iterable[tuple[str | Path, str]] = ()) -> int:
     """First free match-unique item ID for battle-created items.
 
     Native wire IDs are globally unique within the match: the client keeps the
@@ -31,7 +37,7 @@ def match_id_floor(combat):
                                 *getattr(combat,'personal_inventories',{}).values())
                                 for i in decode_item_list(p)[1]),default=0))
     from .item_ids import next_item_id
-    for path,account in set(combat.persistence.values()):
+    for path,account in set((*combat.persistence.values(), *accounts)):
         with closing(connect(path)) as db:
             floor=max(floor,next_item_id(db,account))
     return floor
@@ -74,7 +80,12 @@ class BattleLoot:
         result=self.next_id;self.next_id+=1
         return result
 
+    def allocation_floor(self) -> int:
+        """Include new admissions and saves newer than a recovered counter."""
+        return max(self.next_id, match_id_floor(self.combat))
+
     def _roll(self):
+        self.next_id = self.allocation_floor()
         weapon=self.rng.choice(self.weapons)
         choices=[(weapon,1),(self.rng.choice(self.armors),1),
                  (self.rng.choice((9,34)),self.rng.randint(*self.policy['medical_units']))]
@@ -149,7 +160,7 @@ class BattleLoot:
                 if source[identity].optional_u32 is not None or any(source[identity].unknown_bytes_02[2:]):
                     raise ValueError('Marked or rented equipment cannot be left in a crate')
         temporary=set(self.combat.temporary_items)
-        next_id=self.next_id
+        next_id=self.allocation_floor()
         def move(pairs,source,destination):
             nonlocal next_id
             for identity,count in pairs:

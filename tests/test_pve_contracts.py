@@ -63,10 +63,10 @@ class ContractTests(unittest.TestCase):
         from tio.locations import TOWNS
         before = dict(TOWNS)
         records = self.store.catalog()
-        self.assertEqual([r['id'] for r in records], ['camp', 'depot', 'checkpoint'])
-        self.assertEqual([r['zone_id'] for r in records], [23, 24, 25])
+        self.assertEqual([r['id'] for r in records], ['camp', 'depot', 'checkpoint', 'solo_dogs', 'solo_mutants', 'solo_raiders'])
+        self.assertEqual([r['zone_id'] for r in records], [23, 24, 25, 23, 24, 25])
         records[0]['reward']['credits'] = 123456
-        self.assertEqual(self.store.catalog()[0]['reward']['credits'], 150)
+        self.assertEqual(self.store.catalog()[0]['reward']['credits'], 1500)
         self.assertEqual(TOWNS, before)
         self.assertIn('emulator design', self.store.policy['source'])
         with closing(sqlite3.connect(self.path)) as db:
@@ -79,7 +79,7 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(first['seed'], 42)
         self.assertEqual(first['state'], 'accepted')
         self.assertEqual(first['roster'][0], dict(owner='alice', login='alice', selected=[11]))
-        self.assertEqual(first['rewards'][0]['credits'], 150)
+        self.assertEqual(first['rewards'][0]['credits'], 1500)
         self.store.templates['camp']['reward']['credits'] = 999
         self.assertEqual(self.accept(), first)
         reopened = ContractStore(self.path, clock=lambda: self.now[0])
@@ -265,7 +265,7 @@ class ContractTests(unittest.TestCase):
         complete = self.complete()
         intents = self.store.pending_awards(complete['id'])
         self.assertEqual([award['owner'] for award in intents], ['alice', 'bob'])
-        self.assertEqual(sum(award['credits'] for award in intents), 300)
+        self.assertEqual(sum(award['credits'] for award in intents), 3000)
         self.store.transition(complete['id'], 'active', 'completed', match_id='match-one')
         self.assertEqual(self.store.pending_awards(complete['id']), intents)
         with self.assertRaisesRegex(ValueError, 'settlement transaction'):

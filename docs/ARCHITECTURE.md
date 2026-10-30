@@ -45,7 +45,7 @@
 
 ## Границы передачи
 
-Исходники опубликованного лаунчера 0.1.33 включены в `launcher/`: .NET 10,
+Исходники лаунчера 0.1.42 включены в `launcher/`: .NET 10,
 Windows Forms, `launcher/TioLauncher.csproj`. Нативный интерфейс контрактов
 связан с `deploy/client_contracts_windows.py` и встроенным JSON-планом лаунчера.
 Next.js-сайт, Unity и проприетарные EXE/DLL клиента не включены. Их интеграции

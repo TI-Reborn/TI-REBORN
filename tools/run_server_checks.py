@@ -68,6 +68,8 @@ MODULES = (
     'test_area_fire',
     'test_friends',
     'test_item_ids',
+    'test_mine_item_ids',
+    'test_battle_edge_exit',
     'test_launch_admission',
     'test_repair_from_warehouse',
     'test_sniper_scope',
@@ -116,6 +118,9 @@ MODULES = (
     'test_contracts_service',
     'test_contracts_ui',
     'test_contracts_combat',
+    'test_contract_scene',
+    'test_contracts_expansion',
+    'test_combat_sight_scatter',
     'test_contracts_local_tcp',
 )
 

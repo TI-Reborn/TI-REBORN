@@ -97,6 +97,17 @@ def append_mining_owner(field,path,account,ticket,catalog,*,role,templates):
     if owner in mine.exited or field.actor_ids(owner):raise ValueError('Already admitted to this mine')
     if any(saved_account==account for _,saved_account in field.combat.persistence.values()):
         raise ValueError('Account already admitted to this mine')
+    # Already issued drill/ground IDs cannot be renamed in connected clients.
+    # Reject this admission before touching the scene or the newcomer's saves.
+    from contextlib import closing
+    from tio.db_transaction import connect
+    from tio.item_ids import taken_item_ids
+    issued = set(field.combat.temporary_items)
+    issued.update(item.instance_id for items in field.loot.boxes.values()
+                  for item in (items or ()))
+    with closing(connect(path)) as db:
+        if issued & taken_item_ids(db, account):
+            raise ValueError('Не удалось безопасно присоединить отряд. Попробуйте другую шахту или войдите позже')
     if tuple(band(ticket.levels))!=tuple(band((field.scene_metadata['level_band'][0],))):
         raise ValueError('Squad does not match this mine level range')
     occupied={(a.x,a.y) for a in field._actors.values() if a.health!=0}
@@ -143,6 +154,7 @@ def append_mining_owner(field,path,account,ticket,catalog,*,role,templates):
         field.doors.permissions[identity]=source.field.doors.permissions.get(local,frozenset())
         templates[identity]=template
     mine.next_actor_id=identities[-1]+1
+    field.loot.next_id=field.loot.allocation_floor()
     field.scene_metadata['roles']=dict(mine.roles)
     if getattr(field,'item_darkness',False):
         from tio.battle_item_effects import refresh_sight
@@ -199,6 +211,11 @@ def prepare_shared_mining(path,entries,catalog,*,seed=None):
         templates[identity]=replace(template,fields={**template.fields,'0x8c5187':2})
     field.doors=BattleDoors(field,(),{})
     field.loot=BattleLoot(field.combat,layout.arena.containers,level=max(ticket.levels))
+    # No real squad has been registered in this fresh Combat yet. Reserve all
+    # known accounts before MiningBattle allocates the shared drill identity.
+    from tio.battle_loot import match_id_floor
+    field.loot.next_id=max(field.loot.next_id, match_id_floor(field.combat,
+        accounts=((path, account) for account, _, _ in entries)))
     field.scene_metadata={**old.scene_metadata,'shared':True,'roles':{},'mobs':10}
     field.mining=MiningBattle(field,layout,old.mining.total,role,ticket.character_id,shared=True)
     configure_patrols(field,npc_ids,radius=POLICY['mutant_patrol_radius'])

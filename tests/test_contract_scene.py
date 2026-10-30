@@ -96,6 +96,8 @@ class ContractSceneTests(unittest.TestCase):
             role = record['template']['scene_policy']['roles'][role_name]
             counts[role_name] += 1
             actor = field.actor(actor_id)
+            if actor_id == field.contract_metadata['boss']:
+                role = {**role, 'health': role['health'] * 2, 'name': role['name'] + ' — босс'}
             self.assertEqual((actor.health, actor.max_health, actor.action_points, actor.sight_radius),
                              (role['health'], role['health'], role['action_points'], role['sight_radius']))
             packet = views[42].snapshot(actor_id)
@@ -188,18 +190,23 @@ class ContractSceneTests(unittest.TestCase):
             prepare([(*seats[0][:-1], True)], self.record())
         self.assertEqual(self.rows(), before)
 
-    def test_changed_or_wounded_real_selection_rejected(self):
+    def test_changed_real_selection_rejected(self):
         seat = self.seats(1)[0]
         owner, side, path, account, ticket, bot = seat
         with self.assertRaisesRegex(ValueError, 'no longer owned'):
             prepare([(owner, side, path, account, replace(ticket, actors=(999, 1)), bot)], self.record())
+
+    def test_wounded_selection_retains_saved_health(self):
+        seat = self.seats(1)[0]
+        account = seat[3]
         with closing(sqlite3.connect(self.path)) as db, db:
             packet = db.execute('SELECT pet_packet FROM owned_pets WHERE account=? AND pet_id=2', (account,)).fetchone()[0]
             pet = decode_pet_info(packet, human_equipment=True)
             hurt = encode_pet_info(replace(pet, fields={**pet.fields, '0x8c4ab1': 1}))
             db.execute('UPDATE owned_pets SET pet_packet=? WHERE account=? AND pet_id=2', (hurt, account))
-        with self.assertRaisesRegex(ValueError, 'wounded'):
-            prepare([seat], self.record())
+        field, _, _, _, _ = prepare([seat], self.record())
+        identity = next(i for i in field.actor_ids(seat[0]) if field.combat.storage_ids[i] == 2)
+        self.assertEqual(field.actor(identity).health, 1)
 
 
 if __name__ == '__main__':
