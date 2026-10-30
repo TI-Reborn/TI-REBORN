@@ -110,7 +110,7 @@ class BankGameplayTests(unittest.TestCase):
     def test_conversion_stays_closed_and_monthly_bonds_use_credits_once(self):
         reply=self.command('!bank convert 2 conversion-request1')
         self.assertIn('обмен закрыт',str(lines(reply)));self.assertEqual(self.balance(),(3000,0))
-        price=bank.policy()['bonds']['gold_each']
+        price=bank.policy()['bonds']['credits_each']
         buy=self.command(f'!bank bonds buy 2 {price} bond-buy-request01')
         assets=decode_asset_count(next(p for p in buy.packets if p[:2]==b'\xc8\x39'))
         self.assertEqual((assets.credits,assets.gold,assets.spectra_bonds),(3000-2*price,0,2))

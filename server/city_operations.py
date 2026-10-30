@@ -106,8 +106,10 @@ def quotes(db, now):
         rise = p['daily_rise_credits'] if kind == 'stocks' else p['monthly_rise_credits']
         values[kind] = min(bank.MAX, row[0] + max(0, period-row[1]) * rise) if row else initial
     p = policy['bonds'];month = date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    # The field name is part of the website's strict contract; the value is
+    # a credit price, as everywhere in the economy.
     return dict(stocks=dict(price=values['stocks'], currency='credits'), bonds=dict(
-        priceGold=p['gold_each'], redemptionCredits=values['bonds'], saleOpen=date.day <= p['sale_last_day'],
+        priceGold=p['credits_each'], redemptionCredits=values['bonds'], saleOpen=date.day <= p['sale_last_day'],
         redemptionOpen=date.day == p['redemption_day'], saleEnds=int(month.replace(day=p['sale_last_day']+1).timestamp()),
         redemptionStarts=int(month.replace(day=p['redemption_day']).timestamp()),
         redemptionEnds=int(month.replace(day=p['redemption_day']+1).timestamp())))

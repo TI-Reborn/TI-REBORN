@@ -17,16 +17,8 @@ def required_level(ability, rank):
 
 
 def learning_price(ability,rank,learned):
-    data=rules()
-    base=data['base_prices'][str(ability)]
-    multiplier=data['rank_multipliers'][rank-1]
-    surcharge=data['surcharge_percent_per_learned_rank']
-    if any(type(n) is not int or n<=0 for n in (base,multiplier)) or type(surcharge) is not int or surcharge<0:
-        raise ValueError('Invalid miner price policy')
-    total=sum(e.level for e in learned)
-    price=(base*multiplier*(100+surcharge*total)+99)//100
-    if not 0<price<=0xffffffff:raise ValueError('Miner price exceeds wire field')
-    return price
+    from .ability_prices import PricePolicy
+    return PricePolicy.from_config(rules()).price(ability,rank,sum(e.level for e in learned))
 
 
 def catalog_for_play(catalog):

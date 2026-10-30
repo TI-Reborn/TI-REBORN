@@ -123,4 +123,8 @@
     <value key="castRange" val="0" />
     <value key="reuseTurns" val="0" />
   </skill>
+  <skill id="35" name="Cybernetics">
+    <table>1 2 3 4</table>
+    <value key="effectText" val="m805" />
+  </skill>
 </skills>

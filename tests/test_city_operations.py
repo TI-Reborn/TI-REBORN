@@ -100,7 +100,7 @@ class CityOperationsTests(unittest.TestCase):
     def test_stock_and_bond_quotes_stale_rejection_and_calendar(self):
         self.ops.action(self.request('stocks_buy',count=2,quote=100));self.assertEqual(self.ops.status(dict(username='alice',slot=1))['securities']['stocks'],2)
         self.ops.action(self.request('stocks_sell',count=2,quote=100,requestId='city-stock-sale-0001'))
-        self.ops.action(self.request('bonds_buy',count=2,quote=bank.policy()['bonds']['gold_each'],requestId='city-bond-buy-00001'))
+        self.ops.action(self.request('bonds_buy',count=2,quote=bank.policy()['bonds']['credits_each'],requestId='city-bond-buy-00001'))
         with self.assertRaises(CityError):self.ops.action(self.request('bonds_sell',count=2,quote=150,requestId='city-bond-sale-0001'))
         self.now=int(datetime(2026,11,25,tzinfo=timezone.utc).timestamp())
         self.ops.action(self.request('bonds_sell',count=2,quote=155,requestId='city-bond-sale-0002'))

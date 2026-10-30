@@ -23,7 +23,8 @@ class PreparedActor:
 
 def prepare_actor(path,account,actor_id,character_id,catalog):
     from tio.dog_abilities import catalog_for_play
-    catalog=catalog_for_play(catalog)
+    from tio.restored_abilities import catalog_with_restored
+    catalog=catalog_for_play(catalog_with_restored(catalog))
     with closing(sqlite3.connect(path)) as db,db:
         db.execute('BEGIN')
         row=db.execute('SELECT human,pet_packet,inventory_packet FROM owned_pets WHERE account=? AND pet_id=?',
