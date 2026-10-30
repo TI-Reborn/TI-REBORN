@@ -8,6 +8,7 @@ from .db_transaction import connect
 import json,sqlite3
 from contextlib import closing
 from .abilities import AbilityCatalog,AbilityLevel
+from .ability_prices import PricePolicy
 from .ability_state import AbilityStateStore
 from .wallets import WalletStore
 from .protocol.abilities import AbilityEntry,encode_abilities,decode_ability_request,encode_skill_tree
@@ -19,8 +20,7 @@ from .protocol.binary import Reader
 class AbilityLearning:
     def __init__(self,path,catalog,policy):
         self.path=path;self.catalog=catalog;self.policy=policy
-        self.price=policy['price_credits_per_level']
-        if type(self.price) is not int or not 0<self.price<=0xffffffff:raise ValueError('Invalid learning price')
+        self.prices=PricePolicy.from_config(policy['learning_prices'])
         for key in ('human_skills','dog_skills','miner_skills'):
             ids=policy.get(key,())
             if len(ids)!=len(set(ids)):raise ValueError('Duplicate learning rule')
@@ -29,6 +29,8 @@ class AbilityLearning:
                 maximum=catalog.get(ability,1).number('levels')
                 if sorted(r.level for r in rows)!=list(range(1,maximum+1)) or any(r.number('value') is None for r in rows):
                     raise ValueError('Incomplete learning definition')
+                if key!='miner_skills':
+                    for rank in range(1,maximum+1):self.prices.price(ability,rank,0)
         self.state=AbilityStateStore(path,catalog);WalletStore(path)
         self.offers={}
 
@@ -38,7 +40,8 @@ class AbilityLearning:
         catalog=AbilityCatalog(AbilityLevel(r['id'],r['level'],r['fields']) for r in data['records'])
         from .miner_abilities import catalog_for_play
         from .dog_abilities import catalog_for_play as dog_catalog
-        return cls(path,dog_catalog(catalog_for_play(catalog)),json.loads((root/'config/ability_learning.json').read_text()))
+        from .restored_abilities import catalog_with_restored
+        return cls(path,dog_catalog(catalog_for_play(catalog_with_restored(catalog))),json.loads((root/'config/ability_learning.json').read_text()))
 
     def _allowed(self,db,account,owner):
         self.state._owned(db,account,owner)
@@ -53,6 +56,8 @@ class AbilityLearning:
     def required_level(ability,rank,*,dog=False):
         from .miner_abilities import MINER_SKILLS,required_level
         from .dog_abilities import required_level as dog_level
+        from .restored_abilities import restored_ids,required_level as restored_level
+        if ability in restored_ids():return restored_level(ability,rank)
         if dog or ability in (12,14,15,16,18,19,23,26):return dog_level(ability,rank)
         # Original manual p46: human critical ranks3/4 require levels4/7;
         # melee mastery ranks1/2 require levels3/5. Other human gates are rank.
@@ -63,7 +68,7 @@ class AbilityLearning:
         from .miner_abilities import MINER_SKILLS,learning_price
         if ability in MINER_SKILLS:
             return learning_price(ability,rank,learned)
-        return self.price
+        return self.prices.price(ability,rank,sum(e.level for e in learned))
 
     def _lists(self,db,account,owner):
         allowed=self._allowed(db,account,owner)
@@ -130,7 +135,7 @@ class AbilityLearning:
                        (account,owner,revision+1,packet))
             _,_,available=self._lists(db,account,owner)
             replies=(packet,self._tree(db,account,owner,learned),encode_asset_count(AssetCount(wallet[0]-selected.unknown_u32,wallet[1])))
-            if ability in (1,2,6,15,16,20,21,24):
+            if ability in (1,2,6,15,16,20,21,24,35):
                 from .passive_stats import project_saved_pet
                 human,base=db.execute('SELECT human,pet_packet FROM owned_pets WHERE account=? AND pet_id=?',(account,owner)).fetchone()
                 replies+=(project_saved_pet(db,account,owner,base,bool(human)),)

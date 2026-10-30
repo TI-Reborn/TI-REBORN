@@ -71,6 +71,8 @@
 | [tio/__main__.py](../tio/__main__.py) | Offline application packet inspection; does not assume wire framing. |
 | [tio/abilities.py](../tio/abilities.py) | Source-backed legacy ability definitions; absent parameters stay unknown. |
 | [tio/ability_learning.py](../tio/ability_learning.py) | Atomic learning with explicit price policies and derived passive stats. |
+| [tio/ability_prices.py](../tio/ability_prices.py) | Growing perk learning price shared by humans, dogs and miners. |
+| [tio/restored_abilities.py](../tio/restored_abilities.py) | Perks the client knows (locale, icons, readers) but the legacy CFG lacks. |
 | [tio/ability_progression.py](../tio/ability_progression.py) | Authoritative native90 forgetting and native console skill decreases. |
 | [tio/ability_state.py](../tio/ability_state.py) | Versioned server-owned learned-skill snapshots, not a learning policy. |
 | [tio/achievement_benefits.py](../tio/achievement_benefits.py) | Read-only bonuses from earned immutable achievement reward snapshots. |
@@ -990,6 +992,8 @@
 | [tools/verify_inventory_slots_native.py](../tools/verify_inventory_slots_native.py) | Original inventory slot normalization99082a..9908b4 plus RTTI names. |
 | [tools/verify_item_action_route_native.py](../tools/verify_item_action_route_native.py) | Original997260 action routes to920068 and bypasses legacy6B block. |
 | [tools/verify_item_batch_native.py](../tools/verify_item_batch_native.py) | Original992294 writer6B; list allocation/refcounts/UI isolated, writers run. |
+| [tools/verify_armor_reduction_native.py](../tools/verify_armor_reduction_native.py) | Original target-armor damage reduction a7aa58 against a Python model. |
+| [tools/verify_item_mark_window_native.py](../tools/verify_item_mark_window_native.py) | Original item-mark window builders (B8 01/02/03) and MarkedItems writer C829. |
 | [tools/verify_item_marks_native.py](../tools/verify_item_marks_native.py) | Execute original ItemRecord reader and owner/TTL getters in pinned silver.dll. |
 | [tools/verify_item_policy_native.py](../tools/verify_item_policy_native.py) | Run a6516c with isolated UI/lifetime and synthetic ordinary-item metadata. |
 | [tools/verify_item_record_native.py](../tools/verify_item_record_native.py) | Execute original item-record63bd38 with both optional-u32 branches. |
@@ -1161,6 +1165,8 @@
 | [tests/test_ability_cast.py](../tests/test_ability_cast.py) | См. код и вызывающие модули. |
 | [tests/test_ability_learning.py](../tests/test_ability_learning.py) | См. код и вызывающие модули. |
 | [tests/test_ability_progression.py](../tests/test_ability_progression.py) | См. код и вызывающие модули. |
+| [tests/test_ability_prices.py](../tests/test_ability_prices.py) | См. код и вызывающие модули. |
+| [tests/test_cybernetics.py](../tests/test_cybernetics.py) | См. код и вызывающие модули. |
 | [tests/test_ability_protocol.py](../tests/test_ability_protocol.py) | См. код и вызывающие модули. |
 | [tests/test_ability_state.py](../tests/test_ability_state.py) | См. код и вызывающие модули. |
 | [tests/test_ability_status.py](../tests/test_ability_status.py) | См. код и вызывающие модули. |

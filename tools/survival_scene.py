@@ -42,7 +42,8 @@ def prepare_survival(path, account, ticket, catalog, *, arena_map=None, seed=Non
         raise ValueError('Team fighters must belong to the same level range')
     per_side = policy.players // 2 * len(ticket.actors)
     from tio.dog_abilities import catalog_for_play as dog_catalog
-    catalog=dog_catalog(catalog)
+    from tio.restored_abilities import catalog_with_restored
+    catalog=dog_catalog(catalog_with_restored(catalog))
     from tio.weapons import WeaponCatalog
     weapons=WeaponCatalog()
     generated = None

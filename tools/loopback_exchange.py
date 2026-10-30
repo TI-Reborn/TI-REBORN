@@ -943,6 +943,10 @@ class LoopbackExchange:
                         if handle_mail(self.router.presence,self,packet):
                             self.router.presence.drain(self,game,outbound)
                             continue
+                        from server.securities_service import handle as handle_securities
+                        if handle_securities(self.router.presence,self,packet):
+                            self.router.presence.drain(self,game,outbound)
+                            continue
                     if self.router is not None and self.router.team_arena.handle(self,packet):
                         self.router.team_arena.drain(self,game,outbound)
                         continue
