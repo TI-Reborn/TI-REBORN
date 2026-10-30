@@ -30,12 +30,9 @@ def project_saved_pet(db,account,owner,packet,human):
     from .weapon_proficiency import ProficiencyRules
     packet=ProficiencyRules().normalize(packet,human)
     inventory=db.execute('SELECT inventory_packet FROM owned_pets WHERE account=? AND pet_id=?',(account,owner)).fetchone()[0]
-    from .weight import project_base_weight
-    from .equipment_bonuses import project
     # Older databases need no migration just to read their baseline roster.
-    if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='ability_states'").fetchone() is None:return project(project_base_weight(packet,human,inventory),human,inventory)
-    row=db.execute('SELECT packet FROM ability_states WHERE account=? AND pet_id=?',(account,owner)).fetchone()
-    if row is None:return project(project_base_weight(packet,human,inventory),human,inventory)
+    has_abilities=db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='ability_states'").fetchone() is not None
+    row=db.execute('SELECT packet FROM ability_states WHERE account=? AND pet_id=?',(account,owner)).fetchone() if has_abilities else None
     return _project_profile(owner,packet,human,inventory,row,_catalog)
 
 
@@ -61,9 +58,7 @@ def project_implant_slots(packet,human,learned,catalog):
 
 
 def _project_profile(owner,packet,human,inventory,row,catalog):
-    from .weight import project_base_weight
-    from .equipment_bonuses import project
-    if row is None:return project(project_base_weight(packet,human,inventory),human,inventory)
+    if row is None:return project_passives(packet,human,(),catalog(),inventory=inventory)
     actor,learned,learning=decode_abilities(row[0])
     if actor!=owner or learning:raise ValueError('Invalid saved skill profile')
     return project_passives(packet,human,learned,catalog(),inventory=inventory)

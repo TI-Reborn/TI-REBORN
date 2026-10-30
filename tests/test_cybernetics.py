@@ -84,6 +84,24 @@ class CyberneticsLearningTests(unittest.TestCase):
                 projected=project_saved_pet(db,account,1,base,True)
                 self.assertEqual(decode_pet_info(projected,human_equipment=True).fields[SLOTS],expected)
 
+    def test_saved_slots_require_a_learned_profile(self):
+        from tio.passive_stats import project_saved_pet,project_saved_roster
+        with closing(sqlite3.connect(self.path)) as db,db:
+            base=db.execute("SELECT pet_packet FROM owned_pets WHERE account='bob' AND pet_id=1").fetchone()[0]
+            pet=decode_pet_info(base,human_equipment=True)
+            pet.fields[SLOTS]=4
+            base=encode_pet_info(pet)
+            db.execute("UPDATE owned_pets SET pet_packet=? WHERE account='bob' AND pet_id=1",(base,))
+            for legacy in (False,True):
+                with self.subTest(legacy=legacy):
+                    if legacy:db.execute('DROP TABLE ability_states')
+                    single=project_saved_pet(db,'bob',1,base,True)
+                    rows=db.execute("SELECT pet_id,human,pet_packet,inventory_packet FROM owned_pets WHERE account='bob'").fetchall()
+                    batch=project_saved_roster(db,'bob',rows)[0][2]
+                    self.assertEqual(decode_pet_info(single,human_equipment=True).fields[SLOTS],0)
+                    self.assertEqual(single,batch)
+                    self.assertEqual(db.execute("SELECT pet_packet FROM owned_pets WHERE account='bob' AND pet_id=1").fetchone()[0],base)
+
     def test_learned_cybernetics_does_not_block_battle_preparation(self):
         from tools.battle_roster_fixture import prepare_actor
         self.level(4);self.fund(100_000);self.offers();self.service.learn('alice',1,CYBERNETICS)
