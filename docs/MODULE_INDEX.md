@@ -323,6 +323,7 @@
 | [tools/arena_surroundings_native.py](../tools/arena_surroundings_native.py) | Encode decorative, noninteractive native TI TILE v2 and TI SET resources. |
 | [tools/attest_hosted_world_completion.py](../tools/attest_hosted_world_completion.py) | Read-only final attestation of an already completed native world journey. |
 | [tools/audit_battle_ground_resources.py](../tools/audit_battle_ground_resources.py) | Read-only inventory of installed ground.xml brush dependencies. |
+| [tools/audit_weapon_attacks.py](../tools/audit_weapon_attacks.py) | Attack once with every catalog weapon on the real Combat engine. |
 | [tools/audit_launcher_014_recovery_status.py](../tools/audit_launcher_014_recovery_status.py) | Read-only final service/timer/scratch audit after approved recovery capture. |
 | [tools/audit_project_20261001.py](../tools/audit_project_20261001.py) | Read-only hosting inspection and isolated reproductions; never deploys. |
 | [tools/audit_reservation_candidates.py](../tools/audit_reservation_candidates.py) | Read original candidate fragments without changing gameplay configuration. |
