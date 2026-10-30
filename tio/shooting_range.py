@@ -118,7 +118,7 @@ class ShootingRangeService:
 
     def settings(self, account, name, count):
         return b'\x6c'+encode_battle_settings_body(BattleSettings(
-            1,1,16,20*count+20,2,name,bytes((1,20,count,0,0)),0,0,self.admission.quote(account)))
+            1,1,16,20*count+20,2,name,bytes((1,20,count,0,1)),0,0,self.admission.quote(account)))
 
     def handle(self, account, character, name, packet, *, searching=False):
         room = next((r for r in self.arena.rooms.snapshot() if character in r.members), None)

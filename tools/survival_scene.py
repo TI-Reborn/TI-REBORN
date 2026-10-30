@@ -30,9 +30,9 @@ class PreparedSurvival:
     participants: tuple[int, ...] = ()
 
 
-def prepare_survival(path, account, ticket, catalog, *, arena_map=None, seed=None, mode=0, admitted_prefix=False, selected_ids=False,allow_mixed_levels=False,ranked=False):
+def prepare_survival(path, account, ticket, catalog, *, arena_map=None, seed=None, mode=0, admitted_prefix=False, selected_ids=False,allow_mixed_levels=False,ranked=False,require_full_health=True):
     from tio.battle_modes import mode_rules, level_band, BattleMode
-    if ranked and (mode!=0 or not selected_ids or allow_mixed_levels):raise ValueError('Invalid ranked scene policy')
+    if ranked and (mode!=0 or not selected_ids or allow_mixed_levels or not require_full_health):raise ValueError('Invalid ranked scene policy')
     policy = BattleMode(0,2,MAX_FIGHTERS) if ranked else mode_rules(mode)
     policy.validate(len(ticket.actors))
     if ranked and (len(ticket.actors)!=len(ticket.levels) or len(set(ticket.actors))!=len(ticket.actors)
@@ -72,7 +72,7 @@ def prepare_survival(path, account, ticket, catalog, *, arena_map=None, seed=Non
                 # belong to the city/admission copy, never the saved packet.
                 from tio.passive_stats import project_saved_pet
                 pet=decode_pet_info(project_saved_pet(db,account,i,bytes(p),bool(human)),human_equipment=bool(human))
-                if pet.fields['0x8c4ab1']!=pet.fields['0x8c4a07']:raise SquadAdmissionError('Ranked fighter is wounded')
+                if require_full_health and pet.fields['0x8c4ab1']!=pet.fields['0x8c4a07']:raise SquadAdmissionError('Ranked fighter is wounded')
                 chosen.append((i,encode_pet_info(replace(pet,fields={**pet.fields,'0x8c44a6':len(chosen)+1})),bytes(inv)))
             saved=tuple(chosen)
         if admitted_prefix:

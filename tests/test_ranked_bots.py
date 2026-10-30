@@ -14,6 +14,7 @@ from tio.protocol.battle_turn import encode_end_turn
 from tio import ranked
 import test_ranked as fixture
 from test_ranked_squads import join
+from battle_exit_fixture import place_squad_at_edge
 
 
 class RankedBotsTests(unittest.TestCase):
@@ -69,7 +70,8 @@ class RankedBotsTests(unittest.TestCase):
 
     def test_bot_battle_exit_does_not_change_any_trueskill_rating(self):
         snapshots={s.account:ranked.snapshot(self.path,s.account) for s in self.case.sessions[:2]}
-        owners,battle=self.start();self.case.send(0,b'\x2a\1');self.hub.tick()
+        owners,battle=self.start();place_squad_at_edge(battle['field'],owners[0])
+        self.case.send(0,b'\x2a\1');self.hub.tick()
         self.assertTrue(battle['finished']);self.assertIsNone(self.hub.ranked_report(battle))
         self.assertEqual(snapshots,{s.account:ranked.snapshot(self.path,s.account) for s in self.case.sessions[:2]})
         with closing(sqlite3.connect(self.path)) as db:

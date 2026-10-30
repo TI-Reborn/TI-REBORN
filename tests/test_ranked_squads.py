@@ -12,6 +12,7 @@ from tio.owned_pets import OwnedPetStore
 from tio.protocol.item_list import encode_item_list
 from tio.protocol.pet_info import decode_pet_info,encode_pet_info
 import test_ranked as fixture
+from battle_exit_fixture import place_squad_at_edge
 
 
 def join(ids):
@@ -55,6 +56,7 @@ class RankedSquadTests(unittest.TestCase):
         for owner in owners:
             local={battle['field'].combat.storage_ids[i] for i in battle['field'].actor_ids(owner)}
             self.assertEqual(local,{1,2,3,4})
+        place_squad_at_edge(battle['field'],owners[0])
         self.case.send(0,b'\x2a\x01');self.hub.tick()
         with closing(sqlite3.connect(self.path)) as db:
             self.assertEqual(db.execute('SELECT account,wins,losses FROM ranked_players ORDER BY account').fetchall(),
@@ -112,6 +114,7 @@ class RankedSquadTests(unittest.TestCase):
         active=restored.battles[owners[0]];self.assertEqual(len(active['field']._actors),8)
         self.case.hub=restored
         for index in (0,1):self.assertTrue(restored.resume(self.case.sessions[index]));self.case.send(index,b'\x36')
+        place_squad_at_edge(active['field'],owners[0])
         self.case.send(0,b'\x2a\x01');restored.tick();restored.tick()
         with closing(sqlite3.connect(self.path)) as db:
             self.assertEqual(db.execute('SELECT count(*) FROM ranked_matches').fetchone(),(1,))

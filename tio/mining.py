@@ -153,6 +153,13 @@ class MiningBattle:
         # Do not consume the primary owner's deposit cache ahead of that fanout.
         return () if self.shared else self.packets()
 
+    def at_exit(self, owner: int) -> bool:
+        if owner not in self.roles:
+            return False
+        actors = [self.field.actor(i) for i in self.field.living_actor_ids(owner)]
+        exits = self.layout.raider_exits if self.roles[owner] == 2 else self.layout.lift
+        return bool(actors) and all((a.x, a.y) in exits for a in actors)
+
     def exit(self,owner):
         if owner not in self.roles:raise ValueError('Invalid extraction owner')
         if owner in self.exited:return self.extracted_amounts[owner]
@@ -160,8 +167,7 @@ class MiningBattle:
         if owner==self.owner:blocked=max(blocked,self.exit_blocked_until)
         if self.round<blocked:raise ValueError('Lift is blocked')
         actors=[self.field.actor(i) for i in self.field.living_actor_ids(owner)]
-        exits=self.layout.raider_exits if self.roles[owner]==2 else self.layout.lift
-        if not actors or any((a.x,a.y) not in exits for a in actors):raise ValueError('Bring every living fighter to your exit')
+        if not self.at_exit(owner):raise ValueError('Bring every living fighter to your exit')
         drills=[i for a in actors for i in decode_item_list(self.field.combat.inventories[a.actor_id])[1] if i.template_id==52]
         if any(i.count==0 for i in drills):raise ValueError('Cannot leave the mine carrying an empty drill')
         amount=sum(i.count for i in drills)

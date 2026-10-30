@@ -45,7 +45,7 @@ def exchange(combat,owner,request,generation):
         if len(bag)!=len(items):raise ValueError('Duplicate exchange item identity')
         bags.append(bag);flags.append(flag)
     if set(bags[0])&set(bags[1]):raise ValueError('Duplicate exchange ownership')
-    loot=field.loot;next_id=loot.next_id;temporary=set(combat.temporary_items)
+    loot=field.loot;next_id=loot.allocation_floor();temporary=set(combat.temporary_items)
     for selection,source,target in ((request.withdrawals,bags[1],bags[0]),(request.deposits,bags[0],bags[1])):
         for identity,count in selection:
             item=source.get(identity)

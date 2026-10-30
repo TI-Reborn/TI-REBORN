@@ -110,7 +110,8 @@ class Combat:
             awarded.add(victim)
             actor=states.get(killer,self.field._actors.get(killer))
             if actor is None:continue
-            sight=min(255,actor.sight_radius+combat_rules()['enemy_kill_sight_bonus'])
+            # Native guard 9f00e0 disconnects selected own fighters above 15.
+            sight=min(15,actor.sight_radius+combat_rules()['enemy_kill_sight_bonus'])
             if sight!=actor.sight_radius:
                 states[killer]=replace(actor,sight_radius=sight)
                 changed.add(killer)
@@ -612,8 +613,11 @@ class Combat:
         loot=getattr(self.field,'loot',None);allocated=[]
         def allocate():
             # Match-wide allocator; committed only after persistence succeeds.
-            if loot is None or loot.next_id>0xffffffff:raise ValueError('Item identity space exhausted')
-            allocated.append(loot.next_id);return loot.next_id
+            if loot is None:raise ValueError('Item identity space exhausted')
+            from .battle_loot import match_id_floor
+            identity=max(loot.next_id,match_id_floor(self))
+            if identity>0xffffffff:raise ValueError('Item identity space exhausted')
+            allocated.append(identity);return identity
         inventory,audit=repair_inventory(self.inventories[identity],target,
             selection[1] if packet[0]==0x7e else None,allocate=allocate)
         if actor.action_points<1:raise ValueError('Insufficient action points')

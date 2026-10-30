@@ -53,7 +53,7 @@ def survival_deployment(arena, seats):
     return result
 
 
-def prepare(seats, mode, *, seed=None, ranked=False, profile='reservation',arena_map=None,selected_ids=False,wager=False,map_size=None,town_id=None):
+def prepare(seats, mode, *, seed=None, ranked=False, profile='reservation',arena_map=None,selected_ids=False,wager=False,map_size=None,town_id=None,require_full_health=True):
     """Seats: (unique owner, side, path, account, ticket, is_bot)."""
     from tools.survival_scene import prepare_survival
     raw=json.loads((Path(__file__).resolve().parents[1]/'config/abilities.json').read_text())
@@ -97,7 +97,7 @@ def prepare(seats, mode, *, seed=None, ranked=False, profile='reservation',arena
                 raise ValueError('Selected squad changed during matchmaking')
             cache[key]=prepare_survival(path,account,full,catalog,arena_map=arena_map,mode=mode,
                                         admitted_prefix=mode in (1,4) and not selected_ids,selected_ids=ranked or selected_ids,
-                                        allow_mixed_levels=wager,ranked=ranked)
+                                        allow_mixed_levels=wager,ranked=ranked,require_full_health=require_full_health)
         original=cache[key]
         for local in ticket.actors:
             identity+=1

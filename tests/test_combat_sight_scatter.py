@@ -103,15 +103,15 @@ class CombatSightScatterTests(unittest.TestCase):
         self.assertEqual(visible_actors(field,7),{1})
         self.assertEqual(field.actor(1).health,0)
 
-    def test_sight_byte_saturation_snapshot_roundtrip_and_new_battle_reset(self):
+    def test_native_sight_limit_snapshot_roundtrip_and_new_battle_reset(self):
         field,combat=self.combat()
-        field._actors[1]=replace(field.actor(1),sight_radius=255)
+        field._actors[1]=replace(field.actor(1),sight_radius=15)
         combat.attack(7,AttackRequest(1,5,1))
-        self.assertEqual(field.actor(1).sight_radius,255)
+        self.assertEqual(field.actor(1).sight_radius,15)
         combat.rng=random.Random(512)
         restored,_=battle_snapshot.loads(battle_snapshot.dumps(combat),rebase=False)
         self.assertEqual(restored.sight_kill_victims,{2})
-        self.assertEqual(restored.field.actor(1).sight_radius,255)
+        self.assertEqual(restored.field.actor(1).sight_radius,15)
         self.assertEqual(restored.rng.getstate(),combat.rng.getstate())
         fresh,_=self.combat()
         self.assertEqual(fresh.actor(1).sight_radius,9)

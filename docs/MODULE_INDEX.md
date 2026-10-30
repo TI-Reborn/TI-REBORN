@@ -123,6 +123,7 @@
 | [tio/combat_rolls.py](../tio/combat_rolls.py) | Manual p57: independent accuracy per projectile, catalog damage per burst. |
 | [tio/contest_maps.py](../tio/contest_maps.py) | Original whole TrueSkill contest scenes; spawn selection is server policy. |
 | [tio/contract_scene.py](../tio/contract_scene.py) | Shared PvE scenes from real account selections and frozen contract policy. |
+| [tio/contract_loot.py](../tio/contract_loot.py) | Boss equipment uses ordinary backpack packets and journaled battle state. |
 | [tio/control_points.py](../tio/control_points.py) | Authoritative flag capture and simultaneous score ticks. |
 | [tio/credit_economy.py](../tio/credit_economy.py) | Single spendable currency; binary Gold slots remain zero for native ABI. |
 | [tio/crystal_market.py](../tio/crystal_market.py) | Persistent crystals and fixed-point quotes; no floating-point money writes. |

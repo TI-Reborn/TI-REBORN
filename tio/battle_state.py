@@ -75,6 +75,11 @@ class BattleField:
     def living_actor_ids(self, owner_id):
         return tuple(i for i in self.actor_ids(owner_id) if self.actor(i).health != 0)
 
+    def can_exit(self, owner_id: int) -> bool:
+        """Native 95DC30 checks the inner border for every living owned actor."""
+        return all(a.x in (1, self.width - 2) or a.y in (1, self.height - 2)
+                   for a in self._actors.values() if a.owner_id == owner_id and a.health != 0)
+
     def remove_owner(self, owner_id):
         """Release departed actors' cells and their saved AP budgets."""
         removed = self.actor_ids(owner_id)

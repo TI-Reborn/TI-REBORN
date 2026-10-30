@@ -193,16 +193,16 @@ class PartyStore:
         with closing(connect(self.path)) as db:
             return bool(db.execute('SELECT 1 FROM travel_party_members WHERE login=?', (login,)).fetchone())
 
-    def validate_departure(self, party_id, connection=None):
+    def validate_departure(self, party_id, connection=None, *, solo=False):
         """Revalidate city consent and saved fighters under the route writer's lock."""
         if connection is None:
             with transaction(self.path) as db:
-                return self.validate_departure(party_id, db)
+                return self.validate_departure(party_id, db, solo=solo)
         room = self._snapshot(connection, party_id)
         if room is None or room['state'] != 'city':
             raise ValueError('Группа должна находиться в городе перед выходом')
-        if not 2 <= len(room['members']) <= MAX_MEMBERS:
-            raise ValueError('Для выхода группы нужны от двух до четырёх игроков')
+        if not (1 if solo else 2) <= len(room['members']) <= MAX_MEMBERS:
+            raise ValueError('Для выхода нужны от одного до четырёх игроков')
         if not all(member['online'] and member['ready'] for member in room['members']):
             raise ValueError('Все участники должны быть в сети и подтвердить готовность')
         for member in room['members']:

@@ -69,7 +69,7 @@ class ArenaService:
             raise ValueError('Scene dimensions do not match authoritative field')
         seconds=20*len(selected)+20 if mode else 40
         request = ArenaCreateRequest(mode,0,policy.players,2,seconds,len(selected),len(selected),0,0)
-        settings = BattleSettings(1,policy.players,mode,seconds,2,name,bytes((0,0,len(selected),0,0)),0,0)
+        settings = BattleSettings(1,policy.players,mode,seconds,2,name,bytes((0,0,len(selected),0,1)),0,0)
         records = tuple(BattleMemberRecord(owner,name if owner==character_id else
                        getattr(prepared.field,'enemy_name',(b'Training bot' if not mode else (b'Ally ' if index%2==0 else b'Enemy ')+str(index//2+1).encode())),
                        0,bytes((1,1,index,index%2,1,1))) for index,owner in enumerate(members))
@@ -678,11 +678,11 @@ class ArenaService:
         soldiers=room_soldiers(roster,request.soldiers_count_01)
         # Local profile, not a claim about original unknown field semantics:
         # unknown40=1 matches live diagnostic; unknown1f=2, levels=0/0,
-        # exit_zone=0. Internal room ID is NOT assigned to unknown40.
+        # Native edge exit is enabled; internal room ID is not unknown40.
         # Time follows the create-form formula pending original server evidence.
         seconds = 20 * request.soldiers_count_01 + 20
         settings = BattleSettings(1, request.players_count, request.mode, seconds, 2,
-                                  name, bytes((0, 0, request.soldiers_count_01, request.map_size, 0)),
+                                  name, bytes((0, 0, request.soldiers_count_01, request.map_size, 1)),
                                   request.stake, 0)
         replies = (b'\x6c' + encode_battle_settings_body(settings),
                    encode_battle_members(request.mode, 0, (BattleMemberRecord(character_id, name, 0, bytes((0, 0, 0, 0, 0, 1)),soldiers),)))
@@ -807,10 +807,20 @@ class ArenaService:
         self.disconnect(character_id)
         return replies
 
+    def require_exit(self, character_id: int) -> None:
+        room = next((r for r in self.rooms.snapshot() if character_id in r.members), None)
+        field = None if room is None else self._fields.get(room.room_id)
+        if (field is not None and character_id not in self._completed
+                and self._loading.get(room.room_id) == set(room.members)
+                and not field.can_exit(character_id)
+                and not (hasattr(field, 'mining') and field.mining.at_exit(character_id))):
+            raise ValueError('Для выхода подведите всех живых бойцов своего отряда к краю карты')
+
     def leave(self, character_id, packet):
         from .protocol.arena import validate_room_leave
         from .protocol.system_message import encode_leave_room
         validate_room_leave(packet)
+        self.require_exit(character_id)
         reply=encode_leave_room()
         self.disconnect(character_id)
         return reply  # repeat leave is harmless and still clears stale client UI

@@ -76,6 +76,8 @@ class ContractsService:
             raise ValueError('Contract zones require contiguous public slots')
         backgrounds = {'camp': 'loc_forest', 'depot': 'loc_ny', 'checkpoint': 'loc_outpost'}
         for template in sorted(self.contracts.catalog(), key=lambda t: t['zone_id']):
+            if template['zone_id'] in {int(node.get('id')) for node in root}:
+                continue
             if template['zone_id'] != len(root)+1:
                 raise ValueError('Hidden contract slots must be contiguous')
             town = ET.SubElement(root, 'town', id=str(template['zone_id']), name=template['name'])
@@ -110,7 +112,8 @@ class ContractsService:
             signature = (party['id'], party['revision']) if party else None
             marker = target['instance_id'] if target else None
             if getattr(session, '_contract_markers', object()) != marker:
-                for template in self.contracts.catalog():
+                markers = {t['zone_id']: t for t in self.contracts.catalog()}
+                for template in markers.values():
                     enabled = bool(target and target['zone_id'] == template['zone_id'])
                     self.hub.put(owner, encode_town_info(replace(diagnostic_town_info(),
                         town_id=template['zone_id'], unknown_bytes=(template['levels'][0], template['levels'][1], 0, 0),
@@ -229,7 +232,7 @@ class ContractsService:
                     self.reply(session, '!party ready — подтвердить готовность; !contracts status — посмотреть задание.')
             return
         if command == '!contracts' and action == 'list':
-            self.reply(session, 'Доска контрактов — зачистки для группы из 2–4 игроков.')
+            self.reply(session, 'Доска контрактов — одиночные и групповые зачистки.')
             for template in self.contracts.catalog():
                 reward = template['reward']
                 self.reply(session, f"{template['id']}: {template['name']}; {reward['credits']} кредитов, {reward['experience']} опыта за победу.")
@@ -239,6 +242,11 @@ class ContractsService:
         if self.hub.busy(session) or session.survival.searching(session.probe_character_id) or session.arena._fields:
             raise ValueError('Сначала завершите текущий бой или поиск')
         if command == '!contracts':
+            if not party and action == 'take' and len(args) == 2:
+                template = next((t for t in self.contracts.catalog() if t['id'] == args[1]), None)
+                if template and template['recommended_party_size'] == [1, 1]:
+                    self.parties.create(owner)
+                    party = self.member(session)
             if not party:
                 raise ValueError('Сначала соберите группу в городе: !party create')
             if action == 'take' and len(args) == 2:

@@ -96,6 +96,11 @@ def settle(path,account,match_id,result,*,health=None,rental_tax=0,rank_report=N
         from .premium import state,experience_multiplier
         premium_kind,_=state(db,account,now)
         numerator,denominator=experience_multiplier(db,account,now)
+        contract_match = contract_report is not None
+        if not contract_match and db.execute("SELECT 1 FROM sqlite_master WHERE name='pve_contract_instances'").fetchone():
+            contract_match = db.execute('SELECT 1 FROM pve_contract_instances WHERE match_id=?', (match_id,)).fetchone() is not None
+        if contract_match and numerator:
+            numerator,denominator=1,1
         progression_factor=repeat
         experience_factor=progression_factor*Fraction(numerator,denominator)
         frozen=None
@@ -106,7 +111,7 @@ def settle(path,account,match_id,result,*,health=None,rental_tax=0,rank_report=N
                 progression_factor*=Fraction(frozen['experience'])
                 experience_factor*=Fraction(frozen['experience'])
                 if frozen['town_id']==4:rank_report={}
-        if premium_kind and contract_report is None:
+        if premium_kind and not contract_match:
             audit=json.loads(calculation);audit['premium_kind']=premium_kind
             audit['before_premium']=gross;gross=gross*3//2
             calculation=json.dumps(audit,sort_keys=True)
@@ -132,7 +137,7 @@ def settle(path,account,match_id,result,*,health=None,rental_tax=0,rank_report=N
             # used for clan influence. Keep repeat/city limits on both paths.
             influence_factor=experience_factor if numerator else progression_factor
             influence_report={i:min(MAX_XP,(n-bonus.get(i,0))*influence_factor.numerator//influence_factor.denominator+bonus.get(i,0)) for i,n in experience_report.items()}
-            experience_report={i:min(MAX_XP,(n-bonus.get(i,0))*experience_factor.numerator//experience_factor.denominator+bonus.get(i,0)) for i,n in experience_report.items()}
+            experience_report={i:min(MAX_XP,(n-bonus.get(i,0))*experience_factor.numerator//experience_factor.denominator+(bonus.get(i,0) if numerator else 0)) for i,n in experience_report.items()}
             settle_experience(db,account,match_id,experience_report)
             from .clans import settle_influence
             from .cities import CITIES

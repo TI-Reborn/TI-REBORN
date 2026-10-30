@@ -1,12 +1,12 @@
 {
-  "version": 1,
+  "version": 2,
   "source": "Local emulator design for cooperative clearance contracts. Locations, enemies, levels and reward values are provisional balance, not recovered original server rules.",
   "arrival_ttl_seconds": 1800,
   "safe_margin": 15,
   "templates": [
     {
       "id": "camp",
-      "version": 1,
+      "version": 2,
       "name": "Лагерь мародёров",
       "objective": "Уничтожить всех противников в лагере",
       "zone_id": 23,
@@ -35,13 +35,13 @@
         "heavy": 1
       },
       "reward": {
-        "credits": 150,
-        "experience": 60
+        "credits": 1500,
+        "experience": 600
       }
     },
     {
       "id": "depot",
-      "version": 1,
+      "version": 2,
       "name": "Захваченный склад",
       "objective": "Зачистить склад и погрузочную площадку",
       "zone_id": 24,
@@ -70,13 +70,13 @@
         "heavy": 1
       },
       "reward": {
-        "credits": 180,
-        "experience": 75
+        "credits": 1800,
+        "experience": 750
       }
     },
     {
       "id": "checkpoint",
-      "version": 1,
+      "version": 2,
       "name": "Заброшенный КПП",
       "objective": "Уничтожить гарнизон укреплённого КПП",
       "zone_id": 25,
@@ -105,8 +105,107 @@
         "heavy": 1
       },
       "reward": {
-        "credits": 200,
-        "experience": 80
+        "credits": 2000,
+        "experience": 800
+      }
+    },
+    {
+      "id": "solo_dogs",
+      "version": 2,
+      "name": "Заражённая стая",
+      "objective": "Уничтожить всех противников и забрать рюкзак босса",
+      "zone_id": 23,
+      "bounds": [
+        -342,
+        -167,
+        -322,
+        -147
+      ],
+      "levels": [
+        1,
+        20
+      ],
+      "recommended_party_size": [
+        1,
+        1
+      ],
+      "map_profile": "contract_camp",
+      "map_size": [
+        38,
+        38
+      ],
+      "enemies": {
+        "dog": 3
+      },
+      "reward": {
+        "credits": 150,
+        "experience": 60
+      }
+    },
+    {
+      "id": "solo_mutants",
+      "version": 2,
+      "name": "Логово мутантов",
+      "objective": "Уничтожить всех противников и забрать рюкзак босса",
+      "zone_id": 24,
+      "bounds": [
+        33,
+        38,
+        53,
+        58
+      ],
+      "levels": [
+        1,
+        20
+      ],
+      "recommended_party_size": [
+        1,
+        1
+      ],
+      "map_profile": "contract_depot",
+      "map_size": [
+        42,
+        42
+      ],
+      "enemies": {
+        "mutant": 2
+      },
+      "reward": {
+        "credits": 150,
+        "experience": 60
+      }
+    },
+    {
+      "id": "solo_raiders",
+      "version": 2,
+      "name": "Одинокий рейдер",
+      "objective": "Уничтожить всех противников и забрать рюкзак босса",
+      "zone_id": 25,
+      "bounds": [
+        331,
+        -89,
+        351,
+        -69
+      ],
+      "levels": [
+        1,
+        20
+      ],
+      "recommended_party_size": [
+        1,
+        1
+      ],
+      "map_profile": "contract_checkpoint",
+      "map_size": [
+        40,
+        40
+      ],
+      "enemies": {
+        "raider": 2
+      },
+      "reward": {
+        "credits": 150,
+        "experience": 60
       }
     }
   ]

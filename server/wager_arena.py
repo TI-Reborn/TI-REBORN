@@ -66,7 +66,7 @@ class WagerArena:
             request.unknown_u32_01, 2, captain.probe_character_name,
             bytes((max(1,room.creator_level-request.level_range_index),
                    min(20,room.creator_level+request.level_range_index),
-                   request.soldiers_count_01,request.map_size,0)), request.stake, 0)
+                   request.soldiers_count_01,request.map_size,1)), request.stake, 0)
         for viewer in room.members:
             records = []
             for color, owner in enumerate(room.members):

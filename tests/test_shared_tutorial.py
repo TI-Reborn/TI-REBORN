@@ -4,6 +4,7 @@ import json,random,sqlite3,tempfile,unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
+from battle_exit_fixture import place_squad_at_edge
 
 from server.accounts import Accounts
 from server.battle_journal import BattleJournal
@@ -172,6 +173,7 @@ class TutorialTests(unittest.TestCase):
 
     def test_early_leave_preserves_facts_then_continuation_not_replay(self):
         self.create('alice');before=self.profile('alice');battle=self.start();self.move(battle)
+        place_squad_at_edge(battle['field'], self.hub.identities[self.sessions['alice']])
         self.send('alice',b'\x2a\x01');state=tutorial_status(self.path,'alice')
         self.assertEqual((state['step'],state['match_id'],state['completed']),(1,None,False))
         self.assertTrue(self.hub.tutorial_command(self.sessions['alice'],'/tutorial'))
@@ -181,6 +183,7 @@ class TutorialTests(unittest.TestCase):
 
     def test_verified_early_kill_survives_closed_attempt_without_second_kill(self):
         self.create('alice');battle=self.start();self.defeat(battle)
+        place_squad_at_edge(battle['field'], self.hub.identities[self.sessions['alice']])
         self.send('alice',b'\x2a\x01')
         self.assertEqual(tutorial_status(self.path,'alice')['observed_events'],10)
         self.assertTrue(self.hub.tutorial_command(self.sessions['alice'],'/tutorial'))

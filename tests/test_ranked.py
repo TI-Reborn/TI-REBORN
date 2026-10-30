@@ -1,4 +1,5 @@
 from wallet_fixture import fund_wallet
+from battle_exit_fixture import place_squad_at_edge
 from contextlib import closing
 from dataclasses import replace
 import json
@@ -208,7 +209,8 @@ class RankedServerTests(unittest.TestCase):
             self.assertEqual(db.execute('SELECT count(*) FROM ranked_matches').fetchone()[0],1)
 
     def test_escape_winner_and_city_and_no_ordinary_rating(self):
-        owners,b=self.start();self.case.send(0,b'\x2a\1');self.hub.tick()
+        owners,b=self.start();place_squad_at_edge(b['field'],owners[0])
+        self.case.send(0,b'\x2a\1');self.hub.tick()
         with closing(sqlite3.connect(self.path)) as db:
             self.assertEqual(db.execute('SELECT account,wins,losses FROM ranked_players ORDER BY account').fetchall(),[('alice',0,1),('bob',1,0)])
         self.assertEqual(self.case.sessions[0].locations.current('alice'),2)

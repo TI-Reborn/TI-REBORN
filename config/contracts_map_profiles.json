@@ -4,7 +4,10 @@
   "roles": {
     "scout": {"name": "Разведчик", "resource_id": 2, "level": 1, "health": 45, "action_points": 17, "sight_radius": 10, "carry_capacity": 500, "weapon_id": 301, "armor_ids": [223, 226], "ammunition": 120, "weapon_proficiency": 53},
     "rifleman": {"name": "Стрелок", "resource_id": 1, "level": 2, "health": 65, "action_points": 16, "sight_radius": 9, "carry_capacity": 500, "weapon_id": 303, "armor_ids": [230, 229, 226], "ammunition": 160, "weapon_proficiency": 53},
-    "heavy": {"name": "Тяжёлый боец", "resource_id": 1, "level": 3, "health": 90, "action_points": 15, "sight_radius": 8, "carry_capacity": 500, "weapon_id": 302, "armor_ids": [239, 237, 238], "ammunition": 80, "weapon_proficiency": 53}
+    "heavy": {"name": "Тяжёлый боец", "resource_id": 1, "level": 3, "health": 90, "action_points": 15, "sight_radius": 8, "carry_capacity": 500, "weapon_id": 302, "armor_ids": [239, 237, 238], "ammunition": 80, "weapon_proficiency": 53},
+    "dog": {"name": "Заражённая собака", "resource_id": 103, "level": 1, "health": 35, "action_points": 17, "sight_radius": 10, "carry_capacity": 500, "weapon_id": 65489, "armor_ids": [], "ammunition": 120, "weapon_proficiency": 53},
+    "mutant": {"name": "Мутант", "resource_id": 100, "level": 1, "health": 55, "action_points": 14, "sight_radius": 10, "carry_capacity": 500, "weapon_id": 353, "armor_ids": [], "ammunition": 120, "weapon_proficiency": 53},
+    "raider": {"name": "Рейдер", "resource_id": 1, "level": 1, "health": 50, "action_points": 16, "sight_radius": 10, "carry_capacity": 500, "weapon_id": 301, "armor_ids": [], "ammunition": 120, "weapon_proficiency": 53}
   },
   "profiles": {
     "contract_camp": {
