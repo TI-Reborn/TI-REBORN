@@ -17,6 +17,13 @@ static class Program
         if (args.Length == 3 && args[0] == "--password-limit-self-test") { NativePasswordLimit.Test(args[1],args[2]); return; }
         Console.OutputEncoding = new System.Text.UTF8Encoding(false);
         ApplicationConfiguration.Initialize();
+        if(args.Length==2 && args[0]=="--ground-hover-proof")
+        {
+            File.WriteAllText(args[1],System.Text.Json.JsonSerializer.Serialize(
+                new uint[]{0x400000,0x10400000}.Select(silver=>new {silver,patches=NativeGroundLoot.Sites.Select(site=>new {
+                    address=silver+site,before=Convert.ToHexStringLower(NativeGroundLoot.LoadMouse(silver+0x6c5a04)),
+                    after=Convert.ToHexStringLower(NativeGroundLoot.LoadMouse(0x76e440))})})));return;
+        }
         if(args.Length==2 && args[0]=="--contracts-native-proof") { File.WriteAllBytes(args[1],NativeContractsUi.Build(0x21000000,0x1400000));return; }
         if(args.Length==2 && args[0]=="--native-flame-proof")
         {

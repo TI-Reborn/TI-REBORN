@@ -23,8 +23,8 @@ class WorldCatalogueTests(unittest.TestCase):
             before={int(m[1]):m[0] for m in tool.ROW.finditer(raw)}
             after={int(m[1]):m[0] for m in tool.ROW.finditer(new)}
             self.assertEqual(list(after),list(range(1,23)))
-            self.assertEqual([i for i in before if before[i]!=after[i]],[4,7,10])
-            self.assertTrue(all(before[i]==after[i] for i in before if i not in tool.CHANGED))
+            self.assertEqual([i for i in before if before[i]!=after[i]],list(range(2,18)))
+            self.assertTrue(all(before[i]==after[i] for i in before if i not in range(2,18)))
         client=tool.rows(tool.merge(self.source,self.policy),22)
         runtime=tool.rows(tool.merge(self.server,self.policy),22)
         self.assertEqual(tool.values(client[2])['minlevel'],'3')
@@ -36,15 +36,15 @@ class WorldCatalogueTests(unittest.TestCase):
         nodes=tool.rows(tool.merge(self.source,self.policy),22)
         self.assertEqual(tool.values(nodes[4])['minlevel'],'4')
         self.assertEqual(tool.values(nodes[4])['dragin'],'false')
-        self.assertEqual(tool.values(nodes[7])['x1'],'315')
+        self.assertEqual(tool.values(nodes[7])['x1'],'309')
         self.assertEqual(tool.values(nodes[7])['dragInMaxEnhance'],'3')
         self.assertEqual(tool.values(nodes[10])['arena'],'false')
         self.assertEqual(tool.values(nodes[10])['shop'],'false')
         self.assertEqual(tool.values(nodes[18])['background'],'loc_detroit')
         self.assertEqual(tool.values(nodes[18])['rankBonus'],'10')
         self.assertEqual(tool.values(nodes[18])['dragin'],'true')
-        self.assertEqual(tool.values(nodes[20])['y1'],'-420')
-        self.assertEqual(tool.values(nodes[22])['y1'],'-320')
+        self.assertEqual(tool.values(nodes[20])['y1'],'-440')
+        self.assertEqual(tool.values(nodes[22])['y1'],'-394')
         for identity,limit,band in ((19,10,(4,6)),(20,15,(7,10)),(21,20,(11,15)),(22,25,(16,20))):
             v=tool.values(nodes[identity]);self.assertEqual(v['IsTraining'],'true')
             self.assertEqual(v['dragInMaxEnhance'],str(limit))
@@ -60,11 +60,11 @@ class WorldCatalogueTests(unittest.TestCase):
             with self.assertRaises(ValueError):tool.merge(raw,self.policy)
 
     def test_unreviewed_locations_and_collision_rejected(self):
-        for edit in ('identity','overlap','non_square','bool_level','cap'):
+        for edit in ('identity','overlap','empty_bounds','bool_level','cap'):
             policy=deepcopy(self.policy);row=policy['locations'][5]
             if edit=='identity':row['id']=23
             elif edit=='overlap':row['bounds']=[175,-346,195,-326]
-            elif edit=='non_square':row['bounds']=[-240,-420,-220,-399]
+            elif edit=='empty_bounds':row['bounds']=[-240,-420,-240,-399]
             elif edit=='bool_level':row['levels']=[True,10]
             else:row['max_upgrade']=256
             with self.assertRaises(ValueError):tool.merge(self.source,policy)
@@ -75,7 +75,7 @@ class WorldCatalogueTests(unittest.TestCase):
         self.assertEqual(report['source_runtime_sha256'],hashlib.sha256(self.server).hexdigest())
         self.assertEqual((tool.FOLDER/'client/candidate/zones.xml').read_bytes(),tool.merge(self.source,self.policy))
         self.assertEqual((tool.FOLDER/'runtime/evidence/zones_diagnostic.xml').read_bytes(),tool.merge(self.server,self.policy))
-        self.assertTrue(report['foreign_rows_preserved_byte_for_byte'])
+        self.assertTrue(report['foreign_metadata_preserved'])
         with self.assertRaises(ValueError):tool.folder_checked(tool.ROOT)
 
 
@@ -93,9 +93,9 @@ class OriginalWorldConsumerTests(unittest.TestCase):
         self.assertEqual(proof['loader']['reload_dispatch'],'0x9d1f68')
         self.assertEqual(proof['loader']['loader'],'0x9ea894')
         by_id={r['id']:r for r in proof['loader_cases']}
-        self.assertEqual(by_id[7]['bounds'],[315,-410,335,-390])
-        self.assertEqual(by_id[20]['bounds'],[-240,-420,-220,-400])
-        self.assertEqual(by_id[22]['bounds'],[110,-320,130,-300])
+        self.assertEqual(by_id[7]['bounds'],[309,-312,354,-209])
+        self.assertEqual(by_id[20]['bounds'],[-269,-440,-224,-353])
+        self.assertEqual(by_id[22]['bounds'],[107,-394,152,-302])
         self.assertEqual((by_id[18]['equipment'],by_id[18]['rank_bonus']),(1,10))
         self.assertEqual((by_id[19]['training'],by_id[19]['max_upgrade']),(1,10))
 

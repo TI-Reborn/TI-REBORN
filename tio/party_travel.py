@@ -1,14 +1,15 @@
 """One durable route for a consenting party; coordinates never come from peers."""
 from contextlib import closing
-import math
 import secrets
 import struct
 import time
 
 from .db_transaction import connect, transaction
 from .cities import CITIES
-from .locations import (LocationStore, MAP_SPEED, center, town_at, town_packets,
-                        leave_town_packet, movement_packet, stop_packet)
+from .locations import (Journey, LocationStore, MAP_SPEED, center, town_at, town_packets,
+                        leave_town_packet, stop_packet)
+from .roads import path_length
+from .world_layout import normalize_parties
 from .protocol.world_bootstrap import encode_open_map_view, encode_restore_city_controls
 
 
@@ -22,6 +23,7 @@ class PartyTravel:
                 tx INTEGER NOT NULL, ty INTEGER NOT NULL, started REAL NOT NULL,
                 arrives REAL NOT NULL, nonce TEXT NOT NULL,
                 town_id INTEGER, instance_id TEXT)''')
+            normalize_parties(db, {town: center(town) for town in CITIES})
 
     def route(self, party_id, connection=None):
         if connection is not None:
@@ -30,14 +32,16 @@ class PartyTravel:
         with closing(connect(self.path)) as db:
             return self.route(party_id, connection=db)
 
+    @staticmethod
+    def journey(route):
+        return Journey.from_row(*route[:6])
+
     def _point(self, db, owner, party):
         route = self.route(party['id'], connection=db) if party else None
         if not route:
             point,_ = LocationStore._position(db,owner,self.clock())
             return tuple(round(v) for v in point), None
-        x, y, tx, ty, started, arrives = route[:6]
-        fraction = min(1, max(0, (self.clock()-started)/(arrives-started)))
-        return (x+(tx-x)*fraction, y+(ty-y)*fraction), route
+        return self.journey(route).point(self.clock()), route
 
     def point(self, owner):
         with closing(connect(self.path)) as db, db:
@@ -71,7 +75,8 @@ class PartyTravel:
             elif town is not None:
                 x, y = center(town)
             (sx, sy), _ = self._point(db,owner,party)
-            now = self.clock(); duration = math.hypot(x-sx, y-sy)/MAP_SPEED
+            now = self.clock(); path = ((sx, sy), (x, y))
+            duration = path_length(path)/MAP_SPEED
             # No independently writable map_journeys projection: group route
             # is the sole source of truth, including on process restart.
             for member in party['members']:
@@ -80,7 +85,8 @@ class PartyTravel:
             self.parties.change_state(party['id'], 'travelling', party['state'], connection=db)
             if contract and contract['state'] == 'accepted':
                 self.contracts.transition(contract['id'], 'accepted', 'travelling')
-            db.execute('INSERT OR REPLACE INTO travel_party_journeys VALUES (?,?,?,?,?,?,?,?,?,?)',
+            db.execute('INSERT OR REPLACE INTO travel_party_journeys '
+                       '(party_id,x,y,tx,ty,started,arrives,nonce,town_id,instance_id) VALUES (?,?,?,?,?,?,?,?,?,?)',
                        (party['id'], sx, sy, x, y, now, now+max(duration, .000001),
                         secrets.token_hex(8), town, contract['id'] if private else None))
         self.arrive(owner)
@@ -146,11 +152,14 @@ class PartyLocations:
             return self.base.resume(owner, character_id)
         if town is not None:
             return ()
-        x, y = map(round, point)
-        self._sent[owner] = (x, y, party['state'], route[6] if route else None)
+        now = self.clock()
+        self._sent[owner] = self._signature(party, route, now)
         return (leave_town_packet(), encode_open_map_view(),
-                movement_packet(character_id, x, y, destination=route[2:4])
-                if route else stop_packet(character_id, x, y))
+                *(self.travel_service.journey(route).announce(character_id, now)
+                  if route else (stop_packet(character_id, *map(round, point)),)))
+
+    def _signature(self, party, route, now):
+        return (party['state'], route[6] if route else None)
 
     def travel(self, owner, packet, character_id, *, busy=False):
         if not self.travel_service.parties.info(owner):
@@ -168,15 +177,19 @@ class PartyLocations:
         if not party:
             self._sent.pop(owner, None)
             return self.base.refresh(owner, character_id)
-        x, y = map(round, point)
-        signature = (x, y, party['state'], route[6] if route else None)
+        now = self.clock()
+        signature = self._signature(party, route, now)
         previous = self._sent.get(owner); self._sent[owner] = signature
         if previous == signature or previous is None and party['state'] == 'city':
             return ()
         if route:
-            leaving = previous is None or previous[2] == 'city'
+            leaving = previous is None or previous[0] == 'city'
+            journey = self.travel_service.journey(route)
+            # A new shared route (nonce) is announced with its dashes once.
+            fresh = previous is None or previous[1] != route[6]
             return (*((leave_town_packet(), encode_open_map_view()) if leaving else ()),
-                    movement_packet(character_id, x, y, destination=route[2:4]))
+                    *(journey.announce(character_id, now) if fresh else (journey.movement(character_id, now),)))
+        x, y = map(round, point)
         arrival = town_packets(town, self.path, clock=self.clock) if town is not None else ()
         if arrival:
             # Restore the native character/chat state before the original

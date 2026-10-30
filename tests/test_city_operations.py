@@ -136,7 +136,7 @@ class CityOperationsTests(unittest.TestCase):
 
     def test_travel_battle_checkpoint_pending_result_and_stop_fences_include_replay(self):
         request=self.request('stocks_buy',count=1,quote=100);self.ops.action(request)
-        with transaction(self.path) as db:db.execute("INSERT INTO map_journeys VALUES ('alice',0,0,100,100,0,100)")
+        with transaction(self.path) as db:db.execute("INSERT INTO map_journeys(account,x,y,tx,ty,started,arrives) VALUES ('alice',0,0,100,100,0,100)")
         before=self.rows()
         with self.assertRaises(CityError):self.ops.action(request)
         self.assertEqual(self.rows(),before)
@@ -186,13 +186,13 @@ class CityOperationsTests(unittest.TestCase):
 
     def test_lend_and_reclaim_reject_travelling_recipient_before_physical_move(self):
         _,mark=self.mark()
-        with transaction(self.path) as db:db.execute("INSERT INTO map_journeys VALUES ('bob',0,0,100,100,0,100)")
+        with transaction(self.path) as db:db.execute("INSERT INTO map_journeys(account,x,y,tx,ty,started,arrives) VALUES ('bob',0,0,100,100,0,100)")
         before=self.rows()
         with self.assertRaises(CityError):self.ops.action(self.request('lend',markId=mark,recipientName='Bob',requestId='city-busy-lend-0001'))
         self.assertEqual(self.rows(),before)
         with transaction(self.path) as db:db.execute('DELETE FROM map_journeys')
         self.ops.action(self.request('lend',markId=mark,recipientName='Bob',requestId='city-good-lend-0001'))
-        with transaction(self.path) as db:db.execute("INSERT INTO map_journeys VALUES ('bob',0,0,100,100,0,100)")
+        with transaction(self.path) as db:db.execute("INSERT INTO map_journeys(account,x,y,tx,ty,started,arrives) VALUES ('bob',0,0,100,100,0,100)")
         before=self.rows()
         with self.assertRaises(CityError):self.ops.action(self.request('reclaim',markId=mark,pin=PIN,remove=False,requestId='city-busy-return-01'))
         self.assertEqual(self.rows(),before)

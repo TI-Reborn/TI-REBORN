@@ -35,6 +35,12 @@ static class SelfTest
         Directory.CreateDirectory(root); var results = new List<string>();
         try
         {
+            using(var contracts=JsonDocument.Parse("""{"catalog":[{"id":"solo_dogs","party_size":[1,1]},{"id":"camp","party_size":[2,4]}]}"""))
+            {
+                Assert(NativeContractsUi.Templates(contracts.RootElement,0).Single().GetProperty("id").GetString()=="solo_dogs","solo contract tab");
+                Assert(NativeContractsUi.Templates(contracts.RootElement,1).Single().GetProperty("id").GetString()=="camp","group contract tab");
+                results.Add("PASS: native solo and group tabs select distinct server templates");
+            }
             var server = new FakeServer();
             ReleaseFile Make(string path, string content, bool seed = false)
             {

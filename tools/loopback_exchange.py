@@ -1003,8 +1003,11 @@ class LoopbackExchange:
                             replies=tuple(project_town(self,reply) for reply in replies)
                             self.events.append({'event':'map_travel_started','position':self.locations.position(self.account)})
                         except ValueError as error:
+                            from tio.world_completion import TravelRestriction
                             grouped = contracts and contracts.member(self)
-                            replies=(encode_shop_error(str(error) if grouped else 'перехода по карте: запрос не выполнен'),)
+                            # Prison rules are a known, player-facing reason (translated in english_translations).
+                            readable = grouped or isinstance(error, TravelRestriction)
+                            replies=(encode_shop_error(str(error) if readable else 'перехода по карте: запрос не выполнен'),)
                             self.events.append({'event':'travel_rejected','reason':str(error)})
                         for reply in replies:game.sendall(encode_reply(reply,outbound))
                         continue

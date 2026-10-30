@@ -15,10 +15,10 @@ class City:
 
 
 CITIES = {
-    3: City('Reservation', (-171,-335,-136,-300), (1,3), 'reservation', 'starter', 1,0,0),
-    2: City('Denver', (-390,-447,-345,-402), (4,20), 'denver', 'equipped', 4,1,10),
-    5: City('New York', (140,-70,240,30), (4,20), 'new_york', 'equipped', 4,1,10),
-    8: City('Military Zone', (286,-265,366,-185), (4,20), 'military_zone', 'equipped', 4,1,10),
+    3: City('Reservation', (-215,-335,-137,-156), (1,3), 'reservation', 'starter', 1,0,0),
+    2: City('Denver', (-411,-499,-312,-292), (4,20), 'denver', 'equipped', 4,1,10),
+    5: City('New York', (141,-199,302,139), (4,20), 'new_york', 'equipped', 4,1,10),
+    8: City('Military Zone', (392,-267,499,-9), (4,20), 'military_zone', 'equipped', 4,1,10),
 }
 from .world_completion import extra_cities
 CITIES.update(extra_cities())

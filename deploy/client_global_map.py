@@ -247,8 +247,10 @@ def draw_code():
     return c.finish(0x1000)
 
 
-def click_code():
+def click_code(*, mode_rva=None):
     c = Code(CLICK); c.emit('9c60'); c.base()
+    if mode_rva is not None:
+        mem(c, '83bb', mode_rva); c.emit('00'); c.branch('0f85', 'stock')
     state(c, '83bb', READY); c.emit('01'); c.branch('0f85', 'stock')
     global_pointer(c, 0xac5dec); c.emit('803800'); c.branch('0f84', 'done')
     c.call(0xa62988); c.emit('84c0'); c.branch('0f85', 'done')

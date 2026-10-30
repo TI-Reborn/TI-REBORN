@@ -11,7 +11,9 @@ from unittest.mock import patch
 from server.accounts import Accounts
 from tio.characters import CharacterStore
 from tio.db_transaction import transaction
-from tio.locations import LocationStore, center, movement_packet, stop_packet
+from tio.locations import LocationStore, MAP_SPEED, center, movement_packet, stop_packet
+from tio.protocol.map_route import route_words
+from tio.roads import path_length, point_along
 from tio.protocol.world_bootstrap import encode_open_map_view, encode_restore_city_controls
 from tio.party_travel import PartyLocations, PartyTravel
 from tio.protocol.character_create import CharacterCreateRequest
@@ -81,6 +83,17 @@ class PartyTravelTests(unittest.TestCase):
     def accept(self, leader='alice', template='camp'):
         return self.contracts.accept(self.parties.info(leader), leader, template, 'test-' + leader)
 
+    @staticmethod
+    def announced(character_id, route, driven):
+        # Moving 1D packets from the current point toward the end of the road
+        # leg the client drives next, one per route word (header, dashes); a
+        # contract marker is not a public location, so the final field is 0.
+        path = (route[:2],route[2:4])
+        ahead = path[-1]
+        position = point_along(path, driven)
+        return tuple(movement_packet(character_id, *map(round, position), destination=tuple(map(round, ahead)),
+                                     route=word) for word in route_words(path))
+
     def saved_locations(self):
         with closing(sqlite3.connect(self.path)) as db:
             return db.execute('SELECT * FROM character_locations ORDER BY account').fetchall()
@@ -94,10 +107,11 @@ class PartyTravelTests(unittest.TestCase):
                 self.assertIsNotNone(route)
                 self.assertEqual(route[:2], center(3))
                 self.assertEqual(route[2:4], (-220, -280))
-                import math
-                self.assertAlmostEqual(route[5]-route[4],math.dist(center(3),route[2:4])/12)
+                path = (route[:2],route[2:4])
+                self.assertEqual(path, (center(3), (-220, -280)))
+                self.assertAlmostEqual(route[5]-route[4], path_length(path)/MAP_SPEED)
                 self.now = (route[4] + route[5]) / 2
-                expected = tuple((start + end) / 2 for start, end in zip(center(3), route[2:4]))
+                expected = point_along(path, path_length(path) / 2)
                 for owner in members:
                     for actual, wanted in zip(self.travel.point(owner)[0], expected):
                         self.assertAlmostEqual(actual, wanted)
@@ -288,7 +302,7 @@ class PartyTravelTests(unittest.TestCase):
         packets = locations.resume('bravo', 202)
         self.assertEqual(packets[0][0], 0xf0)
         self.assertEqual(packets[1], encode_open_map_view())
-        self.assertEqual(packets[2], movement_packet(202, *map(round, position), destination=route[2:4]))
+        self.assertEqual(packets[2:], self.announced(202, route, 3 * MAP_SPEED))
         self.assertEqual(locations.refresh('bravo', 202), ())
         self.now = route[5] + 1
         travel.arrive('bravo')
@@ -342,14 +356,19 @@ class PartyTravelTests(unittest.TestCase):
         self.locations.refresh('alice', 101)
         self.locations.refresh('bravo', 202)
         packets = self.locations.travel('alice', self.packet(-220, -280), 101)
-        self.assertEqual([packet[0] for packet in packets], [0xf0, 0xee, 0x1d])
+        self.assertEqual([packet[0] for packet in packets[:3]], [0xf0, 0xee, 0x1d])
         other = self.locations.refresh('bravo', 202)
-        self.assertEqual([packet[0] for packet in other], [0xf0, 0xee, 0x1d])
+        self.assertEqual([packet[0] for packet in other[:3]], [0xf0, 0xee, 0x1d])
         self.assertEqual(packets[1], encode_open_map_view())
         self.assertEqual(other[1], encode_open_map_view())
-        self.assertEqual(packets[2], movement_packet(101, *center(3), destination=(-220, -280)))
-        self.assertEqual(other[2], movement_packet(202, *center(3), destination=(-220, -280)))
         route = self.travel.route(room['id'])
+        self.assertEqual(packets[2:], self.announced(101, route, 0))
+        self.assertEqual(other[2:], self.announced(202, route, 0))
+        # Later refreshes send only the next turn, never the dashes again.
+        self.now += .5
+        for owner, character_id in (('alice', 101), ('bravo', 202)):
+            for packet in self.locations.refresh(owner, character_id):
+                self.assertEqual(struct.unpack_from('<I', packet, 13)[0], 0)
         self.now = route[5] + 1
         for owner, character_id in (('alice', 101), ('bravo', 202)):
             packets = self.locations.refresh(owner, character_id)

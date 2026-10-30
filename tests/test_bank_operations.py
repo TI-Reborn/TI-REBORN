@@ -233,7 +233,7 @@ class BankOperationTests(unittest.TestCase):
 
     def test_recipient_gate_rechecks_before_move_and_foreign_mark_is_rejected(self):
         _,mark=self.mark()
-        with transaction(self.path) as db:db.execute("INSERT INTO map_journeys VALUES ('bob',0,0,100,100,0,100)")
+        with transaction(self.path) as db:db.execute("INSERT INTO map_journeys(account,x,y,tx,ty,started,arrives) VALUES ('bob',0,0,100,100,0,100)")
         before=self.rows()
         with self.assertRaises(CityError):self.ops.action(self.request('lend',nonce='busy-recipient-0001',markId=mark,recipientName='Bob'))
         denied=self.command(f'!bank lend {mark} Bob busy-recipient-0002',busy=('bob',))

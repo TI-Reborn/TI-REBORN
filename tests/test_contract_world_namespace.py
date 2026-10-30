@@ -9,8 +9,8 @@ from tio.locations import TOWNS
 from tio.pve_contracts import validate_catalog
 
 ROOT=Path(__file__).resolve().parents[1]
-PROPOSED={19:(-240,-320,-220,-300),20:(-240,-420,-220,-400),
-          21:(-245,-370,-225,-350),22:(110,-320,130,-300)}
+# Training bases of the road-layout map (2026-10-29).
+PROPOSED={town:TOWNS[town] for town in (19,20,21,22)}
 
 
 class ContractWorldNamespaceTests(unittest.TestCase):
@@ -29,14 +29,16 @@ class ContractWorldNamespaceTests(unittest.TestCase):
 
     def test_matching_public_id_with_conflicting_geometry_is_rejected(self):
         with patch.dict(TOWNS,PROPOSED):
-            for zone,bounds in ((18,TOWNS[18]),(20,TOWNS[20])):
+            for zone in (18,20):
+                x1,y1=TOWNS[zone][:2]
                 source=deepcopy(self.catalog)
-                source['templates']=[{**source['templates'][0],'zone_id':zone,'bounds':list(bounds)}]
+                source['templates']=[{**source['templates'][0],'zone_id':zone,'bounds':[x1,y1,x1+20,y1+20]}]
                 with self.assertRaisesRegex(ValueError,'overlap'):validate_catalog(source)
 
     def test_geometry_still_reserved_with_different_id_and_safe_margin(self):
         with patch.dict(TOWNS,PROPOSED):
-            for bounds in ((-150,50,-130,70),(-170,50,-160,70)):
+            # Inside Detroit, then just within the safe margin west of it.
+            for bounds in ((-150,200,-130,220),(-190,200,-175,220)):
                 source=deepcopy(self.catalog)
                 source['templates']=[{**source['templates'][0],'zone_id':250,'bounds':list(bounds)}]
                 with self.assertRaisesRegex(ValueError,'overlap'):validate_catalog(source)

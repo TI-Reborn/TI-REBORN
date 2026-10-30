@@ -129,7 +129,8 @@ class ContractsServiceTests(unittest.TestCase):
             self.service.sync(session)
             self.hub.queues[self.hub.identities[session]].clear()
         party = self.service.parties.info('alice')
-        self.service.travel_map(self.sessions[0], struct.pack('<Bii', 0x1b, -280, -235))
+        target = self.service.contracts.active(party['id'])['target']
+        self.service.travel_map(self.sessions[0], struct.pack('<Bii', 0x1b, target['x'], target['y']))
         now[0] = self.service.travel.route(party['id'])[5] + 1
         self.service.travel.arrive('alice')
         arrived_party = self.service.parties.info('alice')

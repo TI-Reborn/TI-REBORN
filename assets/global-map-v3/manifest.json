@@ -1,0 +1,754 @@
+{
+ "built_with": {
+  "numpy": "2.5.4",
+  "opencv-python": "5.0.0",
+  "scikit-image": "0.26.0",
+  "Pillow": "12.0.0"
+ },
+ "map": {
+  "path": "pda\\global-map-v3\\gm3-map.png",
+  "sha256": "b5eb21b5f513a07bf488bfdcf86ad30e1de5fbace31bd41dd312dcef9190b70e",
+  "size": 3394102,
+  "pixels": [
+   1819,
+   865
+  ]
+ },
+ "locations": [
+  {
+   "id": 2,
+   "asset": "denver",
+   "label": "DENVER",
+   "footprint": [
+    180,
+    11,
+    357,
+    186
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-02.png",
+    "sha256": "17d28e5f7b1c41552573886d40255546017f72290e24f40fd272d4a902f03d1a",
+    "size": 102524
+   },
+   "rect": [
+    170,
+    1,
+    367,
+    196
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-02.png",
+    "sha256": "8bd54775f37461e514920babf8b289ec0b0bb5653d2213ca583809ddd51778f3",
+    "size": 103631
+   }
+  },
+  {
+   "id": 3,
+   "asset": "reservation",
+   "label": "RES",
+   "footprint": [
+    529,
+    150,
+    667,
+    301
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-03.png",
+    "sha256": "d84f6f7b9c92175f30347fa47b792931ac411fcde7cbbefde386d2d3fa3b2447",
+    "size": 69955
+   },
+   "rect": [
+    519,
+    140,
+    677,
+    311
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-03.png",
+    "sha256": "2be9c025b7e52b80280182f1be4c7909f74e7eee2bdd1b74f725360b8045fdc6",
+    "size": 70780
+   }
+  },
+  {
+   "id": 4,
+   "asset": "military-outpost",
+   "label": "MO",
+   "footprint": [
+    1313,
+    0,
+    1511,
+    158
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-04.png",
+    "sha256": "bce505b17608fe33d8e8d40d7bb11371aeeff70df26dd877241b549a502dea10",
+    "size": 92796
+   },
+   "rect": [
+    1303,
+    0,
+    1521,
+    168
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-04.png",
+    "sha256": "878ad745d295f028b85aa38dde8c43eebb4eaa86440de9da09880971880f5588",
+    "size": 94307
+   }
+  },
+  {
+   "id": 5,
+   "asset": "new-york",
+   "label": "NY",
+   "footprint": [
+    1161,
+    265,
+    1446,
+    550
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-05.png",
+    "sha256": "a3c9f29648b6d39f185c0ce3f43de4f6c89ec2a7938123ab32133420c515a286",
+    "size": 252076
+   },
+   "rect": [
+    1151,
+    255,
+    1456,
+    560
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-05.png",
+    "sha256": "24e10b615346c26e067ccf5a131447f5a41601267e817e0b7bdb304a8360f602",
+    "size": 254004
+   }
+  },
+  {
+   "id": 6,
+   "asset": "denver-base",
+   "label": "DB",
+   "footprint": [
+    55,
+    145,
+    142,
+    226
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-06.png",
+    "sha256": "3edf11340c58484d8cdff9d7d3f695dfe7daf94e1dca7325f56f829eaffe9f2c",
+    "size": 29062
+   },
+   "rect": [
+    45,
+    135,
+    152,
+    236
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-06.png",
+    "sha256": "37e5cb624de19e39a293a1a9f4a12a2fd369edf805ecd1ebc1b3811ee33e9292",
+    "size": 29653
+   }
+  },
+  {
+   "id": 7,
+   "asset": "military-outpost-base",
+   "label": "MOB",
+   "footprint": [
+    1459,
+    169,
+    1539,
+    256
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-07.png",
+    "sha256": "609e8de96fb4c8de6863345be75c73fa17bc1623a120287d934b719b8fabecb5",
+    "size": 27527
+   },
+   "rect": [
+    1449,
+    159,
+    1549,
+    266
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-07.png",
+    "sha256": "45e8d413ef9b53e265e34f6beca82d1b219962b10ce4feccb7f1731f5c439654",
+    "size": 28486
+   }
+  },
+  {
+   "id": 8,
+   "asset": "military-zone",
+   "label": "MZ",
+   "footprint": [
+    1607,
+    207,
+    1797,
+    411
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-08.png",
+    "sha256": "e52c598e56e90b47550b5f64b3919f7b9073451398f4c03d375d40644cead616",
+    "size": 115081
+   },
+   "rect": [
+    1597,
+    197,
+    1807,
+    421
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-08.png",
+    "sha256": "1b14290cb3a74c12559a1bdc860c30f72edf64812419a2ecee0481b7e5673116",
+    "size": 116366
+   }
+  },
+  {
+   "id": 9,
+   "asset": "miner-s-town",
+   "label": "MT",
+   "footprint": [
+    696,
+    54,
+    827,
+    165
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-09.png",
+    "sha256": "d0a6ad46fe9a4caa8a85b94461986e3c46919601431fc8af6ab24d5483002400",
+    "size": 51398
+   },
+   "rect": [
+    686,
+    44,
+    837,
+    175
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-09.png",
+    "sha256": "41381f3de9fd67e4443ddc22ec8102f78b7d3a370dc436332027e756f2971151",
+    "size": 52654
+   }
+  },
+  {
+   "id": 10,
+   "asset": "prison",
+   "label": "PRISON",
+   "footprint": [
+    342,
+    500,
+    493,
+    651
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-10.png",
+    "sha256": "89b231a866764b75e89adfb2b4a8dffd499274462cb5acda69153fe02ac22e7e",
+    "size": 72678
+   },
+   "rect": [
+    332,
+    490,
+    503,
+    661
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-10.png",
+    "sha256": "b5f78e84d4fdbecace73334352f7339da793d478de60a14862634f685a7e6f69",
+    "size": 75485
+   }
+  },
+  {
+   "id": 11,
+   "asset": "ny-base",
+   "label": "NYB",
+   "footprint": [
+    1283,
+    569,
+    1368,
+    645
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-11.png",
+    "sha256": "04b1b9607225253e14712d04946567df53c51732bb85f8df8004814bd229ea1b",
+    "size": 26426
+   },
+   "rect": [
+    1273,
+    559,
+    1378,
+    655
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-11.png",
+    "sha256": "403c858254b7836b16bc3cb863bba69a3675b855b937f0c51c94294b36e4533e",
+    "size": 27195
+   }
+  },
+  {
+   "id": 12,
+   "asset": "mz-base",
+   "label": "MZB",
+   "footprint": [
+    1503,
+    575,
+    1589,
+    657
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-12.png",
+    "sha256": "12ea318574d76f3499e35303e020d140a2f1d0323231670b51a60b1635980cd2",
+    "size": 28086
+   },
+   "rect": [
+    1493,
+    565,
+    1599,
+    667
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-12.png",
+    "sha256": "c35fd098c6105a8c6f9f3dfa79f254611c62948c897a89bd34109be1e0829313",
+    "size": 28904
+   }
+  },
+  {
+   "id": 13,
+   "asset": "mine-4-6",
+   "label": "M 4-6",
+   "footprint": [
+    699,
+    255,
+    780,
+    336
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-13.png",
+    "sha256": "3dc33a44919e958eb238d199b5fd13a350fdce12ec911e1fe701d04e965c7d12",
+    "size": 27263
+   },
+   "rect": [
+    689,
+    245,
+    790,
+    346
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-13.png",
+    "sha256": "b5d52c617fc05f978ea1f1a80c81f0d4f7dd64eadb5081cedb607a1c18cf6544",
+    "size": 27985
+   }
+  },
+  {
+   "id": 14,
+   "asset": "mine-7-10",
+   "label": "M 7-10",
+   "footprint": [
+    1213,
+    114,
+    1291,
+    184
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-14.png",
+    "sha256": "cb48ead194b40241cdf3ac60854b577151423d8efef0a248833e2c3288e71052",
+    "size": 22640
+   },
+   "rect": [
+    1203,
+    104,
+    1301,
+    194
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-14.png",
+    "sha256": "13b7509985139194b10270a2b7884f662c0b60ab17e93e724905d13a89edd453",
+    "size": 23352
+   }
+  },
+  {
+   "id": 15,
+   "asset": "mine-11-15",
+   "label": "M 11-15",
+   "footprint": [
+    1172,
+    659,
+    1255,
+    733
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-15.png",
+    "sha256": "e629720716ee0e7d746649937a75d24f5cb85396802f219a68e5085086428f57",
+    "size": 25691
+   },
+   "rect": [
+    1162,
+    649,
+    1265,
+    743
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-15.png",
+    "sha256": "bcf79369d1d3cbd7baedc8d86cc1b844a7ba261ee7d935d2d09d22d5c5e277ba",
+    "size": 26643
+   }
+  },
+  {
+   "id": 16,
+   "asset": "mine-16-20",
+   "label": "M 16-20",
+   "footprint": [
+    1403,
+    631,
+    1485,
+    707
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-16.png",
+    "sha256": "03ec378b43f8c3aa3f669fc9267e308941ad5a3abd130b489b886398e8428626",
+    "size": 26138
+   },
+   "rect": [
+    1393,
+    621,
+    1495,
+    717
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-16.png",
+    "sha256": "c4c371a0f8e829950d424c9960a3a75dbb7386b70db57de0529e317c3b311e20",
+    "size": 26907
+   }
+  },
+  {
+   "id": 17,
+   "asset": "shooting-range",
+   "label": "RANGE",
+   "footprint": [
+    915,
+    282,
+    1002,
+    361
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-17.png",
+    "sha256": "c295a06b153d9a0a19655cc0c8f44d9dcded75a350e6926a738417a6d452c814",
+    "size": 27787
+   },
+   "rect": [
+    905,
+    272,
+    1012,
+    371
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-17.png",
+    "sha256": "96bf152bdc03d989bc59e706eedd01d396700810342d22f3ff4382ed864e846d",
+    "size": 28490
+   }
+  },
+  {
+   "id": 18,
+   "asset": "detroit",
+   "label": "DETROIT",
+   "footprint": [
+    618,
+    591,
+    811,
+    783
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-18.png",
+    "sha256": "b82d40e557674a2cb299f8b20d950e7f1a879d3b7005f34ff26211f82765e253",
+    "size": 120437
+   },
+   "rect": [
+    608,
+    581,
+    821,
+    793
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-18.png",
+    "sha256": "dc7fec74a2ab085e1eebb2dabf3ad8e65521e0ccbcd31402743acee586e92011",
+    "size": 122484
+   }
+  },
+  {
+   "id": 19,
+   "asset": "training-base-4-6",
+   "label": "T 4-6",
+   "footprint": [
+    590,
+    491,
+    668,
+    558
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-19.png",
+    "sha256": "fa9e9349fece9b7fe55137622feaa01bd3230a0effd632debe04d90a7600f1d5",
+    "size": 21756
+   },
+   "rect": [
+    580,
+    481,
+    678,
+    568
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-19.png",
+    "sha256": "c94aa468a24425172a4f2ca22626b9ea15c12af2ac8b8d4e008b69f1cdd4e157",
+    "size": 22481
+   }
+  },
+  {
+   "id": 20,
+   "asset": "training-base-7-10",
+   "label": "T 7-10",
+   "footprint": [
+    432,
+    61,
+    512,
+    135
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-20.png",
+    "sha256": "197eeb5469795567e60ee2871b1222c6e59e833866367152b8684738b422d416",
+    "size": 24800
+   },
+   "rect": [
+    422,
+    51,
+    522,
+    145
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-20.png",
+    "sha256": "4cee4796db0cef446852b54f662fb0b5201a483a28ef1462176eca99a18ee91f",
+    "size": 25366
+   }
+  },
+  {
+   "id": 21,
+   "asset": "training-base-11-15",
+   "label": "T 11-15",
+   "footprint": [
+    1031,
+    624,
+    1110,
+    697
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-21.png",
+    "sha256": "60800643d8115eec2525a4bba591c91ebc12dff985181f9f2cce1e9af38058e6",
+    "size": 23590
+   },
+   "rect": [
+    1021,
+    614,
+    1120,
+    707
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-21.png",
+    "sha256": "ef9795b8c3b1c643af86e99fd37329c33b8ecee7e08836ce4fe6934ae1579010",
+    "size": 24395
+   }
+  },
+  {
+   "id": 22,
+   "asset": "training-base-16-20",
+   "label": "T 16-20",
+   "footprint": [
+    1100,
+    100,
+    1181,
+    178
+   ],
+   "hover": {
+    "path": "pda\\global-map-v3\\gm3h-22.png",
+    "sha256": "119b724538d3019a03b493e99764c3d8d1b216e8a22ca2e88fe9afd3bd0c3764",
+    "size": 25228
+   },
+   "rect": [
+    1090,
+    90,
+    1191,
+    188
+   ],
+   "selected": {
+    "path": "pda\\global-map-v3\\gm3s-22.png",
+    "sha256": "4100da55c5e30f4f9eec30550df5b1a0022d43297ad2c77b5ce0e6dbab97f96c",
+    "size": 26105
+   }
+  }
+ ],
+ "marker": {
+  "pixels": [
+   64,
+   64
+  ],
+  "frames": [
+   {
+    "path": "pda\\global-map-v3\\gm3m-00.png",
+    "sha256": "80d1e0aad00d0274775e6c4f8ca5b3a7a375a4ea75a2c079e622db758b44ecd5",
+    "size": 2051
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-01.png",
+    "sha256": "17dc7f44e7a3ebee8ad73afdd964ebdd52d2508f9d3741834da3c562a987006a",
+    "size": 2046
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-02.png",
+    "sha256": "1a8842a260574eb40589a395f4c7938fc52e116c7fa8cf0ff957a4eac551a9b4",
+    "size": 1975
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-03.png",
+    "sha256": "d9d97899c466fdb1d06d44fe81cc87f2f8aa80054769aeb7b897b40bda2b1336",
+    "size": 2135
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-04.png",
+    "sha256": "9984c6bd32e090590960517c939a103024d920832cacd9ed3b7746298f19e105",
+    "size": 2164
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-05.png",
+    "sha256": "a22b6d267115ba3d034169f21ad27809af01557333e344e7c893e514c9316f43",
+    "size": 2148
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-06.png",
+    "sha256": "93c12859fc6bbe50cafed22042cf28ffa983f8666561dd08a8b2324b8510cd3d",
+    "size": 2075
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-07.png",
+    "sha256": "75318b00acbc47b5748926ee63422192b048a21cf76a323a9901f82d8fbd82c8",
+    "size": 2138
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-08.png",
+    "sha256": "f9c86d80f695ddd17ebc96b253f789b7d64d5c4e43aa0c2255c79c05922ace3c",
+    "size": 2163
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-09.png",
+    "sha256": "07a25effd56f5727fafa226a048e0713e6c2261518728fbf005fed1987331adb",
+    "size": 2140
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-10.png",
+    "sha256": "166e711179dc795a3baa8fd0a43d4e2b37c85f5d166d4e1b7f106ac101940e33",
+    "size": 2114
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-11.png",
+    "sha256": "9dc09497caf32c21349c71ace30c539282a44fc3256c7b767bdfdb1605a76830",
+    "size": 2158
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-12.png",
+    "sha256": "0d28157783668d7499ceb342cd2b19d8b1db239e6c5e11203f5ba6dbc8caca0c",
+    "size": 2196
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-13.png",
+    "sha256": "3c25caf2a681753a12941708c63a4c1d9ac2c059a2d82b97a04f05cfbcb37f4f",
+    "size": 2107
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-14.png",
+    "sha256": "8b4bb723b3a1445187deff6120a47a72bf900e508158919e894d29d2dae74f1d",
+    "size": 2014
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-15.png",
+    "sha256": "945e65b3a0b55a11bfd6afd1540d49799836a35ca728cb20a56d6b9e115df139",
+    "size": 2101
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-16.png",
+    "sha256": "f0c1f048109b521c09e8d6c459e87633156b8ef930c22750ff9991bdd678d38d",
+    "size": 2074
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-17.png",
+    "sha256": "b5404932e86ff56eb3619a96c50bde0985cdd6e49909e0f77c9deb5a4a5b6630",
+    "size": 2095
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-18.png",
+    "sha256": "f58fc53718a09d3987e7cfe10dd1ef4a7c2f880f80031e922fc668784763af7a",
+    "size": 2019
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-19.png",
+    "sha256": "67d9127be45c5cb585b5a571b149b66132b3fb125ac2cdd34e3c73bd2bc72040",
+    "size": 2194
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-20.png",
+    "sha256": "355e0c89e93aad577fe0366bb81dfc540426ba23349d49f29bffa2331ee0dee7",
+    "size": 2181
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-21.png",
+    "sha256": "2c0ba5ca7b08c308eab9eb9c080dce6916e3cc746fd25711a09897c2cad06c23",
+    "size": 2154
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-22.png",
+    "sha256": "7e9ac9fd8081a3a8e836400b519a89bb7ae24cb129e51541184a75f898870234",
+    "size": 2059
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-23.png",
+    "sha256": "41602e877e716af0776fd3b70f2ab6431bd71c8b07c3afba53a67651ff127822",
+    "size": 2071
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-24.png",
+    "sha256": "8c0ab4ccee1feaf28287cfb98e9fb05971ee76ed4f303162dd94a1c4828f5e0e",
+    "size": 2074
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-25.png",
+    "sha256": "3c17802b30b424d2aa699f6d72bc5696ccf147d92e5b62a69eddde4efcc7ee14",
+    "size": 2063
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-26.png",
+    "sha256": "94f4fdbf0dd2fd36d635aba47073d7ff7023657854eab493fa76c99da6651cca",
+    "size": 2051
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-27.png",
+    "sha256": "32fc20cab4e9683cd2617743d1f50bb1030c1eb3d0a365f003ae366f2c3f0508",
+    "size": 2147
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-28.png",
+    "sha256": "f839a9194e78355ca10d86b1a7e9d2de8c80cdb3d4221cdb9cba83e744697965",
+    "size": 2213
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-29.png",
+    "sha256": "75c6d304960126cf0d412a2e990a34488dcd87d6444c7cf74c7c3b9bdbf65f1c",
+    "size": 2200
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-30.png",
+    "sha256": "e423ba7a2b7b03d33c9ef781e06c80e6114d267c93d8ce38c138694a7f9ca223",
+    "size": 2070
+   },
+   {
+    "path": "pda\\global-map-v3\\gm3m-31.png",
+    "sha256": "9d1307d76b5a7a7a339b111f1a604637b8f049dc33d091a2507447b340beb5a1",
+    "size": 2133
+   }
+  ]
+ }
+}
