@@ -1,6 +1,6 @@
-"""Journeys follow the roads at speed36: one 1D per road turn, durable resume."""
+"""Straight journeys at speed36, durable resume and coordinate-only rollback."""
 from contextlib import closing
-import json
+import math
 from pathlib import Path
 import sqlite3
 import struct
@@ -8,7 +8,7 @@ import tempfile
 import unittest
 
 from tio.locations import LocationStore, MAP_SPEED, center, stop_packet, town_packets
-from tio.roads import ROADS, path_length, point_along
+from tio.roads import path_length, point_along
 
 
 def moving(packet):
@@ -18,7 +18,7 @@ def moving(packet):
     return (x, y), (tx, ty), target
 
 
-class RoadTravelTests(unittest.TestCase):
+class StraightTravelTests(unittest.TestCase):
     def setUp(self):
         folder = tempfile.TemporaryDirectory()
         self.addCleanup(folder.cleanup)
@@ -32,14 +32,31 @@ class RoadTravelTests(unittest.TestCase):
     def go(self, account, town, character_id=42):
         return self.store.travel(account, struct.pack('<Bii', 0x1b, *center(town)), character_id)
 
+    def test_new_journey_keeps_the_legacy_schema_and_moves_straight(self):
+        import math
+        self.go('alice', 8)
+        with closing(sqlite3.connect(self.path)) as db:
+            columns = [r[1] for r in db.execute('PRAGMA table_info(map_journeys)')]
+            route = db.execute('SELECT x,y,tx,ty,started,arrives FROM map_journeys').fetchone()
+        self.assertEqual(columns, ['account','x','y','tx','ty','started','arrives'])
+        self.assertAlmostEqual(route[5]-route[4], math.dist(center(3),center(8))/MAP_SPEED)
+
+    def test_reopening_does_not_complete_a_new_journey(self):
+        self.go('alice', 8)
+        self.now[0] += 1
+        reopened = LocationStore(self.path, clock=lambda: self.now[0])
+        self.assertTrue(reopened.travelling('alice'))
+        self.assertEqual(reopened.position('alice'),self.store.position('alice'))
+        reopened.resume('alice',42)
+        self.assertEqual(reopened.refresh('alice',42),())
+
     def test_speed_road_duration_resume_and_arrival_agree(self):
-        road = ROADS.plan(center(3), center(8))
+        road = (center(3), center(8))
         packets = self.go('alice', 8)
         with closing(sqlite3.connect(self.path)) as db:
-            started, arrives, saved = db.execute(
-                'SELECT started,arrives,path FROM map_journeys WHERE account=?', ('alice',)).fetchone()
+            started, arrives = db.execute(
+                'SELECT started,arrives FROM map_journeys WHERE account=?', ('alice',)).fetchone()
         self.assertEqual(MAP_SPEED, 36)
-        self.assertEqual([tuple(p) for p in json.loads(saved)], list(road))
         self.assertAlmostEqual(arrives - started, path_length(road) / MAP_SPEED)
         self.assertEqual(packets[0][0], 0xf0)
         self.assertEqual(moving(packets[-1])[0], center(3))
@@ -54,37 +71,19 @@ class RoadTravelTests(unittest.TestCase):
         self.assertEqual(resumed.current('alice'), 8)
         self.assertFalse(resumed.travelling('alice'))
 
-    def test_one_movement_per_road_turn_with_the_final_location(self):
-        road = ROADS.plan(center(3), center(5))
-        sent = [moving(self.go('alice', 5)[-1])]
-        arrives = 1000 + path_length(road) / MAP_SPEED
-        while self.now[0] + .05 < arrives:
-            self.now[0] += .05
-            sent.extend(moving(packet) for packet in self.store.refresh('alice', 42))
-        turns = [tuple(map(round, point)) for point in road[1:]]
-        destinations = [turn for _, turn, _ in sent]
-        # Every turn is sent once, in road order; legs shorter than the lead
-        # merge into the next one. Nothing is sent between turns.
-        self.assertEqual(destinations, sorted(set(destinations), key=turns.index))
-        self.assertEqual(destinations[-1], center(5))
-        self.assertGreaterEqual(len(destinations), len(turns) * 3 // 4)
-        self.assertEqual({target for _, _, target in sent}, {5})
-
-    def test_turn_is_sent_before_the_client_reaches_the_corner(self):
-        road = ROADS.plan(center(3), center(5))
-        self.go('alice', 5)
-        corner = path_length(road[:2])
-        self.now[0] = 1000 + corner / MAP_SPEED - .1
-        (position, turn, _), = map(moving, self.store.refresh('alice', 42))
-        self.assertEqual(turn, tuple(map(round, road[2])))
-        self.assertNotEqual(position, tuple(map(round, road[1])))
+    def test_no_corrections_between_departure_and_arrival(self):
+        packets = self.go('alice', 5)
+        self.assertEqual(moving(packets[-1])[1],center(5))
+        for seconds in (0.1,1,3):
+            self.now[0] = 1000 + seconds
+            self.assertEqual(self.store.refresh('alice',42),())
 
     def test_two_accounts_drive_independent_routes(self):
         self.go('alice', 8, 42)
         self.go('bob', 2, 77)
         self.now[0] += 3
-        alice = ROADS.plan(center(3), center(8))
-        bob = ROADS.plan(center(3), center(2))
+        alice = (center(3), center(8))
+        bob = (center(3), center(2))
         self.assertEqual(self.store.position('alice'), tuple(round(v) for v in point_along(alice, 3 * MAP_SPEED)))
         self.assertEqual(self.store.position('bob'), tuple(round(v) for v in point_along(bob, 3 * MAP_SPEED)))
         for packet in self.store.refresh('bob', 77):
@@ -109,12 +108,29 @@ class RoadTravelTests(unittest.TestCase):
             db.execute('DELETE FROM map_journeys WHERE account=?', ('alice',))
         self.go('alice', 8)
         with closing(sqlite3.connect(self.path)) as db:
-            saved = json.loads(db.execute('SELECT path FROM map_journeys').fetchone()[0])
-        self.assertEqual(tuple(saved[0]), point)
-        self.assertAlmostEqual(path_length(saved), path_length(ROADS.plan(center(3), center(8))) - 4 * MAP_SPEED, delta=2)
+            saved = db.execute('SELECT x,y,tx,ty FROM map_journeys').fetchone()
+        self.assertEqual(saved[:2],point)
+        self.assertEqual(saved[2:],center(8))
+
 
 
 class LayoutMigrationTests(unittest.TestCase):
+    def test_coordinate_rollback_keeps_new_player_progress_and_legacy_inserts(self):
+        from tio.world_layout import restore_legacy_layout
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder)/'rollback.db'
+            store = LocationStore(path,clock=lambda:1000)
+            with closing(sqlite3.connect(path)) as db,db:
+                store._save(db,'alice',3,*center(3))
+                db.execute('CREATE TABLE wallets(account TEXT PRIMARY KEY,credits INTEGER)')
+                db.execute("INSERT INTO wallets VALUES ('alice',200)")
+                restore_legacy_layout(db)
+                self.assertEqual(db.execute('SELECT credits FROM wallets').fetchone()[0],200)
+                self.assertEqual(db.execute('SELECT x,y FROM character_locations').fetchone(),(-154,-318))
+                db.execute('INSERT INTO map_journeys VALUES (?,?,?,?,?,?,?)',
+                           ('alice',-154,-318,-368,-425,1000,1020))
+                self.assertEqual(db.execute('SELECT count(*) FROM map_journeys').fetchone()[0],1)
+
     def test_saved_towns_and_old_journeys_move_with_the_layout(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / 'legacy.sqlite3'

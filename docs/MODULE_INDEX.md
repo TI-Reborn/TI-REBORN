@@ -250,7 +250,7 @@
 | [tio/protocol/weather.py](../tio/protocol/weather.py) | FB/v1 cosmetic rain extension; independent of the F7 item snapshot. |
 | [tio/protocol/world_bootstrap.py](../tio/protocol/world_bootstrap.py) | Confirmed SILVER18/1A wire layouts; unknown fields preserved. |
 | [tio/pve_contracts.py](../tio/pve_contracts.py) | Durable, private cooperative clearance contracts. |
-| [tio/roads.py](../tio/roads.py) | Drivable routes of the global map along config/world_roads.json. |
+| [tio/roads.py](../tio/roads.py) | Geometry shared by straight travel and dashed map routes. |
 | [tio/ranked.py](../tio/ranked.py) | Two-side TrueSkill inference and transactional, match-wide rating receipts. |
 | [tio/ranks.py](../tio/ranks.py) | Soldier ranks: manual pp.52–54, original PetInfo66 rank fields. |
 | [tio/rating_completion.py](../tio/rating_completion.py) | Durable rating of fixed four-account Wall squads, separate from duel ratings. |
@@ -701,6 +701,7 @@
 | [tools/publish_gameplay_sc_client.py](../tools/publish_gameplay_sc_client.py) | Build/review the exact SC F8 client, then explicitly publish only silver.dll. |
 | [tools/publish_gameplay_xml_client.py](../tools/publish_gameplay_xml_client.py) | Publish a bounded XML-only catalogue release, preserving other client blobs. |
 | [tools/publish_global_map_remote.py](../tools/publish_global_map_remote.py) | Scoped .2026.10.10.4 -> .5 publication of original global-map PNGs. |
+| [tools/publish_global_map_v3_remote.py](../tools/publish_global_map_v3_remote.py) | Stage immutable map resources and publish the manifest while gameplay is stopped. |
 | [tools/publish_launcher_014_remote.py](../tools/publish_launcher_014_remote.py) | Root-only, guarded launcher 0.1.4 publication; no game code or DB restore. |
 | [tools/publish_launcher_update_remote.py](../tools/publish_launcher_update_remote.py) | Root-only launcher self-update publication from an explicitly pinned baseline. |
 | [tools/publish_legacy_lobbies_client.py](../tools/publish_legacy_lobbies_client.py) | Publish the bounded native lobby and texture fix using the reviewed transaction. |

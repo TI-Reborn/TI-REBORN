@@ -1,14 +1,14 @@
 {
  "built_with": {
-  "numpy": "2.1.3",
-  "opencv-python": "4.12.0",
+  "numpy": "2.5.4",
+  "opencv-python": "5.0.0",
   "scikit-image": "0.26.0",
   "Pillow": "12.0.0"
  },
  "map": {
   "path": "pda\\global-map-v3\\gm3-map.png",
-  "sha256": "941c673a0894953aa6fc1b7e07285b72c7a01906636e2a25a7ad99810eaff709",
-  "size": 3394162,
+  "sha256": "b5eb21b5f513a07bf488bfdcf86ad30e1de5fbace31bd41dd312dcef9190b70e",
+  "size": 3394102,
   "pixels": [
    1819,
    865
@@ -27,8 +27,8 @@
    ],
    "hover": {
     "path": "pda\\global-map-v3\\gm3h-02.png",
-    "sha256": "2745002bca01f9a4a414befe0ba13f184eb3963a62dcf265974454bfa1344c1e",
-    "size": 102506
+    "sha256": "17d28e5f7b1c41552573886d40255546017f72290e24f40fd272d4a902f03d1a",
+    "size": 102524
    },
    "rect": [
     170,
@@ -38,8 +38,8 @@
    ],
    "selected": {
     "path": "pda\\global-map-v3\\gm3s-02.png",
-    "sha256": "43fdc39f7ec550065eea7b09ba69867fae1a435b147ac29c133bb7a2843574d1",
-    "size": 103608
+    "sha256": "8bd54775f37461e514920babf8b289ec0b0bb5653d2213ca583809ddd51778f3",
+    "size": 103631
    }
   },
   {
@@ -54,8 +54,8 @@
    ],
    "hover": {
     "path": "pda\\global-map-v3\\gm3h-03.png",
-    "sha256": "ea2ae4fe21a103db31beac08fb4315d0f23a5f744143df5c8c33e8c58f8b0d34",
-    "size": 69948
+    "sha256": "d84f6f7b9c92175f30347fa47b792931ac411fcde7cbbefde386d2d3fa3b2447",
+    "size": 69955
    },
    "rect": [
     519,
@@ -65,8 +65,8 @@
    ],
    "selected": {
     "path": "pda\\global-map-v3\\gm3s-03.png",
-    "sha256": "8288bf8227ae6eda0ca70c202f1118e761b1629c553a10f49e4123c7810691da",
-    "size": 70757
+    "sha256": "2be9c025b7e52b80280182f1be4c7909f74e7eee2bdd1b74f725360b8045fdc6",
+    "size": 70780
    }
   },
   {
@@ -108,8 +108,8 @@
    ],
    "hover": {
     "path": "pda\\global-map-v3\\gm3h-05.png",
-    "sha256": "7b1c845fc9ce90bf11349cbf63873926f7a7c51ca06da9b32c0ce78c30bb9d89",
-    "size": 252031
+    "sha256": "a3c9f29648b6d39f185c0ce3f43de4f6c89ec2a7938123ab32133420c515a286",
+    "size": 252076
    },
    "rect": [
     1151,
@@ -119,8 +119,8 @@
    ],
    "selected": {
     "path": "pda\\global-map-v3\\gm3s-05.png",
-    "sha256": "f5574a78b44a8f879c39717136d08813827c7dbd88520e1aab5e7d9c55bc0038",
-    "size": 253948
+    "sha256": "24e10b615346c26e067ccf5a131447f5a41601267e817e0b7bdb304a8360f602",
+    "size": 254004
    }
   },
   {
@@ -189,8 +189,8 @@
    ],
    "hover": {
     "path": "pda\\global-map-v3\\gm3h-08.png",
-    "sha256": "31bc141d32681d7196524e28f41179b41a20853c54c449f60935b7f38ed08e7e",
-    "size": 115152
+    "sha256": "e52c598e56e90b47550b5f64b3919f7b9073451398f4c03d375d40644cead616",
+    "size": 115081
    },
    "rect": [
     1597,
@@ -200,8 +200,8 @@
    ],
    "selected": {
     "path": "pda\\global-map-v3\\gm3s-08.png",
-    "sha256": "6f3049070a71ecf2ad77da2fb0f67f4105e039adb96cd3daf7e54c3691365124",
-    "size": 116425
+    "sha256": "1b14290cb3a74c12559a1bdc860c30f72edf64812419a2ecee0481b7e5673116",
+    "size": 116366
    }
   },
   {
@@ -216,8 +216,8 @@
    ],
    "hover": {
     "path": "pda\\global-map-v3\\gm3h-09.png",
-    "sha256": "490a653fe5e1ae2d46d8b0b0e20a9c6abc7f0a46e52b23d5a7127e1079385ffa",
-    "size": 51399
+    "sha256": "d0a6ad46fe9a4caa8a85b94461986e3c46919601431fc8af6ab24d5483002400",
+    "size": 51398
    },
    "rect": [
     686,
@@ -227,8 +227,8 @@
    ],
    "selected": {
     "path": "pda\\global-map-v3\\gm3s-09.png",
-    "sha256": "a01edeb3cc807c792d64e527173f3fb2b7951797367f8abbcf87da9c7f3ba201",
-    "size": 52630
+    "sha256": "41381f3de9fd67e4443ddc22ec8102f78b7d3a370dc436332027e756f2971151",
+    "size": 52654
    }
   },
   {
@@ -243,8 +243,8 @@
    ],
    "hover": {
     "path": "pda\\global-map-v3\\gm3h-10.png",
-    "sha256": "b9cb997e445c9a108981f32b59cb14940fb819a749cfe4bec4078003ca96b9c8",
-    "size": 72706
+    "sha256": "89b231a866764b75e89adfb2b4a8dffd499274462cb5acda69153fe02ac22e7e",
+    "size": 72678
    },
    "rect": [
     332,
@@ -254,8 +254,8 @@
    ],
    "selected": {
     "path": "pda\\global-map-v3\\gm3s-10.png",
-    "sha256": "64083a2c87888b7f627ec928ed429ca28c4572f0fd335a4e9a0cf4c1af11b5d7",
-    "size": 75531
+    "sha256": "b5f78e84d4fdbecace73334352f7339da793d478de60a14862634f685a7e6f69",
+    "size": 75485
    }
   },
   {
@@ -297,8 +297,8 @@
    ],
    "hover": {
     "path": "pda\\global-map-v3\\gm3h-12.png",
-    "sha256": "13016465265f6c2bd5ebe74b03704aa78b9735e466c12f15c4fdcabf0d66d91c",
-    "size": 28072
+    "sha256": "12ea318574d76f3499e35303e020d140a2f1d0323231670b51a60b1635980cd2",
+    "size": 28086
    },
    "rect": [
     1493,
@@ -308,8 +308,8 @@
    ],
    "selected": {
     "path": "pda\\global-map-v3\\gm3s-12.png",
-    "sha256": "4ecc1fdf6413cf2096a7033a0465123bd7ea70e9fd7209f1553fde86128aa197",
-    "size": 28893
+    "sha256": "c35fd098c6105a8c6f9f3dfa79f254611c62948c897a89bd34109be1e0829313",
+    "size": 28904
    }
   },
   {
@@ -324,8 +324,8 @@
    ],
    "hover": {
     "path": "pda\\global-map-v3\\gm3h-13.png",
-    "sha256": "9fd10c4d4684f5b2cf9ee3b763934a3505d42cea40d06952ec4e6a1f9e1a9339",
-    "size": 27252
+    "sha256": "3dc33a44919e958eb238d199b5fd13a350fdce12ec911e1fe701d04e965c7d12",
+    "size": 27263
    },
    "rect": [
     689,
@@ -335,8 +335,8 @@
    ],
    "selected": {
     "path": "pda\\global-map-v3\\gm3s-13.png",
-    "sha256": "5a6c2da731c5cda46574880746e947a3548444f9b37f504b9541c0939bb4447a",
-    "size": 27982
+    "sha256": "b5d52c617fc05f978ea1f1a80c81f0d4f7dd64eadb5081cedb607a1c18cf6544",
+    "size": 27985
    }
   },
   {
@@ -351,8 +351,8 @@
    ],
    "hover": {
     "path": "pda\\global-map-v3\\gm3h-14.png",
-    "sha256": "406228cfd4c4be721a09d3d0bda1e436f3e8340d4c6798df8cfe9f32ee1314a1",
-    "size": 22650
+    "sha256": "cb48ead194b40241cdf3ac60854b577151423d8efef0a248833e2c3288e71052",
+    "size": 22640
    },
    "rect": [
     1203,
@@ -362,8 +362,8 @@
    ],
    "selected": {
     "path": "pda\\global-map-v3\\gm3s-14.png",
-    "sha256": "67d3c4db44dfd15a0697dd15fd4008ce77f517b678a5388c5def2baacaec59e0",
-    "size": 23379
+    "sha256": "13b7509985139194b10270a2b7884f662c0b60ab17e93e724905d13a89edd453",
+    "size": 23352
    }
   },
   {
@@ -378,8 +378,8 @@
    ],
    "hover": {
     "path": "pda\\global-map-v3\\gm3h-15.png",
-    "sha256": "e30dd331dbde8b8cf83db559e0929962a686ca497a890dc9e12d9f568063b838",
-    "size": 25752
+    "sha256": "e629720716ee0e7d746649937a75d24f5cb85396802f219a68e5085086428f57",
+    "size": 25691
    },
    "rect": [
     1162,
@@ -389,8 +389,8 @@
    ],
    "selected": {
     "path": "pda\\global-map-v3\\gm3s-15.png",
-    "sha256": "3ebc183926209b006982c7ee251a36ede94f7b2594e706d353266ff87cacb75e",
-    "size": 26699
+    "sha256": "bcf79369d1d3cbd7baedc8d86cc1b844a7ba261ee7d935d2d09d22d5c5e277ba",
+    "size": 26643
    }
   },
   {
@@ -405,8 +405,8 @@
    ],
    "hover": {
     "path": "pda\\global-map-v3\\gm3h-16.png",
-    "sha256": "00feb5f2a560c9efce07c3d19e2fe4c1352ba3c539b44afc61f46070c5b358f0",
-    "size": 26160
+    "sha256": "03ec378b43f8c3aa3f669fc9267e308941ad5a3abd130b489b886398e8428626",
+    "size": 26138
    },
    "rect": [
     1393,
@@ -416,8 +416,8 @@
    ],
    "selected": {
     "path": "pda\\global-map-v3\\gm3s-16.png",
-    "sha256": "f4f8c429cedf3b2f173cd5e8966dc3cc0342e368b66f435f1f8a82c8c4263895",
-    "size": 26940
+    "sha256": "c4c371a0f8e829950d424c9960a3a75dbb7386b70db57de0529e317c3b311e20",
+    "size": 26907
    }
   },
   {
@@ -432,8 +432,8 @@
    ],
    "hover": {
     "path": "pda\\global-map-v3\\gm3h-17.png",
-    "sha256": "163e5ed623d5212b320b2d9858c794a02339ee50704d7860dfbd9bdeff193cd5",
-    "size": 27821
+    "sha256": "c295a06b153d9a0a19655cc0c8f44d9dcded75a350e6926a738417a6d452c814",
+    "size": 27787
    },
    "rect": [
     905,
@@ -443,8 +443,8 @@
    ],
    "selected": {
     "path": "pda\\global-map-v3\\gm3s-17.png",
-    "sha256": "a729a299cd5f90be1b57ff8ccf040b6225328d807ed3b551fa30e03201d1c607",
-    "size": 28497
+    "sha256": "96bf152bdc03d989bc59e706eedd01d396700810342d22f3ff4382ed864e846d",
+    "size": 28490
    }
   },
   {
@@ -459,7 +459,7 @@
    ],
    "hover": {
     "path": "pda\\global-map-v3\\gm3h-18.png",
-    "sha256": "f42f7472d296421eccb8b22568237ea6c70fc3f3635fee41e5a2b0c26e384fa2",
+    "sha256": "b82d40e557674a2cb299f8b20d950e7f1a879d3b7005f34ff26211f82765e253",
     "size": 120437
    },
    "rect": [
@@ -470,8 +470,8 @@
    ],
    "selected": {
     "path": "pda\\global-map-v3\\gm3s-18.png",
-    "sha256": "da3e9b2d344425ab60d48228cd525e580f04953fe967c04d54374421d2ffcf64",
-    "size": 122481
+    "sha256": "dc7fec74a2ab085e1eebb2dabf3ad8e65521e0ccbcd31402743acee586e92011",
+    "size": 122484
    }
   },
   {
@@ -486,8 +486,8 @@
    ],
    "hover": {
     "path": "pda\\global-map-v3\\gm3h-19.png",
-    "sha256": "12dee59e00b5ae68ac6bc2ae83fb32707926bfb4a0142c27e001b23d4e0a5bbc",
-    "size": 21751
+    "sha256": "fa9e9349fece9b7fe55137622feaa01bd3230a0effd632debe04d90a7600f1d5",
+    "size": 21756
    },
    "rect": [
     580,
@@ -497,8 +497,8 @@
    ],
    "selected": {
     "path": "pda\\global-map-v3\\gm3s-19.png",
-    "sha256": "0b032d3babda7994789630cf35c8526ef9fa208dbc697c1645abe6e2582e57a7",
-    "size": 22475
+    "sha256": "c94aa468a24425172a4f2ca22626b9ea15c12af2ac8b8d4e008b69f1cdd4e157",
+    "size": 22481
    }
   },
   {
@@ -513,8 +513,8 @@
    ],
    "hover": {
     "path": "pda\\global-map-v3\\gm3h-20.png",
-    "sha256": "1bfa4605edd40c146fe9a8d2ee6df217453a72e52269153c2d5e206223e0349a",
-    "size": 24808
+    "sha256": "197eeb5469795567e60ee2871b1222c6e59e833866367152b8684738b422d416",
+    "size": 24800
    },
    "rect": [
     422,
@@ -524,8 +524,8 @@
    ],
    "selected": {
     "path": "pda\\global-map-v3\\gm3s-20.png",
-    "sha256": "72407f6509f84f69a933e6c0b43ab43758327c897c95f4d410a60870d8497d1d",
-    "size": 25380
+    "sha256": "4cee4796db0cef446852b54f662fb0b5201a483a28ef1462176eca99a18ee91f",
+    "size": 25366
    }
   },
   {
@@ -540,8 +540,8 @@
    ],
    "hover": {
     "path": "pda\\global-map-v3\\gm3h-21.png",
-    "sha256": "0bc9d610fb3e74447b02090c15e3dad4f077fcdc8eb17ab37359ad8fdce5525d",
-    "size": 23631
+    "sha256": "60800643d8115eec2525a4bba591c91ebc12dff985181f9f2cce1e9af38058e6",
+    "size": 23590
    },
    "rect": [
     1021,
@@ -551,8 +551,8 @@
    ],
    "selected": {
     "path": "pda\\global-map-v3\\gm3s-21.png",
-    "sha256": "347e78e3c1092353fb83ae336a9f5ccdbe1a5e4411d71356bdd4ee232fffee9c",
-    "size": 24419
+    "sha256": "ef9795b8c3b1c643af86e99fd37329c33b8ecee7e08836ce4fe6934ae1579010",
+    "size": 24395
    }
   },
   {
@@ -567,8 +567,8 @@
    ],
    "hover": {
     "path": "pda\\global-map-v3\\gm3h-22.png",
-    "sha256": "a36d525b634eb37e0cae4974084b2d9bc50cab3c5b3aabc92faad2678af5383b",
-    "size": 25241
+    "sha256": "119b724538d3019a03b493e99764c3d8d1b216e8a22ca2e88fe9afd3bd0c3764",
+    "size": 25228
    },
    "rect": [
     1090,
@@ -578,8 +578,8 @@
    ],
    "selected": {
     "path": "pda\\global-map-v3\\gm3s-22.png",
-    "sha256": "172dffd6b6d342bbed79837b7759e06b0bded27010c61f69aa0ef1f2e27a26a2",
-    "size": 26134
+    "sha256": "4100da55c5e30f4f9eec30550df5b1a0022d43297ad2c77b5ce0e6dbab97f96c",
+    "size": 26105
    }
   }
  ],

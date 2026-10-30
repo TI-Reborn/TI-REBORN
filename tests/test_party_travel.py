@@ -11,9 +11,9 @@ from unittest.mock import patch
 from server.accounts import Accounts
 from tio.characters import CharacterStore
 from tio.db_transaction import transaction
-from tio.locations import LocationStore, MAP_SPEED, TURN_LEAD, center, movement_packet, stop_packet
+from tio.locations import LocationStore, MAP_SPEED, center, movement_packet, stop_packet
 from tio.protocol.map_route import route_words
-from tio.roads import ROADS, leg_index, path_length, point_along
+from tio.roads import path_length, point_along
 from tio.protocol.world_bootstrap import encode_open_map_view, encode_restore_city_controls
 from tio.party_travel import PartyLocations, PartyTravel
 from tio.protocol.character_create import CharacterCreateRequest
@@ -88,8 +88,8 @@ class PartyTravelTests(unittest.TestCase):
         # Moving 1D packets from the current point toward the end of the road
         # leg the client drives next, one per route word (header, dashes); a
         # contract marker is not a public location, so the final field is 0.
-        path = json.loads(route[9])
-        ahead = path[leg_index(path, driven + TURN_LEAD * MAP_SPEED) + 1]
+        path = (route[:2],route[2:4])
+        ahead = path[-1]
         position = point_along(path, driven)
         return tuple(movement_packet(character_id, *map(round, position), destination=tuple(map(round, ahead)),
                                      route=word) for word in route_words(path))
@@ -107,8 +107,8 @@ class PartyTravelTests(unittest.TestCase):
                 self.assertIsNotNone(route)
                 self.assertEqual(route[:2], center(3))
                 self.assertEqual(route[2:4], (-220, -280))
-                path = json.loads(route[9])
-                self.assertEqual(path, [list(p) for p in ROADS.plan(center(3), (-220, -280))])
+                path = (route[:2],route[2:4])
+                self.assertEqual(path, (center(3), (-220, -280)))
                 self.assertAlmostEqual(route[5]-route[4], path_length(path)/MAP_SPEED)
                 self.now = (route[4] + route[5]) / 2
                 expected = point_along(path, path_length(path) / 2)

@@ -6,7 +6,7 @@ import unittest
 from tio.locations import Journey, center, movement_packet
 from tio.protocol.map_route import (DASH, GAP, HEADER, MAX_DASHES, dash_word, dashes, image_point,
                                     route_words)
-from tio.roads import ROADS
+
 
 
 def decode(word):
@@ -24,7 +24,7 @@ class DashTests(unittest.TestCase):
         self.assertEqual(image_point((512, 512)), (1819, 865))
 
     def test_dashes_follow_the_route_in_image_pixels(self):
-        path = ROADS.plan(center(3), center(5))
+        path = (center(3), center(5))
         cut = dashes(path)
         self.assertGreater(len(cut), 20)
         start = tuple(map(round, image_point(path[0])))
@@ -39,7 +39,7 @@ class DashTests(unittest.TestCase):
         for a in towns:
             for b in towns:
                 if a != b:
-                    self.assertLessEqual(len(dashes(ROADS.plan(center(a), center(b)))), MAX_DASHES)
+                    self.assertLessEqual(len(dashes((center(a), center(b)))), MAX_DASHES)
 
     def test_words_round_trip_through_the_client_decoding(self):
         for dash in ((0, 0, 9, 0), (1818, 864, 1809, 858), (700, 300, 694, 309), (5, 5, 5, -4)):
@@ -52,7 +52,7 @@ class DashTests(unittest.TestCase):
             dash_word(10, 10, 10, 10)
 
     def test_header_counts_the_dashes(self):
-        path = ROADS.plan(center(3), center(8))
+        path = (center(3), center(8))
         words = route_words(path)
         self.assertEqual(words[0], HEADER | len(words) - 1)
         self.assertEqual([decode(word) for word in words[1:]], dashes(path))
@@ -60,7 +60,7 @@ class DashTests(unittest.TestCase):
 
 class AnnouncementTests(unittest.TestCase):
     def test_route_burst_repeats_the_same_movement_with_one_word_each(self):
-        path = ROADS.plan(center(3), center(8))
+        path = (center(3), center(8))
         journey = Journey(path, 1000, 1030)
         burst = journey.announce(42, 1003)
         plain = journey.movement(42, 1003)

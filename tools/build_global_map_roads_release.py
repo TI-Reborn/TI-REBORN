@@ -26,10 +26,10 @@ PUBLISHED_MANIFEST = 'b06e9ff53f9ee38b67180de39d7508b719fac5d5530a532d77d5d64d62
 PUBLISHED_VERSION = '2026.10.28.2'
 VERSION = '2026.10.29.1'
 OUT = 'reports/global-map-roads-20261029'
-NEWS = ('Новая глобальная карта: города и базы нарисованы прямо на ней, отряд едет по дорогам, '
+NEWS = ('Новая глобальная карта: города и базы нарисованы прямо на ней, отряд движется по прямой, '
         'маршрут показан пунктиром, а локация под курсором подсвечивается. '
         'Закройте игру и обновите её через лаунчер.')
-NEWS_EN = ('New global map: towns and bases are part of the map, the squad drives along the roads, '
+NEWS_EN = ('New global map: towns and bases are part of the map, the squad travels in a straight line, '
            'the route is shown as a dashed line and the location under the cursor is highlighted. '
            'Close the game and update it through the launcher.')
 

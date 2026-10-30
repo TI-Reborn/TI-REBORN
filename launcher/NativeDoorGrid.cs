@@ -81,6 +81,7 @@ static class NativeDoorGrid
         NativeFriendsDialogue.Apply(process,silver);
         NativeFlameStream.Apply(process,silver,image);
         NativeRainWeather.Apply(process,silver,image);
+        NativeGroundLoot.Apply(process,silver);
         NativeContractsUi.Install(process,silver,image);
         return true;
     }

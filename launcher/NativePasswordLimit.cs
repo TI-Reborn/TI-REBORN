@@ -18,7 +18,7 @@ internal static class NativePasswordLimit
  // Steady full-page shops plus SC goods and rental pages; adapter sites are unchanged.
  internal const string ShopPagesSha256="3f0f31f04e6300b57a8bf519899b84e1e26573e915251b58f37f19b003d65e8d";
  // Road-layout global map: map region code/data and one 1D reader call; adapter sites are unchanged.
- internal const string RoadMapSha256="a975f4d09cbf55928611c06776f0fb3fb75a5c1b13f9671065856406a1dca7eb";
+ internal const string RoadMapSha256="87d54db3ae2d20d2065b0ecee9fe728c294f170b2cd6f11ba818c01d655bc5ed";
  internal static string CompatibilityHash(byte[] image)
  {
   string hash=Convert.ToHexStringLower(SHA256.HashData(image));

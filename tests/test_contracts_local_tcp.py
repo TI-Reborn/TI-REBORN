@@ -245,7 +245,7 @@ class ContractsLocalTcpTests(unittest.TestCase):
             packets = [packet for packet in self.frames[login] if packet[:1] == b'\x1d']
             self.assertTrue(packets)
             # Each 1D points at the next turn of the shared road path.
-            turns = {tuple(map(round, point)) for point in json.loads(route[9])[1:]}
+            turns = {tuple(map(round, point)) for point in (route[2:4],)}
             self.assertIn(struct.unpack_from('<ii', packets[-1], 17), turns)
         first = next(packet for packet in reversed(self.frames['alice']) if packet[:1] == b'\x1d')
         second = next(packet for packet in reversed(self.frames['bob']) if packet[:1] == b'\x1d')

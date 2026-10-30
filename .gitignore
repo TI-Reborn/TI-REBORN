@@ -52,3 +52,6 @@ evidence/*
 
 # Some tests pass the placeholder database path "unused"; SQLite creates it in the cwd.
 /unused
+
+# Rebuilt global-map PNGs; hashes and reproducible build inputs are committed.
+/assets/global-map-v3/base/

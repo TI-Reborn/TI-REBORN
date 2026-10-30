@@ -30,6 +30,7 @@ from .client_equipment_batch import Code
 from . import client_global_map as v2
 from . import client_global_map_filter as filters
 from . import client_global_map_visual as visual
+from .client_barracks_a2 import MODE as INTERFACE_MODE
 
 BASE_SHA = '3f0f31f04e6300b57a8bf519899b84e1e26573e915251b58f37f19b003d65e8d'
 IMAGE_BASE, REGION, DRAW, STATE = v2.IMAGE_BASE, v2.REGION, v2.DRAW, v2.STATE
@@ -130,7 +131,9 @@ def marker_row(manifest: dict) -> int:
 
 def initializer_code(count: int):
     c = Code(v2.INITIALIZE); c.emit('9c60'); c.base()
-    v2.set_state(c, v2.READY, 0); state(c, 'ff83', v2.LOADS)
+    v2.set_state(c, v2.READY, 0)
+    v2.mem(c, '83bb', INTERFACE_MODE); c.emit('00'); c.branch('0f85', 'done')
+    state(c, 'ff83', v2.LOADS)
     c.emit('8db3'); c.word(ROWS); c.emit('bf'); c.word(count)
     c.label('load'); c.emit('8b4614 01d8 ba03000000 89f1')
     # Row id 0 is the map: plain loader. Sprites get the checked mip chain.
@@ -148,6 +151,7 @@ def initializer_code(count: int):
 
 def draw_code():
     c = Code(DRAW); c.emit('9c60'); c.base()
+    v2.mem(c, '83bb', INTERFACE_MODE); c.emit('00'); c.branch('0f85', 'stock')
     c.emit('f644241c01'); c.branch('0f85', 'update_only')
     state(c, '83bb', v2.READY); c.emit('01'); c.branch('0f85', 'stock')
     c.call(v2.VIEWPORT)
@@ -355,6 +359,7 @@ def route_draw_code():
 def tip_code(address: int, original: int, width: int, height: int):
     """Native town/base tooltip next to the cursor, kept inside the map."""
     c = Code(address); visual.scope(c, v2)
+    v2.mem(c, '83bb', INTERFACE_MODE); c.emit('00'); c.branch('0f85', 'stock')
     pointer(c, MOUSE_X); c.emit('8b00 83c012')
     pointer(c, MOUSE_Y, 'edx'); c.emit('8b12 83c216')
     # The chat panel covers the bottom of the map rectangle: in the lower
@@ -437,6 +442,7 @@ def code_blocks(manifest: dict) -> dict[int, bytes]:
     """VA -> bytes of every replaced or new code block."""
     marker_pixels = manifest['marker']['pixels'][0]
     return {v2.INITIALIZE: initializer_code(len(rows(manifest))), DRAW: draw_code(),
+            v2.CLICK: v2.click_code(mode_rva=INTERFACE_MODE),
             DRAW + visual.NAME_OFFSET: name_code(), HIGHLIGHT: highlight_code(),
             MARKER: marker_code(marker_row(manifest)), FINAL_READ: final_read_code(),
             MAP_X: map_axis(MAP_X, v2.LEFT, v2.WIDTH, MAP_WIDTH),
@@ -449,7 +455,7 @@ def code_blocks(manifest: dict) -> dict[int, bytes]:
 
 def _previous(va: int) -> bytes | None:
     """Exact v2 bytes expected where a block is replaced in place."""
-    return {v2.INITIALIZE: v2.initializer_code(), DRAW: v2.draw_code(),
+    return {v2.INITIALIZE: v2.initializer_code(), DRAW: v2.draw_code(), v2.CLICK: v2.click_code(),
             DRAW + visual.NAME_OFFSET: visual.name_code(v2)}.get(va)
 
 

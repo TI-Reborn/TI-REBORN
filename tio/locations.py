@@ -1,15 +1,14 @@
-"""Persistent world-map travel along roads using original1B/1D/1E.
+"""Persistent straight world-map travel using original1B/1D/1E.
 
 Locations sit where the road-layout map (2026-10-29) draws them. A journey
-follows the road polyline; the server sends one 1D per road turn and the
-native client interpolates each straight leg. Speed36 at the user's request.
+uses a straight line; native interpolation and the dashed route agree.
+Speed36 at the user's request. Journey tables keep their original schema.
 """
 
 from .db_transaction import connect
 from contextlib import closing
 from dataclasses import replace
 from fractions import Fraction
-import json
 import math
 import sqlite3
 import struct
@@ -17,8 +16,8 @@ import time
 from .protocol.system_message import encode_current_town, encode_open_town_view
 from .protocol.town_info import diagnostic_town_info, encode_town_info
 from .protocol.map_route import route_words
-from .roads import ROADS, leg_index, path_length, point_along
-from .world_layout import normalize_characters
+from .roads import path_length, point_along
+from .world_layout import normalize_characters, parking_point
 
 from .cities import CITIES
 TOWNS = {i:city.bounds for i,city in CITIES.items()}
@@ -35,14 +34,11 @@ TOWNS.update(location_bounds())
 BASE_LOCATIONS.update({r['id']:tuple(r['bounds']) for r in world_policy()['locations']
                        if r['kind']=='base' and r['capture']})
 MAP_SPEED = 36  # Original MyCharInfo1A u16 -> character+8, map units/second.
-# The next turn leaves the server this early, so the client starts the new
-# leg before it reaches the corner even with poll and network jitter.
-TURN_LEAD = .2
 
 
 def center(town):
     """Map point of a character inside the town: the end of the town's road."""
-    point=ROADS.anchor(town)
+    point=parking_point(town)
     if point is None:raise ValueError(f'Location {town} has no road')
     return point
 
@@ -54,8 +50,8 @@ class Journey:
         self.length=path_length(self.path)
 
     @classmethod
-    def from_row(cls,x,y,tx,ty,started,arrives,path):
-        return cls(json.loads(path) if path else ((x,y),(tx,ty)),started,arrives)
+    def from_row(cls,x,y,tx,ty,started,arrives):
+        return cls(((x,y),(tx,ty)),started,arrives)
 
     @property
     def goal(self):return self.path[-1]
@@ -66,15 +62,10 @@ class Journey:
 
     def point(self,now):return point_along(self.path,self.driven(now))
 
-    def leg(self,now):
-        """Index of the leg the client should drive now (with the turn lead)."""
-        return leg_index(self.path,self.driven(now+TURN_LEAD))
-
     def movement(self,character_id,now,route=0):
         x,y=map(round,self.point(now))
-        tx,ty=map(round,self.path[min(self.leg(now)+1,len(self.path)-1)])
         gx,gy=map(round,self.goal)
-        return movement_packet(character_id,x,y,destination=(tx,ty),target=town_at(gx,gy) or 0,route=route)
+        return movement_packet(character_id,x,y,destination=(gx,gy),target=town_at(gx,gy) or 0,route=route)
 
     def announce(self,character_id,now):
         """Current turn plus the whole dashed route, one route word per 1D."""
@@ -141,16 +132,14 @@ def town_at(x,y):
 
 
 class LocationStore:
-    def __init__(self,path,*,clock=time.time,roads=ROADS):
-        self.path=path;self.clock=clock;self.roads=roads;self._sent={};self._coefficient_sent={}
+    def __init__(self,path,*,clock=time.time):
+        self.path=path;self.clock=clock;self._sent={};self._coefficient_sent={}
         with closing(connect(path)) as db,db:
             db.execute('CREATE TABLE IF NOT EXISTS character_locations (account TEXT PRIMARY KEY,town_id INTEGER NOT NULL)')
             columns={r[1] for r in db.execute('PRAGMA table_info(character_locations)')}
             for column in ('x','y'):
                 if column not in columns:db.execute('ALTER TABLE character_locations ADD COLUMN '+column+' REAL')
             db.execute('CREATE TABLE IF NOT EXISTS map_journeys (account TEXT PRIMARY KEY,x REAL NOT NULL,y REAL NOT NULL,tx INTEGER NOT NULL,ty INTEGER NOT NULL,started REAL NOT NULL,arrives REAL NOT NULL)')
-            if 'path' not in {r[1] for r in db.execute('PRAGMA table_info(map_journeys)')}:
-                db.execute('ALTER TABLE map_journeys ADD COLUMN path TEXT')
             normalize_characters(db,{town:center(town) for town in TOWNS})
 
     def current(self,account,*,connection=None):
@@ -163,7 +152,7 @@ class LocationStore:
     @staticmethod
     def _position(db,account,now):
         """Point and the active Journey (or None) of an account."""
-        route=db.execute('SELECT x,y,tx,ty,started,arrives,path FROM map_journeys WHERE account=?',(account,)).fetchone()
+        route=db.execute('SELECT x,y,tx,ty,started,arrives FROM map_journeys WHERE account=?',(account,)).fetchone()
         if route:
             journey=Journey.from_row(*route)
             return journey.point(now),journey
@@ -195,7 +184,7 @@ class LocationStore:
         if journey is None:
             self._sent.pop(account,None)
             return (leave_town_packet(),stop_packet(character_id,*map(round,point)))
-        self._sent[account]=(journey.started,journey.leg(now))
+        self._sent[account]=journey.started
         return (leave_town_packet(),*journey.announce(character_id,now))
 
     def travel(self,account,packet,character_id,*,busy=False):
@@ -216,23 +205,23 @@ class LocationStore:
             accumulate(db,account,route,now)
             previous=db.execute('SELECT town_id FROM character_locations WHERE account=?',(account,)).fetchone()
             leaving=previous is None or previous[0] in TOWNS
-            path=self.roads.plan(start,(x,y))
+            path=(start,(x,y))
             journey=Journey(path,now,now+path_length(path)/MAP_SPEED)
             db.execute('DELETE FROM map_journeys WHERE account=?',(account,))
             if journey.length<1e-9:
                 self._save(db,account,town,x,y)
             else:
                 self._save(db,account,None,*start)
-                db.execute('INSERT INTO map_journeys VALUES (?,?,?,?,?,?,?,?)',
-                           (account,*start,x,y,now,journey.arrives,json.dumps(journey.path)))
+                db.execute('INSERT INTO map_journeys(account,x,y,tx,ty,started,arrives) VALUES (?,?,?,?,?,?,?)',
+                           (account,*start,x,y,now,journey.arrives))
         if journey.length<1e-9:
             self._sent.pop(account,None)
             return (stop_packet(character_id,x,y),*(town_packets(town,self.path,clock=self.clock) if town is not None else ()))
-        self._sent[account]=(journey.started,journey.leg(now))
+        self._sent[account]=journey.started
         return (*( (leave_town_packet(),) if leaving else ()),*journey.announce(character_id,now))
 
     def refresh(self,account,character_id):
-        """Send each road turn once; arrival is the only travel DB write.
+        """Native interpolation needs no corrections before arrival.
 
         Absolute timestamps resume travel after disconnect; access to city
         services changes only on arrival.
@@ -267,7 +256,7 @@ class LocationStore:
             # Territory projection opens its own transaction. Release the
             # arrival writer before reading/synchronizing that shared state.
             return (stop_packet(character_id,x,y),*(town_packets(town,self.path,clock=self.clock) if town is not None else ()))
-        signature=(journey.started,journey.leg(now))
+        signature=journey.started
         if self._sent.get(account)==signature:return ()
         self._sent[account]=signature
         return (journey.movement(character_id,now),)

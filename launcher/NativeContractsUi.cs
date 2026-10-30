@@ -140,10 +140,10 @@ internal sealed class NativeContractsUi : IDisposable
     }
     async Task Click(int index)
     {
-        if(index is 0 or 1 or 3 or 4){view=index is 1 or 4?1:0;Open();return;}
+        if(index is 0 or 1 or 3 or 4 or 57){view=index is 1 or 4?2:index==57?1:0;template=0;Open();return;}
         if(index==56){Put(Header+8,2);return;}
         if(state.ValueKind!=JsonValueKind.Object)return;
-        var templates=Array("catalog");var members=Members();var pets=Array("pets").Where(p=>B(p,"available")).ToArray();var invites=Array("invitations");
+        var templates=Templates(state,view);var members=Members();var pets=Array("pets").Where(p=>B(p,"available")).ToArray();var invites=Array("invitations");
         if(index is >=5 and <=7){template=Math.Min(index-5,templates.Length-1);return;}
         if(index is >=27 and <=30){member=index-27;return;}
         if(index is >=35 and <=40)
@@ -155,7 +155,7 @@ internal sealed class NativeContractsUi : IDisposable
         if(index==52){invitation=invites.Length==0?0:(invitation+1)%invites.Length;return;}
         switch(index)
         {
-            case 22:await Act("take",S(templates[template],"id"));break;
+            case 22:await Act("take",S(templates[template],"id"));if(Has(state,"contract"))view=2;break;
             case 23:await Act("depart");break;case 24:await Act("start");break;case 25:await Act("cancel");break;
             case 32:await Act("invite",Edit());break;
             case 33:case 34:if(member<members.Length)await Act(index==33?"leader":"kick",S(members[member],"name"));break;
@@ -170,42 +170,49 @@ internal sealed class NativeContractsUi : IDisposable
         string previous=Has(state,"contract")?S(state.GetProperty("contract"),"state"):"";
         state=value.Clone();
         if(Has(state,"contract") && S(state.GetProperty("contract"),"state")=="arrived" && previous!="arrived")
-        {view=0;status=T("Цель достигнута. Лидер может начать бой.","Target reached. The leader may start battle.");Open();}
+        {view=state.GetProperty("contract").GetProperty("party_size")[1].GetInt32()==1?0:1;status=T("Цель достигнута. Лидер может начать бой.","Target reached. The leader may start battle.");Open();}
         if(Has(state,"contract") && S(state.GetProperty("contract"),"state")=="active" && previous!="active")Put(Header+8,2);
         if(!dirty){selected.Clear();foreach(var id in Array("selected"))selected.Add(id.GetInt32());}
         var invites=Array("invitations").Select(i=>i.GetProperty("id").GetInt64()).ToHashSet();
-        if(invites.Except(seenInvites).Any()){view=1;Open();}seenInvites=invites;
+        if(invites.Except(seenInvites).Any()){view=2;Open();}seenInvites=invites;
         if(Has(state,"result"))
         {
             double stamp=state.GetProperty("result").GetProperty("finished_at").GetDouble();
             if(stamp>lastResult){if(initialized){view=0;Open();}lastResult=stamp;}
         }
-        if(!initialized)status=T("Соберите группу и выберите контракт.","Gather a party and choose a contract.");
+        if(!initialized)status=T("Выберите одиночный контракт или соберите группу.","Choose a solo contract or gather a party.");
         initialized=true;Render();
     }
     string Phase(string value)=>value switch{"accepted"=>T("ожидание готовности","waiting for readiness"),"travelling"=>T("в пути","travelling"),"arrived"=>T("у цели","at target"),"active" or "battle"=>T("в бою","in battle"),"city"=>T("в городе","in city"),"at_target"=>T("у цели","at target"),_=>value};
+    internal static JsonElement[] Templates(JsonElement value,int tab)=>value.GetProperty("catalog").EnumerateArray()
+        .Where(t=>(t.TryGetProperty("party_size",out var size)?size[1].GetInt32()==1:false)==(tab!=1)).ToArray();
     void Render()
     {
         if(U32(Header)!=0)return;
-        var rows=new (string Text,bool Visible,bool Enabled)[57];
+        int count=plan.RootElement.GetProperty("count").GetInt32();
+        var rows=new (string Text,bool Visible,bool Enabled)[count];
         void Set(int i,string text,bool visible=true,bool enabled=true)=>rows[i]=(text,visible,enabled);
         bool valid=state.ValueKind==JsonValueKind.Object;
         Set(0,T("Контракты","Contracts"));Set(1,T("Группа","Party"));Set(2,T("Контракты - Полевой штаб","Contracts - Field HQ"));
-        Set(3,(view==0?"> ":"")+T("Контракты","Contracts"));Set(4,(view==1?"> ":"")+T("Моя группа","My party"));
+        Set(3,(view==0?"> ":"")+T("Одиночные","Solo"));Set(57,(view==1?"> ":"")+T("Групповые","Group"));Set(4,(view==2?"> ":"")+T("Моя группа","My party"));
         Set(53,status);Set(56,T("Закрыть","Close"));
         if(valid)
         {
-            bool board=view==0;var permissions=state.GetProperty("permissions");bool P(string name)=>B(permissions,name);
-            var templates=Array("catalog");template=Math.Clamp(template,0,templates.Length-1);var chosen=templates[template];
+            bool board=view!=2;var permissions=state.GetProperty("permissions");bool P(string name)=>B(permissions,name);
+            var templates=Templates(state,view);template=Math.Clamp(template,0,Math.Max(0,templates.Length-1));
+            if(templates.Length==0){Set(26,T("Одиночные контракты требуют обновления сервера.","Solo contracts require a server update."));}
+            var chosen=templates.Length>0?templates[template]:Array("catalog")[0];
             for(int i=0;i<Math.Min(3,templates.Length);i++)Set(5+i,(i==template?"> ":"")+S(templates[i],"name"),board);
             var reward=chosen.GetProperty("reward");var levels=chosen.GetProperty("levels");
-            string[] lines=[S(chosen,"name"),"",S(chosen,"objective"),"",T("Игроков: 2-4. Бойцов на игрока: 1-2.","Players: 2-4. Fighters per player: 1-2."),
+            string[] lines=[S(chosen,"name"),"",S(chosen,"objective"),"",view==0?T("Игрок: 1. Бойцов: 1-2.","Players: 1. Fighters: 1-2."):T("Игроков: 2-4. Бойцов на игрока: 1-2.","Players: 2-4. Fighters per player: 1-2."),
                 $"{T("Уровни","Levels")}: {levels[0]}-{levels[1]}   {T("Противников","Enemies")}: {S(chosen,"enemies")}","",
                 T("Награда каждому участнику за победу:","Victory reward per player:"),$"{S(reward,"credits")} {T("кредитов","credits")}  /  {S(reward,"experience")} {T("опыта выбранным бойцам","XP shared by selected fighters")}","",
                 T("Примите задание, затем подтвердите готовность.","Accept a contract, then confirm readiness."),T("Лидер отправляет группу к цели и начинает бой.","The leader travels to the target and starts battle."),"",
                 Has(state,"contract")?S(state.GetProperty("contract"),"name")+": "+Phase(S(state.GetProperty("contract"),"state")):T("Активного контракта нет.","No active contract.")];
             for(int i=0;i<14;i++)Set(8+i,lines[i],board);
-            Set(22,T("Принять задание","Accept contract"),board,P("take"));Set(23,T("Отправиться к цели","Travel to target"),board,P("depart"));
+            int partyCount=Members().Length;
+            bool fits=view==0?partyCount<=1:partyCount>=2;
+            Set(22,T("Принять задание","Accept contract"),board,P("take")&&fits&&templates.Length>0);Set(23,T("Отправиться к цели","Travel to target"),board,P("depart"));
             Set(24,T("Начать бой","Start battle"),board,P("start"));Set(25,T("Отменить задание","Cancel contract"),board,P("cancel"));
             var members=Members();member=Math.Clamp(member,0,Math.Max(0,members.Length-1));
             Set(26,Has(state,"party")?T("Группа: ","Party: ")+Phase(S(state.GetProperty("party"),"state")):T("Создайте группу или примите приглашение.","Create a party or accept an invitation."),!board);
@@ -246,7 +253,7 @@ internal sealed class NativeContractsUi : IDisposable
         Put(Header,2);
         try
         {
-            for(int i=0;i<57;i++)
+            for(int i=0;i<count;i++)
             {
                 byte[] bytes=new byte[540];BitConverter.GetBytes(rows[i].Visible?1:0).CopyTo(bytes,0);BitConverter.GetBytes(rows[i].Enabled?1:0).CopyTo(bytes,4);
                 string text=rows[i].Text??"";if(text.Length>254)text=text[..254];byte[] caption=Encoding.Unicode.GetBytes(text);

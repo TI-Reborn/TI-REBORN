@@ -1,6 +1,5 @@
 """One durable route for a consenting party; coordinates never come from peers."""
 from contextlib import closing
-import json
 import secrets
 import struct
 import time
@@ -24,20 +23,18 @@ class PartyTravel:
                 tx INTEGER NOT NULL, ty INTEGER NOT NULL, started REAL NOT NULL,
                 arrives REAL NOT NULL, nonce TEXT NOT NULL,
                 town_id INTEGER, instance_id TEXT)''')
-            if 'path' not in {r[1] for r in db.execute('PRAGMA table_info(travel_party_journeys)')}:
-                db.execute('ALTER TABLE travel_party_journeys ADD COLUMN path TEXT')
             normalize_parties(db, {town: center(town) for town in CITIES})
 
     def route(self, party_id, connection=None):
         if connection is not None:
-            return connection.execute('SELECT x,y,tx,ty,started,arrives,nonce,town_id,instance_id,path '
+            return connection.execute('SELECT x,y,tx,ty,started,arrives,nonce,town_id,instance_id '
                                       'FROM travel_party_journeys WHERE party_id=?', (party_id,)).fetchone()
         with closing(connect(self.path)) as db:
             return self.route(party_id, connection=db)
 
     @staticmethod
     def journey(route):
-        return Journey.from_row(*route[:6], route[9])
+        return Journey.from_row(*route[:6])
 
     def _point(self, db, owner, party):
         route = self.route(party['id'], connection=db) if party else None
@@ -78,7 +75,7 @@ class PartyTravel:
             elif town is not None:
                 x, y = center(town)
             (sx, sy), _ = self._point(db,owner,party)
-            now = self.clock(); path = self.locations.roads.plan((sx, sy), (x, y))
+            now = self.clock(); path = ((sx, sy), (x, y))
             duration = path_length(path)/MAP_SPEED
             # No independently writable map_journeys projection: group route
             # is the sole source of truth, including on process restart.
@@ -88,9 +85,10 @@ class PartyTravel:
             self.parties.change_state(party['id'], 'travelling', party['state'], connection=db)
             if contract and contract['state'] == 'accepted':
                 self.contracts.transition(contract['id'], 'accepted', 'travelling')
-            db.execute('INSERT OR REPLACE INTO travel_party_journeys VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+            db.execute('INSERT OR REPLACE INTO travel_party_journeys '
+                       '(party_id,x,y,tx,ty,started,arrives,nonce,town_id,instance_id) VALUES (?,?,?,?,?,?,?,?,?,?)',
                        (party['id'], sx, sy, x, y, now, now+max(duration, .000001),
-                        secrets.token_hex(8), town, contract['id'] if private else None, json.dumps(path)))
+                        secrets.token_hex(8), town, contract['id'] if private else None))
         self.arrive(owner)
 
     def arrive(self, owner):
@@ -161,8 +159,7 @@ class PartyLocations:
                   if route else (stop_packet(character_id, *map(round, point)),)))
 
     def _signature(self, party, route, now):
-        leg = self.travel_service.journey(route).leg(now) if route else None
-        return (party['state'], route[6] if route else None, leg)
+        return (party['state'], route[6] if route else None)
 
     def travel(self, owner, packet, character_id, *, busy=False):
         if not self.travel_service.parties.info(owner):

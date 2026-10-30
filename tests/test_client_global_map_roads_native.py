@@ -75,6 +75,7 @@ class Fixture:
         self.u.reg_write(UC_X86_REG_FPCW, 0x37f)
         self.loads, self.quads, self.texts, self.renders = [], [], [], 0
         self.lines, self.tips = [], []
+        self.native_fallbacks = []
         self.table, self.character = DATA + 0x104, DATA + 0x2000
         for va, address in ((0xac5a4c, DATA + 0x40), (0xac5b70, DATA + 0x60), (0xac5a04, DATA + 0x64),
                             (0xac5b7c, self.character), (0xac5d58, DATA + 0x68), (0xac57ac, DATA + 0x6c),
@@ -107,7 +108,9 @@ class Fixture:
     def hook(self, u, address, size, _):
         eax, edx, ecx = (u.reg_read(r) for r in (UC_X86_REG_EAX, UC_X86_REG_EDX, UC_X86_REG_ECX))
         sp = u.reg_read(UC_X86_REG_ESP)
-        if address == self.va(0x4f2c50):
+        if address in (self.va(v2.STOCK_DRAW), self.va(v2.STOCK_CLICK)):
+            self.native_fallbacks.append(address-self.base+v2.IMAGE_BASE); self.ret()
+        elif address == self.va(0x4f2c50):
             self.loads.append(self.text(eax)); u.mem_write(ecx, struct.pack('<I', 0x1000 + len(self.loads))); self.ret()
         elif address == self.va(0x4f2910):
             flags, color, frame, height, width = (get(u, sp + 4 * i) for i in range(1, 6))
@@ -188,6 +191,18 @@ class RoadMapNativeTests(unittest.TestCase):
         f = self.fixture()
         self.assertEqual(f.loads, roads.rows(MANIFEST))
         self.assertEqual(len(f.loads), 1 + 2 * 21 + 32)
+
+    def test_original_interface_uses_native_map_and_click_without_loading_v3(self):
+        from deploy.client_barracks_a2 import MODE
+        for base in (0x10000000,0x17000000):
+            f = Fixture(base,self.TOWNS)
+            put(f.u,base+MODE,1)
+            f.run(v2.INITIALIZE)
+            self.assertEqual(f.loads,[])
+            f.draw(); f.run(v2.CLICK)
+            self.assertEqual(f.quads,[])
+            self.assertEqual(f.lines,[])
+            self.assertEqual(f.native_fallbacks,[v2.STOCK_DRAW,v2.STOCK_CLICK])
 
     def test_current_town_is_outlined_and_hover_lights_only_its_location_over_a_dimmed_map(self):
         for base in (0x10000000, 0x17000000):
@@ -281,11 +296,11 @@ class RoadMapNativeTests(unittest.TestCase):
 
     def test_route_words_from_the_original_1d_reader_draw_dashes_while_driving(self):
         from tio.locations import Journey
-        from tio.roads import ROADS
+
         from tio.locations import center
         from tio.protocol.map_route import dashes
         f = self.fixture()
-        path = ROADS.plan(center(3), center(5))
+        path = (center(3), center(5))
         burst = Journey(path, 0, 30).announce(42, 0)
         for packet in burst:
             f.u.mem_write(DATA + 0x9000, packet[1:])

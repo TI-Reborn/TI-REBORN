@@ -1,7 +1,8 @@
 """Prepare the bounded world catalogue from observed server/client sources.
 
 Writes only stage8 runtime XML, client candidate XML and catalog.json. Existing
-1..17 rows outside 4/7/10 are preserved byte for byte in each distinct source.
+Gameplay metadata outside 4/7/10 and 18..22 stays source-specific; geometry
+for every public location follows the current map. Supports 17- and 22-row inputs.
 No local diagnostic catalogue, territory policy, database or installed client
 is changed. New coordinates/IDs are explicit world_completion.json policy.
 """
@@ -80,7 +81,6 @@ def checked_policy(policy):
         if (r['kind'] not in ('town','base') or len(bounds) != 4
                 or any(type(n) is not int or not -512 <= n <= 511 for n in bounds)
                 or bounds[0] >= bounds[2] or bounds[1] >= bounds[3]
-                or bounds[2]-bounds[0] != bounds[3]-bounds[1]
                 or len(levels) != 2 or any(type(n) is not int for n in levels)
                 or not 1 <= levels[0] <= levels[1] <= 20
                 or type(r['max_upgrade']) is not int or not 0 <= r['max_upgrade'] <= 255
@@ -91,11 +91,16 @@ def checked_policy(policy):
 
 
 def merge(raw, policy):
-    source = rows(raw,17); policy = checked_policy(policy)
+    if not isinstance(raw, bytes) or not 1 <= len(raw) <= 50000 or b'<!' in raw:
+        raise ValueError('Unsafe or oversized zones XML')
+    count = len(ET.fromstring(raw))
+    if count not in (17,22):
+        raise ValueError('Expected original or current world catalogue')
+    source = rows(raw,count); policy = checked_policy(policy)
     patches = {}
     for rule in policy['locations']:
         identity = rule['id']
-        node = deepcopy(source[identity if identity in CHANGED else CLONES[identity]])
+        node = deepcopy(source[identity if identity in source else CLONES[identity]])
         node.attrib.update(id=str(identity),name=rule['name'])
         x1,y1,x2,y2 = rule['bounds']
         updates = dict(enabled=1,type=rule['kind'],background=rule['background'],
@@ -110,18 +115,32 @@ def merge(raw, policy):
         for key,value in updates.items(): set_value(node,key,value)
         node.tail = None; ET.indent(node,space='  ',level=1)
         patches[identity] = b'  '+ET.tostring(node,encoding='utf-8')
+    from tio.locations import TOWNS
+    for identity, bounds in TOWNS.items():
+        node = ET.fromstring(patches[identity]) if identity in patches else deepcopy(source[identity])
+        for key, value in zip(('x1','y1','x2','y2'), bounds):
+            set_value(node,key,value)
+        set_value(node,'size',bounds[2]-bounds[0])
+        node.tail = None; ET.indent(node,space='  ',level=1)
+        patches[identity] = b'  '+ET.tostring(node,encoding='utf-8')
     matched = {int(m[1]):m[0] for m in ROW.finditer(raw)}
     if set(matched) != set(source):
         raise ValueError('Unknown source XML layout; preserve original rows')
     output = ROW.sub(lambda m:patches.get(int(m[1]),m[0]),raw)
     marker = b'</towns>'
     if output.count(marker) != 1: raise ValueError('Unexpected towns closing element')
-    output = output.replace(marker,b'\n'.join(patches[i] for i in ADDED)+b'\n'+marker)
+    output = output.replace(marker,b'\n'.join(patches[i] for i in ADDED if i not in source)+b'\n'+marker)
     after = rows(output,22)
-    changed = [i for i in source if semantic(source[i]) != semantic(after[i])]
-    if changed != list(CHANGED): raise ValueError('Unrelated source town changed')
+    geometry = {'x1','y1','x2','y2','size'}
+    for identity in source:
+        if identity in (*CHANGED,*ADDED):
+            continue
+        old = {k:v for k,v in values(source[identity]).items() if k not in geometry}
+        new = {k:v for k,v in values(after[identity]).items() if k not in geometry}
+        if old != new or source[identity].attrib != after[identity].attrib:
+            raise ValueError('Unrelated source town metadata changed')
     after_raw = {int(m[1]):m[0] for m in ROW.finditer(output)}
-    if any(matched[i] != after_raw[i] for i in source if i not in CHANGED):
+    if any(matched[i] != after_raw[i] for i in source if i not in patches):
         raise ValueError('Foreign source town bytes changed')
     # Overlap at the old MO Base/Mine14 rectangle is removed. Every amended
     # or new rectangle must be disjoint from all other original town bounds.
@@ -151,13 +170,13 @@ def prepare(folder=FOLDER):
     for name,raw in outputs.items():
         path = folder/name; path.parent.mkdir(parents=True,exist_ok=True)
         path.write_bytes(raw)
-    report = dict(passed=True,source_version=manifest['version'],new_version='2026.10.08.5',
+    report = dict(passed=True,source_version=manifest['version'],new_version='2026.10.29.1',
         client_path=CLIENT_PATH,source_client_sha256=sha(source),source_runtime_sha256=sha(server),
         policy_sha256=sha(policy_raw),source_territories_sha256=sha((folder/'source/territories.json').read_bytes()),
         observation_sha256=sha((folder/'client/source/observation.json').read_bytes()),
         candidate_sha256=sha(client_new),candidate_size=len(client_new),runtime_sha256=sha(server_new),
-        changed_existing_ids=list(CHANGED),added_ids=list(ADDED),contiguous_ids=list(range(1,23)),
-        clones={str(k):v for k,v in CLONES.items()},foreign_rows_preserved_byte_for_byte=True,
+        changed_existing_ids=list(range(2,18)),added_ids=list(ADDED),contiguous_ids=list(range(1,23)),
+        clones={str(k):v for k,v in CLONES.items()},foreign_rows_preserved_byte_for_byte=False,foreign_metadata_preserved=True,
         distinct_original_sources_preserved=True,database_opened=False,installed_client_changed=False,
         local_diagnostic_changed=False,territory_policy_changed=False,published=False,
         location_provenance=[dict(id=r['id'],source=r['source']) for r in policy['locations']])

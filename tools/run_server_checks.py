@@ -105,6 +105,8 @@ MODULES = (
     'test_map_speed',
     'test_roads',
     'test_map_route',
+    'test_map_publication',
+    'test_world_map_catalog',
     'test_pve_contracts',
     'test_contracts_service',
     'test_contracts_ui',
