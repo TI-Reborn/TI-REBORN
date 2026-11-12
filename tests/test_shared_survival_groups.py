@@ -6,6 +6,43 @@ import test_shared_team_arena as shared_fixture
 from tio.protocol.battle_turn import encode_end_turn
 
 
+class SharedSurvivalDuelTests(unittest.TestCase):
+    send = shared_fixture.SharedTeamTests.send
+
+    def setUp(self):
+        shared_fixture.SharedTeamTests.setUp(self)
+        self.hub = shared_fixture.TeamArena(clock=lambda: self.now, survival_duels=True)
+
+    def add_fighters(self, index: int, count: int) -> None:
+        from tio.owned_pets import OwnedPetStore
+        from tio.protocol.item_list import encode_item_list
+        from tio.protocol.pet_info import decode_pet_info, encode_pet_info
+        account = self.sessions[index].account
+        store = OwnedPetStore(self.path)
+        first = decode_pet_info(store.list(account)[0][1], human_equipment=True)
+        for slot in range(2, count + 1):
+            fighter = replace(first, fields={**first.fields, '0x8c43eb': slot, '0x8c44a6': slot})
+            store.ensure(account, encode_pet_info(fighter), encode_item_list(slot, ()), human=True)
+
+    def test_two_owners_keep_all_three_fighters_in_authoritative_scene(self):
+        self.add_fighters(0, 3)
+        self.add_fighters(2, 3)
+        self.add_fighters(3, 2)
+        for index, count in ((0, 3), (1, 1), (3, 2)):
+            self.send(index, bytes((0xba, 3, 0, count)))
+        self.now = 100
+        self.hub.tick()
+        self.assertFalse(self.hub.battles)
+        self.send(2, bytes((0xba, 3, 0, 3)))
+        owners = [self.hub.identities[self.sessions[i]] for i in (0, 2)]
+        battle = self.hub.battles[owners[0]]
+        self.assertIs(battle, self.hub.battles[owners[1]])
+        self.assertEqual(battle['humans'], set(owners))
+        self.assertFalse(battle['bots'])
+        self.assertEqual([len(battle['field'].actor_ids(owner)) for owner in owners], [3, 3])
+        self.assertEqual({len(ticket.actors) for ticket in self.hub.survival_queue.tickets.values()}, {1, 2})
+
+
 class SharedSurvivalGroupsTests(unittest.TestCase):
     send=shared_fixture.SharedTeamTests.send
 

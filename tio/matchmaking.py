@@ -3,6 +3,7 @@
 Survival groups two to four humans within a manual level band, preferring
 larger common squads. A short configured window lets a pair gain more players.
 An isolated survival search receives a transient opponent after one minute.
+Worlds can opt into human-only duels between squads of the same size.
 The caller must start a scene before consuming a returned match proposal.
 """
 from dataclasses import dataclass
@@ -52,7 +53,7 @@ class MatchProposal:
 
 
 class SurvivalQueue:
-    def __init__(self,*,clock=time.monotonic,bot_delay=5,level_span=2,group_wait=None,survival_bot_delay=None):
+    def __init__(self,*,clock=time.monotonic,bot_delay=5,level_span=2,group_wait=None,survival_bot_delay=None,duels: bool=False):
         if group_wait is None or survival_bot_delay is None:
             policy = json.loads((Path(__file__).resolve().parents[1]/'config/survival.json').read_text())
             if group_wait is None:group_wait = policy['group_wait_seconds']
@@ -62,6 +63,7 @@ class SurvivalQueue:
             raise ValueError('Invalid matchmaking policy')
         self.clock=clock;self.bot_delay=bot_delay;self.level_span=level_span;self.group_wait=group_wait
         self.survival_bot_delay=survival_bot_delay
+        self.duels = duels
         self.tickets={}
 
     def join(self,character_id,roster,*,mode=0,pool='starter'):
@@ -105,6 +107,10 @@ class SurvivalQueue:
             candidates=[other for other in self.tickets.values()
                 if other.mode==0 and other.pool==first.pool and other.character_id!=character_id
                 and level_band(other.levels[0])==level_band(first.levels[0])]
+            if self.duels:
+                opponent = min((ticket for ticket in candidates if len(ticket.actors) == len(first.actors)),
+                               key=lambda ticket: (ticket.joined_at, ticket.character_id), default=None)
+                return MatchProposal(first, opponent) if opponent is not None else None
             if candidates:
                 # Manual p15: try the largest common squad first. Extra seats
                 # must not force a lower squad size when a larger one can match.
@@ -127,6 +133,8 @@ class SurvivalQueue:
         members=proposal.members
         first=proposal.first
         if first.mode==0:
+            if self.duels and (len(members) != 2 or len(first.actors) != len(members[1].actors)):
+                raise ValueError('Incompatible Survival duel proposal')
             mode_rules(0).validate_players(len(members)+int(proposal.uses_bot))
             if proposal.uses_bot and self.propose(first.character_id)!=proposal:
                 raise ValueError('Stale or premature bot proposal')

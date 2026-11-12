@@ -48,12 +48,12 @@ from .contracts_combat import ContractsCombat
 
 
 class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,MineArena,RankedArena,TeamRanked,BattleReconnect,BattleFailures):
-    def __init__(self, *, clock=time.monotonic):
+    def __init__(self, *, clock=time.monotonic, survival_duels: bool = False):
         self.lock=threading.RLock();self.clock=clock
         self.lobbies=TeamLobbies(clock)
         self.players={};self.identities={};self.queues={};self.tickets={};self.battles={};self.results=set()
         self.next_id=0x10000000
-        self.survival_queue=SurvivalQueue(clock=clock)
+        self.survival_queue=SurvivalQueue(clock=clock, duels=survival_duels)
         self.survival_waiting=set()
         self.ranked_waiting={}
         from .ranked_party import PartyService
@@ -470,11 +470,11 @@ class _SharedTeamArena(ContractsCombat,TacticalMarks,WagerArena,AssaultArena,Min
                    auth_account(self.players[t.character_id].database,self.players[t.character_id].account))
                   for t in tickets}
         if len(accounts)!=len(tickets):raise ValueError('Для Выживания нужны разные аккаунты')
-        count=min(len(t.actors) for t in tickets)
+        count=proposal.soldiers
         seats=[];teams=[]
         for side,ticket in enumerate(tickets):
             member=ticket.character_id;session=self.players[member]
-            chosen=replace(ticket,actors=ticket.actors[:count],levels=ticket.levels[:count])
+            chosen=ticket if len(ticket.actors)==count else replace(ticket,actors=ticket.actors[:count],levels=ticket.levels[:count])
             seats.append((member,side,session.database,session.account,chosen,False))
             teams.append([member])
         first=SimpleNamespace(mode=0,soldiers=count,band=level_band(tickets[0].levels[0]),captain=tickets[0].character_id)

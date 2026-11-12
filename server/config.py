@@ -68,6 +68,7 @@ class ServerConfig:
     # Opt-in: switch the player database to SQLite WAL at startup. The mode
     # is persistent in the database file; false leaves the current mode.
     sqlite_wal: bool = False
+    survival_duels: bool = False
 
     @classmethod
     def load(cls, path):
@@ -75,7 +76,7 @@ class ServerConfig:
         with path.open('rb') as stream:
             data = tomllib.load(stream)
         required = {'bind_address', 'advertised_address', 'game_port', 'data_directory', 'log_level'}
-        if not required <= set(data) or set(data)-required-{'multi_account','session_port','tls','contracts_enabled','sqlite_wal'}:
+        if not required <= set(data) or set(data)-required-{'multi_account','session_port','tls','contracts_enabled','sqlite_wal','survival_duels'}:
             raise ValueError('Invalid configuration keys; required: ' + ', '.join(sorted(required)))
         bind = IPv4Address(data['bind_address'])
         advertised = IPv4Address(data['advertised_address'])
@@ -110,7 +111,10 @@ class ServerConfig:
                 raise ValueError('Direct and TLS listener ports must all differ')
         wal = data.get('sqlite_wal', False)
         if type(wal) is not bool:raise ValueError('sqlite_wal must be boolean')
-        return cls(str(bind), str(advertised), port, directory.resolve(), level, multi, session_port, tls, contracts, wal)
+        survival_duels = data.get('survival_duels', False)
+        if type(survival_duels) is not bool or survival_duels and not multi:
+            raise ValueError('survival_duels must be boolean and requires multi_account')
+        return cls(str(bind), str(advertised), port, directory.resolve(), level, multi, session_port, tls, contracts, wal, survival_duels)
 
     @property
     def database(self):

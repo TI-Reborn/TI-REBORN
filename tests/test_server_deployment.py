@@ -183,12 +183,19 @@ class DeploymentTests(unittest.TestCase):
         write()
         config = ServerConfig.load(path)
         self.assertEqual(config.data_directory, self.root / 'players')
+        self.assertFalse(config.survival_duels)
         preflight(config)
         self.assertFalse(config.data_directory.exists())
         for key, value in [('advertised_address','0.0.0.0'), ('advertised_address','127.0.0.1'), ('game_port',0)]:
             original = values[key];values[key] = value;write()
             with self.assertRaises(ValueError):ServerConfig.load(path)
             values[key] = original
+        values['survival_duels'] = True
+        write()
+        with self.assertRaises(ValueError):ServerConfig.load(path)
+        values['multi_account'] = True
+        write()
+        self.assertTrue(ServerConfig.load(path).survival_duels)
 
     def test_runtime_package_imports_without_workspace_or_research_modules(self):
         from deploy.package_server import package
