@@ -66,7 +66,7 @@ class MultiServer:
         self.failures = queue.Queue()
         self.login_guard=LoginGuard()
         from .team_arena import TeamArena
-        self.team_arena = TeamArena()
+        self.team_arena = TeamArena(survival_duels=self.config.survival_duels)
         self.team_arena.init_assault(self.config.database)
         self.team_arena.init_training(self.config.database)
         from .presence import Presence

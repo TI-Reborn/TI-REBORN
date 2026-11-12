@@ -27,6 +27,37 @@ class SurvivalMultiplayerQueueTests(unittest.TestCase):
     def join(self, identity, count=1, level=1, pool='starter', mode=0):
         return self.queue.join(identity,self.roster(count,level),pool=pool,mode=mode)
 
+    def test_duel_waits_for_equal_squad_and_consumes_only_one_opponent(self):
+        self.queue = SurvivalQueue(clock=lambda: self.now, duels=True)
+        for count in (1, 2, 3):
+            self.join(count, count)
+        self.now = 10000
+        for count in (1, 2, 3):
+            self.assertIsNone(self.queue.propose(count))
+        self.join(4, 3, level=4)
+        self.join(5, 3, pool='other')
+        self.assertIsNone(self.queue.propose(3))
+        for count in (1, 2, 3):
+            opponent = self.join(10 + count, count)
+            self.join(20 + count, count)
+            proposal = self.queue.propose(count)
+            self.assertEqual(proposal.members, (self.queue.tickets[count], opponent))
+            self.assertEqual(proposal.soldiers, count)
+            self.queue.consume(proposal)
+        self.assertEqual(set(self.queue.tickets), {4, 5, 21, 22, 23})
+
+    def test_duel_consume_rejects_mixed_squads_and_third_player(self):
+        self.queue = SurvivalQueue(clock=lambda: self.now, duels=True)
+        first = self.join(1, 3)
+        smaller = self.join(2, 2)
+        second = self.join(3, 3)
+        third = self.join(4, 3)
+        for proposal in (MatchProposal(first, smaller), MatchProposal(first, second, (first, second, third)),
+                         MatchProposal(first, None)):
+            with self.assertRaisesRegex(ValueError, 'Incompatible'):
+                self.queue.consume(proposal)
+        self.assertEqual(set(self.queue.tickets), {1, 2, 3, 4})
+
     def test_pair_and_three_players_get_bounded_collection_window(self):
         self.join(10,3)
         self.now=1
