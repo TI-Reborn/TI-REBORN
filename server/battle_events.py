@@ -12,7 +12,7 @@ from tio.protocol.battle_attack import decode_attack_result, encode_attack_resul
 from tio.protocol.action_points import encode_action_points
 from tio.protocol.health import encode_health
 from tio.protocol.battle_soldier import decode_battle_soldier
-from tio.battle_state import BattleField
+from tio.battle_state import BattleActor, BattleField
 
 
 def with_inventory_weights(field: BattleField, owner: int,
@@ -39,7 +39,7 @@ def with_inventory_weights(field: BattleField, owner: int,
     return tuple(replies)
 
 
-def movement_packets(view, before, packet):
+def movement_packets(view: VisibilityView, before: dict[int, BattleActor], packet: bytes) -> tuple[bytes, ...]:
     move=decode_battle_move(packet);actor=before[move.actor_id]
     if actor.owner_id==view.owner:
         # Owned actors predict the first step. Keep the original complete path.
@@ -51,13 +51,20 @@ def movement_packets(view, before, packet):
     shadow.resident_corpses=set(view.resident_corpses)
     shadow.loot_states=dict(view.loot_states)
     replies=[]
+    visible_path = []
     for x,y in move.path:
-        old=shadow.visible
+        was_visible = actor.actor_id in shadow.visible
         replay._actors[actor.actor_id]=replace(replay.actor(actor.actor_id),x=x,y=y)
-        current=visible_actors(replay,view.owner)
-        if actor.actor_id in old & current:
-            replies.append(encode_battle_move(BattleMove(actor.actor_id,((x,y),))))
-        replies.extend(shadow.refresh(visuals=False))
+        updates = shadow.refresh(visuals=False)
+        if was_visible and actor.actor_id in shadow.visible:
+            visible_path.append((x, y))
+        if updates and visible_path:
+            # A native 3D starts movement and sets its final destination again.
+            replies.append(encode_battle_move(BattleMove(actor.actor_id, tuple(visible_path))))
+            visible_path.clear()
+        replies.extend(updates)
+    if visible_path:
+        replies.append(encode_battle_move(BattleMove(actor.actor_id, tuple(visible_path))))
     view.visible=shadow.visible;view.door_states=shadow.door_states
     view.hidden_living=shadow.hidden_living
     view.resident_corpses=shadow.resident_corpses

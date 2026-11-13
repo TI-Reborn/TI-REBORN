@@ -12,6 +12,7 @@ from tio.battle_loot import BattleLoot
 from tio.combat import Combat
 from tio.weapons import WeaponCatalog
 from tio.protocol.item_list import ItemRecord, encode_item_list, decode_item_list
+from tio.protocol.battle_move import decode_battle_move
 from tio.protocol.pet_info import decode_pet_info, encode_pet_info
 from tio.tactical_bot import (Actions, play_actor, fire_plan, hidden_cell, loot_selection,
                               fits, heal, weapon_for, enemies_for)
@@ -64,6 +65,16 @@ class TacticalBotTests(unittest.TestCase):
         self.assertEqual(sum(p[0]==0x3d for p in packets[:first_shot]),5)
         self.assertNotIn(1,visible_actors(field,8))
         self.assertGreaterEqual(field.actor(1).action_points,0)
+
+    def test_infected_dog_uses_a_continuous_route_before_biting(self):
+        field, arena, _ = self.scene(bot=(2, 3), enemy=(8, 3), sight=9)
+        field.combat.proficiencies.pop(1)
+        field.combat.register(1, encode_item_list(1, ()), human=False)
+        field.combat.resources[1] = 103
+        packets = play_actor(arena, 1, 7, 1)
+        bite = next(index for index, packet in enumerate(packets) if packet[0] == 0x4b)
+        self.assertEqual([decode_battle_move(p).path for p in packets[:bite] if p[0] == 0x3d],
+                         [((3, 3), (4, 3), (5, 3), (6, 3), (7, 3))])
 
     def test_cover_is_checked_against_two_known_hostiles(self):
         field,_,_=self.scene(bot=(6,5),enemy=(10,5),enemy_sight=5,bag=self.gun())

@@ -10,9 +10,11 @@ import unittest
 
 from tio.enhancement import EnhancementRules, EnhancementStore
 from tio.owned_pets import OwnedPetStore
+from tio.protocol.asset_count import decode_asset_count
 from tio.protocol.enhancement import decode_enhancement_request
 from tio.protocol.item_list import ItemRecord, encode_item_list, decode_item_list
-from tio.protocol.warehouse import warehouse_item_from_inventory
+from tio.protocol.warehouse import decode_warehouse_list, warehouse_item_from_inventory
+from tio.warehouse import WarehouseStore
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -43,6 +45,63 @@ class EnhancementTests(unittest.TestCase):
 
     def saved(self):
         return OwnedPetStore(self.path).inventory('alice', 1)
+
+    def seed_stock(self, alice_count):
+        warehouse = WarehouseStore(self.path)
+        with closing(sqlite3.connect(self.path)) as db, db:
+            db.executemany('INSERT INTO warehouse_items VALUES (?,?,?)', (
+                (account, 2000, encode_item_list(0, (item(2000, 30, count=count),)))
+                for account, count in (('alice', alice_count), ('bob', 3))))
+        return warehouse
+
+    def test_menu_upgrade_consumes_personal_stock_and_refreshes_client(self):
+        self.seed(item(1001, 301))
+        warehouse = self.seed_stock(2)
+
+        for remaining in (1, 0):
+            result = self.store.handle('alice', request(kit=None))
+            self.assertEqual((result.outcome, result.level), ('success', 2 - remaining))
+            target, = decode_item_list(self.saved())[1]
+            self.assertEqual(target.unknown_bytes_03[0], 2 - remaining)
+            stock = next(packet for packet in result.replies if packet[:1] == b'\x6a')
+            assets = next(packet for packet in result.replies if packet[:2] == b'\xc8\x39')
+            self.assertEqual([kit.count for kit in decode_warehouse_list(stock)[3]], [1] if remaining else [])
+            self.assertEqual(decode_asset_count(assets).upgrade_kits, remaining)
+
+        before = self.saved()
+        with self.assertRaisesRegex(ValueError, 'Upgrade Kit required'):
+            self.store.handle('alice', request(kit=None))
+        self.assertEqual(self.saved(), before)
+        self.assertEqual(warehouse.items('alice'), ())
+        self.assertEqual([kit.count for kit in warehouse.items('bob')], [3])
+
+    def test_menu_upgrade_prefers_stock_to_bag(self):
+        warehouse = self.seed_stock(1)
+        self.store.handle('alice', request(kit=None))
+        self.assertEqual(warehouse.items('alice'), ())
+        self.assertEqual(decode_item_list(self.saved())[1][1], item(1002, 30))
+
+    def test_menu_reply_updates_the_dialog_item_before_announcing_success(self):
+        self.seed(replace(item(1001, 301, 2), unknown_u8_01=1, location_raw=16))
+        self.seed_stock(1)
+        result = self.store.handle('alice', request(kit=None))
+
+        # Native InventoryUpdate34 replaces the dialog's copy by instance ID.
+        self.assertEqual(result.replies[-2], struct.pack(
+            '<BBIBIIIIIBBBIHHH10B', 0x34, 1, 1, 0, 1,
+            1001, 301, 1, 2, 0, 0, 1, 16, 495, 495, 495,
+            3, 0, 0, 0, 0, 0, 0, 0, 3, 0))
+        self.assertEqual(result.replies[-1][:5], b'\xf0\x97\0\0\0')
+
+    def test_menu_upgrade_rolls_back_stock_debit_when_save_fails(self):
+        self.seed(item(1001, 301))
+        warehouse = self.seed_stock(1)
+        before = self.saved(), warehouse.items('alice')
+        with closing(sqlite3.connect(self.path)) as db, db:
+            db.execute("CREATE TRIGGER reject_sequence BEFORE INSERT ON item_sequences BEGIN SELECT RAISE(ABORT, 'test failure'); END")
+        with self.assertRaises(sqlite3.Error):
+            self.store.handle('alice', request(kit=None))
+        self.assertEqual((self.saved(), warehouse.items('alice')), before)
 
     def test_safe_levels_no_random_consumed_and_persistent(self):
         def fail(n): raise AssertionError('Safe attempt must not roll')
