@@ -109,6 +109,8 @@ MODULES = (
     'test_shooting_range_turn_repeats',
     'test_armor_equipment',
     'test_enhancement',
+    'test_dog_fog_movement',
+    'test_tactical_bot.TacticalBotTests.test_infected_dog_uses_a_continuous_route_before_biting',
     'test_map_speed',
     'test_roads',
     'test_map_route',

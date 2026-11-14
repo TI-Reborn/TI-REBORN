@@ -1461,7 +1461,8 @@ class LoopbackExchange:
                             self.events.append({'event':'enhancement_committed','request_hex':packet.hex(),
                                                 'outcome':result.outcome,'level':result.level,'chance':result.chance})
                         for reply in replies:
-                            game.sendall(encode_reply(reply,outbound))
+                            frame = warehouse_capacity.frames(self, reply, outbound) if reply[:1] == b'\x6a' else None
+                            game.sendall(encode_reply(reply, outbound) if frame is None else frame)
                             self.events.append({'direction':'S2C','stage':'enhancement_reply','plain_hex':reply.hex()})
                         continue
                     if self.owned_pet_probe and self.database is not None and (packet[:1]==b'\x7e' or packet[:2]==b'\xc2\x03'):

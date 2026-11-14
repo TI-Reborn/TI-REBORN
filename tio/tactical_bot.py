@@ -21,6 +21,9 @@ from .visibility import field_sight
 from .weight import inventory_weight, overload_penalty
 
 
+INFECTED_DOG = 103
+
+
 @lru_cache(maxsize=1)
 def armor_catalog():
     from .equipment import armor_rules
@@ -160,7 +163,10 @@ class Actions:
         if doors is not None and doors.states.get(cell) is False:
             from .protocol.battle_door import DoorRequest, encode_door_request
             self.do('door_action',encode_door_request(DoorRequest(identity,True,*cell)))
-        return self.do('move',encode_move_request(BattleMove(identity,(cell,))))
+        return self.move_path(identity, (cell,))
+
+    def move_path(self, identity: int, path: tuple[tuple[int, int], ...]) -> tuple[bytes, ...]:
+        return self.do('move', encode_move_request(BattleMove(identity, path)))
 
     def item(self,identity,item,slot=None):
         return self.do('equip',encode_item_action(ItemAction(identity,item.instance_id,
@@ -330,7 +336,11 @@ def play_actor(arena, room_id, owner, identity, *, view=None):
                 if plan is not None:
                     approach,target_id,cover=plan
                     if approach:
-                        actions.move(identity,approach[0]);continue
+                        if field.combat.resources[identity] == INFECTED_DOG:
+                            actions.move_path(identity, approach)
+                        else:
+                            actions.move(identity, approach[0])
+                        continue
                     target=field.actor(target_id)
                     actions.do('attack',encode_attack_request(AttackRequest(identity,target.x,target.y)))
                     # Re-evaluate against survivors and newly revealed hostiles

@@ -104,7 +104,8 @@ class VisibilityView:
         current=visible_actors(self.field,self.owner)
         self.resident_corpses={i for i in self.resident_corpses | set(self.visible)
                                if i in self.field._actors and self.field.actor(i).health==0}
-        replies=tuple(encode_battle_remove(i) for i in sorted(self.visible-current-self.resident_corpses))
+        lost = self.visible - current - self.resident_corpses
+        replies = ()
         # The native owner-eliminated predicate scans non-removed actor models,
         # not member-list counts. Keep enemies in every game mode registered off-map
         # while hidden. 255/255 is the native absent-position sentinel; only
@@ -117,6 +118,9 @@ class VisibilityView:
                            for i,alive in sorted(hidden.items())
                            if i in self.visible or self.hidden_living.get(i)!=alive)
             self.hidden_living=hidden
+            # The off-map snapshot hides the actor without destroying its model.
+            lost -= hidden.keys()
+        replies += tuple(encode_battle_remove(i) for i in sorted(lost))
         replies+=tuple(p for i in sorted(current-self.visible) for p in self.snapshot_packets(i))
         self.visible=current
         doors=getattr(self.field,'doors',None)
