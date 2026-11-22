@@ -77,10 +77,15 @@ def restored(name):
 def _equal(a,b):
     """Strict structural equality: types must match (True is not 1)."""
     if a is b:return True
-    if type(a) is not type(b):return False
-    if type(a) in (dict,MappingProxyType):
-        return a.keys()==b.keys() and all(_equal(x,b[k]) for k,x in a.items())
-    if type(a) in (list,tuple):return len(a)==len(b) and all(map(_equal,a,b))
+    kind=type(a)
+    if kind is not type(b):return False
+    if kind in (str,int,float,bool,bytes,type(None)):return a==b
+    if kind in (dict,MappingProxyType):
+        if a.keys()!=b.keys():return False
+        for k,x in a.items():
+            if not _equal(x,b[k]):return False
+        return True
+    if kind in (list,tuple):return len(a)==len(b) and all(map(_equal,a,b))
     if hasattr(a,'__dict__') and not isinstance(a,type):return _equal(vars(a),vars(b))
     return a==b
 
@@ -102,8 +107,7 @@ def rules_digest():
     return h.hexdigest()
 
 
-@timed('checkpoint.encode')
-def dumps(value,*,clock=time.monotonic,wall=time.time):
+def _capture(value, *, clock, wall) -> dict:
     nodes=[];seen={};allowed=registry()
     def encode(v):
         kind=type(v)
@@ -145,7 +149,23 @@ def dumps(value,*,clock=time.monotonic,wall=time.time):
             else:pairs.append([encode(k),encode(x)])
         nodes[index]={'class':name,'attributes':{'d':pairs}}
         return {'r':index}
-    data=dict(version=VERSION,rules=rules_digest(),mono=clock(),wall=wall(),root=encode(value),nodes=nodes)
+    return dict(version=VERSION,rules=rules_digest(),mono=clock(),wall=wall(),root=encode(value),nodes=nodes)
+
+
+@timed('checkpoint.rollback_capture')
+def capture_rollback(value, *, clock, wall) -> dict:
+    """Capture an independent graph for an in-process rollback."""
+    return _capture(value, clock=clock, wall=wall)
+
+
+def restore_rollback(graph: dict, *, clock, wall) -> dict:
+    state, _ = _restore(graph, clock=clock, wall=wall, rebase=False)
+    return state
+
+
+@timed('checkpoint.encode')
+def dumps(value,*,clock=time.monotonic,wall=time.time):
+    data = _capture(value, clock=clock, wall=wall)
     text=json.dumps(data,separators=(',',':'),allow_nan=False)
     if len(text.encode())>MAX_BYTES:raise ValueError('Battle snapshot exceeds limit')
     return text
@@ -155,6 +175,10 @@ def loads(text,*,clock=time.monotonic,wall=time.time,rebase=True):
     if len(text.encode())>MAX_BYTES:raise ValueError('Battle snapshot exceeds limit')
     data=json.loads(text)
     if data['version']!=VERSION or data['rules']!=rules_digest():raise ValueError('Incompatible battle snapshot')
+    return _restore(data, clock=clock, wall=wall, rebase=rebase)
+
+
+def _restore(data: dict, *, clock, wall, rebase: bool) -> tuple[object, dict]:
     nodes=data['nodes'];allowed=registry()
     if len(nodes)>10000:raise ValueError('Too many snapshot objects')
     objects=[]
@@ -208,6 +232,7 @@ def loads(text,*,clock=time.monotonic,wall=time.time,rebase=True):
             value._end_turn_fences = {room_id: deadline + shift
                                       for room_id, deadline in getattr(value, '_end_turn_fences', {}).items()}
             if rebase:value._turns={i:(o,ids,end+shift) for i,(o,ids,end) in value._turns.items()}
+            if rebase:value._turn_starts={i:start+shift for i,start in getattr(value,'_turn_starts',{}).items()}
         elif name=='Practice':value.clock=wall
         elif name=='BattleField':
             if not 1<=value.width<=255 or not 1<=value.height<=255:raise ValueError('Invalid restored battlefield')

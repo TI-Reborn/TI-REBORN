@@ -50,7 +50,7 @@ class ExchangeTests(unittest.TestCase):
 
     def test_wire_native_order_and_strict_parser(self):
         raw=encode_exchange(self.req)
-        self.assertEqual(raw.hex(),'6e010000000200000001000000ca0000000100000002000000650000000a0000006600000001000000')
+        self.assertEqual(raw.hex(),'6e010000000200000002000000650000000a000000660000000100000001000000ca00000001000000')
         self.assertEqual(decode_exchange(raw),self.req)
         for bad in (raw[:-1],raw+b'0',b'X'+raw[1:],encode_exchange(replace(self.req,target_id=1)),
                     encode_exchange(replace(self.req,withdrawals=((202,1),(202,1)))),

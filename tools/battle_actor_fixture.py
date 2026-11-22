@@ -70,6 +70,8 @@ def actor_packet(pet_packet,character_id,inventory_packet=None,*,human=True,acto
         for target,source in (('0x8c543f','0x8c47f5'),('0x8c546e','0x8c4821'),('0x8c549d','0x8c484d')):
             fields[target]=pet[source]
     if inventory_packet is not None:
+        from tio.implants import armor_bonus
+        fields['0x8c5731'] = min(65535,fields['0x8c5731']+armor_bonus(pet,inventory_packet))
         owner,items,_=decode_item_list(inventory_packet)
         if owner!=pet['0x8c43eb']:raise ValueError('Inventory actor mismatch')
         occupied=set()

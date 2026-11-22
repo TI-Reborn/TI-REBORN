@@ -1,4 +1,4 @@
-"""Ready SC equipment costs more than its expected self-upgrade cost.
+"""Ready SC equipment uses an expected-cost premium with a tier ceiling.
 
 Prices use exact arithmetic and the authoritative enhancement probabilities.
 Ordinary failures destroy the item, so the model includes starting over and
@@ -46,16 +46,22 @@ class ReadySCPrices:
         self.native_max = policy['native_max_credits']
         self.revision = policy['revision']
         self.percent = {int(k): v for k, v in policy['total_percent_by_level'].items()}
-        if (policy['model'] != 'expected_self_upgrade_v1'
+        self.max_surcharge = {int(k): v for k, v in policy['max_surcharge_by_level'].items()}
+        if (policy['model'] != 'capped_expected_self_upgrade_v2'
                 or type(self.quantum) is not int or self.quantum < 1
                 or type(self.native_max) is not int or not 1 <= self.native_max <= 0x7fffffff
                 or type(self.revision) is not int or not 1 <= self.revision <= 127
                 or set(self.percent) != set(levels)-{0}
+                or self.max_surcharge.keys() != self.percent.keys()
+                or any(type(v) is not int or not 1 <= v <= self.native_max for v in self.max_surcharge.values())
                 or any(type(v) is not int or not 100 < v <= 1000 for v in self.percent.values())):
             raise ValueError('Invalid ready SC price policy')
         ordered = [self.percent[n] for n in sorted(self.percent)]
         if ordered != sorted(ordered):
             raise ValueError('SC convenience premium must not decrease with level')
+        ceilings = [self.max_surcharge[n] for n in sorted(self.max_surcharge)]
+        if any(a >= b for a, b in zip(ceilings, ceilings[1:])):
+            raise ValueError('SC surcharge ceilings must increase with level')
 
     def quote(self, base, kit, level, *, kind, special):
         expected = expected_self_upgrade_cost(base, kit, level, self.rules, kind=kind, special=special)
@@ -64,6 +70,7 @@ class ReadySCPrices:
         else:
             units = expected * self.percent[level] / (100*self.quantum)
             price = ((units.numerator + units.denominator-1)//units.denominator)*self.quantum
+            price = min(price, base + self.max_surcharge[level])
         if not 1 <= price <= self.native_max:
             raise ValueError('SC price exceeds the native client credit limit')
         return price

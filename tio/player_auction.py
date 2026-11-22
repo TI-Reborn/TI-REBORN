@@ -208,13 +208,14 @@ class AuctionStore:
                 if row['buyout'] is None:
                     raise ValueError('Быстрый выкуп не предусмотрен')
                 amount = row['buyout']
-            elif index != row['bid_index']:
-                raise ValueError('Ставка изменилась, обновите лот')
-            minimum = row['bid']+row['step'] if row['bidder'] else row['price']
-            if type(amount) is not int or not minimum <= amount <= 0x7fffffff:
-                raise ValueError('Недопустимая ставка')
-            if not buyout and row['buyout'] is not None and amount >= row['buyout']:
-                raise ValueError('Для этой цены используйте быстрый выкуп')
+            else:
+                if index != row['bid_index']:
+                    raise ValueError('Ставка изменилась, обновите лот')
+                minimum = row['bid']+row['step'] if row['bidder'] else row['price']
+                if type(amount) is not int or not minimum <= amount <= 0x7fffffff:
+                    raise ValueError('Недопустимая ставка')
+                if row['buyout'] is not None and amount >= row['buyout']:
+                    raise ValueError('Для этой цены используйте быстрый выкуп')
             previous = row['bid'] if row['bidder'] == account else 0
             self._debit(db, account, amount-previous)
             if row['bidder'] and row['bidder'] != account:
@@ -253,3 +254,14 @@ class AuctionStore:
             db.execute('BEGIN')
             return tuple((dict(row),self._items(db,row['id'])) for row in db.execute(
                 "SELECT * FROM player_auction_lots WHERE (state<>'active')=? ORDER BY ends,id",(closed,)).fetchall())
+
+    def active_for(self, account: str) -> tuple:
+        with closing(self._connection(self.path)) as db:
+            db.execute('BEGIN')
+            rows = db.execute(
+                "SELECT * FROM player_auction_lots AS l WHERE state='active' AND "
+                "(seller=? OR bidder=? OR EXISTS (SELECT 1 FROM player_auction_history "
+                "WHERE lot=l.id AND account=? AND action='bid')) ORDER BY ends,id",
+                (account, account, account),
+            )
+            return tuple((dict(row), self._items(db, row['id'])) for row in rows)

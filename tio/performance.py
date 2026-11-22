@@ -36,6 +36,15 @@ def observe(name,seconds):
                      metric,count,total/count,LIMITS[index],maximum)
 
 
+@contextmanager
+def timed_block(name: str):
+    start = time.perf_counter()
+    try:
+        yield
+    finally:
+        observe(name, time.perf_counter() - start)
+
+
 def timed(name):
     def decorate(method):
         @wraps(method)

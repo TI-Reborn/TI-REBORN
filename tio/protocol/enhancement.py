@@ -24,9 +24,9 @@ def decode_enhancement_request(packet):
 
 
 def encode_enhancement_result(outcome, template_id, level):
-    """151/152 resolve arg0 through a75f24; SE failure157 has no arguments."""
-    command = {'success': 151, 'destroyed': 152, 'reset': 157, 'weakened': 157}[outcome]
-    w = Writer().u8(0xf0).u32(command).u32(0 if outcome in ('reset','weakened') else 2)
-    if outcome not in ('reset','weakened'):
+    """151/152 resolve arg0 through a75f24; failure157 has no arguments."""
+    command = {'success': 151, 'destroyed': 152, 'reset': 157, 'weakened': 157, 'preserved': 157}[outcome]
+    w = Writer().u8(0xf0).u32(command).u32(0 if command == 157 else 2)
+    if command != 157:
         w.u32(1).u32(template_id).u32(1).u32(level)
     return w.build()

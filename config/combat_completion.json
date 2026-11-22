@@ -19,10 +19,10 @@
     }
   },
   "mines": {
-    "enabled": false,
-    "devices": [],
-    "reason": "Installed original client supports MineFinder kind35 and MineDefuser kind36, but public item definitions, historical item IDs, prices, AP and search radius are absent. No free or universal detection/defuse entitlement.",
-    "known_native_request": "C8/40 actor,x,y; original95965c->659094",
-    "entitlement_source": "Authoritative owned device class and native metadata AP/radius, never client-supplied fields or guessed passive perks"
+    "enabled": true,
+    "devices": [5101, 5102],
+    "policy": "Local emulator balance. The finder reveals mines to its owner within its catalogue radius and line of sight, once per cell per actor turn. A usable probe deterministically removes a known mine in a free adjacent cell. Both actions spend one device use.",
+    "known_native_request": "33 actor,instance,FF for search; C8/40 actor,x,y for disarm",
+    "entitlement_source": "Owned device and server item catalogue. C8/40 selects the lowest usable probe instance ID."
   }
 }

@@ -13,7 +13,7 @@ except ModuleNotFoundError as error:
     HAS_REGISTRATION=False
 from tio.characters import CharacterStore
 from tio.onboarding import prepare
-from tio.protocol.character_create import CharacterCreateRequest
+from tio.protocol.character_create import CharacterCreateRequest, encode_character_create
 from tio.wallets import WalletStore
 import test_multi_account as fixtures
 
@@ -52,7 +52,13 @@ class StartingFundsWorkflowTests(unittest.TestCase):
 
     def test_cli_account_create_and_game_authentication_seed_only_once(self):
         self.case.accounts.create('fresh_cli',PASSWORD)
-        self.authenticate_new_account('fresh_cli')
+        peer = self.authenticate_new_account('fresh_cli')
+        peer.send(encode_character_create(CharacterCreateRequest(b'FreshCli', 0, (1, 0, 0, 0))))
+        self.assertEqual(peer.receive(), b'\x12\x05')
+        self.assertEqual(peer.receive()[:1], b'\x10')
+        self.assertEqual(self.balances()['fresh_cli'], (50_000, 0))
+        for account, balance in self.previous.items():
+            self.assertEqual(self.balances()[account], balance)
         with closing(sqlite3.connect(self.path)) as db,db:
             db.execute("UPDATE wallets SET credits=2450 WHERE account='fresh_cli'")
         self.case.accounts.create('fresh_cli','Replacement-password-123',reset=True)
@@ -72,7 +78,7 @@ class StartingFundsWorkflowTests(unittest.TestCase):
         request=CharacterCreateRequest(b'NewFighter',0,(1,0,0,0))
         CharacterStore(self.path).create('fresh_form',request)
         prepare(self.path,'fresh_form');prepare(self.path,'fresh_form')
-        self.assertEqual(self.balances()['fresh_form'],(3000,0))
+        self.assertEqual(self.balances()['fresh_form'],(50_000,0))
         with closing(sqlite3.connect(self.path)) as db,db:
             db.execute("UPDATE wallets SET credits=2410 WHERE account='fresh_form'")
         prepare(self.path,'fresh_form')

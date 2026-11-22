@@ -8,6 +8,14 @@ from .binary import PacketError, Reader, Writer, uint
 
 INITIAL_KEY=bytes.fromhex('50259f9a11913a09')
 
+# The native disconnect event reads a little-endian u32 after opcode 01.
+UPDATE_DISCONNECT_REASON = int.from_bytes(b'UPGD', 'little')
+
+
+def encode_update_disconnect() -> bytes:
+    return Writer().u8(1).u32(UPDATE_DISCONNECT_REASON).build()
+
+
 class InitialCipher:
     """One direction's state. S2C is inverse of native receiver, C2S of sender."""
     def __init__(self,direction,key=INITIAL_KEY):

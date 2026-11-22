@@ -63,8 +63,11 @@ class LobbyPerformanceTests(unittest.TestCase):
 class EconomyPerformanceTests(bank_fixture.BankFixture):
     def setUp(self):
         super().setUp()
-        # City services have separate router/configuration fixtures.
-        self.enterContext(patch('server.services_runtime.tick'))
+        # Service scheduling has its own clock and writes. These tests isolate
+        # the economy tick's mark and clan-maintenance decisions.
+        service_tick=patch('server.services_runtime.tick')
+        service_tick.start()
+        self.addCleanup(service_tick.stop)
 
     def router(self):
         return SimpleNamespace(team_arena=SimpleNamespace(lock=threading.RLock()),lock=threading.Lock(),active_accounts={})

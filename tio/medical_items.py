@@ -5,6 +5,14 @@ from pathlib import Path
 from types import MappingProxyType
 from collections.abc import Mapping
 
+DOG_MEAT = 32
+
+
+def can_use_medical(template_id: int, resource: int) -> bool:
+    is_dog = resource in (3, 4, 5)
+    dog_only = template_id == DOG_MEAT
+    return template_id in medical_items() and is_dog == dog_only
+
 
 @lru_cache(maxsize=1)
 def medical_items() -> Mapping[int, tuple[int, int]]:

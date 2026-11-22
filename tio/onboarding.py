@@ -8,7 +8,7 @@ import sqlite3
 
 from .characters import CharacterStore
 from .owned_pets import OwnedPetStore
-from .wallets import WalletStore
+from .wallets import NEW_CHARACTER_CREDITS, WalletStore
 from .protocol.character_create import decode_character_create
 
 OPEN_APPEARANCE = b'\x12\x05'  # Emulator extension; paired with client patch.
@@ -57,6 +57,8 @@ def initialize_created(path,account):
     template=bytes.fromhex(fixture['packet_hex'])
     OwnedPetStore(path).ensure(account,template,bytes.fromhex(fixture['inventory_packet_hex']),human=True)
     WalletStore(path).ensure(account)
+    # Older logins may have funded an empty slot before character creation.
+    db.execute('UPDATE wallets SET credits=MAX(credits, ?) WHERE account=?', (NEW_CHARACTER_CREDITS, account))
     starters=grant_starters(path,account,template,created=True)
     db.execute('CREATE TABLE IF NOT EXISTS character_onboarding(account TEXT PRIMARY KEY,completed INTEGER NOT NULL DEFAULT 0)')
     if decode_character_create(bytes(row[0])).options[0] in (1,2):

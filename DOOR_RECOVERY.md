@@ -1,5 +1,13 @@
 # Closed-door path and reopen correction
 
+## Door and crate state on entering sight, 13 November 2026
+
+The server sends door and opened-crate states when they become visible to a
+living ally, including along intermediate cells of a movement path. Both
+objects use battlefield sight with their own tile allowed as the target.
+The adjacent door interaction rule still allows a neighboring door surface
+across a corner. The state update carries no crate contents or hidden actor ID.
+
 ## Diagonal interaction, 19 October 2026
 
 Door interaction now accepts all eight neighboring cells, including diagonals

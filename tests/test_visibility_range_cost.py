@@ -1,4 +1,4 @@
-"""Range pruning must preserve the frozen pre-fix fog and item semantics."""
+"""Range pruning must preserve the reference fog and item semantics."""
 from copy import copy
 from dataclasses import replace
 from types import SimpleNamespace
@@ -7,18 +7,19 @@ from unittest.mock import patch
 
 from tio import battle_item_effects as effects
 from tio.battle_state import BattleActor,BattleField
+from tio.combat_distance import combat_distance
 
 
 def legacy_can_observe(combat,observer,target,*,field=None):
-    """Exact pre-fix function from module SHA256 ad571e068c9a...a3fec07."""
+    """Unpruned reference using the client's rounded observer distance."""
     if not observer.health:return False
     field=combat.field if field is None else field
     end=(target.x,target.y);start=(observer.x,observer.y)
     if not effects.clear_item_sight(combat,start,end):return False
-    state=effects.initialize(combat);distance=(observer.x-target.x)**2+(observer.y-target.y)**2
+    state=effects.initialize(combat);distance=combat_distance(start,end)
     if effects.field_sight(field,start,end):
-        if distance<=observer.sight_radius**2:return True
-        if effects.is_dark(combat) and distance<=effects.normal_sight(combat,observer.actor_id)**2:
+        if distance<=observer.sight_radius:return True
+        if effects.is_dark(combat) and distance<=effects.normal_sight(combat,observer.actor_id):
             if any(a['kind']=='flare' and (target.x-a['center'][0])**2+(target.y-a['center'][1])**2<=a['radius']**2 for a in state['areas'].values()):return True
     for recon in state['recon'].values():
         source=field._actors.get(recon['source'])

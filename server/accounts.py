@@ -8,10 +8,12 @@ from pathlib import Path
 import re
 import secrets
 import sqlite3
+import time
 
 from .config import ServerConfig
 from .auth_errors import LoginRejected
 from tio.protocol.login import LoginFailureStatus
+from tio.player_admin import active_sanction
 
 ITERATIONS = 600_000
 
@@ -71,8 +73,15 @@ class Accounts:
         # Comparable hash work for an unknown login; never store plaintext.
         salt, expected, rounds = row if row else (bytes(16), bytes(32), ITERATIONS)
         actual = hashlib.pbkdf2_hmac('sha256', password, salt, rounds)
-        if row and hmac.compare_digest(actual, expected):return name
+        if row and hmac.compare_digest(actual, expected):
+            self.require_access(name)
+            return name
         raise LoginRejected('credentials', LoginFailureStatus.INVALID_CREDENTIALS, 'Authentication failed')
+
+    def require_access(self, login: str) -> None:
+        with closing(sqlite3.connect(self.path.as_uri()+'?mode=ro', uri=True)) as db:
+            if active_sanction(db, login, 'ban', now=int(time.time())):
+                raise LoginRejected('account-ban', LoginFailureStatus.ACCESS_FAILED, 'Game account is banned')
 
     def check(self):
         with closing(sqlite3.connect(self.path.as_uri()+'?mode=ro', uri=True)) as db:

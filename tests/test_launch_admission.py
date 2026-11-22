@@ -43,16 +43,21 @@ class LaunchAdmissionTests(unittest.TestCase):
         b.sendall(struct.pack('!4sBBH',b'TIOT',2,0,31001)+self.identity+b'ORANGE')
         self.assertEqual(read_bridge_preface(a,time.monotonic()+1,self.root),31001)
         self.assertEqual(a.recv(6),b'ORANGE')
+    def test_v4_retains_control_token_and_exact_trace_id(self):
+        token = bytes(range(32))
+        trace = bytes(range(16))
+        header = struct.pack('!4sBBH', b'TIOT', 4, 3, 31001)
+        result = self.read(header + self.identity + token + trace)
+        self.assertEqual(result.control_token, token)
+        self.assertEqual(result.trace_id, trace.hex())
+        with self.assertRaises(EOFError):
+            self.read(header + self.identity + token + trace[:-1])
     def test_missing_policy_file_fails_closed(self):
         (self.root/'downloads/launcher-manifest.json').unlink()
         with self.assertRaises(OSError):validate_launch_identity(self.identity,self.root)
 
     def test_actual_tls_two_accounts_and_both_routes_require_current_release(self):
         import test_game_tls as fixture
-        from tls_test_certificates import create
-        from unittest.mock import patch
-        certificates=self.enterContext(tempfile.TemporaryDirectory())
-        self.enterContext(patch.object(fixture,'FIXTURES',create(certificates)))
         tls=fixture.GameTLSTests();tls.setUp();self.addCleanup(tls.doCleanups)
         tls.case.config=replace(tls.case.config,bind_address='0.0.0.0',tls=replace(tls.case.config.tls,launch_manifests=self.root))
         original=tls.connect
@@ -74,5 +79,37 @@ class LaunchAdmissionTests(unittest.TestCase):
         b=tls.handoff(tls.begin('bob',31002,language='english'));tls.case.enter(b,'Bob')
         tls.case.ping(a);tls.case.ping(b)
         self.assertEqual(tls.case.server.multi.server_population()[0],2)
+
+    def test_game_tls_logs_first_peer_eof_with_the_authenticated_account(self):
+        import test_game_tls as fixture
+        tls = fixture.GameTLSTests()
+        tls.setUp()
+        self.addCleanup(tls.doCleanups)
+        tls.case.config = replace(tls.case.config,
+            tls=replace(tls.case.config.tls, launch_manifests=self.root))
+        original = tls.connect
+        game_trace = b'game-test-id-001'
+
+        def connect(kind, *, preface=None, context=None):
+            connection = original(kind, context=context)
+            if kind == 'login':
+                connection.sendall(preface[:4] + b'\x02' + preface[5:] + self.identity)
+            else:
+                header = struct.pack('!4sBBH', b'TIOT', 4, 0, 31001)
+                connection.sendall(header + self.identity + bytes(32) + game_trace)
+            return connection
+
+        tls.connect = connect
+        tls.case.start()
+        peer = tls.handoff(tls.begin('alice', 31001))
+        tls.case.enter(peer, 'Alice')
+        with self.assertLogs('tio.server.tls', level='INFO') as captured:
+            peer.sock.close()
+            tls.until(lambda: any('event=eof' in line for line in captured.output))
+        terminal = [line for line in captured.output if 'tls_relay_end' in line]
+        self.assertEqual(len(terminal), 1)
+        self.assertIn(f'trace_id={game_trace.hex()} kind=game', terminal[0])
+        self.assertIn("operation=read event=eof", terminal[0])
+        self.assertIn("account='alice'", terminal[0])
 
 if __name__=='__main__':unittest.main()

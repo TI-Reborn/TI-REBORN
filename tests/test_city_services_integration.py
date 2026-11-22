@@ -1,5 +1,8 @@
 """Services V2 exercises the live city gate, routes, rollback and private tick."""
 import json,threading,unittest
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
+import sqlite3
 from types import SimpleNamespace
 from unittest.mock import patch
 from urllib.request import Request,urlopen
@@ -31,6 +34,15 @@ class CityServicesIntegrationTests(unittest.TestCase):
         status=self.manager.status(dict(username='alice',slot=5))
         self.assertIsNone(status['services']);self.assertIsNone(status['personalWarehouse']);self.assertFalse(status['canOperate'])
         with self.assertRaises(CityError):self.manager.action(dict(self.request('service_dismiss',petId=2),slot=5))
+
+    def test_services_status_reads_while_another_connection_has_reserved_writer(self):
+        with closing(sqlite3.connect(self.case.path)) as writer, ThreadPoolExecutor(max_workers=1) as pool:
+            writer.execute('BEGIN IMMEDIATE')
+            try:
+                future = pool.submit(self.manager.status, dict(username='alice', slot=1))
+                self.assertTrue(future.result(timeout=2)['services']['pets'])
+            finally:
+                writer.rollback()
     def test_rename_receipt_replays_and_projection_rolls_back(self):
         payload=self.request('service_rename',petId=1,newName='NewAlice')
         accepted=self.manager.action(payload);again=self.manager.action(payload)

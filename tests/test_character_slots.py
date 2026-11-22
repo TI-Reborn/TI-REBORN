@@ -19,7 +19,7 @@ from tio.protocol.character_select import decode_character_list
 from tio.protocol.asset_count import decode_asset_count
 from tio.protocol.pet_info import decode_pet_info,encode_pet_info
 from tio.protocol.world_bootstrap import decode_mychar_info
-from tio.wallets import WalletStore
+from tio.wallets import NEW_CHARACTER_CREDITS, WalletStore
 from tio.appearance import encode_request,change
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -82,7 +82,7 @@ class CharacterSlotTests(unittest.TestCase):
         primary=pets.list('alice')
         before=WalletStore(self.path).ensure('alice')
         self.assertEqual((before.credits,before.gold),(3000,0))
-        self.assertEqual((WalletStore(self.path).ensure(owner).credits,WalletStore(self.path).ensure(owner).gold),(3000,0))
+        self.assertEqual((WalletStore(self.path).ensure(owner).credits,WalletStore(self.path).ensure(owner).gold),(NEW_CHARACTER_CREDITS,0))
         self.assertEqual(decode_pet_info(pets.list(owner)[0][1],human_equipment=True).fields['0x8c4489'],b'AliceTwo')
         raw=pets.list(owner)[0][1]
         with closing(sqlite3.connect(self.path)) as db,db:
@@ -173,6 +173,26 @@ class CharacterSlotsTCPTests(unittest.TestCase):
             if time.monotonic()>deadline:self.fail('Authentication login was not released')
             time.sleep(.01)
 
+    def test_return_to_selection_switches_slot_on_same_socket(self):
+        self.ready()
+        alice, bob = self.connect(), self.connect('bob')
+        self.case.character_screen(alice)
+        self.case.character_screen(bob)
+        self.create_native(alice, b'AliceTwo', 2)
+        self.enter_slot(alice, 1, b'Alice')
+        self.enter_slot(bob, 1, b'Bob')
+        alice.sock.settimeout(2)
+        alice.send(b'\xc8\xfa')
+        roster = decode_character_list(alice.until(b'\x10'))
+        self.assertEqual([(r.record_id, r.name_bytes) for r in roster],
+                         [(1, b'Alice'), (2, b'AliceTwo')])
+        self.case.begin('alice', denied=True)
+        self.case.ping(bob)
+        alice.send(b'\xc8\xfa')
+        alice.send(b'\x69\x01')
+        self.assertEqual(self.enter_slot(alice, 2, b'AliceTwo').credits,
+                         NEW_CHARACTER_CREDITS)
+
     def test_native_creation_secondary_selection_purchase_restart_primary_preserved(self):
         from tio.protocol.shop_purchase import ShopPurchase,encode_shop_purchase
         self.ready();peer=self.connect()
@@ -180,14 +200,14 @@ class CharacterSlotsTCPTests(unittest.TestCase):
         self.assertEqual([(r.record_id,r.name_bytes) for r in records],[(1,b'Alice')])
         records=self.create_native(peer,b'AliceTwo',2)
         self.assertEqual([(r.record_id,r.name_bytes) for r in records],[(1,b'Alice'),(2,b'AliceTwo')])
-        self.assertEqual(self.enter_slot(peer,2,b'AliceTwo').credits,3000)
+        self.assertEqual(self.enter_slot(peer,2,b'AliceTwo').credits,NEW_CHARACTER_CREDITS)
         owner=alias('alice',2)
         self.assertEqual(self.case.server.multi.active_accounts['alice'].account,owner)
         self.case.begin('alice',denied=True)
         peer.send(encode_shop_purchase(ShopPurchase(1,0,81,2)))
         from tio.city_catalogs import CityCatalogs
         price=next(offer.unknown_u32_03 for offer in CityCatalogs(ROOT/'config/city_catalogs.json').items[0] if offer.unknown_u32_01==81)
-        balance=3000-price*2
+        balance=NEW_CHARACTER_CREDITS-price*2
         self.assertEqual(decode_asset_count(peer.until(b'\xc8\x39')).credits,balance)
         self.case.ping(peer)
         self.assertEqual(WalletStore(self.path).ensure('alice').credits,10000)
@@ -208,7 +228,7 @@ class CharacterSlotsTCPTests(unittest.TestCase):
             self.assertEqual([record.record_id for record in records],list(range(1,slot+1)))
         peer.send(encode_character_create(CharacterCreateRequest(b'AliceSix',0,(1,0,0,0))))
         self.assertEqual(peer.receive(),b'\x12\x02')
-        self.assertEqual(self.enter_slot(peer,5,b'Alice5').credits,3000)
+        self.assertEqual(self.enter_slot(peer,5,b'Alice5').credits,NEW_CHARACTER_CREDITS)
         with closing(sqlite3.connect(self.path)) as db:
             self.assertEqual(db.execute("SELECT count(*) FROM accounts").fetchone()[0],2)
 
@@ -229,7 +249,7 @@ class CharacterSlotsTCPTests(unittest.TestCase):
         self.assertEqual([(r.record_id,r.name_bytes) for r in editing],[(2,b'AliceTwo')])
         resumed.send(encode_request(2,editing[0].optional_six))
         self.assertEqual(len(decode_character_list(resumed.until(b'\x10'))),2)
-        self.assertEqual(self.enter_slot(resumed,2,b'AliceTwo').credits,3000)
+        self.assertEqual(self.enter_slot(resumed,2,b'AliceTwo').credits,NEW_CHARACTER_CREDITS)
         self.assertEqual(WalletStore(self.path).ensure('alice').credits,10000)
 
     def test_retained_shared_battle_forbids_other_slot_and_reconnects_exact_owner(self):

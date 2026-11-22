@@ -3,13 +3,13 @@ from contextlib import closing
 from dataclasses import replace
 import sqlite3
 import struct
-from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
 from test_durability import gear, request
 import test_warehouse_resources as fixture
+from tio.battle_loot import BattleLoot
 from test_warehouse_resources import ROOT, item
 from tio.db_transaction import transaction
 from tio.durability import KITS
@@ -114,7 +114,8 @@ class RepairKitStackingTests(unittest.TestCase):
     def test_battle_repair_splits_stack_using_the_match_id_allocator(self):
         from test_durability import DurabilityTests
         field, combat = DurabilityTests().scene()
-        field.loot = SimpleNamespace(next_id=0x60000005)
+        field.loot = BattleLoot(combat, ())
+        field.loot.next_id = 0x60000005
         stacked = replace(kit(101, count=2), unknown_words=(600, 600, 600))
         combat.inventories[1] = encode_item_list(1, (gear(), stacked))
         combat.repair_selections[7] = (1, 101)
@@ -166,7 +167,8 @@ class RepairKitStackingTests(unittest.TestCase):
     def persisted_battle(self, occupied=INVENTORY_SLOTS):
         from test_durability import DurabilityTests
         field, combat = DurabilityTests().scene()
-        field.loot = SimpleNamespace(next_id=0x60000005)
+        field.loot = BattleLoot(combat, ())
+        field.loot.next_id = 0x60000005
         fillers = tuple(item(1000 + i, 317) for i in range(occupied - 2))
         inventory = encode_item_list(1, (gear(), kit(101, count=2), *fillers))
         combat.inventories[1] = inventory

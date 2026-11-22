@@ -920,7 +920,7 @@
   "Сержант": "Sergeant",
   "Сертификат игрового сервера не прошёл проверку Windows. Защищённое соединение закрыто. Проверьте дату компьютера и повторите запуск.": "The game server certificate did not pass Windows verification. The secure connection is closed. Check the computer date and try again.",
   "Серьезная закалка": "Seriously hardened",
-  "Сетевой модуль игры не загрузился за 30 секунд.": "The game's network module did not load in 30 seconds.",
+  "Сетевой модуль игры не загрузился за {0} секунд.": "The game's network module did not load in {0} seconds.",
   "Системный API отсутствует: ": "System API missing: ",
   "Склад доступен только в городе": "Warehouse only available in the city",
   "Ремкомплект израсходован": "Repair kit used up",

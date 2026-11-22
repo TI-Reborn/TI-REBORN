@@ -54,6 +54,38 @@ class EnhancementTests(unittest.TestCase):
                 for account, count in (('alice', alice_count), ('bob', 3))))
         return warehouse
 
+    def test_le_roll_boundary_preserves_item_and_spends_one_kit(self):
+        for template in (301, 243, 252):
+            target = replace(item(1001, template, 10), unknown_words=(151, 500, 950))
+            kit = item(1002, 129, count=2)
+            for roll, outcome in ((49, 'success'), (50, 'preserved')):
+                with self.subTest(template=template, roll=roll):
+                    self.seed(target, kit)
+                    result = EnhancementStore(self.path, randbelow=lambda n: roll).handle('alice', request())
+                    saved, remaining = decode_item_list(self.saved())[1]
+                    self.assertEqual((result.outcome, result.chance, remaining.count), (outcome, 50, 1))
+                    self.assertEqual(result.level, 11 if roll == 49 else 10)
+                    if roll == 50:
+                        self.assertEqual(saved, target)
+                        self.assertEqual(result.replies[-1], b'\xf0\x9d'+bytes(7))
+
+    def test_le_exclusions_reject_without_consuming_kit(self):
+        for template, level in ((314, 0), (315, 0), (316, 0), (301, 25), (301, 27)):
+            self.seed(item(1001, template, level), item(1002, 129))
+            before = self.saved()
+            with self.assertRaises(ValueError):
+                self.store.handle('alice', request())
+            self.assertEqual(self.saved(), before)
+
+    def test_le_respects_safe_levels_and_requires_explicit_selection(self):
+        self.seed(item(1001, 301, 1), item(1002, 129), item(1003, 30))
+        self.store.handle('alice', request(kit=None))
+        self.assertEqual(decode_item_list(self.saved())[1][1].template_id, 129)
+        self.seed(item(1001, 301, 1), item(1002, 129))
+        def fail(n): raise AssertionError('Safe attempt must not roll')
+        result = EnhancementStore(self.path, randbelow=fail).handle('alice', request())
+        self.assertEqual((result.outcome, result.chance, result.level), ('success', 100, 2))
+
     def test_menu_upgrade_consumes_personal_stock_and_refreshes_client(self):
         self.seed(item(1001, 301))
         warehouse = self.seed_stock(2)

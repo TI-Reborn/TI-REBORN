@@ -1,3 +1,7 @@
+## Исправления и проверка
+
+- [x] **Почта — исправлена отправка кредитов в лаунчере `0.1.64`.** Опубликовано 22.11.2026 в отсутствие активных боёв. На двух игровых клиентах проверены переводы по 200 кредитов отдельно и с 24 патронами, комиссии 110 и 135, итоговые балансы 2355 и 3400. После публикации сервер автоматически перезапустился при уборке первой тестовой сессии. Оба перевода проверены после восстановления службы. [Проверка публикации](work/mail-credits-20261122/launcher-publication/verify.json), [проверка переводов](work/mail-credits-20261122/states-fixed.jsonl).
+
 > GROUND LOOT DEPLOYED 2026-09-28: empty-cell40, shared backpacks44/45, temporary death drops and whole drill payload. Hosted two-account pickup/relogin PASS; original rows in35 tables preserved. Backup /root/tio-before-ground-loot-8_gsw320.650 full tests plus new mine lifecycle test PASS, native6+8+4 PASS. Live graphical validation pending. See GROUND_LOOT.md.
 
 > Обновление 2026-09-28: наземные рюкзаки, выбрасывание во всех боевых сценах,

@@ -27,17 +27,17 @@ class CrystalQuoteHistoryTests(unittest.TestCase):
         self.assertEqual(history,((rate,rate,rate,rate),))
         self.assertEqual(self.market.quote_history(),(rate,history))
 
-    def test_sale_and_ten_minute_rise_survive_restart_with_exact_fixed_point_prices(self):
-        rate,history=self.market.quote_history()
-        self.market.sell('seller',1000)
-        after=self.market.quote_history()
-        self.assertEqual(after[0],(POLICY['market_initial_rate_units']-1000)/SCALE)
-        self.assertEqual(len(after[1]),2)
-        self.now+=600
+    def test_first_sale_after_cutover_uses_fixed_price_and_retains_old_quote(self):
+        with closing(sqlite3.connect(self.path)) as db,db:
+            db.execute('UPDATE crystal_market SET rate=?, updated=?', (82*SCALE, self.now))
+            db.execute('INSERT INTO crystal_quote_history(observed,rate) VALUES (?,?)', (self.now,82*SCALE))
+        self.assertEqual(self.market.sell('seller',1000),50_000)
+        self.now+=30*86400
         restored=CrystalMarket(self.path,clock=lambda:self.now)
-        current,values=restored.quote_history()
-        self.assertEqual(current,(POLICY['market_initial_rate_units']-1000+POLICY['market_rise_units'])/SCALE)
-        self.assertEqual(values[:2],after[1]);self.assertEqual(values[-1],(current,)*4)
+        self.assertEqual(restored.quote_history(),(50,((82,)*4,(50,)*4)))
+        with closing(sqlite3.connect(self.path)) as db:
+            self.assertEqual(db.execute('SELECT amount,credits,rate FROM crystal_sales').fetchall(),
+                             [(1000,50_000,50*SCALE)])
 
     def test_rejected_sale_cannot_write_a_price_or_history_sample(self):
         before=self.market.quote_history()
@@ -45,9 +45,10 @@ class CrystalQuoteHistoryTests(unittest.TestCase):
         self.assertEqual(self.market.quote_history(),before)
 
     def test_bounded_history_and_native_quote_are_based_on_same_transaction(self):
+        with closing(sqlite3.connect(self.path)) as db,db:
+            db.executemany('INSERT INTO crystal_quote_history(observed,rate) VALUES (?,?)',
+                           [(n,n*SCALE) for n in (80,81,82,83)])
         with patch.dict(POLICY,market_history_points=3):
-            for _ in range(5):
-                self.market.quote_history();self.now+=600
             rate,values=self.market.quote_history()
         self.assertEqual(len(values),3)
         service=object.__new__(MiningService);service.market=self.market

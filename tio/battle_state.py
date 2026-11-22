@@ -4,6 +4,7 @@ Costs/passability come from server scene preparation, not client requests.
 Original terrain and action-point balance is not yet recovered.
 """
 from dataclasses import dataclass, replace
+from .combat_distance import rounded_radius_squared
 from .protocol.battle_move import BattleMove, encode_battle_move
 
 
@@ -58,6 +59,9 @@ class BattleField:
 
     def actor(self, actor_id):
         return self._actors[actor_id]
+
+    def weapon_ap_cost(self, nominal_cost: int) -> int:
+        return 0 if getattr(self, 'practice', None) is not None else nominal_cost
 
     def actor_ids(self, owner_id):
         return tuple(sorted(a.actor_id for a in self._actors.values() if a.owner_id == owner_id))
@@ -244,6 +248,7 @@ class BattleField:
         hidden_enemies = tuple(a for a in self._actors.values()
                           if a.health != 0 and not self.allied(a.owner_id, owner_id)
                           and a.actor_id not in known)
+        sight_limit = rounded_radius_squared(actor.sight_radius)
         x,y = actor.x,actor.y
         for index, (nx, ny) in enumerate(path):
             blocked = (nx,ny) in occupied
@@ -255,7 +260,7 @@ class BattleField:
                 break
             # Other observers stay put. Only the moving actor can reveal a
             # previously hidden enemy; use the same radius and ray as the view.
-            if any((nx-a.x)**2+(ny-a.y)**2 <= actor.sight_radius**2 and
+            if any((nx-a.x)**2+(ny-a.y)**2 <= sight_limit and
                    field_sight(self, (nx, ny), (a.x, a.y)) for a in hidden_enemies):
                 path = path[:index+1]
                 break

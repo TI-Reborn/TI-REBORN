@@ -430,6 +430,8 @@ class ContractStore:
                 return record
             if record['state'] != expected_state or new_state not in TRANSITIONS.get(expected_state, ()):
                 raise ValueError('Contract state changed or transition is invalid')
+            active_owners = {row[0] for row in db.execute(
+                'SELECT owner FROM pve_contract_locks WHERE instance_id=?', (instance_id,))}
             if new_state == 'completed' and outcome not in (None, 'victory'):
                 raise ValueError('Completed contracts require victory')
             if new_state == 'failed' and outcome not in (None, 'defeat', 'aborted'):
@@ -449,12 +451,25 @@ class ContractStore:
                 if not record['match_id'] or record['battle_roster'] is None:
                     raise ValueError('A completed contract needs its frozen battle')
                 for member, reward in zip(record['roster'], record['rewards']):
+                    if member['owner'] not in active_owners:
+                        continue
                     award = dict(instance_id=instance_id, match_id=record['match_id'], template_id=record['template_id'],
                                  template_version=record['template_version'], seed=record['seed'], selected=member['selected'],
                                  credits=reward['credits'], experience=reward['experience'], outcome='victory')
                     db.execute('INSERT INTO pve_contract_awards VALUES (?,?,?,?,0,NULL)',
                                (instance_id, member['owner'], member['login'], _dump(award)))
             return self._record(db, instance_id)
+
+    def withdraw(self, instance_id: str, owner: str, match_id: str) -> None:
+        """Release one frozen participant without changing the accepted quote."""
+        with transaction(self.path) as db:
+            record = self._record(db, instance_id)
+            if record is None or record['state'] != 'active' or record['match_id'] != match_id:
+                raise ValueError('Контракт не участвует в этом бою')
+            if not any(member['owner'] == owner for member in record['roster']):
+                raise ValueError('Игрок не принадлежит составу контракта')
+            db.execute('DELETE FROM pve_contract_locks WHERE instance_id=? AND owner=?',
+                       (instance_id, owner))
 
     def start(self, instance_id, party_snapshot, actor_owner, match_id):
         _text(instance_id, 'contract instance')

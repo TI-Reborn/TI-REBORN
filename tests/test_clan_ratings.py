@@ -37,6 +37,26 @@ class ClanRatingsTests(unittest.TestCase):
         self.assertEqual([r['id'] for r in standings(self.path,level=1)], [self.fixture.ids[a] for a in ('alice','bob')])
         self.assertEqual(standings(self.path,offset=1,limit=2),records[1:3]);self.assertEqual(before,self.fixture.rows())
 
+    def test_trueskill_averages_current_members_and_excludes_qa(self):
+        from tio.ranked import schema
+        with closing(connect(self.path)) as db,db:
+            schema(db)
+            db.executemany('INSERT INTO ranked_players VALUES (?,25,8,?,3,1,0,0,1,0,1)',
+                           [('alice',100),('member',201),('bob',125),('carol',400)])
+            db.execute('CREATE TABLE rating_exclusions(account TEXT PRIMARY KEY)')
+            db.execute("INSERT INTO rating_exclusions VALUES ('carol')")
+            db.execute("INSERT INTO clan_members(account,clan_id,permissions) VALUES ('qt12345678a',?,0)",
+                       (self.fixture.ids['alice'],))
+        before=self.fixture.rows()
+        rows=standings(self.path,kind='clan_trueskill')
+        self.assertEqual([(r['name'],r['rating'],r['place']) for r in rows],
+                         [(b'Alpha',150,1),(b'Beta',125,2),(b'Delta',0,3)])
+        self.assertEqual(standings(self.path,kind='clan_trueskill',offset=1,limit=1),rows[1:2])
+        self.assertEqual(before,self.fixture.rows())
+        self.fixture.clans.remove('member')
+        self.assertEqual([(r['name'],r['rating']) for r in standings(self.path,kind='clan_trueskill')],
+                         [(b'Beta',125),(b'Alpha',100),(b'Delta',0)])
+
     def test_spending_changes_rating_without_duplicate_influence_and_pending_is_absent(self):
         self.fixture.create();self.fixture.join()
         before=self.fixture.rows();rows=standings(self.path,kind='alliances')

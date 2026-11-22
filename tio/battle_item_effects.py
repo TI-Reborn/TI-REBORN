@@ -16,7 +16,7 @@ from pathlib import Path
 import time
 
 from .recon_geometry import contains
-from .combat_distance import combat_distance
+from .combat_distance import combat_distance, rounded_radius_squared
 from .protocol.action_points import encode_action_points
 from .protocol.battle_attack import AttackResult, AttackHit, encode_attack_result
 from .protocol.battle_item_status import encode_sight
@@ -73,15 +73,18 @@ def _atomic(combat, callback, *, views=()):
     paths = {key(path): path for path, _ in combat.persistence.values()}
     if len(paths) > 1:
         raise ValueError('An item action must use one shared authoritative database')
+    if getattr(combat.field, 'practice', None) is not None:
+        combat.__dict__.setdefault('deferred_weapon_breaks', set())
     names = ('inventories', 'proficiencies', 'statistics', 'hazard_damage', 'rank_kills',
-             'premium_wear_remainders', 'sight_kill_victims', 'item_effects')
+             'premium_wear_remainders', 'sight_kill_victims', 'item_effects', 'repair_selections',
+             'deferred_weapon_breaks')
     saved = {name: deepcopy(getattr(combat, name)) for name in names if hasattr(combat, name)}
     actors = dict(combat.field._actors)
     experience = deepcopy(vars(combat.experience))
     achievements = deepcopy(vars(combat.achievements))
     loot = getattr(combat.field, 'loot', None)
     loot_state = None if loot is None else {name: deepcopy(getattr(loot, name))
-                                          for name in ('boxes', 'ground')}
+                                          for name in ('boxes', 'ground', 'next_id')}
     private_view = getattr(combat.field, 'result_view', None)
     all_views = {id(view): view for view in (*views, private_view) if view is not None}
     view_states = [(view, {name: deepcopy(getattr(view, name))
@@ -92,6 +95,19 @@ def _atomic(combat, callback, *, views=()):
     try:
         with transaction(next(iter(paths.values()))) if paths else nullcontext():
             replies=callback()
+            from .implant_battle import fields as implant_fields, refresh as refresh_implants
+            from .implants import powered
+            changed=[]
+            for identity, previous in saved['inventories'].items():
+                profile=implant_fields(combat,identity)
+                current=combat.inventories.get(identity)
+                if not profile or current is None or current==previous:continue
+                before=tuple(i.template_id for i in powered(profile,previous))
+                after=tuple(i.template_id for i in powered(profile,current))
+                if before!=after:changed.append(identity)
+            if changed:
+                for target in tuple(all_views.values()) or (None,):
+                    replies=(*replies,*refresh_implants(combat,changed,view=target))
             from .armor_display import encode_armor
             armor_updates=tuple(encode_armor(identity,combat.displayed_armor(identity))
                 for identity,previous in armor_before.items()
@@ -201,12 +217,14 @@ def refresh_sight(combat):
     """
     state = initialize(combat); replies = []
     for identity, actor in sorted(combat.field._actors.items()):
-        delta = actor.sight_radius - state['last_sight'][identity]
+        previous = state['last_sight'][identity]
+        delta = actor.sight_radius - previous
         if delta:
             state['base_sight'][identity] = max(0, min(255, state['base_sight'][identity] + delta))
         sight = effective_sight(combat, identity)
         if actor.sight_radius != sight:
             combat.field._actors[identity] = replace(actor, sight_radius=sight)
+        if actor.sight_radius != sight or previous != sight:
             replies.append(encode_sight(identity, sight))
         state['last_sight'][identity] = sight
     return tuple(replies)
@@ -242,9 +260,9 @@ def can_observe(combat, observer, target, *, field=None):
     field = combat.field if field is None else field
     end = (target.x, target.y); start = (observer.x, observer.y)
     state = initialize(combat); distance = (observer.x-target.x)**2 + (observer.y-target.y)**2
-    ordinary = distance <= observer.sight_radius**2
+    ordinary = distance <= rounded_radius_squared(observer.sight_radius)
     illuminated = (not ordinary and is_dark(combat)
-        and distance <= normal_sight(combat, observer.actor_id)**2
+        and distance <= rounded_radius_squared(normal_sight(combat, observer.actor_id))
         and any(a['kind'] == 'flare' and (target.x-a['center'][0])**2 + (target.y-a['center'][1])**2 <= a['radius']**2
                 for a in state['areas'].values()))
     recons = [recon for recon in state['recon'].values() if contains(recon, target.x, target.y)]
@@ -301,7 +319,8 @@ def _attack(combat, owner, request, template, view):
                     and i.client_slot == (4 if template == 334 else 16))
     _, items, flag = _selected(combat, actor, selected.instance_id)
     if selected.unknown_words[0] == 0: raise ValueError('Broken item cannot be used')
-    if actor.action_points < row['ap']: raise ValueError('Insufficient action points')
+    spent_ap = row['ap'] if template == 334 else field.weapon_ap_cost(row['ap'])
+    if actor.action_points < spent_ap: raise ValueError('Insufficient action points')
     if template == 334:
         if any(i.equipped and i.client_slot == 16 for i in items):
             raise ValueError('Remove the primary weapon before using a suicide jacket')
@@ -317,7 +336,7 @@ def _attack(combat, owner, request, template, view):
     accuracy = combat.catalog.accuracy(template, distance, accuracy_bonus) if template in combat.catalog.weapons else max(0, min(95, row['accuracy'] + accuracy_bonus))
     impact = _scatter(combat, (request.x, request.y), {**row, 'accuracy': accuracy})
     inventory = _consume(actor.actor_id, selected, items, flag)
-    replies = _pay(combat, actor, row['ap'], inventory, trained=_train_throwing(combat, actor, row['ap']))
+    replies = _pay(combat, actor, spent_ap, inventory, trained=_train_proficiency(combat, actor, row['ap'], 'Throwing'))
     state = combat.item_effects; hits = []
     if row['kind'] == 'flash':
         for victim in field._actors.values():
@@ -336,14 +355,14 @@ def _attack(combat, owner, request, template, view):
     return _equipment_refresh(combat, actor.actor_id, view, packets)
 
 
-def _train_throwing(combat, actor, ap):
+def _train_proficiency(combat, actor, ap, category):
     profile = combat.proficiencies.get(actor.actor_id)
     if profile is None or getattr(combat, 'wager', False): return None
     from .premium import current
     kind = current(*combat.persistence[actor.actor_id])[0] if actor.actor_id in combat.persistence else 0
     multiplier = 1.5 if kind == 1 else 1
     return combat.proficiency_rules.train(profile, True,
-        'Throwing', ap, hit=True, multiplier=multiplier)
+        category, ap, hit=True, multiplier=multiplier)
 
 
 def _equipment_refresh(combat, identity, view, packets):
@@ -367,7 +386,7 @@ def _suicide(combat, actor, request, selected, items, flag, row, view):
     from .battle_hazards import initialize as hazards_initialize, apply_damage
     hazards_initialize(combat)
     inventory = _consume(actor.actor_id, selected, items, flag)
-    replies = _pay(combat, actor, row['ap'], inventory, trained=_train_throwing(combat, actor, row['ap']))
+    replies = _pay(combat, actor, row['ap'], inventory, trained=_train_proficiency(combat, actor, row['ap'], 'Throwing'))
     origin = (actor.x, actor.y)
     victims = [a for a in combat.field._actors.values() if a.health
         and (a.x-actor.x)**2 + (a.y-actor.y)**2 <= row['radius']**2
@@ -489,15 +508,16 @@ def begin_turn(combat, owner, actor_ids):
             selected, items, flag = _selected(combat, actor, selected.instance_id)
             replies.extend(_pay(combat, actor, row['ap'], _worn_out(identity, selected, items, flag, row['wear'])))
             active['generation'] = generation
-        return (*replies, *refresh_sight(combat))
+        from .implant_battle import begin_turn as implant_turn
+        return (*replies, *implant_turn(combat,actor_ids), *refresh_sight(combat))
     return _atomic(combat, run)
 
 
-def end_turn(combat, owner, actor_ids):
-    return _atomic(combat,lambda:_end_turn(combat,owner,actor_ids))
+def end_turn(combat, owner, actor_ids, *, seconds=0):
+    return _atomic(combat,lambda:_end_turn(combat,owner,actor_ids,seconds))
 
 
-def _end_turn(combat, owner, actor_ids):
+def _end_turn(combat, owner, actor_ids, seconds):
     """Run for ordinary end, timeout and skipped/dead turns before next owner."""
     state = initialize(combat); identities = set(actor_ids)
     for identity in identities:
@@ -528,7 +548,8 @@ def _end_turn(combat, owner, actor_ids):
             for name in ('flash', 'vision', 'night_vision'): state[name].pop(identity, None)
     for identity in identities: state['recon_selection'].pop(identity, None)
     from .combat_completion import end_turn as end_health_capacity
-    return (*end_health_capacity(combat, owner, identities), *refresh_sight(combat))
+    from .implant_battle import end_turn as end_implants
+    return (*end_health_capacity(combat, owner, identities), *end_implants(combat,owner,identities,seconds), *refresh_sight(combat))
 
 
 def freeze_experience(combat, before, *, now=None):
@@ -552,7 +573,8 @@ def freeze_rank_kills(combat, kills, *, now=None):
     for killer, victim in kills:
         if victim in state['rank_bonus'] or killer not in combat.persistence: continue
         bonus = 0
-        if not getattr(combat, 'wager', False) and combat.resources.get(victim) not in (100, 103):
+        from .mobs import MOB_RESOURCES
+        if not getattr(combat, 'wager', False) and combat.resources.get(victim) not in MOB_RESOURCES:
             path, account = combat.persistence[killer]
             bonus = active(path, account, combat.storage_ids.get(killer, killer), now).get('advisor', {}).get('value', 0)
         state['rank_bonus'][victim] = (killer, bonus)

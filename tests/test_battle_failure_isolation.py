@@ -214,6 +214,47 @@ class SessionFailureTests(unittest.TestCase):
             bob=case.handoff(case.begin('bob'));case.enter(bob,'Bob');case.ping(bob)
             self.assertTrue(case.thread.is_alive());self.assertFalse(case.errors)
 
+    def test_territory_sync_retries_after_external_writer_without_dropping_two_accounts(self):
+        import threading
+        from tio import territories
+
+        case = self.tcp_case()
+        case.start()
+        alice = case.handoff(case.begin('alice'))
+        case.enter(alice, 'Alice')
+        bob = case.handoff(case.begin('bob'))
+        case.enter(bob, 'Bob')
+
+        store = case.server.multi.team_arena.assault_store
+        sync = store.sync
+        blocked = threading.Event()
+        resumed = threading.Event()
+
+        def observe_sync(*args, **kwargs):
+            try:
+                result = sync(*args, **kwargs)
+            except sqlite3.OperationalError:
+                blocked.set()
+                raise
+            if blocked.is_set():
+                resumed.set()
+            return result
+
+        def short_connection(path, **kwargs):
+            return sqlite3.connect(path, timeout=kwargs.get('timeout', .02))
+
+        with patch.object(store, 'sync', side_effect=observe_sync), \
+                patch.object(territories, 'connect', side_effect=short_connection):
+            with closing(sqlite3.connect(case.config.database)) as writer:
+                writer.execute('BEGIN IMMEDIATE')
+                self.assertTrue(blocked.wait(4), 'The territory tick never encountered the writer')
+                case.ping(alice)
+                case.ping(bob)
+                self.assertEqual(case.errors, [])
+            self.assertTrue(resumed.wait(4), 'The territory tick did not retry')
+            case.ping(alice)
+            case.ping(bob)
+
     def test_startup_replays_pending_report_before_login(self):
         from tio.wallets import WalletStore
         case=self.tcp_case();WalletStore(case.config.database).ensure('alice')

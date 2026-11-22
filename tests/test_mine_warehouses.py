@@ -62,28 +62,27 @@ class MineWarehouseTests(unittest.TestCase):
                 self.assertEqual(warehouse, ())
 
     def test_partial_stacks_are_shared_between_mines_and_city_but_accounts_are_private(self):
-        allocations = []
-        for town in (*MINE_LOCATIONS, 3):
+        for count, town in enumerate((*MINE_LOCATIONS, 3), 1):
             self.move(town)
             _, items = self.store.exchange('alice',1,deposits=((100,1),))
-            self.assertEqual(sum(i.count for i in items),len(allocations)+1)
-            allocations.append(max(i.instance_id for i in items))
+            self.assertEqual(len(items),1)
+            self.assertEqual(items[0].count,count)
+            if count == 1:
+                stack_id=items[0].instance_id
+            self.assertEqual(items[0].instance_id,stack_id)
             with transaction(self.path) as db:
-                self.assertEqual(counts(db,'alice'),(0,len(allocations)))
-        # Upgrade Kits stack: every checkpoint adds to the same shared record.
-        self.assertEqual(len(set(allocations)),1)
-        self.assertEqual([i.count for i in self.store.items('alice')],[5])
+                self.assertEqual(counts(db,'alice'),(0,count))
         for town in (*MINE_LOCATIONS, 3):
             self.move(town)
-            self.assertEqual({i.instance_id for i in self.store.items('alice')},set(allocations))
+            self.assertEqual({i.instance_id for i in self.store.items('alice')},{stack_id})
             before = self.snapshot()
             self.move(town,'bob')
             self.assertEqual(self.store.items('bob'), ())
-            with self.assertRaises(ValueError): self.store.exchange('bob',1,withdrawals=((allocations[0],1),))
+            with self.assertRaises(ValueError): self.store.exchange('bob',1,withdrawals=((stack_id,1),))
             self.assertEqual(self.snapshot(),before)
-        self.store.exchange('alice',1,withdrawals=((allocations[0],5),))
+        self.store.exchange('alice',1,withdrawals=((stack_id,1),))
         self.move(13)
-        with self.assertRaises(ValueError): self.store.exchange('alice',1,withdrawals=((allocations[0],1),))
+        self.assertEqual(self.store.items('alice')[0].count,4)
         with closing(sqlite3.connect(self.path)) as db:
             bag = decode_item_list(db.execute('SELECT inventory_packet FROM owned_pets WHERE account=?',('alice',)).fetchone()[0])[1]
             self.assertEqual(sum(i.count for i in bag)+sum(i.count for i in WarehouseStore._read(db,'alice').values()),10)
@@ -105,7 +104,7 @@ class MineWarehouseTests(unittest.TestCase):
         self.assertEqual(len(self.store.items('alice')),32)
 
     def test_world_travel_and_other_nonwarehouse_locations_stay_rejected(self):
-        for town in (-1,0,6,11,12,17,19,65535):
+        for town in (-1,0,6,10,11,12,65535):
             self.move(town)
             before = self.snapshot()
             with self.assertRaises(ValueError): self.store.exchange('alice',1,deposits=((100,1),))

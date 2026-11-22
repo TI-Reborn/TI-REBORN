@@ -1,7 +1,7 @@
 """Original SILVER B7 mail ABI; selection/draft ids stay server authoritative.
 
-The UI builders use UTF16 NUL strings; generated TANet body serializers use
-u16 byte-length UTF16 strings. These distinct encodings are intentional.
+The UI builders use NUL-terminated UTF-16LE. Generated TANet serializers
+use UTF-8 prefixed with a u16 byte length.
 """
 from dataclasses import dataclass
 import struct
@@ -25,8 +25,8 @@ def _read_cstring(r):
 
 def _wide(w,value,*,length=False):
     if not isinstance(value,str) or '\0' in value:raise PacketError('Invalid mail text')
-    try:raw=value.encode('utf-16le')
-    except UnicodeError as error:raise PacketError('Invalid UTF16 mail text') from error
+    try:raw=value.encode('utf-8' if length else 'utf-16le')
+    except UnicodeError as error:raise PacketError('Invalid mail text encoding') from error
     if len(raw)>16000:raise PacketError('Mail text exceeds wire policy')
     if length:w.u16(len(raw));w.data.extend(raw)
     else:w.data.extend(raw+bytes(2))
@@ -35,15 +35,15 @@ def _wide(w,value,*,length=False):
 def _read_wide(r,*,length=False):
     if length:
         size=r.u16()
-        if size%2 or size>16000:raise PacketError('Invalid UTF16 byte length')
+        if size>16000:raise PacketError('Invalid UTF-8 byte length')
         raw=r.read(size)
     else:
         raw=bytearray()
         while (word:=r.read(2))!=bytes(2):
             raw.extend(word)
             if len(raw)>16000:raise PacketError('Mail text exceeds wire policy')
-    try:value=bytes(raw).decode('utf-16le')
-    except UnicodeError as error:raise PacketError('Invalid UTF16 mail text') from error
+    try:value=bytes(raw).decode('utf-8' if length else 'utf-16le')
+    except UnicodeError as error:raise PacketError('Invalid mail text encoding') from error
     if '\0' in value:raise PacketError('Embedded NUL in mail text')
     return value
 
@@ -179,7 +179,7 @@ class MailSummary:
     sender:str
     subject:str
     created:int
-    attachments:int=0
+    lifetime_days:int=0
     unread:bool=True
     kind:int=0
 
@@ -188,7 +188,7 @@ def encode_list(rows,*,pages=1,page=1):
     w=Writer().u8(0xb7).u8(0x79).u16(pages).u16(page).u16(len(rows))
     for row in rows:
         w.u32(row.identity);_wide(w,row.sender);_wide(w,row.subject)
-        w.u32(row.created).u16(row.attachments).u8(int(row.unread)).u8(row.kind)
+        w.u32(row.created).u16(row.lifetime_days).u8(int(row.unread)).u8(row.kind)
     return _packet(w)
 
 

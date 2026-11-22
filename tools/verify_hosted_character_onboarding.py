@@ -22,7 +22,7 @@ from tio.protocol.character_select import decode_character_list
 from tio.protocol.pet_info import decode_pet_info
 from tio.appearance import appearance_bytes,encode_request
 from tio.protocol.asset_count import decode_asset_count
-from tio.wallets import STARTING_CREDITS
+from tio.wallets import NEW_CHARACTER_CREDITS
 
 
 def run(host):
@@ -72,7 +72,7 @@ def run(host):
             assert peer.receive()[0]==0x10
             initial=bytes((sex,5 if sex==1 else 12,1 if sex==1 else 0,3,0,0))
             peer.send(encode_request(1,initial))
-            assert decode_asset_count(peer.until(bytes.fromhex('c839'))).credits==STARTING_CREDITS
+            assert decode_asset_count(peer.until(bytes.fromhex('c839'))).credits==NEW_CHARACTER_CREDITS
             assert peer.until(b'\x10')[0]==0x10
             peer.send(bytes.fromhex('1701000000'));assert peer.receive()[0]==0x18
             peer.send(b'\x19')
@@ -84,7 +84,7 @@ def run(host):
         # Reproduce the native submitter's uninitialized absent body/legs bytes.
         peers[1].send(encode_request(1,look[:4]+b'\xab\xab'))
         assert appearance_bytes(decode_pet_info(peers[1].until(b'\x66'),human_equipment=True))==look
-        assert decode_asset_count(peers[1].until(bytes.fromhex('c839'))).credits==STARTING_CREDITS-300
+        assert decode_asset_count(peers[1].until(bytes.fromhex('c839'))).credits==NEW_CHARACTER_CREDITS-300
         result['checks'].append('initial selected components free; later city color change debits 300 credits')
         case.ping(peers[1]);case.ping(peers[0])
         peers[1].sock.close();time.sleep(1)

@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "tio-emulator"
 version = "0.1.0"
 description = "Evidence-led Total Influence application protocol research"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = []
 
 [project.optional-dependencies]

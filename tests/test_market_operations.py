@@ -46,15 +46,15 @@ class AuctionOperationTests(unittest.TestCase):
         lot=self.f.create(count=2)
         self.call('buyer',Writer().u8(0xc8).u8(13).u32(lot).u32(1000).u32(0).build())
         with patch.object(MARKET_OPERATIONS,'execute',wraps=MARKET_OPERATIONS.execute) as run:
-            self.call('other',Writer().u8(0xc8).u8(15).u32(lot).build())
+            self.call('other',Writer().u8(0xc8).u8(14).u32(lot).build())
             self.assertEqual(run.call_args.args[0].name,'auction_buyout')
         self.assertEqual([self.f.wallets.ensure(a).credits for a in ('seller','buyer','other')],[13000,10000,7000])
         before=snapshot(self.path)
-        with self.assertRaises(ValueError):self.call('buyer',Writer().u8(0xc8).u8(15).u32(lot).build())
+        with self.assertRaises(ValueError):self.call('buyer',Writer().u8(0xc8).u8(14).u32(lot).build())
         self.assertEqual(snapshot(self.path),before)
 
     def test_competing_adapters_cannot_buy_same_physical_lot(self):
-        lot=self.f.create(count=2);packet=Writer().u8(0xc8).u8(15).u32(lot).build()
+        lot=self.f.create(count=2);packet=Writer().u8(0xc8).u8(14).u32(lot).build()
         def buy(who):
             try:self.sessions[who].handle(packet);return True
             except ValueError:return False
@@ -76,11 +76,11 @@ class AuctionOperationTests(unittest.TestCase):
         with transaction(self.path) as db:
             db.execute('CREATE TABLE outer_marker(id INTEGER)');db.execute('INSERT INTO outer_marker VALUES (1)')
             with patch.object(self.sessions['other'],'balances',side_effect=RuntimeError('projection')):
-                with self.assertRaises(RuntimeError):self.call('other',Writer().u8(0xc8).u8(15).u32(lot).build())
+                with self.assertRaises(RuntimeError):self.call('other',Writer().u8(0xc8).u8(14).u32(lot).build())
         after=snapshot(self.path);self.assertEqual(after.pop('outer_marker'),['(1,)']);self.assertEqual(after,before)
 
     def test_cancel_replay_returns_goods_once_without_refunding_pledge(self):
-        lot=self.f.create(count=2);packet=Writer().u8(0xc8).u8(14).u32(lot).build()
+        lot=self.f.create(count=2);packet=Writer().u8(0xc8).u8(15).u32(lot).build()
         self.call('seller',packet);before=snapshot(self.path);self.call('seller',packet)
         self.assertEqual(before,snapshot(self.path));self.assertEqual(self.f.wallets.ensure('seller').credits,9950)
 
@@ -88,7 +88,7 @@ class AuctionOperationTests(unittest.TestCase):
         self.sessions['seller'].gate=lambda:False;before=snapshot(self.path)
         with self.assertRaises(ValueError):self.call('seller',auction_fixture.create_packet())
         self.assertEqual(before,snapshot(self.path));lot=self.f.create()
-        with self.assertRaises(ValueError):self.call('buyer',Writer().u8(0xc8).u8(14).u32(lot).build())
+        with self.assertRaises(ValueError):self.call('buyer',Writer().u8(0xc8).u8(15).u32(lot).build())
         self.assertEqual(self.store.get(lot)[0]['state'],'active')
 
     def test_auction_store_joins_without_changing_outer_row_factory(self):
@@ -143,10 +143,12 @@ class PrivateMarketOperationTests(unittest.TestCase):
     def test_private_projection_failure_rolls_back_both_wallets_goods_receipt_and_quote(self):
         ident,revision,item=self.f.listing();self.select('Bobby',ident)
         session=self.sessions['Bobby'];before=snapshot(self.path)
+        balance = self.f.balance('Bobby')
         with patch.object(session,'own',side_effect=RuntimeError('projection')):
             with self.assertRaises(RuntimeError):session.handle(self.buy_packet(ident))
         self.assertEqual(before,snapshot(self.path));self.assertEqual(session.quotes[ident],revision)
-        session.handle(self.buy_packet(ident));self.assertEqual(self.f.balance('Bobby'),2993)
+        session.handle(self.buy_packet(ident))
+        self.assertEqual(self.f.balance('Bobby'), balance - 7)
 
     def test_publish_sales_orders_and_signature_use_shared_registry(self):
         item=self.f.ammo();w=Writer().u8(0xae).u8(8).u8(0).u32(1).u32(item.instance_id).u32(7);put_price(w,100)
@@ -174,20 +176,22 @@ class PrivateMarketOperationTests(unittest.TestCase):
 
     def test_sc_native_duplicate_bid_has_one_fee_and_query_is_not_advanced(self):
         session=self.sessions['Alice'];session.handle_sc(b'\xbd\1\0\0\0')
+        balance = self.f.balance('Alice')
         packet=Writer().u8(0xbd).u8(6).u32(1).build()
         with patch.object(MARKET_OPERATIONS,'execute',wraps=MARKET_OPERATIONS.execute) as run:
             session.handle_sc(packet);self.assertEqual(run.call_args.args[0].name,'sc_bid')
         before=snapshot(self.path);session.handle_sc(packet)
         self.assertEqual(before,snapshot(self.path));self.assertEqual(session.sc_quotes[1],0)
-        self.assertEqual(self.f.balance('Alice'),2995)
+        self.assertEqual(self.f.balance('Alice'), balance - 5)
 
     def test_sc_bot_apply_delete_and_chat_all_use_same_operation(self):
         session=self.sessions['Alice'];session.handle_sc(Writer().u8(0xbd).u8(20).u8(0).u32(1).build())
+        balance = self.f.balance('Alice')
         apply=Writer().u8(0xbd).u8(20).u8(1).u32(1).u32(0).u32(2).u32(0).build()
         session.handle_sc(apply);before=snapshot(self.path);session.handle_sc(apply)
-        self.assertEqual(before,snapshot(self.path));self.assertEqual(self.f.balance('Alice'),2990)
+        self.assertEqual(before,snapshot(self.path));self.assertEqual(self.f.balance('Alice'), balance - 10)
         session.handle_sc(Writer().u8(0xbd).u8(20).u8(2).u32(1).build())
-        self.assertEqual(self.f.balance('Alice'),3000)
+        self.assertEqual(self.f.balance('Alice'), balance)
         with patch.object(MARKET_OPERATIONS,'execute',wraps=MARKET_OPERATIONS.execute) as run:
             session.command('!sc bid 1');self.assertEqual(run.call_args.args[0].name,'sc_bid')
 

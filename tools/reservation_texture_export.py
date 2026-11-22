@@ -2,6 +2,7 @@
 from reservation_texture_assets import *
 from PIL import Image
 from collections import deque
+from tools.reservation_texture_ground import align_ground_base
 
 def islands(image):
     """Find substantial UV islands, excluding JPEG mask speckles/shadows."""
@@ -91,14 +92,7 @@ def export(partial=False):
         generated.append(dict(id=task['id'],path=str(stable),imagegen_source=str(created),mode='built-in image_gen'))
         art=Image.open(stable).convert('RGBA')
         if task['id'].startswith('ground_') and '_base_' in task['id']:
-            canvas=Image.new('RGBA',reference.size)
-            for half in (0,1):
-                crop=art.crop((0,half*art.height//2,art.width,(half+1)*art.height//2))
-                bounds=crop.getchannel('A').point(lambda a:255 if a>=128 else 0).getbbox()
-                if bounds is None:raise ValueError('Empty ground island')
-                sprite=crop.crop(bounds).resize((reference.width,reference.height//2),Image.Resampling.LANCZOS)
-                canvas.paste(sprite,(0,half*reference.height//2))
-            art=canvas
+            art=align_ground_base(art,reference.size)
             registration=dict(registration='two ground rhombi')
         else:
             art,registration=align_uv(art,reference)

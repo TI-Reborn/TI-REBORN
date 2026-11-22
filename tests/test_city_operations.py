@@ -1,8 +1,10 @@
 """Portal actions join real public helpers, scene locks, receipts and sockets."""
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
+from dataclasses import replace
 from datetime import datetime, timezone
 from io import StringIO
+from importlib.util import find_spec
 import json
 import socket
 import sqlite3
@@ -87,6 +89,99 @@ class CityOperationsTests(unittest.TestCase):
         bob=self.ops.status(dict(username='bob',slot=1));self.assertFalse(bob['bases'][0]['canSetTax'])
         text=json.dumps(status);self.assertNotIn('pin_hash',text);self.assertNotIn('changed_accounts',text)
 
+    def test_status_reads_while_another_connection_has_reserved_writer(self):
+        with closing(sqlite3.connect(self.path)) as writer, ThreadPoolExecutor(max_workers=1) as pool:
+            writer.execute('BEGIN IMMEDIATE')
+            try:
+                future = pool.submit(self.ops.status, dict(username='alice', slot=1))
+                self.assertTrue(future.result(timeout=2)['canOperate'])
+            finally:
+                writer.rollback()
+
+    def test_city_projection_releases_arena_lock(self):
+        projecting, resume = threading.Event(), threading.Event()
+        original = self.ops._status
+
+        def project(*args, **kwargs):
+            projecting.set()
+            self.assertTrue(resume.wait(3))
+            return original(*args, **kwargs)
+
+        with patch.object(self.ops, '_status', side_effect=project), ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(self.ops.status, dict(username='alice', slot=1))
+            try:
+                self.assertTrue(projecting.wait(3))
+                lock = self.router.team_arena.lock
+                acquired = lock.acquire(blocking=False)
+                if acquired:
+                    lock.release()
+                self.assertTrue(acquired)
+            finally:
+                resume.set()
+            self.assertTrue(future.result(timeout=3)['canOperate'])
+
+    def test_two_shared_battles_can_move_during_portal_reads(self):
+        from server.ratings_public import RatingsPublic
+        from test_shared_team_arena import SharedTeamTests
+        from tio import rating_completion
+        from tio.protocol.battle_move import BattleMove, encode_move_request
+
+        fixture = SharedTeamTests()
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        self.router.team_arena = fixture.hub
+        for index in range(4):
+            fixture.create(index)
+            fixture.send(index, b'\x2e')
+        for index in range(4):
+            fixture.send(index, b'\x36')
+        fixture.hub.tick()
+        owners = [fixture.hub.identities[session] for session in fixture.sessions]
+        self.assertIsNot(fixture.hub.battles[owners[0]], fixture.hub.battles[owners[2]])
+        city_entered, ratings_entered, resume = threading.Event(), threading.Event(), threading.Event()
+        original = self.ops._status
+        listing = rating_completion.public_listing
+
+        def wait_for_moves(event, method):
+            def paused(*args, **kwargs):
+                event.set()
+                self.assertTrue(resume.wait(5))
+                return method(*args, **kwargs)
+            return paused
+
+        def move(index):
+            battle = fixture.hub.battles[owners[index]]
+            field = battle['field']
+            field.blocked = frozenset()
+            field.doors.states = {}
+            identity = field.actor_ids(owners[index])[0]
+            other_id = field.actor_ids(owners[index+1])[0]
+            field._actors[identity] = replace(field.actor(identity), x=5, y=5, sight_radius=30)
+            field._actors[other_id] = replace(field.actor(other_id), x=7, y=5, sight_radius=30)
+            for view in battle['views'].values():
+                view.refresh()
+            replies = fixture.send(index, encode_move_request(BattleMove(identity, ((5, 6),))))
+            peer = fixture.hub.queues[owners[index+1]]
+            self.assertTrue(any(packet.startswith(b'\x3d') for packet in replies))
+            self.assertTrue(any(packet.startswith(b'\x3d') for packet in peer))
+            self.assertEqual((field.actor(identity).x, field.actor(identity).y), (5, 6))
+
+        with (patch.object(self.ops, '_status', side_effect=wait_for_moves(city_entered, original)),
+              patch.object(rating_completion, 'public_listing', side_effect=wait_for_moves(ratings_entered, listing)),
+              ThreadPoolExecutor(max_workers=3) as pool):
+            status = pool.submit(self.ops.status, dict(username='alice', slot=1))
+            ratings = pool.submit(RatingsPublic(self.router).status,
+                                  dict(username='bob', format='wall', scope='all', offset=0, limit=10))
+            try:
+                self.assertTrue(city_entered.wait(2))
+                self.assertTrue(ratings_entered.wait(2))
+                pool.submit(move, 0).result(timeout=2)
+                pool.submit(move, 2).result(timeout=2)
+            finally:
+                resume.set()
+            self.assertEqual(status.result(timeout=2)['city']['reason'], 'battle_or_search')
+            self.assertEqual(ratings.result(timeout=2)['ratings']['total'], 0)
+
     def test_stock_purchase_concurrent_retry_and_restart_preserve_peer_balance(self):
         request=self.request('stocks_buy',count=7,quote=100)
         with ThreadPoolExecutor(max_workers=4) as pool:replies=list(pool.map(lambda _:self.ops.action(request),range(4)))
@@ -112,8 +207,9 @@ class CityOperationsTests(unittest.TestCase):
         store=CharacterStore(self.path);store.create('alice',CharacterCreateRequest(b'AliceOther',0,(1,0,0,0)))
         with transaction(self.path) as db:
             owner=owner_for_slot(db,'alice',2);self.locations._save(db,owner,3,-153,-317)
+        credits, gold = self.read('SELECT credits,gold FROM wallets WHERE account=?', (owner,))[0]
         reply=self.ops.action(self.request('stocks_buy',slot=2,count=1,quote=100))
-        self.assertEqual(reply['status']['balances'],dict(credits=2900,gold=0))
+        self.assertEqual(reply['status']['balances'], dict(credits=credits - 100, gold=gold))
         self.assertEqual(self.read("SELECT credits,gold FROM wallets WHERE account='alice'")[0],(10000,10000))
         before=self.rows()
         with self.assertRaises(CityError):self.ops.action(self.request('stocks_buy',slot=3,count=1,quote=100))
@@ -136,7 +232,7 @@ class CityOperationsTests(unittest.TestCase):
 
     def test_travel_battle_checkpoint_pending_result_and_stop_fences_include_replay(self):
         request=self.request('stocks_buy',count=1,quote=100);self.ops.action(request)
-        with transaction(self.path) as db:db.execute("INSERT INTO map_journeys(account,x,y,tx,ty,started,arrives) VALUES ('alice',0,0,100,100,0,100)")
+        with transaction(self.path) as db:db.execute("INSERT INTO map_journeys VALUES ('alice',0,0,100,100,0,100)")
         before=self.rows()
         with self.assertRaises(CityError):self.ops.action(request)
         self.assertEqual(self.rows(),before)
@@ -186,13 +282,13 @@ class CityOperationsTests(unittest.TestCase):
 
     def test_lend_and_reclaim_reject_travelling_recipient_before_physical_move(self):
         _,mark=self.mark()
-        with transaction(self.path) as db:db.execute("INSERT INTO map_journeys(account,x,y,tx,ty,started,arrives) VALUES ('bob',0,0,100,100,0,100)")
+        with transaction(self.path) as db:db.execute("INSERT INTO map_journeys VALUES ('bob',0,0,100,100,0,100)")
         before=self.rows()
         with self.assertRaises(CityError):self.ops.action(self.request('lend',markId=mark,recipientName='Bob',requestId='city-busy-lend-0001'))
         self.assertEqual(self.rows(),before)
         with transaction(self.path) as db:db.execute('DELETE FROM map_journeys')
         self.ops.action(self.request('lend',markId=mark,recipientName='Bob',requestId='city-good-lend-0001'))
-        with transaction(self.path) as db:db.execute("INSERT INTO map_journeys(account,x,y,tx,ty,started,arrives) VALUES ('bob',0,0,100,100,0,100)")
+        with transaction(self.path) as db:db.execute("INSERT INTO map_journeys VALUES ('bob',0,0,100,100,0,100)")
         before=self.rows()
         with self.assertRaises(CityError):self.ops.action(self.request('reclaim',markId=mark,pin=PIN,remove=False,requestId='city-busy-return-01'))
         self.assertEqual(self.rows(),before)
@@ -253,11 +349,13 @@ class CityOperationsTests(unittest.TestCase):
         self.router.active_accounts['alice']=session
         self.assertTrue(self.ops.status(dict(username='alice',slot=1))['canOperate'])
         owner=self.router.team_arena.identity(session);self.router.team_arena.survival_waiting.add(owner)
+        self.assertEqual(self.ops.status(dict(username='alice',slot=1))['city']['reason'], 'battle_or_search')
         before=self.rows()
         with self.assertRaises(CityError):self.ops.action(self.request('convert',gold=1))
 
         self.assertEqual(self.rows(),before)
         self.router.team_arena.survival_waiting.clear();session.probe_character_id=None
+        self.assertEqual(self.ops.status(dict(username='alice',slot=1))['city']['reason'], 'session_not_idle')
         with self.assertRaises(CityError):self.ops.action(self.request('convert',gold=1))
 
     def test_operation_waits_for_scene_lock_and_rechecks_busy_before_receipt(self):
@@ -346,6 +444,7 @@ class CityHTTPTests(unittest.TestCase):
             self.assertTrue(all(f.result()[0]==200 for f in futures))
 
 
+@unittest.skipUnless(find_spec('flask'), 'Uses the existing registration/requirements.txt Flask runtime')
 class CityGatewayTests(unittest.TestCase):
     setUp=CityOperationsTests.setUp
     request=CityOperationsTests.request

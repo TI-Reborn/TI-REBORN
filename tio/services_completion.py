@@ -13,6 +13,7 @@ from dataclasses import replace
 import json
 from pathlib import Path
 import re
+import sqlite3
 import time
 
 from .db_transaction import transaction
@@ -317,24 +318,27 @@ class ServicesCompletion:
             self._pet(db, owner, pet_id)
             raise ServiceRejected('Точный оригинальный каталог аватаров не восстановлен; услуга отключена')
 
-    def status(self, owner, *, allowed=False):
-        with transaction(self.path) as db:
-            self._owner(db, owner)
-            available = True
+    def status(self, owner, *, allowed=False, connection: sqlite3.Connection | None = None):
+        if connection is None:
+            with transaction(self.path) as db:
+                return self.status(owner, allowed=allowed, connection=db)
+        db = connection
+        self._owner(db, owner)
+        available = True
+        try:
+            self._gate(db, owner, allowed)
+        except ServiceRejected:
+            available = False
+        pets = []
+        for (pet_id,) in db.execute('SELECT pet_id FROM owned_pets WHERE account=? ORDER BY pet_id', (owner,)).fetchall():
+            row, pet = self._pet(db, owner, pet_id)
+            can_dismiss = available
             try:
-                self._gate(db, owner, allowed)
+                self._dismissable(db, owner, pet_id, row)
             except ServiceRejected:
-                available = False
-            pets = []
-            for (pet_id,) in db.execute('SELECT pet_id FROM owned_pets WHERE account=? ORDER BY pet_id', (owner,)).fetchall():
-                row, pet = self._pet(db, owner, pet_id)
-                can_dismiss = available
-                try:
-                    self._dismissable(db, owner, pet_id, row)
-                except ServiceRejected:
-                    can_dismiss = False
-                pending = db.execute('SELECT due_at FROM service_dismissals WHERE account=? AND pet_id=? AND completed_at IS NULL', (owner, pet_id)).fetchone()
-                pets.append(dict(petId=pet_id, name=pet.fields['0x8c4489'].decode('cp1251'), canRename=available,
-                                 canDismiss=can_dismiss and pending is None, dismissAt=pending[0] if pending else None))
-            rewards = [dict(dismissedPetId=i, templateId=32, count=1) for (i,) in db.execute('SELECT pet_id FROM service_dog_meat_rewards WHERE account=? AND claimed_at IS NULL ORDER BY pet_id', (owner,))]
-            return dict(pets=pets, renamePrices=dict(mainGold=3000, recruitCredits=3000), avatarsEnabled=False, avatars=[], pendingDogMeat=rewards)
+                can_dismiss = False
+            pending = db.execute('SELECT due_at FROM service_dismissals WHERE account=? AND pet_id=? AND completed_at IS NULL', (owner, pet_id)).fetchone()
+            pets.append(dict(petId=pet_id, name=pet.fields['0x8c4489'].decode('cp1251'), canRename=available,
+                             canDismiss=can_dismiss and pending is None, dismissAt=pending[0] if pending else None))
+        rewards = [dict(dismissedPetId=i, templateId=32, count=1) for (i,) in db.execute('SELECT pet_id FROM service_dog_meat_rewards WHERE account=? AND claimed_at IS NULL ORDER BY pet_id', (owner,))]
+        return dict(pets=pets, renamePrices=dict(mainGold=3000, recruitCredits=3000), avatarsEnabled=False, avatars=[], pendingDogMeat=rewards)

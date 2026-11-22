@@ -6,6 +6,7 @@ from pathlib import Path
 import sqlite3
 
 from tio.protocol.pet_info import decode_pet_info
+from tio.character_lifecycle import retired
 
 
 @dataclass(frozen=True)
@@ -36,12 +37,18 @@ class PublicProfile:
     clan_crest_id: int = 0
     alliance_crest_id: int = 0
 
-    @property
-    def summary(self):
-        return ''
+    summary: str = ''
+    website: str = ''
+    contact: str = ''
+    avatar_id: int = 0
+    jailed: bool = False
+    assault_place: int = 0
+    assault_bonus: int = 0
+    tournament_places: tuple[int, ...] = (0,) * 8
 
 
-def read_profile(path,*,account=None,name=None,include_history=True):
+def read_profile(path: str | Path, *, account: str | None = None, name: bytes | None = None,
+                 include_history: bool = True) -> PublicProfile | None:
     # A UI refresh must never run rank decay or create/modify game tables.
     with closing(sqlite3.connect(Path(path).resolve().as_uri()+'?mode=ro',uri=True)) as db:
         db.execute('BEGIN')
@@ -51,6 +58,7 @@ def read_profile(path,*,account=None,name=None,include_history=True):
             row=db.execute('SELECT account,name FROM characters WHERE account=? ORDER BY slot LIMIT 1',(account,)).fetchone()
         if row is None:return None
         owner,character_name=row
+        if retired(db, owner):return None
         from tio.clans import membership
         clan=membership(db,owner)
         from tio.alliances import alliance_for_clan
@@ -95,9 +103,43 @@ def read_profile(path,*,account=None,name=None,include_history=True):
         icon=min(14,max(0,(rank-1)//2500))
         from tio.ranked import profile as ranked_profile
         skill,league,place,streak=ranked_profile(db,owner) if include_history else (0,3,0,0)
+        texts = ('', '', '')
+        avatar_id = 0
+        jailed = False
+        badge = (0, 0)
+        if include_history:
+            from tio.player_profile_text import read as read_text
+            from tio.world_completion import prison_state
+            texts = read_text(db, owner)
+            if 'pet_avatars' in tables:
+                avatar = db.execute('SELECT avatar_id FROM pet_avatars WHERE account=? AND pet_id=1',
+                                    (owner,)).fetchone()
+                avatar_id = avatar[0] if avatar else 0
+            state = prison_state(db, owner)
+            jailed = bool(state and state['remaining'] > 0)
+            if clan:
+                from tio.clan_benefits import active_weekly_badge
+                badge = active_weekly_badge(db, clan['id'])
+        from tio.tournaments import read_standings
+        places = read_standings(db, owner) if include_history else (0,) * 8
         return PublicProfile(bytes(character_name),min(255,max(levels,default=0)),len(roster),
                              results.get(1,0),results.get(0,0),results.get(2,0),
                              *totals,rating,rank,icon,seconds,mercenaries,skill,league,place,streak,
                              clan['name'] if clan else b'',clan['id'] if clan else 0,
                              alliance['name'] if alliance else b'',alliance['id'] if alliance else 0,
-                             clan_crest,alliance.get('crest_id',0) if alliance else 0)
+                             clan_crest,alliance.get('crest_id',0) if alliance else 0,
+                             *texts,avatar_id,jailed,*badge,places)
+
+
+def prisoner_card(path: str | Path, name: bytes) -> bytes:
+    from tio.protocol.public_profile import encode_jail_info
+    from tio.world_completion import prison_state
+
+    with closing(sqlite3.connect(Path(path).resolve().as_uri() + '?mode=ro', uri=True)) as db:
+        db.execute('BEGIN')
+        row = db.execute('SELECT account,name FROM characters WHERE name_key=?',
+                         (name.decode('ascii').lower(),)).fetchone()
+        state = prison_state(db, row[0]) if row and not retired(db, row[0]) else None
+        if not state or not state['remaining']:
+            raise ValueError('Персонаж не отбывает наказание')
+        return encode_jail_info(bytes(row[1]), state['remaining'])

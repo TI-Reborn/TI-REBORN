@@ -95,6 +95,49 @@ class MailTransportTests(unittest.TestCase):
         pairs=((identity,count),)
         return self.command(peer,encode_warehouse_transfer(WarehouseTransfer(3,actor,pairs if deposit else (),() if deposit else pairs)))
 
+    def test_native_compose_price_request_is_read_only(self):
+        sender = self.login('mail_alice', 'MailAlice')
+        before = self.fingerprint()
+        # The compose panel uses action 1 with the unsaved package sentinel.
+        request = wire.BodyRequest(1, 0xffffffff, items=(
+            wire.ClaimItem(self.item.instance_id, self.item.template_id, 2),
+        ))
+        replies = self.command(sender, wire.encode_body_request(request))
+        quote = wire.decode_body(self.reply(replies, b'\xb7\x7a'))
+        self.assertEqual((quote.identity, quote.price), (0, 125))
+        self.assertEqual(self.fingerprint(), before)
+
+    def test_native_compose_confirmation_sends_to_an_offline_account_once(self):
+        sender = self.login('mail_alice', 'MailAlice')
+        selected = ((self.item.instance_id, 2),)
+        quote = wire.BodyRequest(1, 0xffffffff, items=(
+            wire.ClaimItem(self.item.instance_id, self.item.template_id, 2),
+        ))
+        self.command(sender, wire.encode_body_request(quote))
+
+        send = wire.encode_draft(wire.DraftRequest(3, b'MailBob', 'Посылка', 'Проверка', selected))
+        self.command(sender, send)
+        self.assertEqual(WalletStore(self.path).ensure('mail_alice').credits, 2875)
+        before = self.fingerprint()
+        self.command(sender, send)
+        self.assertEqual(self.fingerprint(), before)
+
+        recipient = self.login('mail_bob', 'MailBob')
+        rows = wire.decode_list(self.reply(self.command(recipient, wire.encode_page()), b'\xb7\x79'))[2]
+        self.assertEqual(len(rows), 1)
+        read = wire.encode_body_request(wire.BodyRequest(0, rows[0].identity))
+        received = wire.decode_body(self.reply(self.command(recipient, read), b'\xb7\x7a'))
+        self.assertEqual((received.subject, received.body), ('Посылка', 'Проверка'))
+        self.assertEqual(len(received.items), 1)
+        claim = wire.encode_body_request(wire.BodyRequest(1, received.identity, received.subject, received.body))
+        self.rejected(sender, claim)
+        self.command(recipient, claim)
+        self.assertEqual([(i.template_id, i.count) for i in WarehouseStore(self.path).items('mail_bob')],
+                         [(self.item.template_id, 2)])
+        claimed = self.fingerprint()
+        self.command(recipient, claim)
+        self.assertEqual(self.fingerprint(), claimed)
+
     def test_offline_native_delivery_money_partial_items_replay_and_relogin(self):
         a=self.login('mail_alice','MailAlice')
         b=self.login('mail_bob','MailBob')
@@ -118,7 +161,7 @@ class MailTransportTests(unittest.TestCase):
         b=self.login('mail_bob','MailBob')
         rows=wire.decode_list(self.reply(self.command(b,wire.encode_page()),b'\xb7\x79'))[2]
         self.assertEqual(len(rows),1);identity=rows[0].identity
-        self.assertEqual((rows[0].sender,rows[0].subject,rows[0].attachments),('MailAlice',draft.subject,2))
+        self.assertEqual((rows[0].sender,rows[0].subject,rows[0].lifetime_days),('MailAlice',draft.subject,10))
         received=wire.decode_body(self.reply(self.command(b,wire.encode_body_request(wire.BodyRequest(0,identity))),b'\xb7\x7a'))
         money=next(i for i in received.items if i.template==1)
         item=next(i for i in received.items if i.template==self.item.template_id)

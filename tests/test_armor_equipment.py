@@ -30,7 +30,7 @@ class ArmorTests(unittest.TestCase):
         return equip_primary_weapon(self.path,'alice',encode_item_action(ItemAction(1,instance,option)))
 
     def test_heavy_complete_set_persists_and_enters_battle(self):
-        pet,_=self.seed((242,243,244,252))
+        pet,_=self.seed((242,243,244,252),level=4)
         for i,opt in ((1001,0),(1002,2),(1003,3)):bag=self.wear(i,opt)
         actor=decode_battle_soldier(actor_packet(pet,7,bag),human_equipment=True)
         self.assertEqual({m:actor.equipment_templates[m] for m in (1,4,8)},{1:242,4:243,8:244})
@@ -60,11 +60,36 @@ class ArmorTests(unittest.TestCase):
 
     def test_armor_catalog_covers_requested_items(self):
         rules=armor_rules()
-        self.assertEqual(rules[243],{'slot':4,'dog':False,'level':0})
+        self.assertEqual(rules[243],{'slot':4,'dog':False,'level':4})
         self.assertEqual(rules[266],{'slot':4,'dog':True,'level':5})
 
+    def test_heavy_and_exo_city_equip_open_at_level_four(self):
+        for template, option in ((242, 0), (243, 2), (244, 3), (251, 0),
+                                 (252, 2), (253, 3), (263, 2), (264, 2)):
+            with self.subTest(template=template):
+                _, old = self.seed((template,), level=3, female=True)
+                with self.assertRaisesRegex(EquipmentRejected, 'level 4'):
+                    self.wear(option=option)
+                self.assertEqual(self.pets.inventory('alice', 1), old)
+                self.seed((template,), level=4, female=True)
+                self.assertTrue(decode_item_list(self.wear(option=option))[1][0].equipped)
+
+    def test_existing_early_armor_returns_to_backpack_when_roster_loads(self):
+        _, bag = self.seed((243, 301), level=3)
+        owner, (armor, weapon), flags = decode_item_list(bag)
+        armor = replace(armor, unknown_u8_01=1, location_raw=4)
+        weapon = replace(weapon, unknown_u8_01=1, location_raw=16)
+        with closing(sqlite3.connect(self.path)) as db, db:
+            db.execute("UPDATE owned_pets SET inventory_packet=? WHERE account='alice'",
+                       (encode_item_list(owner, (armor, weapon), flags),))
+        _, _, corrected = self.pets.list('alice')[0]
+        self.assertEqual(decode_item_list(corrected)[1],
+                         (replace(armor, unknown_u8_01=0, location_raw=0), weapon))
+        self.assertEqual(self.pets.inventory('alice', 1), corrected)
+        self.assertEqual(self.pets.list('alice')[0][2], corrected)
+
     def test_screenshot_helmet_option_zero_and_battle_head_slot(self):
-        pet,_=self.seed((251,))
+        pet,_=self.seed((251,),level=4)
         bag=self.wear(option=0)
         self.assertEqual(decode_item_list(bag)[1][0].client_slot,1)
         actor=decode_battle_soldier(actor_packet(pet,7,bag),human_equipment=True)
@@ -74,7 +99,7 @@ class ArmorTests(unittest.TestCase):
     def test_female_exo_equips_replaces_and_enters_battle(self):
         from tio.armor import ArmorCatalog
         for template in (263,264):
-            pet,_=self.seed((242,243,244,template,301),female=True)
+            pet,_=self.seed((242,243,244,template,301),level=4,female=True)
             for instance,option in ((1001,0),(1002,2),(1003,3),(1005,4)):
                 self.wear(instance,option)
             bag=self.wear(1004,2)  # Exact screenshot option: chest.
@@ -94,7 +119,7 @@ class ArmorTests(unittest.TestCase):
     def test_female_exo_rejects_men_dogs_and_wrong_slot_atomically(self):
         for template in (263,264):
             for human,female,option in ((True,False,2),(False,False,2),(True,True,3)):
-                _,before=self.seed((template,),human=human,female=female)
+                _,before=self.seed((template,),human=human,level=4,female=female)
                 with self.assertRaises(EquipmentRejected):self.wear(option=option)
                 self.assertEqual(self.pets.inventory('alice',1),before)
 

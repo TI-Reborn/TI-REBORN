@@ -7,7 +7,6 @@ from types import SimpleNamespace
 import unittest
 
 from tio.achievements import AchievementStore,update
-from tio.battle_recovery import CREDITS_PER_HP
 from tio.owned_pets import OwnedPetStore
 from tio.protocol.arena import ArenaCreateRequest,encode_create_request
 from tio.protocol.asset_count import decode_asset_count
@@ -114,13 +113,11 @@ class AchievementCityTCPTests(unittest.TestCase):
         self.assertEqual(wallet.ensure('bob'),other_before)
         self.assertFalse(hub.busy(session));self.assertTrue(hub.busy(other))
         # Confirming the city does not discard the late native shared ID map.
-        saved=decode_pet_info(OwnedPetStore(case.config.database).list('alice')[0][1],human_equipment=True)
-        cost=(saved.fields['0x8c4a07']-saved.fields['0x8c4ab1'])*CREDITS_PER_HP
         request=b'\x7c\x01'+struct.pack('<I',identity)
         peer.send(request)
         healed=decode_asset_count(peer.until(b'\xc8\x39',max_packets=512))
         pet=decode_pet_info(peer.until(b'\x66',max_packets=512),human_equipment=True)
-        self.assertEqual(healed.credits,assets.credits-cost)
+        self.assertEqual(healed.credits,assets.credits)
         self.assertEqual(pet.fields['0x8c4ab1'],pet.fields['0x8c4a07'])
         # Repeat Finish, town confirmation and treatment preserve prize receipts.
         peer.sock.sendall(encode_initial_frame(b'\x2a\x01',peer.outbound)+

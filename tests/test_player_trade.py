@@ -143,6 +143,11 @@ class ServiceTests(StoreTests):
         self.assertEqual(draft.offers['alice'][200],7)
         self.assertEqual(self.state(),before)
         self.send('alice',wire.confirm_request());self.send('alice',wire.confirm_request())
+        for account, command in (('alice', 131), ('bobby', 125)):
+            notices = [packet for packet in self.presence.messages[self.sessions[account]]
+                       if packet.startswith(b'\xf0')]
+            self.assertEqual(notices, [bytes((0xf0, command)) + bytes(7)])
+        self.assertEqual(self.presence.messages[self.sessions['clara']], deque())
         self.assertEqual(self.state(),before)
         self.send('bobby',wire.confirm_request());after=self.state()
         self.send('bobby',wire.confirm_request());self.assertEqual(self.state(),after)

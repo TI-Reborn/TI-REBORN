@@ -27,6 +27,69 @@ def create_packet(request=1, instance=1, count=1, hours=12, price=1000, step=100
 
 
 class AuctionTests(unittest.TestCase):
+    def test_history_uses_one_based_pages(self):
+        from server.player_auction import AuctionSession
+        from tio.protocol.binary import Reader
+
+        lot = self.create(price=100, step=1, buyout=None)
+        for index in range(30):
+            self.store.bid('buyer', 'Покупатель', lot, 100+index, index, now=101+index)
+        session = AuctionSession(self.store, 'buyer', 'Покупатель')
+        request = Writer().u8(0xc8).u8(6).u32(lot).build()
+        for suffix, expected_page, count, kind, amount in (
+                (b'\0', 1, 30, 1, 100),
+                (b'\1'+bytes(4), 1, 30, 1, 100),
+                (b'\1'+(1).to_bytes(4, 'little'), 1, 30, 1, 100),
+                (b'\1'+(2).to_bytes(4, 'little'), 2, 1, 3, 129),
+                (b'\1'+b'\xff'*4, 2, 1, 3, 129)):
+            with self.subTest(page=expected_page, request=suffix):
+                reply, = session.handle(request+suffix)
+                reader = Reader(reply)
+                self.assertEqual(reader.read(2), b'\xc8\x07')
+                self.assertEqual([reader.u32() for _ in range(6)],
+                                 [lot, expected_page, 2, count, kind, amount])
+
+    def test_native_confirmation_packets_buy_out_and_cancel_the_correct_lots(self):
+        from server.player_auction import AuctionSession
+
+        seller = AuctionSession(self.store, 'seller', 'Продавец')
+        buyer = AuctionSession(self.store, 'buyer', 'Покупатель')
+        sold, cancelled = [int.from_bytes(seller.handle(create_packet(request=i))[1][6:10], 'little')
+                           for i in (1, 2)]
+        self.assertIn(b'\xc8\x04'+sold.to_bytes(4, 'little'),
+                      buyer.handle(b'\xc8\x0e'+sold.to_bytes(4, 'little')))
+        self.assertIn(b'\xc8\x05'+cancelled.to_bytes(4, 'little'),
+                      seller.handle(b'\xc8\x0f'+cancelled.to_bytes(4, 'little')))
+        self.assertEqual((self.store.get(sold)[0]['state'], self.store.get(cancelled)[0]['state']),
+                         ('sold', 'cancelled'))
+
+    def test_buyout_remains_available_when_next_bid_exceeds_buyout(self):
+        lot = self.create(price=100, step=50, buyout=120)
+        self.store.bid('buyer', 'Покупатель', lot, 100, 0, now=101)
+        self.store.bid('other', 'Другой', lot, None, None, buyout=True, now=102)
+        self.assertEqual(self.store.get(lot)[0]['state'], 'sold')
+        self.assertEqual([self.wallets.ensure(n).credits for n in ('seller', 'buyer', 'other')],
+                         [10120, 10000, 9880])
+        self.assertEqual(WarehouseStore(self.path).items('other')[0].template_id, self.item.template_id)
+
+    def test_personal_lots_are_restored_and_updated_in_a_new_session(self):
+        from server.player_auction import AuctionSession
+
+        lot = self.create()
+        seller = AuctionSession(self.store, 'seller', 'Продавец')
+        other = AuctionSession(self.store, 'other', 'Другой')
+        added = b'\xc8\x03\x01\0\0\0' + lot.to_bytes(4, 'little')
+        self.assertTrue(any(p.startswith(added) for p in seller.refresh()))
+        self.assertFalse(any(p.startswith(added) for p in other.refresh()))
+        self.store.bid('buyer', 'Покупатель', lot, 1000, 0, now=101)
+        buyer = AuctionSession(self.store, 'buyer', 'Покупатель')
+        self.assertTrue(any(p.startswith(added) for p in buyer.refresh()))
+        seller.next_refresh = 0
+        self.assertTrue(any(p.startswith(added) for p in seller.refresh()))
+        self.store.bid('other', 'Другой', lot, None, None, buyout=True, now=102)
+        seller.next_refresh = 0
+        self.assertIn(b'\xc8\x04' + lot.to_bytes(4, 'little'), seller.refresh())
+
     def test_native_first_page_and_load_more_are_one_based(self):
         from unittest.mock import patch
         from server.player_auction import AuctionSession
@@ -44,6 +107,16 @@ class AuctionTests(unittest.TestCase):
                 self.assertEqual([int.from_bytes(reply[o:o+4],'little') for o in (2,6,10,14)],
                                  [77,max(1,page),3,count])
                 if first is not None:self.assertEqual(int.from_bytes(reply[18:22],'little'),first)
+
+    def test_buy_pages_count_lots_the_native_tab_can_display(self):
+        from server.player_auction import AuctionSession
+
+        self.create()
+        query = (0, 77, 1, (), (), None, None, None)
+        seller = AuctionSession(self.store, 'seller', 'Продавец')
+        buyer = AuctionSession(self.store, 'buyer', 'Покупатель')
+        self.assertEqual(int.from_bytes(seller.listing(query)[14:18], 'little'), 0)
+        self.assertEqual(int.from_bytes(buyer.listing(query)[14:18], 'little'), 1)
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()

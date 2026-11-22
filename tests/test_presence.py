@@ -51,8 +51,18 @@ class PresenceTests(unittest.TestCase):
     def test_private_message_not_broadcast(self):
         a,b,c=self.sessions
         self.hub.handle(a,b'\x21\1h\0i\0\0\0Bob\0')
-        self.assertEqual(len(self.hub.messages[b]),1)
-        self.assertFalse(self.hub.messages[c])
+        self.assertEqual(list(self.hub.private_messages[b]), [encode_message(1, b'Alice', 'hi')])
+        self.assertNotIn(a, self.hub.private_messages)
+        self.assertNotIn(c, self.hub.private_messages)
+
+    def test_public_card_is_not_split_when_only_one_queue_slot_is_free(self):
+        viewer = self.sessions[0]
+        queue = self.hub.messages[viewer]
+        queued = [b'\xc7\x01'] * 127
+        queue.extend(queued)
+        with patch.object(self.hub, '_character_profile', return_value=b'\xa7\x00card'):
+            self.assertTrue(self.hub.handle(viewer, b'\x68\x00Bob\0'))
+        self.assertEqual(list(queue), queued)
 
     def test_bad_requests_limits_and_refresh_preserves_messages(self):
         a,b,c=self.sessions

@@ -8,9 +8,12 @@ from collections import deque
 from copy import copy
 from dataclasses import replace
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
 from .combat import MEDICAL_ITEMS
 from .combat_distance import combat_distance
+from .medical_items import DOG_MEAT, can_use_medical
+from .mobs import INFECTED_DOG
 from .protocol.battle_attack import AttackRequest, encode_attack_request
 from .protocol.battle_move import BattleMove, encode_move_request
 from .protocol.battle_loot import LootTransfer, encode_loot_transfer
@@ -20,8 +23,8 @@ from .protocol.item_list import decode_item_list, encode_item_list
 from .visibility import field_sight
 from .weight import inventory_weight, overload_penalty
 
-
-INFECTED_DOG = 103
+if TYPE_CHECKING:
+    from .turn_planning import TurnObjective, TurnPlan
 
 
 @lru_cache(maxsize=1)
@@ -41,9 +44,10 @@ def enemies_for(field, owner, identity):
                  if field.actor(i).health and not field.allied(field.actor(i).owner_id,owner))
 
 
-def routes(field, identity, known, steps):
+def routes(field, identity, known, steps, *, start=None):
     """Cardinal BFS bounded by AP; occupancy is restricted to known actors."""
-    actor=field.actor(identity);start=(actor.x,actor.y)
+    if start is None:
+        actor=field.actor(identity);start=(actor.x,actor.y)
     blocked=field.blocked|{(field.actor(i).x,field.actor(i).y) for i in known
                            if i!=identity and field.actor(i).health}
     previous={start:None};depth={start:0};queue=deque([start])
@@ -165,7 +169,7 @@ class Actions:
             self.do('door_action',encode_door_request(DoorRequest(identity,True,*cell)))
         return self.move_path(identity, (cell,))
 
-    def move_path(self, identity: int, path: tuple[tuple[int, int], ...]) -> tuple[bytes, ...]:
+    def move_path(self, identity: int, path: tuple[tuple[int, int], ...]):
         return self.do('move', encode_move_request(BattleMove(identity, path)))
 
     def item(self,identity,item,slot=None):
@@ -173,16 +177,20 @@ class Actions:
                                          255 if slot is None else item_target_option(slot))))
 
 
-def heal(field, identity, actions):
+def medical_item(field, identity):
     actor=field.actor(identity)
-    if not actor.max_health or actor.health*10>actor.max_health*7:return False
-    choices=[i for i in items_for(field,identity) if i.template_id in MEDICAL_ITEMS
-             and (i.template_id!=32 or not field.combat.human[identity])
+    if not actor.max_health or actor.health*10>actor.max_health*7:return None
+    choices=[i for i in items_for(field,identity) if can_use_medical(i.template_id, field.combat.resources[identity])
              and MEDICAL_ITEMS[i.template_id][1]<=actor.action_points]
-    if not choices:return False
+    if not choices:return None
     missing=actor.max_health-actor.health
-    chosen=min(choices,key=lambda i:(-min(missing,MEDICAL_ITEMS[i.template_id][0])/MEDICAL_ITEMS[i.template_id][1],
+    return min(choices,key=lambda i:(-min(missing,MEDICAL_ITEMS[i.template_id][0])/MEDICAL_ITEMS[i.template_id][1],
                                      MEDICAL_ITEMS[i.template_id][0],i.instance_id))
+
+
+def heal(field, identity, actions):
+    chosen=medical_item(field,identity)
+    if chosen is None:return False
     actions.item(identity,chosen);return True
 
 
@@ -234,7 +242,7 @@ def loot_selection(field, identity, contents):
                 before=sum(n for _,n in selected);quantity(item,needed)
                 needed-=sum(n for _,n in selected)-before
     for item in sorted(contents,key=lambda i:i.instance_id):
-        if item.template_id in MEDICAL_ITEMS and item.template_id!=32:
+        if item.template_id in MEDICAL_ITEMS and item.template_id!=DOG_MEAT:
             quantity(item,max(0,3-sum(i.count for i in bag if i.template_id in MEDICAL_ITEMS)))
     covered=set()
     for item in bag:
@@ -311,15 +319,60 @@ def scavenge(field, identity, owner, known, actions):
     return True
 
 
-def play_actor(arena, room_id, owner, identity, *, view=None):
+def _execute_plan(actions: Actions, room_id: int, identity: int, plan: 'TurnPlan',
+                  known: frozenset[int]) -> bool:
+    """Return whether an observation or a miss warrants replanning."""
+    from .training_bot import bot_known
+    field = actions.arena._fields[room_id]
+
+    def walk(path, *, require_target=False):
+        for cell in path:
+            actions.move(identity, cell)
+            if room_id not in actions.arena._turns:
+                return False
+            visible = bot_known(field, actions.owner, identity)
+            if visible - known or (require_target and plan.target not in visible):
+                return False
+        return True
+
+    if not walk(plan.before, require_target=plan.target is not None):
+        return True
+    if plan.medical is not None:
+        actions.item(identity, plan.medical)
+        return True
+    for _ in range(plan.shots):
+        target = field.actor(plan.target)
+        if not target.health:
+            break
+        actions.do('attack', encode_attack_request(AttackRequest(identity, target.x, target.y)))
+        if room_id not in actions.arena._turns:
+            return False
+        if field.actor(plan.target).health == target.health or bot_known(field, actions.owner, identity) - known:
+            return True
+    return not walk(plan.after)
+
+
+def play_actor(arena, room_id, owner, identity, *, view=None,
+               objective: 'TurnObjective | None' = None):
     from .training_bot import bot_known, approach_path
     from .bot_finishing import finish_plan
     field=arena._fields[room_id];actions=Actions(arena,owner,view)
+    seen = {} if objective is None else {enemy.actor_id: enemy for enemy in objective.recent_enemies}
     # At most one actor turn's movement/actions, with a guard for zero-AP gear.
     for _ in range(64):
         actor=field.actor(identity)
         if room_id not in arena._turns or not actor.health or actor.action_points<=0:break
         try:
+            if objective is not None:
+                from .turn_planning import choose_plan
+                known = bot_known(field, owner, identity)
+                seen.update((enemy, field.actor(enemy)) for enemy in known
+                            if not field.allied(owner, field.actor(enemy).owner_id))
+                plan = choose_plan(field, identity, known, replace(objective, recent_enemies=tuple(seen.values())))
+                if plan is not None:
+                    if _execute_plan(actions, room_id, identity, plan, known):
+                        continue
+                    break
             if heal(field,identity,actions):continue
             equip_found(field,identity,actions)
             enemies=enemies_for(field,owner,identity);known=bot_known(field,owner,identity)

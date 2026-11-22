@@ -41,8 +41,7 @@ class ShopTests(unittest.TestCase):
         for template in (3,9,210,211,212,304):
             offer=next(o for o in self.store.catalogs.items[0] if o.item_id==template)
             result=self.store.purchase('alice',ShopPurchase(1,0,offer.unknown_u32_01,1))
-            # A firearm now arrives with its ammunition pack; check the weapon itself.
-            item=next(i for i in reversed(decode_item_list(result.inventory)[1]) if i.template_id==template)
+            item=decode_item_list(result.inventory)[1][-1]
             if template==3:
                 self.assertEqual(item.count,50)  # Original 9mm packamount.
             self.assertEqual((item.template_id,item.count,item.unknown_words),(template,offer.unknown_u32_02,(offer.durability,)*3))
@@ -113,5 +112,4 @@ class ShopTests(unittest.TestCase):
         self.assertEqual(sum(r is not None for r in results), 1)
         self.assertEqual(WalletStore(self.path).ensure('alice').credits, 0)
         snapshot = OwnedPetStore(self.path).ensure('alice', self.pet, self.inventory, human=True)[1]
-        # Original item + 8 weapons + one merged stack of their ammunition packs.
-        self.assertEqual(len(decode_item_list(snapshot)[1]), 10)
+        self.assertEqual(len(decode_item_list(snapshot)[1]), 9)

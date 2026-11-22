@@ -11,7 +11,8 @@ from .protocol.asset_count import AssetCount
 def settle(path,account,match_id,result,*,health=None,rental_tax=0,rank_report=None,
            escaped=False,rental_units=None,mined_crystals=None,achievement_report=None,experience_report=None,
            reward_context=None,statistics_report=None,ranked_report=None,encounter_report=None,now=None,mine_extraction=None,team_ranked_report=None,
-           wager=False,wager_report=None,contract_report=None):
+           wager=False,wager_report=None,contract_report=None,reservation_survival: bool = False,
+           tournament_proficiency: dict[int, tuple[tuple[int, ...], tuple[int, ...]]] | None = None):
     if result not in (0,1,2):raise ValueError('Invalid battle result')
     if type(rental_tax) is not int or rental_tax<0:
         raise ValueError('Invalid rental tax')
@@ -35,7 +36,7 @@ def settle(path,account,match_id,result,*,health=None,rental_tax=0,rank_report=N
             # equipment consumption, but never pass through progression hooks.
             if any(v is not None for v in (rank_report,experience_report,reward_context,
                     statistics_report,ranked_report,team_ranked_report,achievement_report,
-                    encounter_report,mine_extraction,mined_crystals)):
+                    encounter_report,mine_extraction,mined_crystals,tournament_proficiency)):
                 raise ValueError('Wager report contains ordinary progression')
             from . import wagers
             wagers.schema(db)
@@ -63,6 +64,12 @@ def settle(path,account,match_id,result,*,health=None,rental_tax=0,rank_report=N
         from .reward_policy import calculate
         gross,calculation=calculate(db,account,match_id,result,
             reward_context if mined_crystals is None or mine_extraction is not None else None,percent,escaped=escaped,now=now)
+        tournament = tournament_proficiency is not None
+        if tournament:
+            gross = 0
+            audit = json.loads(calculation)
+            audit['tournament'] = True
+            calculation = json.dumps(audit, sort_keys=True)
         if mine_extraction is not None:
             audit=json.loads(calculation);audit['mining_credit_reward']=0
             calculation=json.dumps(audit,sort_keys=True);gross=0
@@ -126,6 +133,9 @@ def settle(path,account,match_id,result,*,health=None,rental_tax=0,rank_report=N
         if health:
             from .battle_recovery import save_wounds
             save_wounds(db,account,health)
+        if tournament_proficiency:
+            from .weapon_proficiency import settle_proficiencies
+            settle_proficiencies(db, account, tournament_proficiency)
         if experience_report:
             from .level_progression import settle_experience,MAX_XP
             if any(type(n) is not int or not 0<=n<=MAX_XP for n in experience_report.values()):
@@ -138,12 +148,13 @@ def settle(path,account,match_id,result,*,health=None,rental_tax=0,rank_report=N
             influence_factor=experience_factor if numerator else progression_factor
             influence_report={i:min(MAX_XP,(n-bonus.get(i,0))*influence_factor.numerator//influence_factor.denominator+bonus.get(i,0)) for i,n in experience_report.items()}
             experience_report={i:min(MAX_XP,(n-bonus.get(i,0))*experience_factor.numerator//experience_factor.denominator+(bonus.get(i,0) if numerator else 0)) for i,n in experience_report.items()}
-            settle_experience(db,account,match_id,experience_report)
-            from .clans import settle_influence
-            from .cities import CITIES
-            city=CITIES.get(reward_context.town_id) if reward_context is not None else None
-            settle_influence(db,account,influence_report,identity=match_id,
-                city_coefficient=Fraction(frozen['influence']) if frozen is not None else 1 if city is None else city.influence,now=now)
+            settle_experience(db,account,match_id,experience_report,keep_full_health=tournament)
+            if not tournament:
+                from .clans import settle_influence
+                from .cities import CITIES
+                city=CITIES.get(reward_context.town_id) if reward_context is not None else None
+                settle_influence(db,account,influence_report,identity=match_id,
+                    city_coefficient=Fraction(frozen['influence']) if frozen is not None else 1 if city is None else city.influence,now=now)
         if rank_report:
             from .ranks import settle_ranks
             settle_ranks(db,account,match_id,result,rank_report,escaped=escaped,now=now,
@@ -189,6 +200,9 @@ def settle(path,account,match_id,result,*,health=None,rental_tax=0,rank_report=N
         db.execute('INSERT INTO battle_rewards(match_id,account,result,credits,gross,rental_tax,calculation) VALUES (?,?,?,?,?,?,?)',
                    (match_id,account,result,reward,gross,rental_tax,calculation))
         db.execute('UPDATE wallets SET credits=credits+? WHERE account=?',(reward,account))
+        if reservation_survival and not escaped:
+            from .reservation_quests import survival_result
+            survival_result(db,account,result)
         if achievement_report is not None:
             from .achievements import settle_battle,update
             settle_battle(db,account,achievement_report,result,escaped=escaped)

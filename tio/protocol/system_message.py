@@ -5,6 +5,15 @@ separate: this packet alone does not guarantee that the city UI opens.
 """
 from .binary import Reader, Writer, PacketError
 
+MODERATION_ROLE_DISABLED = 0x54494F30
+MODERATION_ROLE_ENABLED = 0x54494F31
+
+
+def encode_moderation_role(enabled: bool) -> bytes:
+    """Private server-to-client projection for the native moderation menu."""
+    command = MODERATION_ROLE_ENABLED if enabled else MODERATION_ROLE_DISABLED
+    return Writer().u8(0xf0).u32(command).u32(0).build()
+
 
 def encode_current_town(town_id: int) -> bytes:
     # Consumer uses a one-based town table. Zero/negative IDs are not valid here.

@@ -4,6 +4,7 @@ import hashlib
 import sqlite3
 import time
 from .db_transaction import connect
+from .performance import timed
 
 
 def schema(db):
@@ -20,10 +21,11 @@ def initialise(path):
     with closing(connect(path)) as db,db:schema(db)
 
 
+@timed('checkpoint.save')
 def save(db,match_id,payload,members,*,status='active',now=None):
     schema(db)
-    if len(set(members))!=len(members):raise ValueError('Duplicate checkpoint account')
-    for account in members:
+    bound = dict(db.execute('SELECT account,owner_id FROM battle_checkpoint_members WHERE match_id=?', (match_id,)))
+    for account in members.keys() - bound.keys():
         prior=db.execute('SELECT match_id FROM battle_checkpoint_members WHERE account=?',(account,)).fetchone()
         if prior and prior[0]!=match_id:raise ValueError('Account belongs to another durable battle')
     checksum=hashlib.sha256(payload.encode()).hexdigest()
@@ -31,9 +33,14 @@ def save(db,match_id,payload,members,*,status='active',now=None):
         ON CONFLICT(match_id) DO UPDATE SET revision=revision+1,payload=excluded.payload,
         checksum=excluded.checksum,updated_at=excluded.updated_at,status=excluded.status,error_type=NULL''',
         (match_id,payload,checksum,time.time() if now is None else now,status))
-    db.execute('DELETE FROM battle_checkpoint_members WHERE match_id=?',(match_id,))
+    for account in bound.keys() - members.keys():
+        db.execute('DELETE FROM battle_checkpoint_members WHERE account=? AND match_id=?', (account, match_id))
     for account,owner in members.items():
-        db.execute('INSERT INTO battle_checkpoint_members VALUES (?,?,?)',(account,match_id,owner))
+        if account not in bound:
+            db.execute('INSERT INTO battle_checkpoint_members VALUES (?,?,?)',(account,match_id,owner))
+        elif owner != bound[account]:
+            db.execute('UPDATE battle_checkpoint_members SET owner_id=? WHERE account=? AND match_id=?',
+                       (owner, account, match_id))
 
 
 def delete(db,match_id):

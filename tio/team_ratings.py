@@ -203,16 +203,15 @@ def standings(db,*,scope=None,now=None,offset=0,limit=10):
     all_rows=db.execute(f'''SELECT v.team_id,t.members,v.mu,v.sigma,v.skill,v.wins,v.losses,v.draws,v.unrated
         FROM {table} v JOIN team_rating_teams t ON t.team_id=v.team_id
         WHERE v.{column}=? AND v.wins+v.losses+v.draws>0 ORDER BY v.skill DESC,v.team_id''',(scope,)).fetchall()
-    from .rating_visibility import excluded
-    all_rows=[row for row in all_rows if not any(excluded(db,owner) for owner in json.loads(row[1]))]
+    from .rating_visibility import exclusion_filter, character_names
+    hidden=exclusion_filter(db)
+    all_rows=[row for row in all_rows if not any(hidden(owner) for owner in json.loads(row[1]))]
+    display_names=character_names(db,(owner for row in all_rows[offset:offset+limit] for owner in json.loads(row[1])))
     result=[];previous=None;place=0
     for index,(team,accounts,mu,sigma,points,wins,losses,draws,unrated) in enumerate(all_rows,1):
         if previous!=points:place=index;previous=points
         if not offset<=index-1<offset+limit:continue
-        names=[]
-        for account in json.loads(accounts):
-            row=db.execute('SELECT name FROM characters WHERE account=? ORDER BY slot LIMIT 1',(account,)).fetchone() if db.execute("SELECT 1 FROM sqlite_master WHERE name='characters'").fetchone() else None
-            names.append(bytes(row[0]).decode('cp1251',errors='replace') if row else account)
+        names=[display_names.get(account,account) for account in json.loads(accounts)]
         result.append(dict(team_id=team,members=json.loads(accounts),names=names,place=place,skill=points,mu=mu,sigma=sigma,
                            wins=wins,losses=losses,draws=draws,unrated=unrated,scope=scope,archived=bool(archived)))
     return tuple(result)

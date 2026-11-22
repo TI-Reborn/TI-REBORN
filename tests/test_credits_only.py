@@ -10,6 +10,7 @@ from tio.wallets import WalletStore
 from tio.shop import ShopStore
 from tio.shop_completion import CompletedSCShopStore
 from tio.protocol.shop_purchase import ShopPurchase
+from tio.protocol.city_catalogs import decode_item_shop
 from tio.protocol.item_list import encode_item_list,decode_item_list
 from tio.protocol.premium_shop import decode_premium_purchase
 from tio.protocol.binary import Reader
@@ -55,6 +56,76 @@ class CreditsOnlyTests(unittest.TestCase):
         self.assertEqual(self.wallet(),(94000,0));self.assertEqual(self.wallet('bob'),(100000,0))
         inv=self.inventory();self.buy(248,identity='owned-request-se')
         self.assertEqual(self.wallet(),(94000,0));self.assertEqual(self.inventory(),inv)
+
+    def test_common_shop_lists_former_premium_goods_once_in_city_and_mine(self):
+        with closing(sqlite3.connect(self.path)) as db, db:
+            db.execute("UPDATE character_locations SET town_id=13 WHERE account='bob'")
+        former_premium = {offer.item_id for offer in self.cats.premium_items}
+        self.assertTrue(former_premium)
+        for account, town in (('alice', 2), ('bob', 13)):
+            with self.subTest(account=account):
+                _, offers = decode_item_shop(self.shop.catalog(account, 0))
+                ids = [offer.item_id for offer in offers]
+                self.assertEqual(len(ids), len(set(ids)))
+                self.assertTrue({item for item in former_premium
+                                 if self.shop.completion.allowed(item, town)} <= set(ids))
+                offer = next(offer for offer in offers if offer.item_id == 304)
+                result = self.buy(304, a=account)
+                self.assertEqual((result.charged_credits, result.charged_gold),
+                                 (offer.unknown_u32_03, 0))
+
+    def test_light_leg_armor_is_sold_to_both_accounts_in_the_ordinary_shop(self):
+        expected = {206: 80, 226: 160}
+        for account, template in (('alice', 206), ('bob', 226)):
+            with self.subTest(account=account):
+                _, offers = decode_item_shop(self.shop.catalog(account, 0))
+                armor = {offer.item_id: offer for offer in offers if offer.item_id in expected}
+                self.assertEqual({item: offer.unknown_u32_03 for item, offer in armor.items()}, expected)
+                purchase = self.buy(template, a=account)
+                _, inventory, _ = decode_item_list(purchase.inventory)
+                self.assertEqual([(item.template_id, item.unknown_words) for item in inventory],
+                                 [(template, (300, 300, 300))])
+                self.assertEqual(self.wallet(account), (100000 - expected[template], 0))
+
+    def test_repair_kit_le_is_sold_for_credits(self):
+        offer, = (o for o in decode_item_shop(self.shop.catalog('alice', 0))[1] if o.item_id == 128)
+        result = self.shop.purchase('alice', ShopPurchase(1, 0, offer.unknown_u32_01, 1))
+        self.assertEqual((result.charged_credits, result.charged_gold), (4900, 0))
+        kit, = decode_item_list(result.inventory)[1]
+        self.assertEqual((kit.template_id, kit.unknown_words), (128, (1000, 1000, 1000)))
+        self.assertEqual(self.wallet('bob'), (100000, 0))
+
+    def test_le_kit_is_unlimited_despite_previous_finite_stock(self):
+        self.assertFalse(any(o.item_id == 129 for o in self.cats.premium_items))
+        with closing(sqlite3.connect(self.path)) as db, db:
+            db.execute("UPDATE character_locations SET town_id=5 WHERE account='bob'")
+            db.execute('INSERT INTO shop_global_stock VALUES (?,?,?,?,?,?,?)',
+                       (self.shop.completion.policy['version'], 0, 1, 1129, 1, 0, None))
+        offer, = (o for o in decode_item_shop(self.shop.catalog('alice', 0))[1] if o.item_id == 129)
+        purchase = ShopPurchase(1, 0, offer.unknown_u32_01, 1)
+        result = self.shop.purchase('alice', purchase)
+        self.assertEqual((result.charged_credits, result.charged_gold), (19800, 0))
+        self.assertEqual([(i.template_id,i.count) for i in decode_item_list(result.inventory)[1]], [(129, 1)])
+        self.assertIn(129, {o.item_id for o in decode_item_shop(self.shop.catalog('bob', 0))[1]})
+        result = self.shop.purchase('bob', purchase)
+        self.assertEqual([(i.template_id, i.count) for i in decode_item_list(result.inventory)[1]], [(129, 1)])
+        self.assertEqual(self.wallet('bob'), (80200, 0))
+        with closing(sqlite3.connect(self.path)) as db:
+            self.assertEqual(db.execute('SELECT quantity FROM shop_global_stock').fetchall(), [(1,)])
+
+    def test_heavy_miner_armor_is_sold_in_miners_town(self):
+        expected = {260: (2550, 600), 261: (2200, 600)}
+        with closing(sqlite3.connect(self.path)) as db, db:
+            db.execute("UPDATE character_locations SET town_id=9 WHERE account='alice'")
+        for account, prices in (('alice', expected), ('bob', {})):
+            offers = decode_item_shop(self.shop.catalog(account, 0))[1]
+            self.assertEqual({o.item_id: (o.unknown_u32_03, o.durability)
+                              for o in offers if o.item_id in expected}, prices)
+        for template in expected:
+            with self.assertRaises(ValueError):
+                self.buy(template, a='bob')
+            self.buy(template)
+        self.assertEqual({i.template_id for i in decode_item_list(self.inventory())[1]}, expected.keys())
     def test_no_credit_purchase_when_only_gold_is_present(self):
         with closing(sqlite3.connect(self.path)) as db,db:db.execute("UPDATE wallets SET credits=0,gold=999999 WHERE account='alice'")
         before=self.inventory()
@@ -99,7 +170,7 @@ class CreditsOnlyTests(unittest.TestCase):
         rental.handle('alice',packet)
         self.assertEqual(self.wallet(),(100000-o.credits,0));self.assertEqual(self.wallet('bob'),(100000,0))
         with self.assertRaises(ValueError):rental.handle('alice',b'\xb4\x10'+struct.pack('<IHIB',o.lot_id,o.hours,1,2))
-    def test_se_failure_resets_level_and_original_durability(self):
+    def test_se_failure_resets_level_and_keeps_item(self):
         self.buy(248);item=decode_item_list(self.inventory())[1][0]
         kit_result=self.buy(30)
         items=list(decode_item_list(self.inventory())[1]);items[0]=replace(item,unknown_words=(805,805,805),unknown_bytes_02=bytes((7,0,0,0)),unknown_bytes_03=bytes((7,0,1)))
@@ -107,22 +178,16 @@ class CreditsOnlyTests(unittest.TestCase):
         packet=b'\xc8\x2a'+struct.pack('<IBI',items[0].instance_id,1,items[1].instance_id)
         result=EnhancementStore(self.path,randbelow=lambda _:99).handle('alice',packet)
         saved=decode_item_list(self.inventory())[1][0]
-        self.assertEqual((result.outcome, result.level), ('reset', 0))
-        durability = self.sc.completion.enhancement.items[248]['durability']
-        self.assertEqual(saved.unknown_words, (durability,) * 3)
-        self.assertEqual(saved.instance_id, item.instance_id)
-        self.assertEqual(saved.unknown_bytes_03[0], 0)
-        self.assertEqual(len(decode_item_list(self.inventory())[1]), 1)
-    def test_se_failed_low_durability_restores_item(self):
+        self.assertEqual(result.outcome,'reset');self.assertEqual(result.level,0)
+        self.assertEqual(saved.unknown_words,item.unknown_words);self.assertEqual(saved.instance_id,item.instance_id)
+        self.assertEqual(saved.unknown_bytes_03[0],0);self.assertEqual(len(decode_item_list(self.inventory())[1]),1)
+    def test_se_failed_low_durability_restores_base_durability(self):
         self.buy(248);self.buy(30);items=list(decode_item_list(self.inventory())[1])
         items[0]=replace(items[0],unknown_words=(20,80,545),unknown_bytes_02=bytes((3,0,0,0)),unknown_bytes_03=bytes((3,0,1)))
         with closing(sqlite3.connect(self.path)) as db,db:db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=1',(encode_item_list(1,items),'alice'))
         packet=b'\xc8\x2a'+struct.pack('<IBI',items[0].instance_id,1,items[1].instance_id)
         EnhancementStore(self.path,randbelow=lambda _:99).handle('alice',packet)
-        saved = decode_item_list(self.inventory())[1][0]
-        durability = self.sc.completion.enhancement.items[248]['durability']
-        self.assertEqual(saved.unknown_words, (durability,) * 3)
-        self.assertEqual(saved.unknown_bytes_03[0], 0)
+        saved=decode_item_list(self.inventory())[1][0];self.assertEqual(saved.unknown_words,(350,350,350))
     def test_retired_conversion_and_gold_transfers_reject(self):
         self.assertNotIn(GOLD_ID,CURRENCIES)
         with closing(sqlite3.connect(self.path)) as db,db:

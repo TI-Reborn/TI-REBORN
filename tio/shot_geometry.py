@@ -18,11 +18,14 @@ def _intersects(start,end,cell):
 def clear_shot(start,end,opaque):
     if start==end:return True
     source=tuple(v*32+16 for v in start);target=tuple(v*32+16 for v in end)
-    # Native checks centre, four source offsets, then four target offsets.
+    # Offsetting both endpoints also tests the gaps between staggered corners.
     rays=[(source,target)]
-    for dx,dy in ((0,-12),(0,12),(12,0),(-12,0)):
-        rays.append(((source[0]+dx,source[1]+dy),target))
-        rays.append((source,(target[0]+dx,target[1]+dy)))
+    offsets=((0,-12),(0,12),(12,0),(-12,0))
+    sources=[(source[0]+dx,source[1]+dy) for dx,dy in offsets]
+    targets=[(target[0]+dx,target[1]+dy) for dx,dy in offsets]
+    rays.extend((a,target) for a in sources)
+    rays.extend((source,b) for b in targets)
+    rays.extend((a,b) for a in sources for b in targets)
     nearby=[p for p in opaque if min(start[0],end[0])<=p[0]<=max(start[0],end[0])
             and min(start[1],end[1])<=p[1]<=max(start[1],end[1])]
     return any(not any(_intersects(a,b,p) for p in nearby) for a,b in rays)

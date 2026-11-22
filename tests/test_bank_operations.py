@@ -233,7 +233,7 @@ class BankOperationTests(unittest.TestCase):
 
     def test_recipient_gate_rechecks_before_move_and_foreign_mark_is_rejected(self):
         _,mark=self.mark()
-        with transaction(self.path) as db:db.execute("INSERT INTO map_journeys(account,x,y,tx,ty,started,arrives) VALUES ('bob',0,0,100,100,0,100)")
+        with transaction(self.path) as db:db.execute("INSERT INTO map_journeys VALUES ('bob',0,0,100,100,0,100)")
         before=self.rows()
         with self.assertRaises(CityError):self.ops.action(self.request('lend',nonce='busy-recipient-0001',markId=mark,recipientName='Bob'))
         denied=self.command(f'!bank lend {mark} Bob busy-recipient-0002',busy=('bob',))
@@ -246,9 +246,11 @@ class BankOperationTests(unittest.TestCase):
         with transaction(self.path) as db:
             owner=owner_for_slot(db,'alice',2);self.case.locations._save(db,owner,3,-154,-318)
         before=self.wallet();request=self.request(count=2,quote=100);request['slot']=2
+        credits, gold = self.wallet(owner)
         first=self.ops.action(request)
-        self.assertEqual(first['status']['balances']['credits'],2800)
-        self.assertEqual(self.wallet(),before);self.assertEqual(self.wallet(owner),(2800,0))
+        self.assertEqual(first['status']['balances'], dict(credits=credits - 200, gold=gold))
+        self.assertEqual(self.wallet(), before)
+        self.assertEqual(self.wallet(owner), (credits - 200, gold))
         self.assertTrue(self.ops.action(request)['replayed'])
 
     def test_scene_fences_still_reject_replay_and_action_id_reuse(self):

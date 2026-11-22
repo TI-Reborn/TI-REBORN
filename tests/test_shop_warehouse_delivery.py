@@ -88,8 +88,8 @@ class WarehouseDeliveryTests(unittest.TestCase):
 
     def test_location_without_a_warehouse_rejects_the_purchase(self):
         self.sql('CREATE TABLE character_locations (account TEXT PRIMARY KEY,town_id INTEGER NOT NULL)')
-        self.sql("INSERT INTO character_locations VALUES ('alice',19)")  # Training base.
-        with self.assertRaisesRegex(PurchaseRejected, 'Склад доступен'):
+        self.sql("INSERT INTO character_locations VALUES ('alice',99)")  # Unknown location.
+        with self.assertRaisesRegex(PurchaseRejected, 'Магазин доступен'):
             self.store.purchase('alice', ShopPurchase(WAREHOUSE, 0, SINGLE, 1))
         self.assertEqual((self.credits(), self.warehouse()), (10_000, ()))
 

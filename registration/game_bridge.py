@@ -170,70 +170,73 @@ def create_app(database, key, status_file, *, probe=lambda: False, clock=time.ti
         fingerprint = hmac.digest(key.encode(),
             json.dumps(data, sort_keys=True, separators=(',', ':')).encode(), 'sha256')
         username, request_id = data['username'], data['requestId']
-        with closing(sqlite3.connect(database, timeout=5)) as db, db:
-            db.execute('BEGIN IMMEDIATE')
+
+        def state(db):
             receipt = db.execute('SELECT operation,login,fingerprint FROM game_web_receipts WHERE request_id=?',
                                  (request_id,)).fetchone()
-            if receipt:
-                if (receipt[0] != operation or receipt[1] != username
-                        or not hmac.compare_digest(receipt[2], fingerprint)):
-                    raise ApiError('request_id_conflict', 409)
-                if operation in ('password', 'recovery'):
-                    # A lost-response retry is safe only while its intended
-                    # result remains current. An older receipt must not report
-                    # success after an intervening password change.
-                    current = db.execute('SELECT salt,digest,iterations FROM accounts WHERE login=?',
-                                         (username,)).fetchone()
-                    if not current:
-                        raise ApiError('invalid_credentials', 401)
-                    actual = hashlib.pbkdf2_hmac('sha256', password_bytes(data['newPassword']),
-                                                current[0], current[2])
-                    if not hmac.compare_digest(actual, current[1]):
-                        raise ApiError('invalid_credentials', 401)
-                return True
-            exists = db.execute('SELECT 1 FROM accounts WHERE login=?', (username,)).fetchone()
-            if operation == 'recovery':
-                # Only the authenticated portal calls this after mailbox proof.
-                # A pending signup may finish provisioning, but cannot take
-                # over an unrelated legacy account that claimed its name.
-                provisioning = data['provisioningId']
-                if provisioning:
-                    owner = db.execute('SELECT operation,login FROM game_web_receipts WHERE request_id=?',
-                                       (provisioning,)).fetchone()
-                    if exists and owner != ('create', username):
-                        raise ApiError('username_exists', 409)
-                elif not exists:
-                    raise ApiError('invalid_credentials', 401)
-                password = data['newPassword']
-            elif operation == 'create':
-                if exists:
-                    raise ApiError('username_exists', 409)
-                password = data['password']
-            else:
-                # Verify inside the write transaction, preventing racing resets.
-                row = db.execute('SELECT salt,digest,iterations FROM accounts WHERE login=?',
+            current = db.execute('SELECT salt,digest,iterations FROM accounts WHERE login=?',
                                  (username,)).fetchone()
-                salt, expected, rounds = row if row else (bytes(16), bytes(32), ITERATIONS)
-                actual = hashlib.pbkdf2_hmac('sha256', data['currentPassword'].encode('ascii'), salt, rounds)
-                if not row or not hmac.compare_digest(actual, expected):
-                    raise ApiError('invalid_credentials', 401)
-                password = data['newPassword']
-            salt = secrets.token_bytes(16)
-            digest = hashlib.pbkdf2_hmac('sha256', password_bytes(password), salt, ITERATIONS)
-            if operation == 'create' or (operation == 'recovery' and not exists):
-                db.execute('INSERT INTO accounts(login,salt,digest,iterations) VALUES (?,?,?,?)',
-                           (username, salt, digest, ITERATIONS))
-                if operation == 'recovery':
-                    # Reserve the original provisioning identity as well, so
-                    # recovery after a lost response can prove ownership.
+            provisioning = data.get('provisioningId')
+            owner = db.execute('SELECT operation,login FROM game_web_receipts WHERE request_id=?',
+                               (provisioning,)).fetchone() if provisioning else None
+            return receipt, current, owner
+
+        with closing(sqlite3.connect(database, timeout=5)) as db:
+            for _ in range(3):
+                with db:
+                    db.execute('BEGIN')
+                    observed = state(db)
+                receipt, current, owner = observed
+                if receipt:
+                    if (receipt[0] != operation or receipt[1] != username
+                            or not hmac.compare_digest(receipt[2], fingerprint)):
+                        raise ApiError('request_id_conflict', 409)
+                    if operation in ('password', 'recovery'):
+                        # A receipt is valid only while its intended password is current.
+                        if not current:
+                            raise ApiError('invalid_credentials', 401)
+                        actual = hashlib.pbkdf2_hmac('sha256', password_bytes(data['newPassword']),
+                                                    current[0], current[2])
+                        if not hmac.compare_digest(actual, current[1]):
+                            raise ApiError('invalid_credentials', 401)
+                else:
+                    if operation == 'recovery':
+                        if data['provisioningId']:
+                            if current and owner != ('create', username):
+                                raise ApiError('username_exists', 409)
+                        elif not current:
+                            raise ApiError('invalid_credentials', 401)
+                    elif operation == 'create':
+                        if current:
+                            raise ApiError('username_exists', 409)
+                    else:
+                        salt, expected, rounds = current if current else (bytes(16), bytes(32), ITERATIONS)
+                        actual = hashlib.pbkdf2_hmac('sha256', data['currentPassword'].encode('ascii'), salt, rounds)
+                        if not current or not hmac.compare_digest(actual, expected):
+                            raise ApiError('invalid_credentials', 401)
+                    password = data['password'] if operation == 'create' else data['newPassword']
+                    salt = secrets.token_bytes(16)
+                    digest = hashlib.pbkdf2_hmac('sha256', password_bytes(password), salt, ITERATIONS)
+                with db:
+                    db.execute('BEGIN IMMEDIATE')
+                    # Hash outside the writer; revalidate every authorization input atomically.
+                    if state(db) != observed:
+                        continue
+                    if receipt:
+                        return True
+                    if operation == 'create' or (operation == 'recovery' and not current):
+                        db.execute('INSERT INTO accounts(login,salt,digest,iterations) VALUES (?,?,?,?)',
+                                   (username, salt, digest, ITERATIONS))
+                        if operation == 'recovery':
+                            db.execute('INSERT INTO game_web_receipts VALUES (?,?,?,?,?)',
+                                       (data['provisioningId'], 'create', username, fingerprint, time.time()))
+                    else:
+                        db.execute('UPDATE accounts SET salt=?,digest=?,iterations=? WHERE login=?',
+                                   (salt, digest, ITERATIONS, username))
                     db.execute('INSERT INTO game_web_receipts VALUES (?,?,?,?,?)',
-                               (data['provisioningId'], 'create', username, fingerprint, time.time()))
-            else:
-                db.execute('UPDATE accounts SET salt=?,digest=?,iterations=? WHERE login=?',
-                           (salt, digest, ITERATIONS, username))
-            db.execute('INSERT INTO game_web_receipts VALUES (?,?,?,?,?)',
-                       (request_id, operation, username, fingerprint, time.time()))
-        return False
+                               (request_id, operation, username, fingerprint, time.time()))
+                return False
+        raise ApiError('service_unavailable', 503)
 
     def hash_work(callback):
         if not budget.hash_slots.acquire(blocking=False):

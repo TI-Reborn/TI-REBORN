@@ -53,14 +53,19 @@ def prepare_range(path, account, ticket, catalog, *, clock):
         combat.resources[identity]=10
     field=BattleField(w,h,actors,blocked=blocked,step_cost=1,teams={owner:0,enemy:1},transparent_obstacles=transparent)
     combat.field=field;field.combat=combat;field.battle_mode=16
+    field.avatar_ids = {i: previous.avatar_ids.get(i, 0) for i in ticket.actors}
     for attr in ('_healing_rules','_slash_rules','_dog_rules'):
         setattr(field,attr,{k:v for k,v in getattr(previous,attr).items() if k[0] in ticket.actors})
-    for identity in ticket.actors:field._turn_points[identity]=previous._turn_points[identity]
     from tio.battle_doors import BattleDoors
     from tio.battle_loot import BattleLoot
     field.doors=BattleDoors(field,(),{})
     field.loot=BattleLoot(combat,(),level=max(ticket.levels))
     field.practice=Practice(field,owner,target_ids,clock)
+    for identity in ticket.actors:
+        maximum = previous._turn_points[identity]
+        field._turn_points[identity] = maximum
+        # The shared scene builder priced the initial turn before the range policy was attached.
+        field._actors[identity] = replace(field.actor(identity), action_points=combat.turn_budget(identity, maximum))
     field.scene_metadata=dict(profile='shooting_range',resource='shootingrange',width=w,height=h,targets=len(targets),mode=16)
     view=VisibilityView(field,owner,templates)
     skills=tuple(p for p in base.packets if p[:1]==b'\x80')

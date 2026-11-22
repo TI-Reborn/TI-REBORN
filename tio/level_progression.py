@@ -6,6 +6,7 @@ returns level0 at its upper sentinel, so cumulative XP must stay below it.
 
 from .db_transaction import connect
 from bisect import bisect_right
+from collections.abc import Collection
 from contextlib import closing
 from dataclasses import replace
 from fractions import Fraction
@@ -86,12 +87,13 @@ class BattleExperience:
                                          (b,a,victim.actor_id,c['xp_per_damage_received'])):
             self.totals[identity]=self.totals.get(identity,Fraction(0))+eligible*rate*self.factor(actor,other)
 
-    def report(self,combat,owner):
+    def report(self,combat,owner,*,actor_ids: Collection[int] | None = None) -> dict[int, int]:
+        eligible = combat.persistence if actor_ids is None else actor_ids
         return {i:min(MAX_XP,int(self.totals.get(i,0))) for i,a in combat.field._actors.items()
-                if a.owner_id==owner and i in combat.persistence}
+                if a.owner_id==owner and i in eligible}
 
 
-def settle_experience(db,account,match_id,report):
+def settle_experience(db,account,match_id,report,*,keep_full_health: bool = False):
     db.execute('''CREATE TABLE IF NOT EXISTS experience_battle_audit (
         account TEXT NOT NULL, match_id TEXT NOT NULL, pet_id INTEGER NOT NULL,
         xp_before INTEGER NOT NULL, gain INTEGER NOT NULL, xp_after INTEGER NOT NULL,
@@ -105,7 +107,10 @@ def settle_experience(db,account,match_id,report):
         human,raw=row
         pet=decode_pet_info(normalize(raw,bool(human)),human_equipment=bool(human));f=dict(pet.fields)
         before=f[XP];old=f[LEVEL];after=min(MAX_XP,before+gain);level=level_for_xp(after)
-        f.update({XP:after,LEVEL:level,'0x8c4a07':f['0x8c4a07']+(level-old)*RULES['hp_per_level']})
+        growth = (level-old)*RULES['hp_per_level']
+        if keep_full_health and f['0x8c4ab1'] == f['0x8c4a07']:
+            f['0x8c4ab1'] += growth
+        f.update({XP:after,LEVEL:level,'0x8c4a07':f['0x8c4a07']+growth})
         # Current HP is retained even at zero. Perk HP is projected separately.
         from .weapon_proficiency import ProficiencyRules
         packet=ProficiencyRules().normalize(encode_pet_info(replace(pet,fields=f)),bool(human))
@@ -114,7 +119,7 @@ def settle_experience(db,account,match_id,report):
                    (account,match_id,owner,before,after-before,after,old,level))
 
 
-def result_packets(path,account,match_id,combat,view):
+def result_packets(path,account,match_id,combat,view,*,actor_ids: Collection[int] | None = None):
     """Update native actor XP before4C subtracts gain to detect a promotion."""
     from .protocol.binary import Writer
     from .protocol.battle_over import SoldierExperience
@@ -126,8 +131,9 @@ def result_packets(path,account,match_id,combat,view):
     # Filter persistence by account before inversion because opponents may both
     # own pet1, and mirrored bots can reuse the same saved source fighter.
     actors={}
-    for identity,(_,saved_account) in combat.persistence.items():
-        if saved_account!=account:continue
+    if actor_ids is None:
+        actor_ids = tuple(i for i, (_, saved_account) in combat.persistence.items() if saved_account == account)
+    for identity in actor_ids:
         local=combat.storage_ids.get(identity,identity)
         if local in actors:raise ValueError('Ambiguous battle experience recipient')
         actors[local]=identity
@@ -145,9 +151,11 @@ def result_packets(path,account,match_id,combat,view):
                 actor=combat.field.actor(identity);t=view.templates[identity]
                 fields={**t.fields,**battle_fields(projected,human),'0x8c5134':f[LEVEL],'0x8c514b':xp,
                     '0x8c566a':f['0x8c4a07'],'0x8c57d0':f['0x8c4b57'],
+                    '0x8c5847':f['0x8c4bbc'],'0x8c585c':f['0x8c4bd0'],
                     '0x8c519b':actor.x,'0x8c51af':actor.y,'0x8c57bb':actor.health,
                     '0x8c571d':actor.action_points,'0x8c5694':combat.field._turn_points[identity]}
-                updates.append(encode_battle_soldier(replace(t,fields=fields)))
+                from .avatars import soldier_avatar
+                updates.append(encode_battle_soldier(replace(t,fields=soldier_avatar(combat.field,identity,fields))))
             # 4E attribute2 is the original experience/model+602C update.
             updates.append(Writer().u8(0x4e).u32(identity).u32(1).u32(2).u32(xp).u8(0).build())
             initial=combat.initial_proficiencies.get(identity,projected)

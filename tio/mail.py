@@ -7,7 +7,7 @@ from pathlib import Path
 import time
 
 from .db_transaction import connect
-from .protocol.item_list import encode_item_list,decode_item_list
+from .protocol.item_list import ItemRecord, encode_item_list, decode_item_list
 from .warehouse import WarehouseStore
 from . import warehouse_completion as completion
 from .wallets import WalletStore
@@ -171,6 +171,27 @@ class MailStore:
             db.execute('INSERT INTO mail_requests VALUES (?,?,?,?)',(sender,request_id,canonical,ident))
             db.execute('INSERT INTO mail_receipts VALUES (?,?,?,?,?)',(ident,'sent',sender,now,json.dumps(dict(credits=credits,fee=fee,items=len(selected)),sort_keys=True)))
             return ident
+
+    def deliver_reward(self, recipient: str, recipient_name: bytes, subject: str, body: str,
+                       *, credits: int, items: tuple[ItemRecord, ...], now: int) -> None:
+        """Deposit server-owned rewards without charging a player wallet."""
+        subject = _text(subject, self.rules['maximum_subject_bytes'])
+        body = _text(body, self.rules['maximum_body_bytes'])
+        _uint(credits)
+        with closing(connect(self.path)) as db, db:
+            db.execute('BEGIN IMMEDIATE')
+            message = db.execute('''INSERT INTO mail_messages
+                (sender,recipient,sender_name,recipient_name,subject,body,credits,fee,created_at,expires_at,state)
+                VALUES ('@system',?,X'54494F',?,?,?,?,0,?,?,'pending')''',
+                (recipient, recipient_name, subject, body, credits, now,
+                 now + self.rules['expires_seconds'])).lastrowid
+            if message > MAX_CREDITS:
+                raise ValueError('Mail identity space exhausted')
+            for position, item in enumerate(items):
+                escrow = self._escrow_id(db)
+                packet = encode_item_list(0, (replace(item, instance_id=escrow),))
+                db.execute('INSERT INTO mail_items VALUES (?,?,?,?)',
+                           (message, position, packet, escrow))
 
     @staticmethod
     def _row(db,owner,ident,*,sender=False):

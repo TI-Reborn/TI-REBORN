@@ -11,29 +11,36 @@ import shutil
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def source_paths(root: Path) -> list[Path]:
+    files = set()
+    for folder in ('server', 'tio', 'tools', 'tests', 'registration'):
+        files.update((root / folder).rglob('*.py'))
+    for pattern in ('*.json', '*.xml', '*.toml'):
+        files.update((root / 'config').glob(pattern))
+    for pattern in ('*.py', '*.service', '*.timer', '*.md', '*.sh', '*.nginx', '*.inc'):
+        files.update((root / 'deploy').glob(pattern))
+    for folder in ('registration/templates', 'registration/static'):
+        files.update(p for p in (root / folder).rglob('*') if p.is_file()
+                     and p.suffix in ('.html', '.css', '.js', '.svg'))
+    files.update(root.glob('*.md'))
+    files.update((root / 'docs').glob('*.md'))
+    files.update((root / '.github/workflows').glob('server-checks.yml'))
+    files.update(root / name for name in ('pyproject.toml', 'requirements.txt', 'registration/requirements.txt',
+                                          'assets/item-icons-hd-v1/manifest.json', 'tools/full_tests_known.json',
+                                          'tests/fixtures/game_tls/generate.ps1'))
+    tree = ast.parse((root / 'server/runtime.py').read_text(encoding='utf-8-sig'))
+    assets = next(ast.literal_eval(node.value) for node in tree.body
+                  if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'RUNTIME_ASSETS' for t in node.targets))
+    files.update(root / 'evidence' / name for name in assets)
+    return sorted(files)
+
+
 def build(destination: Path):
     destination = destination.resolve()
     if destination.exists():
         raise FileExistsError(f'Refusing to overwrite: {destination}')
-    files = set()
-    for folder in ('server', 'tio', 'tools', 'tests', 'registration'):
-        files.update((ROOT / folder).rglob('*.py'))
-    for pattern in ('*.json', '*.xml', '*.toml'):
-        files.update((ROOT / 'config').glob(pattern))
-    for pattern in ('*.py', '*.service', '*.timer', '*.md', '*.sh', '*.nginx', '*.inc'):
-        files.update((ROOT / 'deploy').glob(pattern))
-    for folder in ('registration/templates', 'registration/static'):
-        files.update(p for p in (ROOT / folder).rglob('*') if p.is_file()
-                     and p.suffix in ('.html', '.css', '.js', '.svg'))
-    files.update(ROOT.glob('*.md'))
-    files.update((ROOT / 'docs').glob('*.md'))
-    files.update(ROOT / name for name in ('pyproject.toml', 'requirements.txt', 'registration/requirements.txt'))
-    tree = ast.parse((ROOT / 'server/runtime.py').read_text(encoding='utf-8-sig'))
-    assets = next(ast.literal_eval(node.value) for node in tree.body
-                  if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'RUNTIME_ASSETS' for t in node.targets))
-    files.update(ROOT / 'evidence' / name for name in assets)
     manifest = []
-    for source in sorted(files):
+    for source in source_paths(ROOT):
         relative = source.relative_to(ROOT)
         if source.is_symlink() or source.resolve() != source.absolute():
             raise ValueError(f'Unexpected source link: {relative}')

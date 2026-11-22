@@ -221,7 +221,7 @@ class GameTLSTests(unittest.TestCase):
 
     def test_bad_or_incomplete_preface_releases_reservation_without_account_state(self):
         self.case.start()
-        for preface in (b'JUNK\1\0\x75\x30',b'TIOT\2\0\x75\x30',b'TIOT\1\2\x75\x30',
+        for preface in (b'JUNK\1\0\x75\x30',b'TIOT\2\0\x75\x30',b'TIOT\1\4\x75\x30',
                 b'TIOT\1\0\0\1',b'TIO',b''):
             with self.subTest(preface=preface):
                 connection=self.connect('login',preface=preface)

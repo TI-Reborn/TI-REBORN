@@ -14,11 +14,13 @@ DIRECT_TYPES = frozenset(('Bullet','None','Minigun'))
 def battle_skills(learned,inventory,human):
     from .protocol.item_list import decode_item_list
     from .sniper_scope import WEAPONS
-    entries=tuple(e for e in learned if e.ability_id not in (9,27))
-    if human and any(i.template_id==339 and i.equipped and i.client_slot==16
-                     for i in decode_item_list(inventory)[1]):
-        entries+=(AbilityEntry(27,1,0,1),)
-    if human and any(i.template_id in WEAPONS and i.equipped and i.client_slot==16
-                     for i in decode_item_list(inventory)[1]):
-        entries+=(AbilityEntry(9,1,0,1),)
+    from .miner_abilities import rules
+    primary = {i.template_id for i in decode_item_list(inventory)[1]
+               if i.equipped and i.client_slot == 16} if human else set()
+    entries = tuple(e for e in learned if e.ability_id not in (9, 27)
+                    and (e.ability_id != 22 or rules()['hammer_id'] in primary))
+    if 339 in primary:
+        entries += (AbilityEntry(27, 1, 0, 1),)
+    if primary & WEAPONS:
+        entries += (AbilityEntry(9, 1, 0, 1),)
     return entries

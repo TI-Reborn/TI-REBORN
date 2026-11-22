@@ -42,7 +42,7 @@ class ComplexArmorTests(unittest.TestCase):
         for template in (263, 264):
             for replacement, option in ((1001, 0), (1002, 2), (1003, 3)):
                 with self.subTest(template=template, replacement=replacement):
-                    self.seed((242, 243, 244, template), female=True)
+                    self.seed((242, 243, 244, template), female=True, level=20)
                     for identity, slot in ((1001, 0), (1002, 2), (1003, 3)):
                         self.wear(identity, slot)
                     bag = self.wear(1004, 2)

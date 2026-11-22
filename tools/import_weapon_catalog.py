@@ -18,6 +18,8 @@ def build(raw):
         item=int(fields['item_id'])
         # User's gameplay rule, 2026-10-19: M60 reaches twelve cells.
         if item==314:fields['maxRange']='12'
+        if item==306:fields['actionPoints']='4'
+        if item==306:fields['actionPoints']='4'
         if item in records:raise ValueError('Duplicate item')
         records[item]=fields
     ammo={str(i):{'name':r['name'],'pack_amount':int(r.get('packamount',1)),

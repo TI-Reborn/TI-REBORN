@@ -1,5 +1,6 @@
 """Clan delivery uses each authenticated session's own Presence queue."""
 from contextlib import closing
+import time
 from tio.db_transaction import connect
 from tio.clans import ClansStore,membership,character,VIEW_SAFE,project_inventory
 from tio.protocol.clans import decode_request,encode_info,encode_members,encode_invitation,encode_join
@@ -32,7 +33,8 @@ def sync(presence,session):
     clan,members=current.snapshot(session.account,online)
     signature=(encode_info(clan),b'\x57',encode_members(members))
     revision=clan['revision'] if clan else 0
-    if signature!=getattr(session,'clans_signature',None) or revision!=getattr(session,'clans_revision',None):
+    revision_changed = revision != getattr(session, 'clans_revision', None)
+    if signature!=getattr(session,'clans_signature',None) or revision_changed:
         old=getattr(session,'clans_signature',None)
         session.clans_signature=signature
         session.clans_revision=revision
@@ -44,9 +46,19 @@ def sync(presence,session):
         if clan:
             from tio.clans import VIEW_WAREHOUSE
             for kind,right in ((1,VIEW_WAREHOUSE),(2,VIEW_SAFE)):
-                if clan['permissions']&right:enqueue(presence,session,*current.warehouse_packets(session.account,kind))
+                if clan['permissions'] & right:
+                    packets = current.warehouse_packets(session.account, kind, include_marks=True)
+                    enqueue(presence, session, *packets)
             assets=WalletStore(session.database).ensure(session.account)
             enqueue(presence,session,encode_asset_count(assets))
+            if old is not None and revision_changed:
+                from .economy_runtime import city_idle
+                from .item_mark_service import listing
+                if city_idle(session):
+                    with closing(connect(session.database)) as db:
+                        db.execute('BEGIN')
+                        mark_list = listing(db, session.account, int(time.time()))
+                    enqueue(presence, session, mark_list)
         elif old is not None:
             enqueue(presence,session,encode_asset_count(WalletStore(session.database).ensure(session.account)))
         team=getattr(getattr(session,'router',None),'team_arena',None)
@@ -56,7 +68,6 @@ def sync(presence,session):
                 from tio.enhancement_limits import project_owned_inventory
                 enqueue(presence,session,project_inventory(session.database,session.account,project_owned_inventory(session.database,session.account,packet)))
     with closing(connect(session.database)) as db:
-        import time
         row=db.execute('SELECT clan_id,inviter,expires FROM clan_invitations WHERE account=?',(session.account,)).fetchone()
         invitation=None
         if row and row[2]>time.time():

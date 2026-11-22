@@ -123,14 +123,23 @@ class RatingsPublicTests(unittest.TestCase):
         with self.assertRaises(CityError) as error:self.public.status({**valid,'username':'unknown'})
         self.assertEqual(error.exception.status,404);self.assertEqual(before,self.rows())
 
-    def test_status_waits_for_authoritative_lock_and_rechecks_stop(self):
-        entered=threading.Event();before=self.rows()
-        def read():entered.set();return self.public.status(self.request())
+    def test_status_reads_while_arena_lock_is_held(self):
         with ThreadPoolExecutor(max_workers=1) as pool:
             with self.router.team_arena.lock:
-                future=pool.submit(read);self.assertTrue(entered.wait(3));self.assertFalse(future.done());self.router.server.stopping.set()
-            with self.assertRaises(CityError) as error:future.result(timeout=3)
-        self.assertEqual(error.exception.status,503);self.assertEqual(before,self.rows())
+                future = pool.submit(self.public.status, self.request())
+                self.assertEqual(future.result(timeout=2)['ratings']['total'], 0)
+
+    def test_status_rechecks_stop_during_listing(self):
+        original = rating_completion.public_listing
+
+        def listing(db, **kwargs):
+            self.router.server.stopping.set()
+            return original(db, **kwargs)
+
+        with patch.object(rating_completion, 'public_listing', side_effect=listing):
+            with self.assertRaises(CityError) as error:
+                self.public.status(self.request())
+        self.assertEqual(error.exception.status, 503)
 
     def test_response_validator_rejects_foreign_query_extra_secret_and_inconsistent_rows(self):
         names=self.accounts();self.match('wall',(names[:4],names[4:]),'wall');request=self.request('wall');sample=self.public.status(request)

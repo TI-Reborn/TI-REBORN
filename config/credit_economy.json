@@ -467,6 +467,81 @@
       "item_id": 5012,
       "credits": 300,
       "pack_count": 1
+    },
+    {
+      "item_id": 6100,
+      "credits": 4900,
+      "pack_count": 1
+    },
+    {
+      "item_id": 6101,
+      "credits": 4900,
+      "pack_count": 1
+    },
+    {
+      "item_id": 6102,
+      "credits": 4900,
+      "pack_count": 1
+    },
+    {
+      "item_id": 6103,
+      "credits": 4900,
+      "pack_count": 1
+    },
+    {
+      "item_id": 6104,
+      "credits": 4900,
+      "pack_count": 1
+    },
+    {
+      "item_id": 6105,
+      "credits": 4900,
+      "pack_count": 1
+    },
+    {
+      "item_id": 6106,
+      "credits": 4900,
+      "pack_count": 1
+    },
+    {
+      "item_id": 6107,
+      "credits": 4900,
+      "pack_count": 1
+    },
+    {
+      "item_id": 6108,
+      "credits": 4900,
+      "pack_count": 1
+    },
+    {
+      "item_id": 6109,
+      "credits": 4900,
+      "pack_count": 1
+    },
+    {
+      "item_id": 6110,
+      "credits": 4900,
+      "pack_count": 1
+    },
+    {
+      "item_id": 6120,
+      "credits": 1800,
+      "pack_count": 1
+    },
+    {
+      "item_id": 6121,
+      "credits": 1200,
+      "pack_count": 1
+    },
+    {
+      "item_id": 6122,
+      "credits": 1050,
+      "pack_count": 1
+    },
+    {
+      "item_id": 6123,
+      "credits": 1200,
+      "pack_count": 1
     }
   ]
 }

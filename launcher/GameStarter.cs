@@ -10,6 +10,7 @@ namespace TioLauncher;
 // single in-memory module pointer is corrected; files and network code stay intact.
 static class GameStarter
 {
+    internal static readonly TimeSpan StartupTimeout = TimeSpan.FromSeconds(90);
     [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
     struct Startup
     {
@@ -28,17 +29,10 @@ static class GameStarter
     [DllImport("kernel32")] static extern bool CloseHandle(IntPtr handle);
     [DllImport("kernel32")] static extern IntPtr OpenThread(uint access,bool inherit,uint tid);
     [DllImport("kernel32",SetLastError=true)] static extern bool Wow64GetThreadContext(IntPtr thread,IntPtr context);
-    [DllImport("kernel32",SetLastError=true)] static extern bool ReadProcessMemory(IntPtr process,IntPtr address,byte[] data,nuint size,out nuint read);
     [DllImport("kernel32",SetLastError=true)] static extern bool WriteProcessMemory(IntPtr process,IntPtr address,byte[] data,nuint size,out nuint written);
     [DllImport("kernel32")] static extern bool TerminateProcess(IntPtr process,uint code);
     static readonly List<object> startupTrace=new();
     internal static object[] LastTrace => startupTrace.ToArray();
-    static uint Read(IntPtr process,long address)
-    {
-        var bytes=new byte[4];
-        if (!ReadProcessMemory(process,new IntPtr(address),bytes,4,out var n) || n!=4) return 0;
-        return BitConverter.ToUInt32(bytes);
-    }
     static void Pin(string path,string hash)
     {
         using var file=File.OpenRead(path);
@@ -73,6 +67,7 @@ static class GameStarter
         bool englishCaptions=L.Language!="english";
         bool initialNativeBreak=false, initialWowBreak=false, detached=false, canDetach=false,routeInstalled=false;
         NativeTlsRoute.InProcessPlan? route=null;
+        NativeOrangeDep.Plan? depBridge=null;
         uint nativeGrid=0;
         bool reconConfigured=false;
         bool guiThemeConfigured=false;
@@ -80,7 +75,7 @@ static class GameStarter
         try
         {
             attachLifetime?.Invoke(info.process);
-            while(timer.Elapsed < TimeSpan.FromSeconds(30))
+            while(timer.Elapsed < StartupTimeout)
             {
                 if (!detached && WaitForDebugEvent(data,100))
                 {
@@ -111,11 +106,11 @@ static class GameStarter
                                         var modules=process.Modules.Cast<ProcessModule>().ToArray();
                                         var user=modules.Single(m=>m.ModuleName.Equals("user32.dll",StringComparison.OrdinalIgnoreCase));
                                         var app=modules.SingleOrDefault(m=>m.ModuleName.Equals("apphelp.dll",StringComparison.OrdinalIgnoreCase));
-                                        uint before=Read(info.process,packed+0x4a13);
+                                        uint before=NativeStartupProbe.ReadUInt32(info.process,packed+0x4a13);
                                         uint userBase=(uint)user.BaseAddress.ToInt64();
                                         if(before!=userBase)
                                         {
-                                            if(app is null || before!=(uint)app.BaseAddress.ToInt64() || Read(info.process,packed+0xbc80)!=0x81ec8b55)
+                                            if(app is null || before!=(uint)app.BaseAddress.ToInt64() || NativeStartupProbe.ReadUInt32(info.process,packed+0xbc80)!=0x81ec8b55)
                                                 throw new IOException(L.Text("Неизвестное состояние загрузчика ORANGE; исправление не применено."));
                                             byte[] bytes=BitConverter.GetBytes(userBase);
                                             if(!WriteProcessMemory(info.process,new IntPtr(packed+0x4a13),bytes,4,out var written) || written!=4)
@@ -126,6 +121,8 @@ static class GameStarter
                                         {
                                             var orange=modules.Single(m=>m.ModuleName.Equals("orange.dll",StringComparison.OrdinalIgnoreCase));
                                             if((uint)orange.BaseAddress.ToInt64()!=packed) throw new IOException(L.Text("Неизвестный модуль ORANGE."));
+                                            depBridge=NativeOrangeDep.Prepare(info.process,modules,packed);
+                                            if(depBridge is not null) startupTrace.Add(new {phase="orange_dep_bridge_prepared"});
                                             route=NativeTlsRoute.PrepareInProcess(info.process,modules,packed,profile);
                                             startupTrace.Add(new { phase="tls_bootstrap_prepared" });
                                         }
@@ -147,6 +144,8 @@ static class GameStarter
                                 startupTrace.Add(new { phase="native_door_grid_installed" });
                                 NativeBattleTurn.Apply(info.process,checked((uint)Marshal.ReadInt64(data,40)));
                                 startupTrace.Add(new { phase="native_turn_selection_installed" });
+                                bool hdMaps=NativeHdMapTextures.Apply(info.process,checked((uint)Marshal.ReadInt64(data,40)),interfaceMode);
+                                startupTrace.Add(new { phase="native_hd_map_textures",enabled=hdMaps });
                             }
                             if(kind==6 && nativeGrid!=0 && file!=IntPtr.Zero && file!=new IntPtr(-1) && NativeEnglish.IsSilver(file))
                             {
@@ -154,6 +153,15 @@ static class GameStarter
                                 guiThemeConfigured=true;
                                 startupTrace.Add(new { phase="native_gui_theme", enabled=guiTheme });
                                 bool bound=NativeDoorGrid.BindRecon(info.process,nativeGrid,checked((uint)Marshal.ReadInt64(data,24)),Path.Combine(root,"silver.dll"));
+                                bool moderation = NativePlayerModeration.Apply(info.process,
+                                    checked((uint)Marshal.ReadInt64(data,24)), Path.Combine(root,"silver.dll"));
+                                startupTrace.Add(new { phase="native_player_moderation", enabled=moderation });
+                                bool bidTitle = NativeAuctionBidTitle.Apply(info.process,
+                                    checked((uint)Marshal.ReadInt64(data,24)), Path.Combine(root,"silver.dll"));
+                                startupTrace.Add(new { phase="native_auction_bid_title", enabled=bidTitle });
+                                bool mailCredits = NativeMailCredits.Apply(info.process,
+                                    checked((uint)Marshal.ReadInt64(data,24)), Path.Combine(root,"silver.dll"));
+                                startupTrace.Add(new { phase="native_mail_credits", enabled=mailCredits });
                                 reconConfigured=true;
                                 startupTrace.Add(new { phase="native_recon_fog_bound",bound });
                             }
@@ -190,7 +198,9 @@ static class GameStarter
                     }
                 }
                 if(detached) Thread.Sleep(50);
-                if(Read(info.process,0x76da80)!=0)
+                if(detached && NativeStartupProbe.ExitCode(info.process) is uint exitCode)
+                    throw new IOException(L.Text("Игра завершилась до загрузки сетевого модуля. Код: ")+exitCode);
+                if(NativeStartupProbe.ReadUInt32(info.process,0x76da80)!=0)
                 {
                     if(!reconConfigured)
                     {
@@ -198,6 +208,15 @@ static class GameStarter
                         var silver=gridProcess.Modules.Cast<ProcessModule>().SingleOrDefault(m=>m.ModuleName.Equals("silver.dll",StringComparison.OrdinalIgnoreCase));
                         if(silver is null) continue;
                         bool bound=NativeDoorGrid.BindRecon(info.process,nativeGrid,checked((uint)silver.BaseAddress.ToInt64()),Path.Combine(root,"silver.dll"));
+                        bool moderation = NativePlayerModeration.Apply(info.process,
+                            checked((uint)silver.BaseAddress.ToInt64()), Path.Combine(root,"silver.dll"));
+                        startupTrace.Add(new { phase="native_player_moderation", enabled=moderation });
+                        bool bidTitle = NativeAuctionBidTitle.Apply(info.process,
+                            checked((uint)silver.BaseAddress.ToInt64()), Path.Combine(root,"silver.dll"));
+                        startupTrace.Add(new { phase="native_auction_bid_title", enabled=bidTitle });
+                        bool mailCredits = NativeMailCredits.Apply(info.process,
+                            checked((uint)silver.BaseAddress.ToInt64()), Path.Combine(root,"silver.dll"));
+                        startupTrace.Add(new { phase="native_mail_credits", enabled=mailCredits });
                         reconConfigured=true;
                         startupTrace.Add(new { phase="native_recon_fog_bound",bound });
                     }
@@ -237,6 +256,12 @@ static class GameStarter
                         startupTrace.Add(new { phase="tls_route_verified" });
                     }
                     if(!detached && !DebugActiveProcessStop(info.pid)) throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+                    if(depBridge is not null)
+                    {
+                        uint count=NativeOrangeDep.Complete(info.process,depBridge);
+                        startupTrace.Add(new {phase="orange_dep_bridge_removed",handlers=count,dep_enabled=true});
+                        depBridge=null;
+                    }
                     success=true;
                     if(probe)
                     {
@@ -251,7 +276,13 @@ static class GameStarter
                     return info.pid;
                 }
             }
-            throw new IOException(L.Text("Сетевой модуль игры не загрузился за 30 секунд."));
+            throw new IOException(string.Format(L.Text("Сетевой модуль игры не загрузился за {0} секунд."), StartupTimeout.TotalSeconds));
+        }
+        catch (Exception error)
+        {
+            // Observe before cleanup terminates the process and destroys its original state.
+            error.Data["native_startup"] = NativeStartupProbe.Capture(info.process, info.pid, route?.PhaseAddress);
+            throw;
         }
         finally
         {

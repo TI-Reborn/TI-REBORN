@@ -34,7 +34,7 @@ class CityInventoryWaitTests(unittest.TestCase):
 
 
 class CityInventoryWaitTCPTests(unittest.TestCase):
-    def setUp(self):
+    def setUp(self, *, towns=(13, 3)):
         self.case = network.MultiAccountTests()
         self.case.setUp()
         self.addCleanup(self.case.doCleanups)
@@ -42,7 +42,7 @@ class CityInventoryWaitTCPTests(unittest.TestCase):
         trial = json.loads((network.ROOT / 'evidence/owned_pet_trial.json').read_text())
         pet = bytes.fromhex(trial['packet_hex'])
         LocationStore(self.case.config.database)
-        for index, (login, town) in enumerate((("alice", 13), ("bob", 3))):
+        for index, (login, town) in enumerate(zip(('alice', 'bob'), towns)):
             item = ItemRecord(1001 + index, 263, bytes(2), 1, 0, 0,
                               (290, 300, 300), bytes(4), None, bytes(3))
             self.items[login] = item

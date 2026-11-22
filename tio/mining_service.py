@@ -41,7 +41,7 @@ class MiningService:
         # This public read must not run checkpoint admission or change gameplay.
         if sub==0x28:
             if len(packet)!=3:raise ValueError('Invalid mining rating request')
-            return None,(b'\xb0\x29'+packet[2:3]+b'\0\0',)
+            return None,(wire.rating(packet[2], self.market.ratings(packet[2])),)
         if sub not in (0x14,0x19,0x1c,0x2c):return None
         town=self.locations.current(account)
         if town not in MINE_LOCATIONS:raise ValueError('Travel to a mine checkpoint first')
@@ -64,7 +64,8 @@ class MiningService:
         catalog=AbilityCatalog(AbilityLevel(r['id'],r['level'],r['fields']) for r in source['records'])
         prepared=prepare_mining(self.path,account,ticket,catalog,role=role)
         prepared.field.return_town=town
-        room,replies=self.arena.start_survival(character,name,prepared)
+        from .clan_benefits import path_crest
+        room,replies=self.arena.start_survival(character,name,prepared,crest_id=path_crest(self.path,account))
         return (room,prepared),replies
 
 

@@ -6,10 +6,13 @@ def text_read(r):
     raw=bytearray()
     while (word:=r.read(2))!=b'\0\0':
         raw.extend(word)
-        if len(raw)>800:raise PacketError('Chat text too long')
+        if len(raw)>800:raise PacketError('Сообщение чата слишком длинное (максимум 200 символов)')
     try:text=raw.decode('utf-16-le')
     except UnicodeError as exc:raise PacketError('Invalid Unicode') from exc
-    if not text.strip() or len(text)>200 or any(ord(c)<32 for c in text):raise PacketError('Invalid chat text')
+    # Clipboard text can contain line breaks even in the native single-line edit.
+    text=text.replace('\r\n',' ').translate(str.maketrans('\r\n\t','   '))
+    if len(text)>200:raise PacketError('Сообщение чата слишком длинное (максимум 200 символов)')
+    if not text.strip() or any(ord(c)<32 for c in text):raise PacketError('Сообщение чата пустое или содержит недопустимые символы')
     return text
 
 

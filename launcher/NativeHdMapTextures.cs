@@ -1,0 +1,59 @@
+using System.Runtime.InteropServices;
+using System.Text.Json;
+
+namespace TioLauncher;
+
+// The new interface prefers .2x.hd, then .hd, then the original map sheet.
+// The adapter preserves logical frame dimensions for 2x GPU textures.
+static class NativeHdMapTextures
+{
+    internal sealed record Relocation(int Offset, uint Target);
+    internal sealed record Adapter(string Code, uint CallSite, string CallSiteBytes,
+        uint DimensionsSite, string DimensionsSiteBytes, uint DimensionsOffset, Relocation[] Relocations);
+    internal static readonly Adapter Plan = Load();
+    static Adapter Load()
+    {
+        using var stream = typeof(NativeHdMapTextures).Assembly.GetManifestResourceStream("TioLauncher.native-hd-map-textures.json")!;
+        return JsonSerializer.Deserialize<Adapter>(stream, Updater.Json)!;
+    }
+    internal static byte[] Build(uint allocation)
+    {
+        byte[] code = Convert.FromHexString(Plan.Code);
+        foreach (var relocation in Plan.Relocations)
+            BitConverter.GetBytes(unchecked((int)(relocation.Target - allocation - (uint)relocation.Offset - 4)))
+                .CopyTo(code, relocation.Offset);
+        return code;
+    }
+    internal static byte[] Call(uint source, uint target)
+    {
+        byte[] result = [0xe8, 0, 0, 0, 0];
+        BitConverter.GetBytes(unchecked((int)(target - source - 5))).CopyTo(result, 1);
+        return result;
+    }
+    [DllImport("kernel32", SetLastError = true)]
+    static extern IntPtr VirtualAllocEx(IntPtr process, IntPtr address, nuint size, uint allocation, uint protection);
+    [DllImport("kernel32", SetLastError = true)]
+    static extern bool WriteProcessMemory(IntPtr process, IntPtr address, byte[] data, nuint size, out nuint count);
+    [DllImport("kernel32", SetLastError = true)]
+    static extern bool VirtualProtectEx(IntPtr process, IntPtr address, nuint size, uint protection, out uint previous);
+    [DllImport("kernel32", SetLastError = true)]
+    static extern bool FlushInstructionCache(IntPtr process, IntPtr address, nuint size);
+
+    internal static bool Apply(IntPtr process, uint module, string mode)
+    {
+        GameInterface.Validate(mode);
+        if (mode != GameInterface.New) return false;
+        if (module != 0x400000) throw new InvalidDataException("Unsupported native game image base.");
+        IntPtr memory = VirtualAllocEx(process, IntPtr.Zero, 4096, 0x3000, 0x04);
+        if (memory == IntPtr.Zero || memory.ToInt64() > uint.MaxValue)
+            throw new IOException("Cannot allocate native HD map texture adapter.");
+        uint allocation = checked((uint)memory.ToInt64()); byte[] code = Build(allocation);
+        if (!WriteProcessMemory(process, memory, code, (nuint)code.Length, out var count) || count != (nuint)code.Length ||
+            !VirtualProtectEx(process, memory, 4096, 0x20, out _) || !FlushInstructionCache(process, memory, (nuint)code.Length))
+            throw new IOException("Cannot initialize native HD map texture adapter.");
+        NativeTlsRoute.GuardedPatch(process, Plan.CallSite, Convert.FromHexString(Plan.CallSiteBytes), Call(Plan.CallSite, allocation));
+        NativeTlsRoute.GuardedPatch(process, Plan.DimensionsSite, Convert.FromHexString(Plan.DimensionsSiteBytes),
+            Call(Plan.DimensionsSite, checked(allocation + Plan.DimensionsOffset)));
+        return true;
+    }
+}

@@ -1,4 +1,4 @@
-"""One personal warehouse across all eligible cities and mine checkpoints.
+"""One personal warehouse across cities, mine checkpoints, training bases and the range.
 
 The original warehouse_items triplet and WarehouseStore._read remain global
 authority for IDs and lifecycle work. A sidecar names only new accepted item
@@ -51,12 +51,15 @@ def exists(db, table):
 
 def current_town(db, account, *, required=True):
     from .cities import CITIES
-    from .locations import MINE_LOCATIONS
+    from .locations import MINE_LOCATIONS, SHOOTING_RANGE
+    from .world_completion import policy
     row = db.execute('SELECT town_id FROM character_locations WHERE account=?', (account,)).fetchone() if exists(db, 'character_locations') else None
     town = row[0] if row else 3
     travelling = exists(db, 'map_journeys') and db.execute('SELECT 1 FROM map_journeys WHERE account=?', (account,)).fetchone()
-    if type(town) is not int or town not in (*CITIES, 9, *MINE_LOCATIONS) or travelling:
-        if required: raise ValueError('Склад доступен только в городе или у входа в шахту')
+    training_bases = tuple(location['id'] for location in policy()['locations']
+                           if location['profile'] == 'assault_training')
+    if type(town) is not int or town not in (*CITIES, 9, *MINE_LOCATIONS, *training_bases, SHOOTING_RANGE) or travelling:
+        if required: raise ValueError('Склад доступен в городе, у входа в шахту, на тренировочной базе или в тире')
         return None
     return town
 
@@ -225,10 +228,28 @@ def exchange(db, account, pet_id, *, deposits=(), withdrawals=()):
     warehouse = read_scope(db, account, all_items, required=True)
     before = dict(warehouse)
     seen = set(all_items)
-    for raw, in db.execute('SELECT inventory_packet FROM owned_pets WHERE account=?', (account,)):
-        for item in decode_item_list(raw)[1]:
+    donors = {}
+    for owner, human, pet, raw in db.execute(
+            'SELECT pet_id,human,pet_packet,inventory_packet FROM owned_pets WHERE account=?', (account,)):
+        _, carried, source_flag = decode_item_list(raw)
+        taken = set()
+        for item in carried:
             if item.instance_id in seen: raise WarehouseRejected('Item ID exists in multiple locations')
             seen.add(item.instance_id)
+            if (owner != pet_id and item.instance_id in withdrawals
+                    and item.equipped == 1 and item.count == 1):
+                from .equipment import armor_rules
+                from .weapons import WeaponCatalog
+                if (item.template_id not in armor_rules()
+                        and item.template_id not in WeaponCatalog().weapons.keys() - {300, 333, 337}):
+                    continue
+                if OwnedPetStore.validate(pet, raw, bool(human)) != owner:
+                    raise WarehouseRejected('Owned mercenary required')
+                # Grey warehouse entries reference equipment, not a second stored item.
+                warehouse[item.instance_id] = replace(item, unknown_u8_01=0, location_raw=0)
+                taken.add(item.instance_id)
+        if taken:
+            donors[owner] = encode_item_list(owner, tuple(i for i in carried if i.instance_id not in taken), source_flag)
     for selection, source in ((deposits, inventory), (withdrawals, warehouse)):
         for key, count in selection.items():
             item = source.get(key)
@@ -252,6 +273,8 @@ def exchange(db, account, pet_id, *, deposits=(), withdrawals=()):
     validate_capacity(original, inventory, error=WarehouseRejected)
     packet = encode_item_list(pet_id, inventory, flag)
     encode_private_warehouse_snapshot(stored)
+    for owner, updated in donors.items():
+        db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=?', (updated, account, owner))
     db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=?', (packet, account, pet_id))
     persist_scope(db, account, before, stored, assignments)
     db.execute('INSERT INTO item_sequences VALUES (?,?) ON CONFLICT(account) DO UPDATE SET next_id=MAX(next_id,excluded.next_id)', (account, next_id))

@@ -3,6 +3,7 @@ from dataclasses import replace
 import json
 import math
 from pathlib import Path
+import sqlite3
 import struct
 from .protocol.pet_info import decode_pet_info, encode_pet_info
 
@@ -87,3 +88,29 @@ def damage_endpoint(raw,skill):
 def skill_signature(packet,human):
     f=decode_pet_info(packet,human_equipment=human).fields
     return tuple(f[k] for k in (*SAVED,*BASE,*CAPS,'0x8c4aef'))
+
+
+def saved_skills(packet: bytes, human: bool) -> tuple[int, ...]:
+    fields = decode_pet_info(packet, human_equipment=human).fields
+    return tuple(fields[key] for key in SAVED)
+
+
+def settle_proficiencies(db: sqlite3.Connection, account: str,
+                         report: dict[int, tuple[tuple[int, ...], tuple[int, ...]]]) -> None:
+    from .rule_catalogs import proficiency_rules
+    rules = proficiency_rules()
+    for identity, (before, after) in report.items():
+        row = db.execute('SELECT human,pet_packet FROM owned_pets WHERE account=? AND pet_id=?',
+                         (account, identity)).fetchone()
+        if row is None:
+            raise ValueError('Proficiency recipient missing')
+        human, raw = row
+        if saved_skills(rules.normalize(raw, bool(human)), bool(human)) != tuple(before):
+            raise ValueError('Saved proficiency changed during battle')
+        if len(after) != len(SAVED) or any(not number(old) <= number(new) <= 200
+                                          for old, new in zip(before, after)):
+            raise ValueError('Invalid battle proficiency')
+        pet = decode_pet_info(raw, human_equipment=bool(human))
+        fields = {**pet.fields, **dict(zip(SAVED, after)), **dict(zip(BASE, after))}
+        db.execute('UPDATE owned_pets SET pet_packet=? WHERE account=? AND pet_id=?',
+                   (encode_pet_info(replace(pet, fields=fields)), account, identity))

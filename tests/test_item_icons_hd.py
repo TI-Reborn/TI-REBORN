@@ -53,9 +53,16 @@ class CatalogTests(unittest.TestCase):
         for item_id in (17, 18, 19, 30, 9, 3):
             self.assertEqual(self.items[item_id].pipeline, 'redraw')
 
-    def test_committed_manifest_matches_the_catalogue(self):
+    def test_v1_manifest_keeps_classification_for_its_original_items(self):
         committed = json.loads((ROOT / 'assets/item-icons-hd-v1/manifest.json').read_text(encoding='utf-8'))
-        self.assertEqual(committed, catalog.manifest(catalog.load()))
+        expected = {item['item_id']: item for item in committed['items']}
+        live = catalog.manifest(tuple(self.items[identity] for identity in expected))
+        self.assertEqual(committed['counts'], live['counts'])
+        for item in live['items']:
+            with self.subTest(identity=item['item_id']):
+                original = expected[item['item_id']]
+                self.assertEqual((item['slot'], item['pipeline'], item['models']),
+                                 (original['slot'], original['pipeline'], original['models']))
 
 
 class MeshTests(unittest.TestCase):

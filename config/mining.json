@@ -6,7 +6,7 @@
       6,
       1000,
       150,
-      160,
+      128,
       57,
       79
     ],
@@ -15,7 +15,7 @@
       10,
       1500,
       249,
-      270,
+      180,
       70,
       96
     ],
@@ -24,7 +24,7 @@
       15,
       2000,
       249,
-      270,
+      200,
       86,
       118
     ],
@@ -33,7 +33,7 @@
       20,
       3000,
       300,
-      310,
+      240,
       89,
       122
     ]
@@ -43,15 +43,22 @@
   "deposits_max": 3,
   "mob_ap": 20,
   "mob_attack_ap": 5,
+  "gunners": {
+    "count": 3,
+    "resource": 102,
+    "weapon": 304,
+    "name": "Wild Miner",
+    "action_points": 15,
+    "ammunition": 7,
+    "rounds": 1000,
+    "note": "Original client mob 102 (base/mobs.udf: Mob Wildminer, default-weapon 304 AK 47). The 2008-2011 manual lists melee mutants only; the count among mob_count and the ammunition supply are emulator policy. Level, HP and armour follow the band like the melee mutants; shots use ordinary AK 47 rules."
+  },
   "mutant_patrol_radius": 6,
   "mutant_ai_note": "Local policy, not recovered original server AI: individual sight and patrols within six walkable steps of each initial spawn. No respawn or shared enemy detection.",
-  "market_initial_rate_units": 10000000,
-  "market_min_rate_units": 10000,
-  "market_rise_interval": 600,
-  "market_rise_units": 100000,
+  "market_rate_units": 500000000,
   "market_sale_min": 1000,
   "market_sale_max": 50000,
-  "notes": "Rates use 10000000 units/credit. Initial rate 1 credit and floor 0.001 credit are provisional emulator policy; original initial/floor rate not recovered. One unit decrease per crystal implements -0.0001 per 1000. No clan owner in local test, therefore no clan tax.",
+  "notes": "Rates use 10000000 units/credit. The current exchange pays a fixed 50 credits per crystal. Past sales and quote samples retain their original rates.",
   "locations": [
     {
       "id": 13,

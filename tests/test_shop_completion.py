@@ -44,9 +44,10 @@ class ShopCompletionTests(unittest.TestCase):
         self.path = Path(self.folder.name)/'shared.sqlite3'
         self.policy_path = Path(self.folder.name)/'policy.json'
         self.policy = json.loads((ROOT/'config/shop_completion.json').read_text(encoding='utf-8'))
-        self.policy['stock']['weapon']['capacity'] = 2
-        self.policy['stock']['armor']['capacity'] = 2
-        self.policy['stock']['supply'].update(capacity=3, threshold=2, delay_seconds=20)
+        self.policy['stock']['weapon'] = dict(mode='weekly', capacity=2)
+        self.policy['stock']['armor'] = dict(mode='weekly', capacity=2)
+        self.policy['stock']['supply'] = dict(mode='threshold', capacity=3, threshold=2, delay_seconds=20)
+        self.policy['stock']['le_kit'] = dict(mode='finite', capacity=3000)
         self.write_policy()
         self.now = MONDAY + 100*WEEK + 100
         self.pet = bytes.fromhex(json.loads((ROOT/'evidence/owned_pet_trial.json').read_text())['packet_hex'])
@@ -327,9 +328,8 @@ class ShopCompletionTests(unittest.TestCase):
                 self.assertEqual(self.database_snapshot(), before)
 
     def test_non_shop_locations_reject_all_catalogs_and_purchases_without_writes(self):
-        # Travel, prison and unknown locations remain unavailable. Cities,
-        # bases and mine entrances now sell (tests/test_sc_shop_locations.py).
-        for town in (-1, 0, 1, 10, 17, 65535):
+        # Travel, outpost, prison, bases and each actual mine remain unavailable.
+        for town in (-1, 0, 1, 4, 10, 11, 12, 13, 14, 15, 16, 17, 65535):
             self.locate(town)
             for operation in (lambda: self.store.catalog('alice', 0),
                               lambda: self.store.catalog('alice', 0, gold=True),

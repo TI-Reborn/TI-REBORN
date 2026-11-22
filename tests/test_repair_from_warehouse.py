@@ -1,7 +1,7 @@
 """Quick repair debits real personal-city kits atomically, without transfers."""
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import replace
 from contextlib import closing
+from dataclasses import replace
 import sqlite3,struct,unittest
 from unittest.mock import patch
 from test_warehouse_resources import WarehouseResourcesTests,item

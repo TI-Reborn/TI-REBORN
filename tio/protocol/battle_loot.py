@@ -15,6 +15,8 @@ class LootTransfer:
     y:int
     deposits:tuple=()
     withdrawals:tuple=()
+    live:bool=False
+    nonce:int=0
 
 
 def encode_open_container_state(x,y):
@@ -28,7 +30,9 @@ def encode_open_container_state(x,y):
 
 
 def encode_loot_transfer(request):
-    w=Writer().u8(0x40).u32(request.actor_id).u8(request.x).u8(request.y)
+    w=Writer().u8(0xf5 if request.live else 0x40)
+    if request.live:w.u32(request.nonce)
+    w.u32(request.actor_id).u8(request.x).u8(request.y)
     for selection in (request.deposits,request.withdrawals):
         w.u32(len(selection))
         for identity,count in selection:w.u32(identity).u32(count)
@@ -37,7 +41,10 @@ def encode_loot_transfer(request):
 
 def decode_loot_transfer(packet,*,allow_empty=False):
     r=Reader(packet)
-    if r.u8()!=0x40:raise PacketError('Expected loot transfer40')
+    opcode = r.u8()
+    if opcode not in (0x40, 0xf5):raise PacketError('Expected loot transfer40/F5')
+    nonce = r.u32() if opcode == 0xf5 else 0
+    if opcode == 0xf5 and not nonce:raise PacketError('Live transfer needs a nonzero nonce')
     actor,x,y=r.u32(),r.u8(),r.u8()
     selections=[]
     for _ in range(2):
@@ -49,7 +56,7 @@ def decode_loot_transfer(packet,*,allow_empty=False):
         selections.append(values)
     r.finish()
     if set(i for i,n in selections[0]) & set(i for i,n in selections[1]):raise PacketError('Item moves both ways')
-    return LootTransfer(actor,x,y,*selections)
+    return LootTransfer(actor,x,y,*selections,live=opcode==0xf5,nonce=nonce)
 
 
 def encode_container(actor,x,y,items):

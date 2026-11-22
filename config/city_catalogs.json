@@ -116,6 +116,22 @@
         "unknown_u8": 0
       },
       {
+        "unknown_u32_01": 1128,
+        "unknown_u32_02": 1,
+        "item_id": 128,
+        "unknown_u32_03": 4900,
+        "durability": 1000,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 1129,
+        "unknown_u32_02": 1,
+        "item_id": 129,
+        "unknown_u32_03": 19800,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
         "unknown_u32_01": 20,
         "unknown_u32_02": 40,
         "item_id": 36,
@@ -668,6 +684,22 @@
         "unknown_u8": 0
       },
       {
+        "unknown_u32_01": 65101,
+        "unknown_u32_02": 1,
+        "item_id": 5101,
+        "unknown_u32_03": 180,
+        "durability": 30,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 65102,
+        "unknown_u32_02": 1,
+        "item_id": 5102,
+        "unknown_u32_03": 180,
+        "durability": 30,
+        "unknown_u8": 0
+      },
+      {
         "unknown_u32_01": 98,
         "unknown_u32_02": 1,
         "item_id": 318,
@@ -740,6 +772,14 @@
         "unknown_u8": 0
       },
       {
+        "unknown_u32_01": 60206,
+        "unknown_u32_02": 1,
+        "item_id": 206,
+        "unknown_u32_03": 80,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
         "unknown_u32_01": 60208,
         "unknown_u32_02": 1,
         "item_id": 208,
@@ -768,6 +808,14 @@
         "unknown_u32_02": 1,
         "item_id": 224,
         "unknown_u32_03": 120,
+        "durability": 300,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 60226,
+        "unknown_u32_02": 1,
+        "item_id": 226,
+        "unknown_u32_03": 160,
         "durability": 300,
         "unknown_u8": 0
       },
@@ -1032,6 +1080,126 @@
         "unknown_u32_02": 1,
         "item_id": 20,
         "unknown_u32_03": 300,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 6100,
+        "unknown_u32_02": 1,
+        "item_id": 6100,
+        "unknown_u32_03": 4900,
+        "durability": 500,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 6101,
+        "unknown_u32_02": 1,
+        "item_id": 6101,
+        "unknown_u32_03": 4900,
+        "durability": 500,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 6102,
+        "unknown_u32_02": 1,
+        "item_id": 6102,
+        "unknown_u32_03": 4900,
+        "durability": 500,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 6103,
+        "unknown_u32_02": 1,
+        "item_id": 6103,
+        "unknown_u32_03": 4900,
+        "durability": 500,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 6104,
+        "unknown_u32_02": 1,
+        "item_id": 6104,
+        "unknown_u32_03": 4900,
+        "durability": 500,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 6105,
+        "unknown_u32_02": 1,
+        "item_id": 6105,
+        "unknown_u32_03": 4900,
+        "durability": 500,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 6106,
+        "unknown_u32_02": 1,
+        "item_id": 6106,
+        "unknown_u32_03": 4900,
+        "durability": 1000,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 6107,
+        "unknown_u32_02": 1,
+        "item_id": 6107,
+        "unknown_u32_03": 4900,
+        "durability": 1000,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 6108,
+        "unknown_u32_02": 1,
+        "item_id": 6108,
+        "unknown_u32_03": 4900,
+        "durability": 1000,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 6109,
+        "unknown_u32_02": 1,
+        "item_id": 6109,
+        "unknown_u32_03": 4900,
+        "durability": 1000,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 6110,
+        "unknown_u32_02": 1,
+        "item_id": 6110,
+        "unknown_u32_03": 4900,
+        "durability": 1000,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 6120,
+        "unknown_u32_02": 1,
+        "item_id": 6120,
+        "unknown_u32_03": 1800,
+        "durability": 3600,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 6121,
+        "unknown_u32_02": 1,
+        "item_id": 6121,
+        "unknown_u32_03": 1200,
+        "durability": 1200,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 6122,
+        "unknown_u32_02": 1,
+        "item_id": 6122,
+        "unknown_u32_03": 1050,
+        "durability": 1,
+        "unknown_u8": 0
+      },
+      {
+        "unknown_u32_01": 6123,
+        "unknown_u32_02": 1,
+        "item_id": 6123,
+        "unknown_u32_03": 1200,
         "durability": 1,
         "unknown_u8": 0
       }
@@ -1820,9 +1988,129 @@
       "gold": 300,
       "durability": 1,
       "currency": 1
+    },
+    {
+      "offer_id": 16100,
+      "item_id": 6100,
+      "pack_count": 1,
+      "gold": 4900,
+      "durability": 500,
+      "currency": 1
+    },
+    {
+      "offer_id": 16101,
+      "item_id": 6101,
+      "pack_count": 1,
+      "gold": 4900,
+      "durability": 500,
+      "currency": 1
+    },
+    {
+      "offer_id": 16102,
+      "item_id": 6102,
+      "pack_count": 1,
+      "gold": 4900,
+      "durability": 500,
+      "currency": 1
+    },
+    {
+      "offer_id": 16103,
+      "item_id": 6103,
+      "pack_count": 1,
+      "gold": 4900,
+      "durability": 500,
+      "currency": 1
+    },
+    {
+      "offer_id": 16104,
+      "item_id": 6104,
+      "pack_count": 1,
+      "gold": 4900,
+      "durability": 500,
+      "currency": 1
+    },
+    {
+      "offer_id": 16105,
+      "item_id": 6105,
+      "pack_count": 1,
+      "gold": 4900,
+      "durability": 500,
+      "currency": 1
+    },
+    {
+      "offer_id": 16106,
+      "item_id": 6106,
+      "pack_count": 1,
+      "gold": 4900,
+      "durability": 1000,
+      "currency": 1
+    },
+    {
+      "offer_id": 16107,
+      "item_id": 6107,
+      "pack_count": 1,
+      "gold": 4900,
+      "durability": 1000,
+      "currency": 1
+    },
+    {
+      "offer_id": 16108,
+      "item_id": 6108,
+      "pack_count": 1,
+      "gold": 4900,
+      "durability": 1000,
+      "currency": 1
+    },
+    {
+      "offer_id": 16109,
+      "item_id": 6109,
+      "pack_count": 1,
+      "gold": 4900,
+      "durability": 1000,
+      "currency": 1
+    },
+    {
+      "offer_id": 16110,
+      "item_id": 6110,
+      "pack_count": 1,
+      "gold": 4900,
+      "durability": 1000,
+      "currency": 1
+    },
+    {
+      "offer_id": 16120,
+      "item_id": 6120,
+      "pack_count": 1,
+      "gold": 1800,
+      "durability": 3600,
+      "currency": 1
+    },
+    {
+      "offer_id": 16121,
+      "item_id": 6121,
+      "pack_count": 1,
+      "gold": 1200,
+      "durability": 1200,
+      "currency": 1
+    },
+    {
+      "offer_id": 16122,
+      "item_id": 6122,
+      "pack_count": 1,
+      "gold": 1050,
+      "durability": 1,
+      "currency": 1
+    },
+    {
+      "offer_id": 16123,
+      "item_id": 6123,
+      "pack_count": 1,
+      "gold": 1200,
+      "durability": 1,
+      "currency": 1
     }
   ],
-  "price_revision": 20261010,
+  "price_revision": 20261031,
   "special_item_prices": "Explicit serverbalance config/special_items.json; classicmanualdoesnotdocumentpricesofexperimental319/321/323/324/325.",
   "battle_item_prices": "Manual printed64/79-83; smoke318180cr is explicit emulator policy, absent from book. Injection HP5012: manual printed82,100Gold; emulator ID policy."
 }

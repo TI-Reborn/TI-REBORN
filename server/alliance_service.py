@@ -119,13 +119,13 @@ def classic_ratings(session,packet):
     with closing(connect(session.database)) as db:
         db.execute('BEGIN')
         badge_places=active_badge_places(db)
-        # Original RTTI: Set100/200/300Mode(isTrueSkill). Public influence is
-        # authoritative; no clan TrueSkill store/formula has been established.
-        rows=() if selector else tuple(ClanRating(id=r['id'],name=r['name'],leader=r['leader_name'],
-            members=r['members'],capacity=MEMBER_LIMITS[r['level']],level=r['level'],influence=r['influence'],
+        # Both native page selectors render the second numeric column (row+214h).
+        rows=tuple(ClanRating(id=r['id'],name=r['name'],leader=r['leader_name'],
+            members=r['members'],capacity=MEMBER_LIMITS[r['level']],level=r['level'],
+            influence=r['rating'] if selector else r['influence'],
             crest_id=crest_id(db,r['id']),alliance_crest_id=(alliance_for_clan(db,r['id']) or {}).get('crest_id',0),
             unknown_u32_3=badge_places.get(r['id'],0))
-            for r in clans(db,offset=kind*100,limit=100))
+            for r in clans(db,offset=kind*100,limit=100,trueskill=bool(selector)))
         return encode_rating(kind,selector,rows)
 
 

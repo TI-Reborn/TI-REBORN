@@ -8,6 +8,7 @@ from tio.services_completion import ServiceRejected
 from tio.wallets import WalletStore
 from tio.protocol.asset_count import encode_asset_count
 from tio.protocol.chat import encode_system_message
+from tio.protocol.hire import decode_paid_rename
 from .service_operations import prepare_service,execute_service
 
 def service(router):
@@ -23,7 +24,10 @@ def available(manager,db,owner):
     manager.operations._running()
     return manager.operations._available(db,owner,busy_accounts(manager.router,db))[0]
 
-def native(session,*,command=None,pet_id=None):
+def native(session,*,command=None,pet_id=None,rename_packet: bytes | None = None) -> tuple[bytes, ...]:
+    renaming = command is not None or rename_packet is not None
+    if rename_packet is not None:
+        pet_id, new_name = decode_paid_rename(rename_packet)
     manager=service(session.router)
     with session.router.team_arena.lock:
         with transaction(session.database) as db:
@@ -31,14 +35,16 @@ def native(session,*,command=None,pet_id=None):
             identity='native-'+uuid.uuid4().hex
             if command is not None:
                 operation=prepare_service('service_rename_command',identity,dict(command=command))
+            elif rename_packet is not None:
+                operation=prepare_service('service_rename',identity,dict(petId=pet_id,newName=new_name))
             else:
                 operation=prepare_service('service_dismiss',identity,dict(petId=pet_id))
             execute_service(operation,db=db,path=manager.path,helper=manager.helper,owner=session.account,allowed=allowed)
-            name=public_name(db,session.account) if command is not None else None
+            name=public_name(db,session.account) if renaming else None
         if name:session.probe_character_name=name.encode('cp1251')
         manager.invalidate(session.account)
         replies=refresh_inventory(session,force=True)+(encode_asset_count(WalletStore(session.database).ensure(session.account)),)
-        if command is None:replies+=(encode_system_message(4,b'Services','Увольнение назначено через 48 часов. Точная дата доступна в разделе услуг на сайте.'),)
+        if not renaming:replies+=(encode_system_message(4,b'Services','Увольнение назначено через 48 часов. Точная дата доступна в разделе услуг на сайте.'),)
         return replies
 
 def tick(router):

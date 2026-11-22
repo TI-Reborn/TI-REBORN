@@ -17,13 +17,15 @@ def handle(presence,session,packet):
 
 def sync(presence,session):
     if session.database is None or not getattr(session,'owned_pet_probe',False):return
+    if not getattr(session,'avatar_sync_needed',True):return
     from .economy_runtime import city_idle
     # Battle actors use global IDs, unlike account-local city pet IDs.
     # Battle snapshots send their own remapped avatar assignments.
     with session.router.team_arena.lock:
         if not city_idle(session):return
         packet=snapshot(session.database,session.account)
-    # Send after native66 loading and after any roster reload. At most252 bytes
-    # per normal half-second presence heartbeat, no new polling thread.
+    # Initial assignment only; later city profiles carry their selected avatar.
     with presence.lock:
-        if session in presence.messages:presence.messages[session].append(packet)
+        if session in presence.messages:
+            presence.messages[session].append(packet)
+            session.avatar_sync_needed=False

@@ -2,6 +2,8 @@
 from dataclasses import dataclass
 from .binary import Reader, Writer, PacketError
 
+MAX_COMPRESSED_SIZE = 50_000
+
 
 @dataclass(frozen=True)
 class SharedConfigEntry:
@@ -49,7 +51,7 @@ def encode_shared_config_data(value):
     name = value.name_bytes
     if not isinstance(name, bytes) or b'\0' in name or len(name) > 255:
         raise PacketError('Expected raw CString up to 255 bytes without NUL')
-    if not isinstance(value.compressed_bytes, bytes) or len(value.compressed_bytes) > 50000:
+    if not isinstance(value.compressed_bytes, bytes) or len(value.compressed_bytes) > MAX_COMPRESSED_SIZE:
         raise PacketError('Compressed config exceeds native buffer capacity')
     w = Writer().u8(0xb9).u8(3)
     w.data.extend(name+b'\0')
@@ -68,7 +70,7 @@ def decode_shared_config_data(data):
         if len(name) > 255:
             raise PacketError('CString exceeds 255 bytes')
     decompressed_size, compressed_size = r.u32(), r.u32()
-    if compressed_size > 50000:
+    if compressed_size > MAX_COMPRESSED_SIZE:
         raise PacketError('Compressed config exceeds native buffer capacity')
     result = SharedConfigData(bytes(name), decompressed_size, r.read(compressed_size))
     r.finish()

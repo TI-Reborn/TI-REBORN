@@ -176,7 +176,9 @@ class PlayerTrade:
         if session.account in draft.confirmed:return
         draft.confirmed.add(session.account)
         if len(draft.confirmed)<2:
-            for s in draft.sessions:self.notice(s,'Один участник подтвердил обмен; ожидается подтверждение второго')
+            for s in draft.sessions:
+                enqueue(self.router.presence, s, wire.confirmation(own=s is session))
+                self.notice(s,'Один участник подтвердил обмен; ожидается подтверждение второго')
             return
         parties=tuple((s.account,draft.pets[s.account]) for s in draft.sessions)
         command=prepare_market('trade_commit',draft.identity,dict(parties=parties,

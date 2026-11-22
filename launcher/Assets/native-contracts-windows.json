@@ -98,7 +98,7 @@
         {
           "at": 198,
           "kind": "allocation",
-          "offset": 1024,
+          "offset": 2816,
           "relative": true
         }
       ]
@@ -170,14 +170,14 @@
         {
           "at": 1798,
           "kind": "allocation",
-          "offset": 1024,
+          "offset": 2816,
           "relative": true
         }
       ]
     },
     {
       "offset": 2048,
-      "hex": "9c60833d00000000000f844c000000a10000000085c00f8505000000e800000000833d00000000010f8505000000e800000000a10000000085c00f841b00000050c7050000000000000000a1000000005a83fa010f94c28b08ff11619d558bec5356e900000000",
+      "hex": "9c60833d00000000000f8498000000a10000000085c00f8505000000e800000000833d00000000010f850a000000e800000000e800000000a10000000085c00f843a0000008338110f8531000000e800000000c7050000000000000000a10000000085c00f843d000000807849000f843300000031d28b08ff11e928000000a10000000085c00f841b00000050c7050000000000000000a1000000005a83fa010f94c28b08ff11619d558bec5356e900000000",
       "relocations": [
         {
           "at": 2052,
@@ -212,26 +212,176 @@
         {
           "at": 2100,
           "kind": "allocation",
-          "offset": 32776,
+          "offset": 3072,
+          "relative": true
+        },
+        {
+          "at": 2105,
+          "kind": "silver",
+          "offset": 7101784,
           "relative": false
         },
         {
-          "at": 2115,
+          "at": 2127,
+          "kind": "allocation",
+          "offset": 2304,
+          "relative": true
+        },
+        {
+          "at": 2133,
           "kind": "allocation",
           "offset": 32776,
           "relative": false
         },
         {
-          "at": 2124,
+          "at": 2142,
           "kind": "allocation",
           "offset": 34112,
           "relative": false
         },
         {
-          "at": 2147,
+          "at": 2176,
+          "kind": "allocation",
+          "offset": 32776,
+          "relative": false
+        },
+        {
+          "at": 2191,
+          "kind": "allocation",
+          "offset": 32776,
+          "relative": false
+        },
+        {
+          "at": 2200,
+          "kind": "allocation",
+          "offset": 34112,
+          "relative": false
+        },
+        {
+          "at": 2223,
           "kind": "silver",
           "offset": 6550273,
           "relative": true
+        }
+      ]
+    },
+    {
+      "offset": 2304,
+      "hex": "9c60a10000000085c00f840600000066c740490000a10000000085c00f840600000066c740490000a10000000085c00f8407000000c7403420000000a10000000085c00f8407000000c7403440000000a10000000085c00f8407000000c7403460000000a10000000085c00f8407000000c7403480000000a10000000085c00f8407000000c7403cb0000000619dc3",
+      "relocations": [
+        {
+          "at": 2307,
+          "kind": "allocation",
+          "offset": 33024,
+          "relative": false
+        },
+        {
+          "at": 2326,
+          "kind": "allocation",
+          "offset": 33568,
+          "relative": false
+        },
+        {
+          "at": 2345,
+          "kind": "silver",
+          "offset": 7139392,
+          "relative": false
+        },
+        {
+          "at": 2365,
+          "kind": "silver",
+          "offset": 7139372,
+          "relative": false
+        },
+        {
+          "at": 2385,
+          "kind": "silver",
+          "offset": 7139416,
+          "relative": false
+        },
+        {
+          "at": 2405,
+          "kind": "silver",
+          "offset": 7139396,
+          "relative": false
+        },
+        {
+          "at": 2425,
+          "kind": "allocation",
+          "offset": 32792,
+          "relative": false
+        }
+      ]
+    },
+    {
+      "offset": 2560,
+      "hex": "9c60a10000000085c00f84110000008338110f8508000000619de800000000c3619d558bec5153e900000000",
+      "relocations": [
+        {
+          "at": 2563,
+          "kind": "silver",
+          "offset": 7101784,
+          "relative": false
+        },
+        {
+          "at": 2587,
+          "kind": "allocation",
+          "offset": 2304,
+          "relative": true
+        },
+        {
+          "at": 2600,
+          "kind": "silver",
+          "offset": 4556997,
+          "relative": true
+        }
+      ]
+    },
+    {
+      "offset": 2816,
+      "hex": "9c60a10000000085c00f84110000008338110f8508000000619de800000000c3619de900000000",
+      "relocations": [
+        {
+          "at": 2819,
+          "kind": "silver",
+          "offset": 7101784,
+          "relative": false
+        },
+        {
+          "at": 2843,
+          "kind": "allocation",
+          "offset": 2304,
+          "relative": true
+        },
+        {
+          "at": 2851,
+          "kind": "allocation",
+          "offset": 1024,
+          "relative": true
+        }
+      ]
+    },
+    {
+      "offset": 3072,
+      "hex": "a10000000085c00f84590000008b003d0d0000000f84260000003d0e0000000f841b0000003d0f0000000f84100000003d100000000f8405000000e926000000a10000000085c00f840600000066c740490000a10000000085c00f840600000066c740490000c3",
+      "relocations": [
+        {
+          "at": 3073,
+          "kind": "silver",
+          "offset": 7101784,
+          "relative": false
+        },
+        {
+          "at": 3137,
+          "kind": "allocation",
+          "offset": 33024,
+          "relative": false
+        },
+        {
+          "at": 3156,
+          "kind": "allocation",
+          "offset": 33568,
+          "relative": false
         }
       ]
     },
@@ -4736,6 +4886,12 @@
       "before": "e853ebffff",
       "target": 1792,
       "opcode": 232
+    },
+    {
+      "rva": 4556992,
+      "before": "558bec5153",
+      "target": 2560,
+      "opcode": 233
     }
   ]
 }

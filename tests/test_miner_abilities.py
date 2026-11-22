@@ -144,7 +144,7 @@ class MinerAbilityTests(unittest.TestCase):
             projected=project_passives(pet,True,entries,self.service.catalog,inventory=inv)
             f=decode_pet_info(projected,human_equipment=True).fields
             self.assertEqual((f['0x8c4a07'],f['0x8c4ab1'],f['0x8c4b57'],f['0x8c4ac5']),
-                             (118+(20,28,36,44)[rank-1],98,1200+(60,110,160,210)[rank-1],(52,67,83,99)[rank-1]))
+                             (118+(20,28,36,44)[rank-1],98,1710+(60,110,160,210)[rank-1],(52,67,83,99)[rank-1]))
             self.service.state.replace('alice',1,entries,expected_revision=rank-1)
             self.assertEqual(OwnedPetStore(self.path).list('alice')[0][1],projected)
             armored=project_passives(pet,True,entries,self.service.catalog,inventory=encode_item_list(1,(armor,)))

@@ -169,9 +169,11 @@ internal static class TlsSelfTest
                 }
                 results.Add("PASS: bridge shutdown releases all listeners and active channels");
             }
+            var resetDiagnostic = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
             await using (var login = new Server(valid, true))
             await using (var session = new Server(valid, false))
-            await using (var bridge = new TlsBridge(new("localhost", login.Port, session.Port, "127.0.0.1"), Trust(root)))
+            await using (var bridge = new TlsBridge(new("localhost", login.Port, session.Port, "127.0.0.1"), Trust(root),
+                diagnostic: line => resetDiagnostic.TrySetResult(line)))
             {
                 bridge.Start();
                 using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
@@ -182,8 +184,9 @@ internal static class TlsSelfTest
                 using var loginNative = new TcpClient();
                 await loginNative.ConnectAsync(IPAddress.Loopback, bridge.LoginPort, timeout.Token);
                 await loginNative.GetStream().ReadExactlyAsync(challenge, timeout.Token);
-                loginNative.Client.LingerState = new LingerOption(true, 0); loginNative.Close();
-                await Task.Delay(100, timeout.Token);
+                loginNative.Client.Close(0);
+                string first = await resetDiagnostic.Task.WaitAsync(timeout.Token);
+                Assert(first.Contains("kind=login operation=native_read event=reset"), $"unexpected first relay event: {first}");
                 Assert(!bridge.Failure.IsCompleted, "normal mode0 native RST terminated the bridge");
                 byte[] payload = Encoding.ASCII.GetBytes("mode1-survives-login-reset");
                 await sessionNative.GetStream().WriteAsync(payload, timeout.Token);

@@ -1,7 +1,10 @@
 import dataclasses
+import json
 import unittest
 from pathlib import Path
+from xml.etree import ElementTree
 from tio.city_catalogs import CityCatalogs
+from tio.shop_completion import _shop_level_limits
 from tio.protocol.binary import PacketError
 from tio.protocol.city_services import city_service_reply
 from tio.protocol.city_catalogs import *
@@ -17,9 +20,7 @@ class CityCatalogTests(unittest.TestCase):
         self.assertEqual(category, 0)
         ids=[item.item_id for item in items]
         self.assertEqual(ids[:2], [301, 3])
-        # Gold is retired (credits-only economy): the Knife, Gold-only in the
-        # original manual, is now an ordinary credits offer.
-        self.assertIn(326, ids)
+        self.assertIn(326, ids)  # Former Premium goods are in the credit catalog.
         self.assertEqual(len(ids),len(set(ids)))
         self.assertTrue({3,9,210,211,212,302,304,312}.issubset(ids))
         self.assertFalse({0,1,2,300,65500}.intersection(ids))
@@ -36,6 +37,19 @@ class CityCatalogTests(unittest.TestCase):
         for request in (b'\x61\0', b'\x73', b'\x73\0\0'):
             with self.assertRaises(PacketError):
                 city_service_reply(request, self.catalogs)
+
+    def test_shop_menu_matches_server_availability_in_enabled_locations(self):
+        root = Path(__file__).resolve().parents[1]
+        zones = root / 'evidence/zones_diagnostic.xml'
+        policy = json.loads((root / 'config/shop_completion.json').read_text(encoding='utf-8'))
+        available = _shop_level_limits({int(k): v for k, v in policy['town_max_level'].items()})
+        for town in ElementTree.parse(zones).getroot():
+            fields = {v.get('key'): v.get('val') for v in town}
+            if fields['enabled'] != '1':
+                continue
+            identity = int(town.get('id'))
+            with self.subTest(town=identity):
+                self.assertEqual(fields.get('shop', 'true') == 'true', identity in available)
 
     def test_roundtrips_unknown_bits_and_optional_branches(self):
         base = self.catalogs.candidates[0]

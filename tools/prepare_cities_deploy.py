@@ -3,7 +3,7 @@ from pathlib import Path
 import hashlib,json,shlex,subprocess,tarfile
 
 ROOT=Path(__file__).resolve().parents[1]
-FILES=('tio/cities.py', 'tio/locations.py', 'tio/hiring.py', 'tio/matchmaking.py', 'tio/team_lobbies.py', 'tio/team_scene.py', 'tio/reward_policy.py', 'tio/battle_rewards.py', 'tio/battle_settlement.py', 'tio/ranks.py', 'server/team_arena.py', 'server/runtime.py', 'config/battle_map_profiles.json', 'config/arena_fragments.json', 'evidence/zones_diagnostic.xml', 'CITIES.md', 'README.md', 'DEPLOY.md')
+FILES=('tio/cities.py', 'tio/locations.py', 'tio/hiring.py', 'tio/matchmaking.py', 'tio/team_lobbies.py', 'tio/team_scene.py', 'tio/reward_policy.py', 'tio/battle_rewards.py', 'tio/battle_settlement.py', 'tio/ranks.py', 'server/team_arena.py', 'server/runtime.py', 'config/battle_map_profiles.json', 'config/arena_fragments.json', 'evidence/zones_diagnostic.xml', 'CITIES.md', 'README.md', 'DEPLOY_HETZNER.md')
 SSH=['ssh','-i',str(Path.home()/'.ssh/tio_server'),'-o','BatchMode=yes','root@185.184.42.88']
 
 def main():

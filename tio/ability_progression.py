@@ -29,9 +29,15 @@ def policy():
         raise ValueError('Invalid forgetting price policy')
     if (value.get('base_roster_capacity')!=7 or value.get('extra_starter_mercenaries')!=2
             or value.get('starter_resources')!=[1,2]
-            or value.get('roster_expansion')!=[[1,2000],[2,5800],[3,11400],[4,18800],[5,28000]]
             or value.get('hire_credits')!={'1':500,'2':500,'3':2500,'4':2500,'5':2500,'6':3500}):
         raise ValueError('Invalid documented recruitment policy')
+    expansion = value.get('roster_expansion')
+    if not isinstance(expansion, list) or not 1 <= len(expansion) <= 255 or any(
+            not isinstance(tier, list) or len(tier) != 2
+            or type(tier[0]) is not int or tier[0] != bonus
+            or type(tier[1]) is not int or not 1 <= tier[1] <= 0xffffffff
+            for bonus, tier in enumerate(expansion, 1)):
+        raise ValueError('Invalid roster expansion policy')
     return value
 
 

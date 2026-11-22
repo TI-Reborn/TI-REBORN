@@ -16,9 +16,19 @@
 Не коммитьте пользовательские данные, журналы, адресные конфиги, ключи, пароли и дампы.
 Не добавляйте автоматический deploy в CI и production-секреты в Actions.
 
-Перед PR: `python tools/check_handoff.py`, `python tools/run_server_checks.py`,
-тематические тесты. Полный исследовательский suite имеет внешние зависимости;
-см. `docs/VALIDATION.md`. Известная ошибка baseline не разрешает игнорировать новую ошибку.
+Перед PR выполните `python tools/check_handoff.py`, `python -m server --check`,
+`python tools/run_server_checks.py` и тематические тесты. Для полного штатного
+прогона установите `registration/requirements.txt` в окружение тестов.
+Без Flask и Waitress проверки шлюзов отмечаются как пропущенные.
+Полный исследовательский набор запускается через `tools/run_full_tests.py`.
+Известная ошибка baseline не разрешает игнорировать новую ошибку.
+
+`check_handoff.py` в Git проверяет отслеживаемые файлы. В рабочей копии без Git
+он проверяет исходники, которые отбирает `tools/prepare_github_handoff.py`.
+Для проверки содержимого готового экспорта используйте
+`python tools/check_handoff.py --export PATH`.
+Перед запуском тестов из свежего экспорта сгенерируйте локальные тестовые
+сертификаты командой `pwsh -NoProfile -File tests/fixtures/game_tls/generate.ps1`.
 
 Hosted QA: только зарезервированные случайные логины из `tio/rating_visibility.py`
 или явное `rating_exclusions(account TEXT PRIMARY KEY)` до тестирования.

@@ -60,6 +60,8 @@ internal static class SecureGame
     internal static async Task RunChild(string root, string pipeName, bool ownedQa)
     {
         bool reported = false;
+        var startupTimer = Stopwatch.StartNew();
+        string phase = "bridge_connect";
         using var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.Out, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
         StreamWriter? writer = null;
         try
@@ -73,20 +75,26 @@ internal static class SecureGame
             string presentation = Environment.GetEnvironmentVariable("TIO_GAME_INTERFACE") ?? GameInterface.New;
             GameInterface.Validate(presentation);
             using var verificationTimeout = new CancellationTokenSource(TimeSpan.FromMinutes(25));
+            phase = "update_verification";
             var verification = await LaunchVerification.Verify(root, verificationTimeout.Token,ownedQa:ownedQa).ConfigureAwait(false);
             // Apply locale after verification, which can install language files.
+            phase = "language_setup";
             GameLanguage.Apply(root, locale,ownedQa:ownedQa);
             // The server sends this interface's item catalogue at every login.
             await using var bridge = new TlsBridge(TlsEndpoint.Production, language: locale, verification: verification, presentation: presentation);
+            phase = "tls_preflight";
             await bridge.ValidateEndpoints(CancellationToken.None).ConfigureAwait(false);
             bridge.Start();
             using var lifetime = new GameLifetime();
             var profile = new GameLaunchProfile(bridge.LoginPort, bridge.SessionPort, ownedQa, verification, presentation);
+            phase = "native_startup";
             uint pid = await Task.Run(() => GameStarter.Start(root, profile: profile, attachLifetime: lifetime.Assign)).ConfigureAwait(false);
             Trace("child_game_started");
             using var game = Process.GetProcessById(checked((int)pid));
             await using var windowIcon = new GameWindowIcon(game);
             using var contracts = NativeContractsUi.Attach(bridge,game);
+            using var npcs = new NpcCityMenu(bridge, game, presentation);
+            phase = "startup_confirmation";
             await writer.WriteLineAsync(JsonSerializer.Serialize(new SecureGameStatus(pid, Environment.ProcessId, bridge.LoginPort, bridge.SessionPort, EndpointCertificatesValidated: true))).ConfigureAwait(false);
             Trace("child_status_sent");
             reported = true; writer.Dispose(); writer = null; pipe.Dispose();
@@ -97,6 +105,7 @@ internal static class SecureGame
         catch (Exception error)
         {
             Environment.ExitCode = 1;
+            if (!reported) StartupDiagnostics.TrySave(SteamDistribution.SettingsRoot, phase, startupTimer.Elapsed, error, GameStarter.LastTrace);
             string message = Describe(error);
             if (!reported && writer is not null)
             {

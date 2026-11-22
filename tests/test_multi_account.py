@@ -119,6 +119,52 @@ class MultiAccountTests(unittest.TestCase):
         self.handoff(self.begin('bob'))
         self.assertEqual(self.last_server_entry.unknown_u16_02,1)
 
+    def test_update_disconnect_reaches_world_and_character_selection_before_eof(self):
+        self.start()
+        alice = self.handoff(self.begin('alice'))
+        self.enter(alice, 'Alice')
+        bob = self.handoff(self.begin('bob'))
+        self.character_screen(bob)
+
+        self.server.stop_for_update()
+
+        for peer in (alice, bob):
+            self.assertEqual(peer.until(b'\x01'), b'\x01UPGD')
+            with self.assertRaises(EOFError):
+                peer.receive()
+
+    def test_normal_stop_does_not_send_update_disconnect(self):
+        self.start()
+        peer = self.handoff(self.begin('alice'))
+        self.character_screen(peer)
+
+        self.server.stop()
+
+        with self.assertRaises((EOFError, ConnectionResetError)):
+            while True:
+                self.assertNotEqual(peer.receive(), b'\x01UPGD')
+
+    def test_busy_mail_expiration_keeps_game_listener_running(self):
+        from tio.mail import MailStore
+
+        attempted = threading.Event()
+        expire = MailStore.expire
+
+        def expire_while_locked(store):
+            with closing(sqlite3.connect(store.path)) as writer, writer:
+                writer.execute('BEGIN IMMEDIATE')
+                with patch('tio.mail.connect', lambda path: sqlite3.connect(path, timeout=0)):
+                    try:
+                        return expire(store)
+                    finally:
+                        attempted.set()
+
+        with patch.object(MailStore, 'expire', expire_while_locked):
+            self.start()
+            self.assertTrue(attempted.wait(5), 'Mail expiration did not run')
+            for login in ('alice', 'bob'):
+                self.character_screen(self.handoff(self.begin(login)))
+
     def test_slow_login_construction_does_not_block_game_listener(self):
         from tools.loopback_exchange import LoopbackExchange
         self.start()
@@ -196,6 +242,138 @@ class MultiAccountTests(unittest.TestCase):
 
     def ping(self,peer):
         peer.send(b'\x70');self.assertEqual(peer.until(b'\x9e'),b'\x9e')
+
+    def test_native_safe_deposit_reaches_shared_treasury(self):
+        from tio.clans import ClansStore
+        from tio.db_transaction import transaction
+        from tio.protocol.asset_count import decode_asset_count
+        from tio.protocol.warehouse import decode_warehouse_list
+
+        self.start()
+        alice = self.handoff(self.begin('alice'))
+        self.enter(alice, 'Alice')
+        bob = self.handoff(self.begin('bob'))
+        self.enter(bob, 'Bob')
+        path = self.config.database
+        with transaction(path) as db:
+            packet, = db.execute(
+                "SELECT pet_packet FROM owned_pets WHERE account='alice' AND pet_id=1"
+            ).fetchone()
+            pet = decode_pet_info(packet, human_equipment=True)
+            pet.fields['0x8c4aef'] = 4
+            db.execute("UPDATE owned_pets SET pet_packet=? WHERE account='alice' AND pet_id=1",
+                       (encode_pet_info(pet),))
+        clan = ClansStore(path)
+        clan.create('alice', b'Alpha')
+        clan.invite('alice', b'Bob')
+        clan.accept('bob', 1)
+
+        deposit = bytes.fromhex('c2020100000002000000000001000100ffffe8030000')
+        replies = self.exchange_inventory_requests(bob, [deposit])
+        self.assertEqual(clan.info('alice')['credits'], 1000)
+        self.assertTrue(any(decode_asset_count(p).credits == 9000
+                            for p in replies if p.startswith(b'\xc8\x39')))
+
+        # Bob can deposit with view permission but cannot withdraw the same money.
+        withdrawal = bytes.fromhex('6b0201000000000001000100fffff4010000')
+        denied = self.exchange_inventory_requests(bob, [withdrawal])
+        self.assertTrue(any(p.startswith(b'\xf0\x8a') for p in denied))
+        self.assertEqual(clan.info('alice')['credits'], 1000)
+        replies = self.exchange_inventory_requests(alice, [withdrawal, b'\x69\x02'])
+        safe = [decode_warehouse_list(p)[3] for p in replies if p.startswith(b'\x6a\x02\0\0\0')]
+        self.assertTrue(any([(item.template_id, item.count) for item in items] == [(1, 500)]
+                            for items in safe))
+
+    def test_native_clan_donation_moves_ammo_from_personal_to_shared_stock(self):
+        from tio.clans import ClansStore
+        from tio.db_transaction import transaction
+        from tio.protocol.item_list import ItemRecord
+        from tio.protocol.warehouse import decode_warehouse_list
+        from tio.warehouse_completion import stash
+
+        self.start()
+        alice = self.handoff(self.begin('alice'))
+        self.enter(alice, 'Alice')
+        bob = self.handoff(self.begin('bob'))
+        self.enter(bob, 'Bob')
+        path = self.config.database
+        with transaction(path) as db:
+            packet, = db.execute("SELECT pet_packet FROM owned_pets WHERE account='alice' AND pet_id=1").fetchone()
+            pet = decode_pet_info(packet, human_equipment=True)
+            pet.fields['0x8c4aef'] = 4
+            db.execute("UPDATE owned_pets SET pet_packet=? WHERE account='alice' AND pet_id=1", (encode_pet_info(pet),))
+            ammo = ItemRecord(50001, 7, bytes(2), 20, 0, 0, (0, 0, 0), bytes(4), None, bytes(3))
+            stash(db, 'bob', (ammo,), origin='test-clan-donation')
+            bag_before, = db.execute("SELECT inventory_packet FROM owned_pets WHERE account='bob' AND pet_id=1").fetchone()
+        clan = ClansStore(path)
+        clan.create('alice', b'Alpha')
+        clan.invite('alice', b'Bob')
+        clan.accept('bob', 1)
+
+        donation = bytes.fromhex('c20200000000010000000000010051c300000f000000')
+        denied = self.exchange_inventory_requests(alice, [donation])
+        self.assertTrue(any(p.startswith(b'\xf0\x8a') for p in denied))
+        replies = self.exchange_inventory_requests(bob, [donation])
+        self.assertEqual([p.hex() for p in replies if p.startswith(b'\xf0\x8a')], [])
+        bins = {kind: items for p in replies if p.startswith(b'\x6a')
+                for kind, _, _, items in [decode_warehouse_list(p)]}
+        self.assertEqual([(i.instance_id, i.count) for i in bins[0]], [(50001, 5)])
+        self.assertEqual([(i.template_id, i.count) for i in bins[1]], [(7, 15)])
+        with transaction(path) as db:
+            bag_after, = db.execute("SELECT inventory_packet FROM owned_pets WHERE account='bob' AND pet_id=1").fetchone()
+        self.assertEqual(bag_before, bag_after)
+
+        replay = self.exchange_inventory_requests(bob, [donation])
+        self.assertTrue(any(p.startswith(b'\xf0\x8a') for p in replay))
+        replies = self.exchange_inventory_requests(alice, [b'\x69\x01'])
+        shared = [decode_warehouse_list(p)[3] for p in replies if p.startswith(b'\x6a\x01\0\0\0')]
+        self.assertEqual(shared[-1], bins[1])
+
+    def test_native_clan_repair_uses_shared_stock_and_safe_balance(self):
+        from tio.clans import ClansStore, DEFAULT_RIGHTS, WITHDRAW_REPAIR
+        from tio.db_transaction import transaction
+        from tio.protocol.item_list import ItemRecord, encode_item_list
+        from tio.protocol.warehouse import decode_warehouse_list
+        from tio.warehouse import WarehouseStore
+        from tio.warehouse_completion import stash
+
+        self.start()
+        alice = self.handoff(self.begin('alice'))
+        self.enter(alice, 'Alice')
+        bob = self.handoff(self.begin('bob'))
+        self.enter(bob, 'Bob')
+        path = self.config.database
+        kit = ItemRecord(51001, 17, bytes(2), 1, 0, 0, (600, 600, 600), bytes(4), None, bytes(3))
+        coat = ItemRecord(51002, 222, bytes(2), 1, 0, 0, (100, 180, 180), bytes(4), None, bytes(3))
+        with transaction(path) as db:
+            raw, = db.execute("SELECT pet_packet FROM owned_pets WHERE account='alice' AND pet_id=1").fetchone()
+            pet = decode_pet_info(raw, human_equipment=True)
+            pet.fields['0x8c4aef'] = 4
+            db.execute("UPDATE owned_pets SET pet_packet=? WHERE account='alice' AND pet_id=1", (encode_pet_info(pet),))
+            db.execute("UPDATE owned_pets SET inventory_packet=? WHERE account='alice' AND pet_id=1", (encode_item_list(1, (coat,)),))
+            stash(db, 'alice', (kit,), origin='test-clan-repair')
+        clan = ClansStore(path)
+        clan.create('alice', b'Alpha')
+        clan.invite('alice', b'Bob')
+        clan.accept('bob', 1)
+        clan.exchange('alice', 1, 1, deposits=((coat.instance_id, 1),))
+        self.exchange_inventory_requests(alice, [bytes.fromhex('c2020100000002000000000001007300ffff58020000')])
+        self.assertEqual(clan.info('bob')['repair'], 600)
+        self.assertEqual(WarehouseStore(path).items('alice'), ())
+
+        repair = bytes.fromhex('c2030100000000000040')
+        denied = self.exchange_inventory_requests(bob, [repair])
+        self.assertTrue(any(p.startswith(b'\xf0\x8a') for p in denied))
+        clan.permissions('alice', clan.info('bob')['member_id'], DEFAULT_RIGHTS | WITHDRAW_REPAIR, 0)
+        replies = self.exchange_inventory_requests(bob, [repair, repair])
+        self.assertTrue(any(p.startswith(b'\xf0\x70') for p in replies))
+        self.assertTrue(any(any(i.durability == 178 for i in decode_warehouse_list(p)[3])
+                            for p in replies if p.startswith(b'\x6a\x01\0\0\0')))
+        self.assertEqual(clan.items('alice', 1)[0].unknown_words, (178, 178, 180))
+        self.assertEqual(clan.info('alice')['repair'], 522)
+        self.exchange_inventory_requests(bob, [bytes.fromhex('6b0201000000000001007300ffff0a020000')])
+        self.assertEqual([i.unknown_words[0] for i in WarehouseStore(path).items('bob')], [522])
+        self.assertEqual(clan.info('alice')['repair'], 0)
 
     def test_private_bank_commands_shared_securities_replay_and_no_peer_broadcast(self):
         from tio.db_transaction import transaction
@@ -306,7 +484,7 @@ class MultiAccountTests(unittest.TestCase):
         listing=Writer().u8(0xc8).u8(8).u32(0).u32(77).u8(0).u8(0).u32(1).build()
         b.send(listing);record=Reader(b.until(b'\xc8\x09')[2:])
         self.assertEqual((record.u32(),record.u32(),record.u32(),record.u32(),record.u32()),(77,1,1,1,lot))
-        b.send(Writer().u8(0xc8).u8(15).u32(lot).build())
+        b.send(Writer().u8(0xc8).u8(14).u32(lot).build())
         b.until(b'\xc8\x04')
         self.assertEqual(decode_asset_count(b.until(b'\xc8\x39')).credits,7000)
         goods=decode_warehouse_list(b.until(b'\x6a'))[3]
@@ -316,7 +494,7 @@ class MultiAccountTests(unittest.TestCase):
             if time.monotonic()>deadline:self.fail('Seller settlement missing')
             time.sleep(.05)
         self.assertEqual(len(WarehouseStore(self.config.database).items('bob')),1)
-        a.send(Writer().u8(0xc8).u8(15).u32(lot).build());a.until(b'\xf0\x8a\x01\0\0')
+        a.send(Writer().u8(0xc8).u8(14).u32(lot).build());a.until(b'\xf0\x8a\x01\0\0')
         self.assertEqual(WalletStore(self.config.database).ensure('alice').credits,11000)
 
     def test_new_accounts_create_retry_select_customize_and_relogin(self):
@@ -497,47 +675,38 @@ class MultiAccountTests(unittest.TestCase):
         self.assertEqual(store.inventory('alice',owner),seed)
         self.ping(alice);self.ping(bob)
 
-    def test_full_repair_bag_rejection_keeps_both_tcp_clients_connected(self):
-        import struct
-        from tio.db_transaction import transaction
-        from tio.inventory_capacity import INVENTORY_SLOTS
-        from tio.protocol.item_list import ItemRecord
+    def test_city_exchange_moves_worn_armor_to_owned_backpack(self):
+        from tio.protocol.battle_exchange import BattleExchange, encode_exchange
 
         self.start()
         alice = self.handoff(self.begin('alice')); self.enter(alice, 'Alice')
         bob = self.handoff(self.begin('bob')); self.enter(bob, 'Bob')
-        gear = ItemRecord(9001, 301, bytes(2), 1, 1, 16, (50, 350, 350),
-                          bytes(4), None, bytes(3))
-        kit = ItemRecord(5, 17, bytes(2), 2, 0, 0, (600, 600, 600),
-                         bytes(4), None, bytes(3))
-        fillers = tuple(replace(kit, instance_id=100 + i, template_id=317,
-                                unknown_u32_01=1, unknown_words=(1, 1, 1))
-                        for i in range(INVENTORY_SLOTS - 2))
-        alice_inventory = encode_item_list(1, (gear, kit, *fillers))
-        bob_inventory = encode_item_list(1, (gear, replace(kit, unknown_u32_01=1)))
-        with transaction(self.config.database) as db:
-            db.executemany('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=1',
-                           ((alice_inventory, 'alice'), (bob_inventory, 'bob')))
-            db.execute('INSERT INTO item_sequences VALUES (?,?) ON CONFLICT(account) '
-                       'DO UPDATE SET next_id=excluded.next_id', ('alice', 9600))
-
-        request = b'\xc2\x03' + struct.pack('<II', 1, 9001)
-        alice.send(request)
-        refusal = alice.until(b'\xf0\x8a\x01\x00\x00')
-        self.assertIn('Inventory is full'.encode('utf-16-le'), refusal)
-        self.ping(alice); self.ping(bob)
         store = OwnedPetStore(self.config.database)
-        self.assertEqual(store.inventory('alice', 1), alice_inventory)
-        self.assertEqual(store.inventory('bob', 1), bob_inventory)
+        before_bob = store.inventory('bob', 1)
+        before_alice = store.inventory('alice', 1)
+        owner, items, flag = decode_item_list(before_alice)
+        armor = replace(items[0], instance_id=9001, template_id=264, unknown_u32_01=1,
+                        unknown_u8_01=1, location_raw=4, unknown_words=(211, 400, 500),
+                        unknown_bytes_03=bytes((3, 0, 1)))
         with closing(sqlite3.connect(self.config.database)) as db:
-            self.assertEqual(db.execute('SELECT next_id FROM item_sequences WHERE account=?',
-                                        ('alice',)).fetchone()[0], 9600)
+            raw, = db.execute('SELECT pet_packet FROM owned_pets WHERE account=? AND pet_id=?',
+                              ('alice', owner)).fetchone()
+        pet = decode_pet_info(raw, human_equipment=True)
+        pet.fields.update({'0x8c43eb': 2, '0x8c44a6': 2, '0x8c446f': 2, '0x8c4aef': 5})
+        donor = encode_item_list(2, (armor,), flag)
+        store.ensure('alice', encode_pet_info(pet), donor, human=True)
 
-        bob.send(request)
-        repaired = decode_item_list(bob.until(b'\x30'))[1]
-        self.assertEqual([i.unknown_words[0] for i in repaired], [341, 309])
-        self.assertEqual(store.inventory('alice', 1), alice_inventory)
-        self.ping(alice); self.ping(bob)
+        request = encode_exchange(BattleExchange(owner, 2, withdrawals=((armor.instance_id, 1),)))
+        replies = self.exchange_inventory_requests(alice, [request])
+        self.assertEqual(store.inventory('alice', 2), encode_item_list(2, (), flag))
+        expected = encode_item_list(owner, (*items, replace(armor, unknown_u8_01=0, location_raw=0)), flag)
+        self.assertEqual(store.inventory('alice', owner), expected)
+        self.assertIn(expected, replies)
+        self.assertIn(store.inventory('alice', 2), replies)
+        self.assertEqual(store.inventory('bob', 1), before_bob)
+        self.exchange_inventory_requests(alice, [request])
+        self.assertEqual(store.inventory('alice', owner), expected)
+        self.ping(bob)
 
     def test_bad_password_duplicate_login_and_reconnect_do_not_affect_other_player(self):
         self.start()
@@ -691,6 +860,64 @@ class MultiAccountTests(unittest.TestCase):
         peers[0].until(b'\x39',max_packets=2048);peers[1].until(b'\x38',max_packets=2048)
         self.ping(peers[0]);self.ping(peers[1])
 
+    def test_private_chat_waits_for_town_after_battle(self):
+        from tio.protocol.arena import ArenaCreateRequest, encode_create_request
+        from tio.protocol.chat import encode_message
+        from tio.protocol.system_message import encode_open_town_view
+
+        self.start()
+        alice = self.handoff(self.begin('alice')); self.enter(alice, 'Alice')
+        bob = self.handoff(self.begin('bob')); self.enter(bob, 'Bob')
+        request = encode_create_request(ArenaCreateRequest(1, 0, 4, 2, 40, 1, 1, 0, 0))
+        for peer in (alice, bob):
+            peer.send(request); peer.until(b'\x25'); peer.send(b'\x2e')
+        for peer in (alice, bob):
+            peer.until(b'\x41', max_packets=512)
+        lines = ('Во время боя', 'На экране результатов')
+        expected = [encode_message(1, b'Bob', line) for line in lines]
+
+        def send(line):
+            bob.send(b'\x21\1' + line.encode('utf-16-le') + b'\0\0Alice\0')
+            # A presence roster confirms that the preceding chat was processed.
+            bob.send(b'\xc7\1'); bob.until(b'\xc7\2', max_packets=512)
+
+        def read_until(peer, prefix):
+            received = []
+            for _ in range(1024):
+                packet = peer.receive()
+                if packet.startswith(prefix):
+                    return received
+                if packet in expected:
+                    received.append(packet)
+            self.fail('Missing response ' + prefix.hex())
+
+        send(lines[0])
+        hub = self.server.multi.team_arena
+        with hub.lock:
+            session = self.server.multi.active_accounts['alice']
+            owner = hub.identities[session]
+            battle = hub.battles[owner]
+            field = battle['field']
+            for identity, actor in tuple(field._actors.items()):
+                if field.side(actor.owner_id) != field.side(owner):
+                    field._actors[identity] = replace(actor, health=0)
+            hub.finish(battle)
+        self.assertEqual(read_until(alice, b'\x4c'), [])
+        bob.until(b'\x4c', max_packets=512)
+        send(lines[1])
+        alice.send(b'\x2a\x01')
+        self.assertEqual(read_until(alice, encode_open_town_view()), [])
+        # Presence still drains while native city controls are loading.
+        alice.send(b'\xc7\1')
+        self.assertEqual(read_until(alice, b'\xc7\2'), [])
+        alice.send(b'\x50\x03')
+        self.assertEqual(alice.until(b'\x22', max_packets=512), expected[0])
+        self.assertEqual(alice.until(b'\x22', max_packets=512), expected[1])
+        alice.send(b'\x50\x03'); alice.send(b'\xb1\x02')
+        self.assertEqual(read_until(alice, b'\xb1\x03'), [])
+        bob.send(b'\xc7\1')
+        self.assertEqual(read_until(bob, b'\xc7\x02'), [])
+
     def test_two_tcp_clients_presence_chat_and_leave(self):
         self.start()
         alice=self.handoff(self.begin('alice'));self.enter(alice,'Alice')
@@ -771,3 +998,45 @@ class MultiAccountTests(unittest.TestCase):
             if b'Bob\0' not in snapshot(alice)[0]:break
             if time.monotonic()>deadline:self.fail('Global disconnect not delivered to another town')
             time.sleep(.1)
+
+    def test_full_repair_bag_rejection_keeps_both_tcp_clients_connected(self):
+        import struct
+        from tio.db_transaction import transaction
+        from tio.inventory_capacity import INVENTORY_SLOTS
+        from tio.protocol.item_list import ItemRecord
+
+        self.start()
+        alice = self.handoff(self.begin('alice')); self.enter(alice, 'Alice')
+        bob = self.handoff(self.begin('bob')); self.enter(bob, 'Bob')
+        gear = ItemRecord(9001, 301, bytes(2), 1, 1, 16, (50, 350, 350),
+                          bytes(4), None, bytes(3))
+        kit = ItemRecord(5, 17, bytes(2), 2, 0, 0, (600, 600, 600),
+                         bytes(4), None, bytes(3))
+        fillers = tuple(replace(kit, instance_id=100 + i, template_id=317,
+                                unknown_u32_01=1, unknown_words=(1, 1, 1))
+                        for i in range(INVENTORY_SLOTS - 2))
+        alice_inventory = encode_item_list(1, (gear, kit, *fillers))
+        bob_inventory = encode_item_list(1, (gear, replace(kit, unknown_u32_01=1)))
+        with transaction(self.config.database) as db:
+            db.executemany('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=1',
+                           ((alice_inventory, 'alice'), (bob_inventory, 'bob')))
+            db.execute('INSERT INTO item_sequences VALUES (?,?) ON CONFLICT(account) '
+                       'DO UPDATE SET next_id=excluded.next_id', ('alice', 9600))
+
+        request = b'\xc2\x03' + struct.pack('<II', 1, 9001)
+        alice.send(request)
+        refusal = alice.until(b'\xf0\x8a\x01\x00\x00')
+        self.assertIn('Inventory is full'.encode('utf-16-le'), refusal)
+        self.ping(alice); self.ping(bob)
+        store = OwnedPetStore(self.config.database)
+        self.assertEqual(store.inventory('alice', 1), alice_inventory)
+        self.assertEqual(store.inventory('bob', 1), bob_inventory)
+        with closing(sqlite3.connect(self.config.database)) as db:
+            self.assertEqual(db.execute('SELECT next_id FROM item_sequences WHERE account=?',
+                                        ('alice',)).fetchone()[0], 9600)
+
+        bob.send(request)
+        repaired = decode_item_list(bob.until(b'\x30'))[1]
+        self.assertEqual([i.unknown_words[0] for i in repaired], [341, 309])
+        self.assertEqual(store.inventory('alice', 1), alice_inventory)
+        self.ping(alice); self.ping(bob)

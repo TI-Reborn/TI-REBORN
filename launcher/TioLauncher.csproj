@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>TIO Launcher</AssemblyName>
-    <Version>0.1.42</Version>
+    <Version>0.1.65</Version>
     <ApplicationIcon>Assets\tio-launcher.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup Condition="'$(SteamDistribution)' == 'true'">
@@ -20,6 +20,8 @@
     <Error Condition="'$(SteamManifestPath)' == '' Or !Exists('$(SteamManifestPath)')" Text="A reviewed SteamManifestPath is required for a Steam distribution build." />
   </Target>
   <ItemGroup>
+    <EmbeddedResource Include="Assets\onboarding-quests\ruth-dialogue.png" LogicalName="TioLauncher.ruth-dialogue.png" />
+    <EmbeddedResource Include="Assets\onboarding-quests\ruth-voss.png" LogicalName="TioLauncher.ruth-voss.png" />
     <EmbeddedResource Include="Assets\native-contracts-windows.json" LogicalName="TioLauncher.native-contracts-windows.json" />
     <EmbeddedResource Include="Assets\tio-launcher.ico" LogicalName="TioLauncher.icon.ico" />
     <EmbeddedResource Include="Assets\wasteland.png" LogicalName="TioLauncher.wasteland.png" />
@@ -27,7 +29,10 @@
     <EmbeddedResource Include="Assets\native-english.json" LogicalName="TioLauncher.native-english.json" />
     <EmbeddedResource Include="Assets\native-door-grid.json" LogicalName="TioLauncher.native-door-grid.json" />
     <EmbeddedResource Include="Assets\native-battle-turn.json" LogicalName="TioLauncher.native-battle-turn.json" />
+    <EmbeddedResource Include="Assets\native-hd-map-textures.json" LogicalName="TioLauncher.native-hd-map-textures.json" />
     <EmbeddedResource Include="Assets\native-throwable-effects.json" LogicalName="TioLauncher.native-throwable-effects.json" />
     <EmbeddedResource Include="Assets\native-flame-stream.json" LogicalName="TioLauncher.native-flame-stream.json" />
+    <EmbeddedResource Include="Assets\native-player-moderation.json" LogicalName="TioLauncher.native-player-moderation.json" />
+    <EmbeddedResource Include="Assets\native-silver-regions.json" LogicalName="TioLauncher.native-silver-regions.json" />
   </ItemGroup>
 </Project>

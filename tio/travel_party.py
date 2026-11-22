@@ -356,6 +356,27 @@ class PartyStore:
             self._changed(db, room['id'], reset_ready=True)
             return self._snapshot(db, room['id'])
 
+    def withdraw_from_battle(self, party_id: int, owner: str) -> dict | None:
+        """Authoritative battle departure; ordinary party commands stay frozen."""
+        with transaction(self.path) as db:
+            room = self._snapshot(db, party_id)
+            if room is None or room['state'] != 'battle':
+                raise ValueError('Группа не участвует в бою')
+            if not any(m['owner'] == owner for m in room['members']):
+                raise ValueError('Игрок не принадлежит боевой группе')
+            if len(room['members']) == 1:
+                self._delete_room(db, party_id)
+                return None
+            db.execute('DELETE FROM travel_party_selected WHERE owner=?', (owner,))
+            db.execute('DELETE FROM travel_party_disconnects WHERE owner=?', (owner,))
+            db.execute('DELETE FROM travel_party_members WHERE owner=?', (owner,))
+            if room['leader'] == owner:
+                leader = next(m['owner'] for m in room['members'] if m['owner'] != owner)
+                db.execute('UPDATE travel_party_groups SET leader=? WHERE id=?', (leader, party_id))
+                db.execute('DELETE FROM travel_party_invitations WHERE party_id=?', (party_id,))
+            self._changed(db, party_id)
+            return self._snapshot(db, party_id)
+
     def kick(self, owner, target_owner):
         with transaction(self.path) as db:
             room = self._room(db, owner, leader=True, city=True)

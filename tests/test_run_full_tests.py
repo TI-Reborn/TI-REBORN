@@ -2,6 +2,7 @@
 from pathlib import Path
 from contextlib import redirect_stdout
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -14,6 +15,17 @@ import run_full_tests as runner
 
 
 class RunFullTestsTests(unittest.TestCase):
+    def repository_fixture(self):
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        root = Path(folder.name).resolve()
+        subprocess.run(['git', 'init', '-q', str(root)], check=True, timeout=10)
+        (root/'.gitignore').write_text('/reports/\n/evidence/*.bin\n', encoding='utf-8')
+        patcher = patch.object(runner, 'ROOT', root)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        return root
+
     def test_json_report_preserves_unicode_with_a_legacy_system_encoding(self):
         class CyrillicFailure(unittest.TestCase):
             def runTest(self):
@@ -83,8 +95,9 @@ class RunFullTestsTests(unittest.TestCase):
                 self.assertEqual(len(result.real), 1)
 
     def test_missing_local_inputs_and_optional_modules_are_environment(self):
+        root = self.repository_fixture()
         for error, reason in (
-                (FileNotFoundError(2, 'missing', str(ROOT/'evidence/x_native.json')), 'file:evidence'),
+                (FileNotFoundError(2, 'missing', str(root/'evidence/x_native.bin')), 'file:evidence'),
                 (FileNotFoundError(2, 'missing', 'C:\\Program Files (x86)\\TIOnline\\base\\x'), 'file:windows-client'),
                 (FileNotFoundError(2, 'missing', '/mnt/elsewhere/client.dll'), 'file:outside-repository'),
                 (ModuleNotFoundError("No module named 'pefile'", name='pefile'), 'module:pefile'),
@@ -93,8 +106,9 @@ class RunFullTestsTests(unittest.TestCase):
                 self.assertEqual(runner.environment_reason(error), reason)
 
     def test_wrapped_environment_cause_is_found(self):
+        root = self.repository_fixture()
         try:
-            try:raise FileNotFoundError(2, 'missing', str(ROOT/'reports/a/b.json'))
+            try:raise FileNotFoundError(2, 'missing', str(root/'reports/a/b.json'))
             except FileNotFoundError as cause:raise ValueError('wrapped') from cause
         except ValueError as error:
             self.assertEqual(runner.environment_reason(error), 'file:reports')

@@ -103,7 +103,16 @@ class CombatSightScatterTests(unittest.TestCase):
         self.assertEqual(visible_actors(field,7),{1})
         self.assertEqual(field.actor(1).health,0)
 
-    def test_native_sight_limit_snapshot_roundtrip_and_new_battle_reset(self):
+    def test_seven_enemy_kills_do_not_exceed_native_sight_limit(self):
+        actors=[BattleActor(1,7,1,1,40,100,100)]+[
+            BattleActor(i,8,i,1,40,1,100) for i in range(2,11)]
+        field,combat=self.combat(311,actors=actors)
+        for target in range(2,11):
+            field.prepare_turn(7,(1,))
+            combat.attack(7,AttackRequest(1,target,1))
+            self.assertEqual(field.actor(1).sight_radius,min(15,9+target-1))
+
+    def test_native_sight_saturation_snapshot_roundtrip_and_new_battle_reset(self):
         field,combat=self.combat()
         field._actors[1]=replace(field.actor(1),sight_radius=15)
         combat.attack(7,AttackRequest(1,5,1))

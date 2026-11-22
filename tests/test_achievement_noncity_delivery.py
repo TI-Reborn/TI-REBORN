@@ -34,8 +34,7 @@ class NoncityDeliveryTests(unittest.TestCase):
                        ('alice', town, 0, 0))
 
     def test_defer_in_range_mine_base_map_and_prison_without_changing_receipts(self):
-        # Mine checkpoints have warehouses now (MINE_WAREHOUSES.md) and deliver.
-        for town in (17, 6, -1, 10):
+        for town in (17, next(iter(MINE_LOCATIONS)), 6, -1, 10):
             with self.subTest(town=town):
                 self.location(town)
                 before = self.dump()
@@ -56,7 +55,7 @@ class NoncityDeliveryTests(unittest.TestCase):
         self.location(3)
         # A persisted city ID while a journey is active is still unavailable.
         with closing(sqlite3.connect(self.path)) as db, db:
-            db.execute('INSERT INTO map_journeys(account,x,y,tx,ty,started,arrives) VALUES (?,?,?,?,?,?,?)',
+            db.execute('INSERT INTO map_journeys VALUES (?,?,?,?,?,?,?)',
                        ('alice', 0, 0, 1, 1, 1, 2))
         before = self.dump()
         self.assertEqual(self.store.flush('alice'), ())

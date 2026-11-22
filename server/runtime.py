@@ -98,6 +98,7 @@ class Server:
     def __init__(self, config):
         self.config = config
         self.stopping = threading.Event()
+        self.update_restart = False
         self.tls_reload_requested = threading.Event()
         self.exchange = None
         self.listener = None
@@ -106,6 +107,10 @@ class Server:
         # Signal handler only requests shutdown. The main thread closes sockets
         # and waits for SQLite work/settlement to finish in the worker.
         self.stopping.set()
+
+    def stop_for_update(self, *_: object) -> None:
+        self.update_restart = True
+        self.stop()
 
     def reload_tls(self, *_):
         # Signal callbacks do no certificate I/O; the serving loop validates
@@ -186,6 +191,8 @@ def main(argv=None):
         previous = {sig: signal.signal(sig, server.stop) for sig in (signal.SIGINT, signal.SIGTERM)}
         if hasattr(signal,'SIGHUP'):
             previous[signal.SIGHUP]=signal.signal(signal.SIGHUP,server.reload_tls)
+        if config.multi_account and hasattr(signal, 'SIGUSR1'):
+            previous[signal.SIGUSR1] = signal.signal(signal.SIGUSR1, server.stop_for_update)
         try:
             server.serve()
         finally:

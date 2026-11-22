@@ -12,6 +12,9 @@ from .inventory_capacity import validate_capacity
 from .protocol.item_list import ItemRecord, decode_item_list, encode_item_list
 
 KITS = {17:600, 18:1200, 19:3600}
+LE_REPAIR_KIT = 128
+# LE points are spent through explicit item selection, never pooled as ordinary repair points.
+SELECTABLE_KITS = {**KITS, LE_REPAIR_KIT: 1000}
 
 
 @lru_cache(maxsize=1)
@@ -22,8 +25,9 @@ def definitions():
 
 def durable(item):
     d=definitions().get(item.template_id,{})
-    return (item.template_id not in (*KITS,300,333,337) and int(d.get('durability',0))>1
-            and (d.get('itype')=='armor' or 'weaponType' in d or item.template_id in (24,5002)))
+    return (item.template_id not in (*SELECTABLE_KITS,300,333,337) and int(d.get('durability',0))>1
+            and (d.get('itype') in ('armor','implant') or 'weaponType' in d or item.template_id in (24,5002)
+                 or d.get('item_type') in ('minefinder', 'defuse')))
 
 
 def special(item):
@@ -34,57 +38,93 @@ def broken(item):
     return durable(item) and item.unknown_words[0]==0
 
 
-def wear(item, amount):
+def wear(item, amount, *, keep_at_zero: bool = False):
     if not durable(item) or amount<=0:return item
     current,maximum,limit=item.unknown_words
     current=max(0,current-amount)
+    if keep_at_zero or definitions().get(item.template_id,{}).get('itype')=='implant':
+        return replace(item,unknown_words=(current,maximum,limit))
     if current==0 and not special(item):return None
     return replace(item,unknown_words=(current,maximum,limit),
                    unknown_u8_01=item.equipped if current else 0,
                    location_raw=item.slot if current else 0)
 
 
-def wear_inventory(packet, *, weapon=None, weapon_ap=0, armor_damage=0,half_wear=False,remainders=None):
+def wear_inventory(packet, *, weapon=None, weapon_ap=0, armor_damage=0,half_wear=False,remainders=None,
+                   weapon_type=None, deferred_breaks: set[int] | None = None):
     owner,items,flag=decode_item_list(packet)
     updated=[]
+    if weapon_type is None:
+        selected=next((i for i in items if i.instance_id==weapon),None)
+        weapon_type=definitions().get(selected.template_id,{}).get('weaponType') if selected else None
     for item in items:
         amount=weapon_ap if item.instance_id==weapon else 0
         if item.equipped and definitions().get(item.template_id,{}).get('itype')=='armor':
             amount+=armor_damage*2//5
+        if item.equipped and definitions().get(item.template_id,{}).get('itype')=='implant':
+            from .implants import effect_stats
+            from .weapon_proficiency import NAMES
+            stats=effect_stats(item.template_id)
+            amount+=(weapon_ap if weapon_type in stats else 0)
+            amount+=armor_damage*2//5 if any(stat not in NAMES[:6] for stat in stats) else 0
         if half_wear and amount>0:
             # Carry odd units within the battle; round cumulative wear upward.
             key=(owner,item.instance_id)
             numerator=amount+(remainders.get(key,1) if remainders is not None else 1)
             amount=numerator//2
             if remainders is not None:remainders[key]=numerator%2
-        changed=wear(item,amount)
+        defer = deferred_breaks is not None and item.instance_id == weapon
+        changed=wear(item,amount,keep_at_zero=defer)
+        if defer and broken(changed):
+            deferred_breaks.add(item.instance_id)
         if changed is not None:updated.append(changed)
     return encode_item_list(owner,tuple(updated),flag)
 
 
-def repair_item(item, kit):
-    if not durable(item) or item.count!=1 or item.optional_u32 is not None or item.unknown_bytes_02[3]:
+def repair_item(item: ItemRecord, kit: ItemRecord) -> tuple[ItemRecord, ItemRecord | None, int, int]:
+    from .implants import catalog
+    implant = item.template_id in catalog()
+    if (not implant and not durable(item)) or item.count!=1 or item.optional_u32 is not None or item.unknown_bytes_02[3]:
         raise ValueError('Предмет нельзя ремонтировать этим набором')
-    if kit.template_id not in KITS or kit.count!=1 or kit.equipped or kit.unknown_words[0]<=0:
+    if kit.template_id not in repair_kits(item, selected=True) or kit.count!=1 or kit.equipped or kit.unknown_words[0]<=0:
         raise ValueError('Ремкомплект отсутствует или израсходован')
+    repaired, restored, loss = restore_resource(item, kit.unknown_words[0],
+                                                preserve_maximum=kit.template_id == LE_REPAIR_KIT)
+    remaining=kit.unknown_words[0]-restored
+    used=replace(kit,unknown_words=(remaining,*kit.unknown_words[1:])) if remaining else None
+    return repaired,used,restored,loss
+
+
+def restore_resource(item: ItemRecord, resource: int, *, preserve_maximum: bool = False) -> tuple[ItemRecord, int, int]:
     current,maximum,limit=item.unknown_words
+    if type(resource) is not int or resource <= 0 or not 0 <= current <= maximum <= limit:
+        raise ValueError('Некорректный ресурс ремонта')
     if current>=maximum:raise ValueError('Предмет не нуждается в ремонте')
+    if preserve_maximum:
+        restored = min(resource, maximum - current)
+        return replace(item, unknown_words=(current + restored, maximum, limit)), restored, 0
     # 3% of spent resource, integer nearest rounding. For a full repair
     # solve restored * 1.03 = deficit and assign the remainder to max loss.
-    resource=kit.unknown_words[0]
     full=(100*(maximum-current)+51)//103
     restored=min(resource,full)
     loss=maximum-current-restored if restored==full else (restored*3+50)//100
     if restored<=0:raise ValueError('Недостаточно ресурса для ремонта')
     repaired=replace(item,unknown_words=(current+restored,maximum-loss,limit))
-    remaining=resource-restored
-    used=replace(kit,unknown_words=(remaining,*kit.unknown_words[1:])) if remaining else None
-    return repaired,used,restored,loss
+    return repaired,restored,loss
+
+
+def repair_kits(item: ItemRecord, *, selected: bool = False) -> dict[int, int]:
+    from .implants import catalog, policy
+    if item.template_id in catalog():
+        return {policy()['repair']['template']: policy()['repair']['resource']}
+    return SELECTABLE_KITS if selected else KITS
 
 
 def spending_order(kit: ItemRecord) -> tuple[bool, int]:
     """Spend partially used kits first, so stacks leave at most one remainder."""
-    return (kit.unknown_words[0]>=KITS[kit.template_id],kit.instance_id)
+    from .implants import policy
+    capacity = SELECTABLE_KITS.get(kit.template_id, policy()['repair']['resource'])
+    return (kit.unknown_words[0]>=capacity,kit.instance_id)
 
 
 def repair_inventory(packet: bytes, target: int, kit_id: int | None = None, *,
@@ -93,7 +133,8 @@ def repair_inventory(packet: bytes, target: int, kit_id: int | None = None, *,
     owner,items,flag=decode_item_list(packet)
     item=next((i for i in items if i.instance_id==target),None)
     if item is None:raise ValueError('Предмет не принадлежит бойцу')
-    kits=sorted((i for i in items if i.template_id in KITS and i.unknown_words[0]>0 and not i.equipped
+    templates = repair_kits(item, selected=kit_id is not None)
+    kits=sorted((i for i in items if i.template_id in templates and i.unknown_words[0]>0 and not i.equipped
                  and (kit_id is None or i.instance_id==kit_id)),key=spending_order)
     if not kits:raise ValueError('У этого бойца нет ремкомплекта')
     kit=kits[0]

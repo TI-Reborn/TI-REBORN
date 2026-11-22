@@ -40,23 +40,21 @@
   },
   "stock": {
     "weapon": {
-      "mode": "weekly",
-      "capacity": 50
+      "mode": "infinite"
     },
     "armor": {
-      "mode": "weekly",
-      "capacity": 50
+      "mode": "infinite"
     },
     "ammo": {
       "mode": "infinite"
     },
     "supply": {
-      "mode": "threshold",
-      "capacity": 100,
-      "threshold": 10,
-      "delay_seconds": 3600
+      "mode": "infinite"
     },
     "premium": {
+      "mode": "infinite"
+    },
+    "le_kit": {
       "mode": "infinite"
     }
   },
@@ -74,13 +72,19 @@
     "retain_legacy_cart_terms": true,
     "retain_non_enhanceable_legacy_offers": true,
     "ready_price": {
-      "model": "expected_self_upgrade_v1",
-      "revision": 3,
+      "model": "capped_expected_self_upgrade_v2",
+      "revision": 4,
       "total_percent_by_level": {
         "10": 150,
         "15": 175,
         "20": 200,
         "25": 225
+      },
+      "max_surcharge_by_level": {
+        "10": 40000,
+        "15": 80000,
+        "20": 160000,
+        "25": 280000
       },
       "round_up_credits": 100,
       "native_max_credits": 2147483647

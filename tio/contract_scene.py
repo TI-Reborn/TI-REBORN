@@ -250,14 +250,14 @@ def prepare(seats, contract):
     from .battle_doors import BattleDoors
     from .battle_loot import BattleLoot
     field.doors = BattleDoors(field, generated.arena.doors, permissions)
-    # Native crate artwork keeps its verified footprint, but contracts never
-    # allocate random crate rewards or persist generated NPC equipment.
-    field.loot = BattleLoot(field.combat, (), level=max(l for s in seats for l in s[4].levels),
+    field.loot = BattleLoot(field.combat, generated.arena.containers, level=max(l for s in seats for l in s[4].levels),
                            rng=random.Random(contract['seed'] ^ 0x4C4F4F54))
+    from .contract_loot import populate_crates
+    populate_crates(field.loot)
     field.patrol_waypoints = generated.patrol
     field.scene_metadata = dict(profile=generated.profile, variant=generated.variant, seed=generated.seed,
         width=field.width, height=field.height, objects=deepcopy(generated.layout['objects']),
-        crates=0, visual_containers=len(generated.arena.containers), doors=len(generated.arena.doors))
+        crates=len(field.loot.boxes), visual_containers=len(generated.arena.containers), doors=len(generated.arena.doors))
     field.contract_metadata = dict(instance_id=contract.get('id'), template_id=template['id'],
         seed=contract['seed'], policy_sha256=snapshot['content_sha256'], npc_roles=npc_roles,
         human_actors=humans, npc_actors=count, boss=boss, provisional_balance=True)

@@ -109,6 +109,18 @@ class PacketIsolation(TeamHeartbeatTests):
 
 
 class TimingBoundaries(unittest.TestCase):
+    def test_failed_begin_records_wait(self):
+        with patch('tio.db_transaction.sqlite3.connect') as connect, patch('tio.db_transaction.observe') as observe:
+            db = connect.return_value
+            def execute(sql):
+                if sql == 'BEGIN IMMEDIATE':
+                    raise sqlite3.OperationalError('database is locked')
+            db.execute.side_effect = execute
+            with self.assertRaisesRegex(sqlite3.OperationalError, 'locked'), transaction('test.db'):
+                self.fail('Busy writer entered the transaction body')
+            self.assertIn('sql.begin_wait', [call.args[0] for call in observe.call_args_list])
+            db.close.assert_called_once()
+
     def test_exception_records_elapsed(self):
         with patch('tio.performance.observe') as observe:
             with self.assertRaises(ValueError):

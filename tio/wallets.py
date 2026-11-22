@@ -7,6 +7,7 @@ from pathlib import Path
 from .protocol.asset_count import AssetCount
 
 STARTING_CREDITS = 3_000
+NEW_CHARACTER_CREDITS = 50_000
 STARTING_GOLD = 0
 
 

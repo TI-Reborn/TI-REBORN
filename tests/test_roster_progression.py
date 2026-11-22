@@ -3,9 +3,7 @@ from contextlib import closing
 from dataclasses import replace
 import json,random,sqlite3,tempfile,unittest
 from pathlib import Path
-from unittest.mock import patch
-
-from tio.roster_progression import (RecruitmentStore,profile,grant_starters,roster_expansion,
+from tio.roster_progression import (RecruitmentStore,profile,grant_starters,
     tutorial_status,tutorial_begin,tutorial_progress,tutorial_leave)
 from tio.city_catalogs import CityCatalogs
 from tio.characters import CharacterStore
@@ -15,6 +13,7 @@ from tio.protocol.character_create import CharacterCreateRequest
 from tio.protocol.pet_info import decode_pet_info
 from tio.protocol.item_list import encode_item_list,decode_item_list
 from tio.protocol.binary import Writer
+from tio.protocol.city_catalogs import decode_service_shop
 from tio.weapon_proficiency import SAVED,number,HUMAN_SKILLS
 from tio import services
 
@@ -55,7 +54,7 @@ class RosterProgressionTests(unittest.TestCase):
             pet=decode_pet_info(raw,human_equipment=True).fields
             self.assertIn(pet['0x8c446f'],(1,2));self.assertEqual(pet['0x8c4aef'],1)
             self.assertEqual(pet['0x8c4a07'],85);self.assertEqual(pet['0x8c4ab1'],85)
-            self.assertEqual(pet['0x8c4b57'],1000)
+            self.assertEqual(pet['0x8c4b57'],1315)
             self.assertTrue(all(number(pet[SAVED[i]])==35 for i in HUMAN_SKILLS))
             names.append(pet['0x8c4489']);looks.append(pet['0x6d0203'])
             self.assertEqual(decode_item_list(inventory),(identity,(),0))
@@ -128,17 +127,28 @@ class RosterProgressionTests(unittest.TestCase):
         with self.assertRaises(sqlite3.IntegrityError):self.store.hire('alice',offer.candidate_id)
         self.assertEqual((self.rows(),self.credits(),self.store.available('alice')),before)
 
-    def test_documented_all_five_service_levels_unlock_twelve_real_saved_fighters(self):
-        with patch.dict(services.OFFERS,{2:roster_expansion()}):
-            for _ in range(7):self.store.hire('alice',self.store.available('alice')[0].candidate_id)
-            with self.assertRaises(ValueError):self.store.hire('alice',self.store.available('alice')[0].candidate_id)
-            for level,cost in enumerate((2000,5800,11400,18800,28000),1):
-                before=self.credits();request=Writer().u8(0xb1).u8(4).u8(0).u32(2).u8(level).u32(1).build()
-                services.purchase(self.path,'alice',request);self.assertEqual(self.credits(),before-cost)
-                self.store.hire('alice',self.store.available('alice')[0].candidate_id)
-                self.assertEqual(len(self.rows()),7+level)
-                with self.assertRaises(ValueError):self.store.hire('alice',self.store.available('alice')[0].candidate_id)
-            self.assertEqual(len(self.rows()),12);self.assertEqual(len(self.rows('bob')),0)
+    def test_service_levels_unlock_fifteen_saved_fighters(self):
+        with closing(sqlite3.connect(self.path)) as db, db:
+            db.execute('UPDATE wallets SET credits=300000 WHERE account=?', ('alice',))
+        self.create('alice')
+        for _ in range(6):
+            self.store.hire('alice', self.store.available('alice')[0].candidate_id)
+        with self.assertRaisesRegex(ValueError, 'Отряд заполнен'):
+            self.store.hire('alice', self.store.available('alice')[0].candidate_id)
+        prices = (2000, 5800, 11400, 18800, 28000, 39000, 51800, 66400)
+        for level, cost in enumerate(prices, 1):
+            request = Writer().u8(0xb1).u8(4).u8(0).u32(2).u8(level).u32(1).build()
+            before = self.credits()
+            services.purchase(self.path, 'alice', request)
+            services.purchase(self.path, 'alice', request)
+            self.assertEqual(self.credits(), before - cost)
+            self.store.hire('alice', self.store.available('alice')[0].candidate_id)
+            self.assertEqual(len(self.rows()), 7 + level)
+            with self.assertRaisesRegex(ValueError, 'Отряд заполнен'):
+                self.store.hire('alice', self.store.available('alice')[0].candidate_id)
+        self.assertNotIn(2, [offer.unknown_u32 for offer in
+                             decode_service_shop(services.catalog(self.path, 'alice'))])
+        self.assertEqual(len(self.rows('bob')), 0)
 
     def test_tutorial_requires_real_owned_battle_and_server_observation_then_survives_resume(self):
         self.create('alice');self.create('bob');grant_starters(self.path,'alice',self.template,created=True)

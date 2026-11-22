@@ -243,28 +243,14 @@ class MineArena(MineRequests):
     def mine_exit_position(self, battle, owner):
         return battle['field'].mining.at_exit(owner)
 
-    def mine_after_action(self, battle, owner):
+    def mine_after_action(self, battle, owner, *, moved=False):
+        """Refresh the menu flag; only an explicit quit request extracts a drill."""
         if owner not in battle['mine_active']:
             return
         self.mine_lift_refresh(battle)
-        from tio.protocol.item_list import decode_item_list
-        field = battle['field']
-        if (self.mine_exit_position(battle, owner)
-                and any(i.template_id == 52 and i.count for a in field.living_actor_ids(owner)
-                        for i in decode_item_list(field.combat.inventories[a])[1])):
-            if field.mining.round < field.mining.exit_blocked_until_by_owner[owner]:
-                return
-            amount=field.mining.exit(owner)
-            if amount>0:self.complete_mine_mission(battle,owner)
 
     def mine_can_quit(self, battle, owner):
-        from tio.protocol.item_list import decode_item_list
-        field=battle['field'];mine=field.mining
-        return (owner in battle['mine_active'] and self.mine_exit_position(battle,owner)
-                and mine.round>=mine.exit_blocked_until_by_owner[owner]
-                and not any(i.template_id==52 and i.count==0
-                            for actor in field.living_actor_ids(owner)
-                            for i in decode_item_list(field.combat.inventories[actor])[1]))
+        return owner in battle['mine_active'] and battle['field'].mining.can_quit(owner)
 
     def mine_scene_flags(self, battle, owner):
         if battle.get('kind')!='mine':return ()
@@ -311,8 +297,10 @@ class MineArena(MineRequests):
         if battle['finished']:return
         field=battle['field'];mine=field.mining
         if not (mine.extracted_amounts.get(extractor) or 0):raise ValueError('Successful extraction required')
+        from tio.mining import minimum_victory_crystals
+        victory=mine.extracted_amounts[extractor]>=minimum_victory_crystals(field.scene_metadata['level_band'][0])
         side=1 if mine.roles[extractor]==2 else 0
-        plans=tuple((o,int((1 if mine.roles[o]==2 else 0)==side),False) for o in sorted(battle['mine_active']))
+        plans=tuple((o,int(victory and (1 if mine.roles[o]==2 else 0)==side),False) for o in sorted(battle['mine_active']))
         # Freeze every report before removing any actor. Database replay must
         # keep the earned partner shares even after scene membership changes.
         self.prepare_settlements(battle,plans)

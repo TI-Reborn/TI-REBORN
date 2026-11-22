@@ -150,7 +150,7 @@ class TravelPartyTests(unittest.TestCase):
             self.party.accept('bravo', invitation['id'])
         with closing(sqlite3.connect(self.path)) as db, db:
             db.execute('UPDATE character_locations SET town_id=3 WHERE account=?', ('bravo',))
-            db.execute('INSERT INTO map_journeys(account,x,y,tx,ty,started,arrives) VALUES (?,?,?,?,?,?,?)', ('bravo', 0, 0, 1, 1, 1000, 1010))
+            db.execute('INSERT INTO map_journeys VALUES (?,?,?,?,?,?,?)', ('bravo', 0, 0, 1, 1, 1000, 1010))
         with self.assertRaises(ValueError):
             self.party.accept('bravo', invitation['id'])
         with self.assertRaises(ValueError):
@@ -249,7 +249,7 @@ class TravelPartyTests(unittest.TestCase):
         self.assertEqual(self.party.validate_departure(room['id']), room)
         with transaction(self.path) as db:
             self.assertEqual(self.party.validate_departure(room['id'], db), room)
-            db.execute('INSERT INTO map_journeys(account,x,y,tx,ty,started,arrives) VALUES (?,?,?,?,?,?,?)', ('bravo', 0, 0, 1, 1, 1000, 1010))
+            db.execute('INSERT INTO map_journeys VALUES (?,?,?,?,?,?,?)', ('bravo', 0, 0, 1, 1, 1000, 1010))
             with self.assertRaises(ValueError):
                 self.party.validate_departure(room['id'], db)
             db.execute('DELETE FROM map_journeys WHERE account=?', ('bravo',))

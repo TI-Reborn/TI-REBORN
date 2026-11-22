@@ -313,7 +313,7 @@ class ContractTests(unittest.TestCase):
             lambda c: c['templates'][0]['reward'].update(credits=-1),
             lambda c: c['templates'][0]['enemies'].update(unknown=1),
             lambda c: c['templates'][0].update(map_profile='../escape'),
-            lambda c: c['templates'][1].update(zone_id=c['templates'][0]['zone_id']),
+            lambda c: c['templates'][1].update(zone_id=18),
             lambda c: c['templates'][1].update(id='camp'),
             lambda c: c['templates'][1].update(bounds=c['templates'][0]['bounds']))
         for index, change in enumerate(changes):

@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import sqlite3
 import subprocess
 import tarfile
@@ -14,13 +15,6 @@ import time
 ROOT=Path('/opt/tio-emulator')
 DATABASE=Path('/var/lib/tio-server/reservation.sqlite3')
 CONFIG=Path('/etc/tio-server/server.toml')
-MAP_ROLLBACK_SOURCE = '''
-import sys
-from tio.db_transaction import transaction
-from tio.world_layout import restore_legacy_layout
-with transaction(sys.argv[1]) as db:
-    restore_legacy_layout(db)
-'''
 SCOPES={
     'services':frozenset(('server/game_operations.py','server/service_operations.py',
         'server/city_services.py','server/services_runtime.py','server/services_v2.py')),
@@ -29,12 +23,6 @@ SCOPES={
         'server/private_market.py','tio/player_auction.py','tools/loopback_exchange.py')),
 }
 SCOPES['bank-trade']=SCOPES['bank']|SCOPES['trade']
-SCOPES['global-map'] = frozenset((
-    'tio/locations.py','tio/party_travel.py','tio/world_encounters.py',
-    'tio/world_completion.py','tio/cities.py','tio/roads.py','tio/world_layout.py',
-    'tio/protocol/map_route.py','config/world_roads.json','config/world_completion.json',
-    'config/mining.json','config/pve_contracts.json','config/english_translations.json',
-    'evidence/zones_diagnostic.xml','tools/loopback_exchange.py'))
 SCOPES['battle-screen-fixes']=frozenset(('server/team_arena.py','tio/visibility.py'))
 SCOPES['bot-finishing']=frozenset(('tio/tactical_bot.py','tio/bot_finishing.py'))
 SCOPES['bot-credit-rewards']=frozenset(('tio/reward_policy.py','server/team_arena.py'))
@@ -42,52 +30,13 @@ SCOPES['encounter-movement']=frozenset(('tio/battle_state.py',))
 SCOPES['training-base']=frozenset(('server/training_arena.py','server/contracts_service.py'))
 SCOPES['training-strings']=frozenset(('tio/protocol/assault.py',))
 SCOPES['training-counter']=frozenset(('server/training_arena.py',))
-SCOPES['gameplay-audit'] = frozenset((
-    'server/character_operations.py',
-    'server/mine_arena.py',
-    'server/team_arena.py',
-    'server/warehouse_capacity.py',
-    'tio/armor.py',
-    'tio/character_deletion.py',
-    'tio/character_identity.py',
-    'tio/character_lifecycle.py',
-    'tio/characters.py',
-    'tio/combat.py',
-    'tio/enhancement.py',
-    'tio/equipment.py',
-    'tio/hiring.py',
-    'tio/mining.py',
-    'tio/protocol/character_delete.py',
-    'tio/rating_visibility.py',
-    'tio/roster_rules.py',
-    'tio/services_completion.py',
-    'tio/tactical_bot.py',
-    'tio/world_completion.py',
-    'tools/loopback_exchange.py',
-))
 SCOPES['warehouse-counter-refresh']=frozenset(('server/economy_runtime.py',))
-SCOPES['shooting-range-turns'] = frozenset((
-    'server/team_arena.py', 'tio/arena_service.py',
-    'tio/battle_snapshot.py', 'tio/turn_repeats.py', 'tools/loopback_exchange.py',
-))
-SCOPES['warehouse-latency'] = frozenset((
-    'server/economy_runtime.py', 'server/warehouse_capacity.py',
-    'server/multi.py', 'tools/loopback_exchange.py', 'tio/weight.py',
-    'tio/battle_recovery.py',
-))
 SCOPES['mine-warehouses']=frozenset(('tio/warehouse_completion.py',))
 SCOPES['shared-warehouse']=frozenset(('tio/warehouse_completion.py','tio/warehouse_resources.py'))
 SCOPES['map-speed']=frozenset(('tio/locations.py',))
 SCOPES['premium-effects']=frozenset(('tio/premium.py','tio/battle_rewards.py'))
 SCOPES['warehouse-counters']=frozenset(('tio/clans.py','tio/protocol/asset_count.py','tio/warehouse_resources.py','tio/warehouse_service.py','server/economy_runtime.py'))
 SCOPES['ranked-cancel']=frozenset(('server/ranked_arena.py','server/team_arena.py'))
-SCOPES['ranked-party-refactor'] = frozenset((
-    'server/ranked_party.py', 'server/ranked_party_access.py',
-    'server/ranked_arena.py', 'server/team_arena.py', 'tio/ranked_party.py',
-    'tio/protocol/ranked_party.py', 'tio/protocol/ranked.py', 'tio/ranked_loadout.py',
-    'tio/matchmaking.py', 'tools/survival_scene.py',
-    'tio/world_completion.py',
-))
 SCOPES['crystal-quotes']=frozenset(('tio/mining_service.py',))
 SCOPES['area-fire']=frozenset(('tio/combat.py','tio/combat_rolls.py'))
 SCOPES['clan-icons']=frozenset(('server/clan_service.py','tio/protocol/clan_crests.py','tio/clan_benefits.py'))
@@ -103,25 +52,24 @@ SCOPES['performance-through-reads']=SCOPES['performance-fastpaths']|SCOPES['perf
 SCOPES['performance-idle-writes']=frozenset(('tio/pve_contracts.py','tio/travel_party.py','tio/sc_auction.py'))
 SCOPES['performance-hub-contention']=frozenset(('tio/performance.py','tio/db_transaction.py',
     'tio/territories.py','server/assault_arena.py','server/training_arena.py','server/team_arena.py'))
+SCOPES['performance-portal-reads']=frozenset(('server/city_operations.py','server/city_services.py',
+    'server/economy_runtime.py','server/ratings_public.py','server/team_arena.py','server/training_arena.py',
+    'tio/party_travel.py','tio/services_completion.py','tio/territories.py'))
+SCOPES['performance-portal-and-journal']=SCOPES['performance-portal-reads']|frozenset((
+    'server/battle_events.py','tio/battle_checkpoints.py','tio/db_transaction.py','tio/performance.py'))
 SCOPES['tactical-bots']=frozenset(('tio/tactical_bot.py','tio/training_bot.py','tio/matchmaking.py',
     'tio/team_scene.py','tio/visibility.py','server/team_arena.py','server/battle_events.py','config/survival.json'))
 KEEP_TABLES=('accounts','characters','owned_pets','wallets','warehouse_items','clans','clan_members')
 SCOPES['repair-from-warehouse']=frozenset(('tio/repair.py','tools/loopback_exchange.py'))
-SCOPES['medical-optics'] = frozenset((
-    'config/city_catalogs.json', 'config/credit_economy.json',
-    'config/sc_catalog.json', 'config/medical_items.json',
-    'tio/medical_items.py', 'tio/combat.py', 'tio/battle_item_effects.py',
-))
-SCOPES['securities-perks'] = frozenset((
-    'config/ability_learning.json', 'config/bank_economy.json',
-    'config/restored_abilities.json', 'evidence/skills_diagnostic.xml',
-    'server/bank_gameplay.py', 'server/city_operations.py',
-    'server/securities_service.py', 'tio/ability_learning.py',
-    'tio/ability_prices.py', 'tio/bank_economy.py', 'tio/combat.py',
-    'tio/miner_abilities.py', 'tio/passive_stats.py',
-    'tio/protocol/securities.py', 'tio/restored_abilities.py',
-    'tools/battle_roster_fixture.py', 'tools/build_skills_fixture.py',
-    'tools/loopback_exchange.py', 'tools/survival_scene.py',
+SCOPES['update-disconnect'] = frozenset(('server/runtime.py', 'server/multi.py',
+    'tools/loopback_exchange.py', 'tio/protocol/transport.py'))
+SCOPES['tls-relay-trace'] = frozenset(('server/tls.py', 'server/multi.py'))
+SCOPES['implant-workshop'] = frozenset(('server/implant_service.py', 'tio/implant_equipment.py'))
+SCOPES['reservation-onboarding-hint'] = frozenset(('server/tutorial_arena.py',))
+SCOPES['reservation-onboarding'] = SCOPES['reservation-onboarding-hint'] | frozenset((
+    'server/contracts_ui.py', 'server/location_npc_ui.py', 'server/reservation_quest_ui.py',
+    'server/multi.py', 'server/team_arena.py', 'tio/battle_rewards.py',
+    'tio/reservation_quests.py', 'tio/roster_progression.py', 'tio/shop.py',
 ))
 
 
@@ -162,6 +110,27 @@ def idle_routes(db):
             raise RuntimeError('Map travel is in progress; speed deployment deferred')
 
 
+def stop_for_release() -> bool:
+    pid = int(run('systemctl', 'show', 'tio-server', '-p', 'MainPID', '--value').stdout)
+    with Path(f'/proc/{pid}/status').open() as status:
+        caught = next(int(line.split()[1], 16) for line in status if line.startswith('SigCgt:'))
+    if not caught & (1 << (signal.SIGUSR1 - 1)):
+        run('systemctl', 'stop', 'tio-server')
+        return False
+    run('systemctl', 'kill', '--kill-whom=main', '--signal=SIGUSR1', 'tio-server')
+    deadline = time.monotonic() + 45
+    while time.monotonic() < deadline:
+        state = run('systemctl', 'show', 'tio-server', '-p', 'ActiveState', '--value').stdout.strip()
+        if state == 'inactive':
+            if run('systemctl', 'show', 'tio-server', '-p', 'Result', '--value').stdout.strip() == 'success':
+                return True
+            break
+        if state in ('failed', 'activating'):
+            break
+        time.sleep(0.2)
+    raise RuntimeError('Update shutdown did not finish successfully')
+
+
 def main():
     os.umask(0o077)
     parser=argparse.ArgumentParser(description=__doc__)
@@ -171,13 +140,9 @@ def main():
     parser.add_argument('--backup',required=True,type=Path)
     parser.add_argument('--scope',choices=tuple(SCOPES),default='services')
     parser.add_argument('--prepare-only',action='store_true',help='Validate and back up without replacing code or restarting')
-    parser.add_argument('--keep-stopped',action='store_true',
-        help='Global-map cutover: leave the service stopped until its client manifest is published')
     parser.add_argument('--maintenance-restart',action='store_true',
         help='Explicitly authorized restart with connected players; still refuses retained battles and settlements')
     args=parser.parse_args()
-    if args.keep_stopped and (args.scope!='global-map' or args.prepare_only):
-        parser.error('--keep-stopped requires a global-map cutover')
     files=SCOPES[args.scope]
     if args.backup.parent!=Path('/root') or not args.backup.name.startswith('tio-before-game-operations-'):
         raise RuntimeError('Unexpected protected backup path')
@@ -209,7 +174,7 @@ def main():
     checked=run(str(ROOT/'.venv/bin/python'),'-m','server','--config',str(CONFIG),'--check',cwd=stage)
     # Import every changed adapter, including the lazily loaded city modules.
     run(str(ROOT/'.venv/bin/python'),'-c',
-        'import '+','.join(path.removesuffix('.py').replace('/','.') for path in sorted(files) if path.endswith('.py')),cwd=stage)
+        ';'.join('import '+path.removesuffix('.py').replace('/','.') for path in sorted(files) if path.endswith('.py')),cwd=stage)
     args.backup.mkdir(mode=0o700)
     config_hash=digest(CONFIG)
     with tarfile.open(args.backup/'previous-code-config.tar.gz','w:gz') as archive:
@@ -241,7 +206,8 @@ def main():
     if digest(CONFIG)!=config_hash:raise RuntimeError('Configuration changed')
     stopped=False;applied=[]
     try:
-        run('systemctl','stop','tio-server');stopped=True
+        update_notice_requested = stop_for_release()
+        stopped=True
         with (closing(sqlite3.connect(DATABASE.as_uri()+'?mode=ro',uri=True)) as source,
               closing(sqlite3.connect(args.backup/'at-cutover.sqlite3')) as target):
             for table in ('battle_checkpoints','battle_checkpoint_members','battle_settlement_jobs'):
@@ -261,12 +227,6 @@ def main():
         run('runuser','-u','tio','--',str(ROOT/'.venv/bin/python'),'-m','server','--config',str(CONFIG),'--check')
         with closing(sqlite3.connect(DATABASE.as_uri()+'?mode=ro',uri=True)) as db:
             if before!=snapshot(db):raise RuntimeError('Player data changed during code replacement')
-        if args.keep_stopped:
-            report=dict(passed=True,scope=args.scope,backup=str(args.backup),service='inactive',
-                        client_publication_pending=True,files_verified=len(manifest),
-                        local_player_data_uploaded=False,database_restored=False)
-            (args.backup/'deployment.json').write_text(json.dumps(report,indent=2))
-            print(json.dumps(report));return
         run('systemctl','start','tio-server');stopped=False
         time.sleep(2)
         status=run('systemctl','is-active','tio-server').stdout.strip()
@@ -279,6 +239,7 @@ def main():
         if integrity!='ok' or digest(CONFIG)!=config_hash:raise RuntimeError('Postcheck failed')
         report=dict(passed=True,scope=args.scope,backup=str(args.backup),service=status,integrity=integrity,
             maintenance_restart=args.maintenance_restart,
+            update_notice_requested=update_notice_requested,
             files_verified=len(manifest),database_tables_preserved_before_restart=len(before),
             protected_player_tables_preserved=list(KEEP_TABLES),
             other_table_changes=[t for t in before if before[t]!=after.get(t)],
@@ -287,8 +248,6 @@ def main():
         print(json.dumps(report))
     except BaseException:
         if not stopped:run('systemctl','stop','tio-server')
-        if args.scope=='global-map' and 'tio/world_layout.py' in applied:
-            run(str(ROOT/'.venv/bin/python'),'-c',MAP_ROLLBACK_SOURCE,str(DATABASE))
         for path in applied:
             saved=args.backup/'files'/path;target=ROOT/path
             if saved.is_file():shutil.copy2(saved,target)

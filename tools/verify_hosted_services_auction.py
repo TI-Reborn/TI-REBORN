@@ -83,8 +83,8 @@ with sqlite3.connect(path) as db:db.execute('INSERT INTO warehouse_items VALUES 
         b.send(Writer().u8(0xc8).u8(13).u32(lot).u32(1000).u32(0).build());b.until(b'\xc8\x02')
         assert decode_asset_count(b.until(b'\xc8\x39')).credits==9000
         case.ping(b)
-        a.send(Writer().u8(0xc8).u8(14).u32(lot).build());a.until(b'\xf0\x8a\x01\0\0');case.ping(a)
-        b.send(Writer().u8(0xc8).u8(15).u32(lot).build());b.until(b'\xc8\x04')
+        a.send(Writer().u8(0xc8).u8(15).u32(lot).build());a.until(b'\xf0\x8a\x01\0\0');case.ping(a)
+        b.send(Writer().u8(0xc8).u8(14).u32(lot).build());b.until(b'\xc8\x04')
         assert decode_asset_count(b.until(b'\xc8\x39')).credits==7000
         goods=decode_warehouse_list(b.until(b'\x6a'))[3]
         assert goods[0].template_id==316

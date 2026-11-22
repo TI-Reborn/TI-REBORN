@@ -923,6 +923,7 @@
   "Сетевой модуль игры не загрузился за 30 секунд.": "The game's network module did not load in 30 seconds.",
   "Системный API отсутствует: ": "System API missing: ",
   "Склад доступен только в городе": "Warehouse only available in the city",
+  "Repair Kit LE нельзя передавать клану": "Repair Kit LE cannot be deposited in clan storage",
   "Ремкомплект израсходован": "Repair kit used up",
   "Ремкомплект отсутствует или израсходован": "Repair kit is missing or used up",
   "Ремонт через шаблон пока недоступен: сначала почините вещь или отключите ремонт в шаблоне": "Repair through the template is not yet available: first repair the item or disable repair in the template",
@@ -1401,5 +1402,6 @@
   "Недостаточно кредитов для премиума": "Not enough credits for premium",
   "Золото выведено из экономики; обмен закрыт": "Gold is retired; conversion is closed",
   "Покупка игровой валюты за реальные деньги отключена": "Real-money game currency purchases are disabled",
-  "Единственная игровая валюта — кредиты. Покупка валюты за деньги отключена.": "Credits are the only game currency. Currency purchases are disabled."
+  "Единственная игровая валюта — кредиты. Покупка валюты за деньги отключена.": "Credits are the only game currency. Currency purchases are disabled.",
+  "Флаги — ваша команда {ours}, противник {theirs}": "Flags — your team {ours}, opponents {theirs}"
 }

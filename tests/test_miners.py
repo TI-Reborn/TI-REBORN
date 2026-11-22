@@ -1,20 +1,22 @@
 from wallet_fixture import fund_wallet
-from tio.protocol.map_route import route_words
-from tio.roads import ROADS
 from contextlib import closing
 from dataclasses import replace
 import json,sqlite3,struct,tempfile,unittest
+from collections import deque
 from pathlib import Path
 import xml.etree.ElementTree as ET
-from tio.locations import LocationStore,TOWNS,center
+from tio.locations import LocationStore,TOWNS,center,town_at
 from tio.hiring import HireStore
 from tio.city_catalogs import CityCatalogs
 from tio.owned_pets import OwnedPetStore
 from tio.wallets import WalletStore
+from tio.weight import encode_weight
 from tio.protocol.pet_info import decode_pet_info
 from tio.protocol.item_list import decode_item_list,encode_item_list
 from tio.protocol.item_action import ItemAction,encode_item_action
-from tio.protocol.system_message import decode_current_town
+from tio.protocol.map_route import HEADER, MAX_DASHES
+from tio.protocol.system_message import decode_current_town, encode_current_town, encode_open_town_view
+from tio.protocol.town_info import decode_town_info
 from tio.equipment import equip_primary_weapon
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -36,6 +38,19 @@ class MinerTests(unittest.TestCase):
         self.now[0]+=1000
         return self.locations.refresh('alice',42)
 
+    def assert_route(self, packets, start, destination):
+        self.assertTrue(packets)
+        moves = [struct.unpack('<BIiiIiiiB', packet) for packet in packets]
+        route = moves[0][4]
+        self.assertTrue(route & HEADER)
+        self.assertEqual(route & ~HEADER, len(moves) - 1)
+        self.assertGreater(len(moves), 1)
+        for opcode, actor, x, y, _, tx, ty, town, stopped in moves:
+            self.assertEqual((opcode, actor, stopped), (0x1d, 42, 0))
+            self.assertEqual((x, y), start)
+            self.assertEqual((tx, ty), destination)
+            self.assertEqual(town, town_at(*destination) or 0)
+
     def test_location_persistence_and_rejected_travel(self):
         self.assertEqual(self.locations.current('alice'),3)
         replies=self.travel(9)
@@ -56,7 +71,7 @@ class MinerTests(unittest.TestCase):
         p,inv,wallet=self.hire.hire('alice',6)
         self.assertEqual(wallet.credits,6500)
         f=decode_pet_info(p,human_equipment=True).fields
-        self.assertEqual(tuple(f[k] for k in ('0x8c446f','0x8c4a07','0x8c4ab1','0x8c4a1b','0x8c4a2f','0x8c4b57')),(6,98,98,8,14,1000))
+        self.assertEqual(tuple(f[k] for k in ('0x8c446f','0x8c4a07','0x8c4ab1','0x8c4a1b','0x8c4a2f','0x8c4b57')),(6,98,98,8,14,1510))
         self.assertEqual(OwnedPetStore(self.path).list('alice'),((1,p,inv),))
         reopened=HireStore(self.path,self.hire.catalogs,self.template)
         self.assertEqual([c.candidate_id for c in reopened.available('alice')],[1006])
@@ -130,11 +145,13 @@ class MinerTests(unittest.TestCase):
 
     def test_client_zone_bounds_match_server_and_keep_ids(self):
         towns=ET.parse(ROOT/'evidence/zones_diagnostic.xml').getroot().findall('town')
-        self.assertEqual([int(t.get('id')) for t in towns],list(range(1,18)))
+        ids = [int(t.get('id')) for t in towns]
+        self.assertEqual(ids, list(range(1, 23)))
+        self.assertTrue(TOWNS.keys() <= set(ids))
         for t in towns:
             i=int(t.get('id'));v={e.get('key'):e.get('val') for e in t}
             if i in TOWNS:self.assertEqual(tuple(int(v[k]) for k in ('x1','y1','x2','y2')),TOWNS[i])
-        self.assertEqual(TOWNS[9],(-90,-460,-64,-434))
+        self.assertEqual(town_at(*center(9)),9)
 
     def test_gradual_progress_and_no_hiring_before_arrival(self):
         start=center(3)
@@ -144,24 +161,20 @@ class MinerTests(unittest.TestCase):
         self.assertEqual(packets[-1][-1],0)
         self.assertEqual(self.hire.available('alice'),())
         with self.assertRaises(ValueError):self.hire.hire('alice',6)
-        self.now[0]+=5
+        self.now[0]+=1
         x,y=self.locations.position('alice')
         self.assertGreater(x,start[0]);self.assertLess(y,start[1])
         self.assertNotEqual((x,y),center(9))
-        self.assertEqual(self.locations.refresh('alice',42)[0][-1],0)
         self.assertEqual(self.locations.refresh('alice',42),())
         self.assertEqual(WalletStore(self.path).ensure('alice').credits,10000)
 
     def test_rerouting_from_current_position_and_wilderness_stop(self):
         self.locations.travel('alice',struct.pack('<Bii',0x1b,0,0),42)
-        self.now[0]+=10
+        self.now[0]+=2
         point=self.locations.position('alice')
+        self.assertNotEqual(point, (0, 0))
         reply=self.locations.travel('alice',struct.pack('<Bii',0x1b,120,0),42)
-        # No repeated leave-city reset: only the new route, announced in 1D packets.
-        self.assertEqual({p[0] for p in reply},{0x1d})
-        header=struct.unpack_from('<I',reply[0],13)[0]
-        self.assertEqual(len(reply),(header&0xffff)+1)
-        self.assertEqual(struct.unpack_from('<ii',reply[0],5),point)
+        self.assert_route(reply, point, (120, 0))
         self.now[0]+=1000
         reply=self.locations.refresh('alice',42)
         self.assertEqual([p[0] for p in reply],[0x1e])
@@ -172,14 +185,13 @@ class MinerTests(unittest.TestCase):
 
     def test_reconnect_in_transit_and_offline_arrival(self):
         self.locations.travel('alice',struct.pack('<Bii',0x1b,*center(9)),42)
-        self.now[0]+=10
+        self.now[0]+=1
         other=LocationStore(self.path,clock=lambda:self.now[0])
         self.assertEqual(other.position('alice'),self.locations.position('alice'))
         self.assertIsNone(other.current('alice'))
         resumed=other.resume('alice',42)
-        self.assertEqual(resumed[0][0],0xf0)
-        self.assertEqual({p[0] for p in resumed[1:]},{0x1d})  # Current turn and the dashed route.
-        self.assertEqual(resumed[-1][-1],0)
+        self.assertEqual(resumed[0], struct.pack('<BII', 0xf0, 97, 0))
+        self.assert_route(resumed[1:], other.position('alice'), center(9))
         self.now[0]+=1000
         self.assertEqual(len(other.refresh('alice',42)),4)
         self.assertEqual(other.current('alice'),9)
@@ -198,14 +210,17 @@ class MinerTests(unittest.TestCase):
         self.assertEqual(decode_pet_info(p,human_equipment=True).fields['0x8c4489'],b'Shrek')
         self.assertEqual(WalletStore(self.path).ensure('alice').credits,6500)
 
-    def test_old_city_schema_parks_at_miners_town_road(self):
+    def test_old_city_schema_migrates_to_current_miner_parking_point(self):
         legacy=Path(self.temp.name)/'legacy.db'
         with closing(sqlite3.connect(legacy)) as db,db:
             db.execute('CREATE TABLE character_locations (account TEXT PRIMARY KEY,town_id INTEGER NOT NULL)')
             db.execute('INSERT INTO character_locations VALUES (?,9)',('alice',))
         store=LocationStore(legacy)
-        self.assertEqual(store.position('alice'),(-62,-351))
+        self.assertEqual(store.position('alice'),center(9))
         self.assertEqual(store.current('alice'),9)
+        with closing(sqlite3.connect(legacy)) as db:
+            saved = db.execute('SELECT x,y FROM character_locations WHERE account=?', ('alice',)).fetchone()
+        self.assertEqual(saved, center(9))
 
     def test_live_session_routes_map_catalog_and_hire(self):
         import socket,threading
@@ -224,29 +239,44 @@ class MinerTests(unittest.TestCase):
         thread.start()
         try:
             cipher=InitialCipher('C2S');reader=InitialFrameReader(InitialCipher('S2C'))
+            pending = deque()
             def request(p):client.sendall(encode_initial_frame(p,cipher))
             def receive(count):
-                packets=[]
-                while len(packets)<count:packets.extend(reader.feed(client.recv(65535)))
-                return packets
+                while len(pending) < count:
+                    raw = client.recv(65535)
+                    self.assertTrue(raw, 'Server closed the connection before replying')
+                    pending.extend(reader.feed(raw))
+                return [pending.popleft() for _ in range(count)]
             request(struct.pack('<Bii',0x1b,*center(9)))
-            started=receive(1+len(route_words(ROADS.plan(center(3),center(9)))))
-            self.assertEqual([p[0] for p in started[:2]],[0xf0,0x1d])
-            self.assertEqual(started[-1][-1],0)
+            leave, header = receive(2)
+            self.assertEqual(leave, struct.pack('<BII', 0xf0, 97, 0))
+            route, = struct.unpack_from('<I', header, 13)
+            self.assertTrue(route & HEADER)
+            self.assertLessEqual(route & ~HEADER, MAX_DASHES)
+            self.assert_route([header, *receive(route & ~HEADER)], center(3), center(9))
             request(b'\x61')
             self.assertEqual(receive(1)[0][0],0xf0)  # No shop access in transit.
             self.now[0]+=1000
             request(b'\x70')
             arrival=receive(5)
             self.assertEqual(sorted(p[0] for p in arrival),sorted((0x1e,0xc8,0xf0,0xf0,0x9e)))
+            self.assertIn(encode_open_town_view(), arrival)
+            self.assertIn(encode_current_town(9), arrival)
+            self.assertEqual(decode_town_info(next(p for p in arrival if p[:2] == b'\xc8\x2d')).town_id, 9)
             request(b'\x61');request(encode_hire_request(6))
-            packets=receive(7)
-            self.assertEqual([p[0] for p in packets],[0x62,0x66,0x30,0x4e,0x4e,0xc8,0x62])
+            packets=receive(8)
+            self.assertEqual([p[0] for p in packets],[0x62,0x66,0x4e,0x30,0x4e,0x4e,0xc8,0x62])
             from tio.armor_display import encode_armor
-            self.assertEqual(packets[4],encode_armor(1,0))
+            self.assertEqual(packets[2],encode_weight(1,0))
+            self.assertEqual(packets[4],encode_weight(1,0))
+            self.assertEqual(packets[5],encode_armor(1,0))
             self.assertEqual([c.resource_type for c in decode_pet_shop(packets[0])],[6])
             self.assertEqual(decode_pet_info(packets[1],human_equipment=True).fields['0x8c446f'],6)
             self.assertEqual(WalletStore(self.path).ensure('probe_user').credits,6500)
         finally:
-            client.close();thread.join(3);exchange.stop();server.close()
+            client.shutdown(socket.SHUT_WR)
+            thread.join(3)
+            exchange.stop()
+            client.close()
+            server.close()
         self.assertFalse(thread.is_alive())

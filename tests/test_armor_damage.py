@@ -14,6 +14,32 @@ def armor(i,template,slot):
 class ArmorDamageTests(unittest.TestCase):
     setup_combat=test_combat.CombatTests.setup_combat
 
+    def test_stone_skin_and_powered_implant_protect_against_damage(self):
+        from test_armor_equipment import ArmorTests
+        from tio.implants import SLOTS
+        from tio.passive_stats import project_passives, _catalog
+        from tio.protocol.abilities import AbilityEntry
+        from tio.protocol.battle_attack import decode_attack_result
+
+        fixture = ArmorTests()
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        pet, _ = fixture.seed((), level=4)
+        gear = tuple(replace(armor(i, template, slot), unknown_bytes_03=bytes((25, 0, 0)))
+                     for i, (template, slot) in enumerate(((242, 1), (243, 4), (244, 8)), 10))
+        implant = replace(armor(20, 6107, SLOTS[0]), unknown_bytes_03=bytes((25, 0, 0)))
+        learned = (AbilityEntry(6, 4, 0, 0), AbilityEntry(35, 1, 0, 0))
+        for charge, expected, damage in ((0, 286, 25), (300, 309, 24)):
+            with self.subTest(charge=charge):
+                battery = replace(test_combat.item(21, 6120), unknown_words=(charge, 300, 300))
+                bag = encode_item_list(2, (*gear, implant, battery))
+                profile = project_passives(pet, True, learned, _catalog(), inventory=bag)
+                field, combat = self.setup_combat(317, None)
+                combat.register(2, bag, human=True, pet_packet=profile)
+                hit, = decode_attack_result(combat.attack(7, AttackRequest(1, 5, 1))[0]).hits
+                self.assertEqual((combat.displayed_armor(2), combat.defense(2)), (expected, expected))
+                self.assertEqual((hit.damage, field.actor(2).health), (damage, 100-damage))
+
     def test_formula_and_backpack_species_slots(self):
         self.assertEqual(mitigate(50,85),(27,23))
         self.assertEqual(mitigate(50,160),(19,31))

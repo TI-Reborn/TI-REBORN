@@ -29,23 +29,52 @@ class CrystalMarket:
                 gross INTEGER NOT NULL,tax INTEGER NOT NULL,claim_json TEXT NOT NULL,
                 request_json TEXT NOT NULL,receipt_json TEXT NOT NULL,
                 PRIMARY KEY(match_id,extractor))''')
-            db.execute('INSERT OR IGNORE INTO crystal_market VALUES (1,?,?)',(POLICY['market_initial_rate_units'],int(clock())))
+            db.execute('INSERT OR IGNORE INTO crystal_market VALUES (1,?,?)',(POLICY['market_rate_units'],int(clock())))
 
     def balance(self,account):
         with closing(connect(self.path)) as db:
             row=db.execute('SELECT amount FROM crystal_wallets WHERE account=?',(account,)).fetchone()
             return row[0] if row else 0
 
+    def ratings(self, role: int) -> tuple[tuple[int, bytes, int, int], ...]:
+        """Top 100 settled net earnings by role, independent of later sales."""
+        if type(role) is not int or role not in (1, 2, 3):
+            raise ValueError('Invalid mining rating role')
+        from .world_completion import public_owners, exists
+        with closing(sqlite3.connect(Path(self.path).resolve().as_uri()+'?mode=ro', uri=True)) as db:
+            db.execute('BEGIN')
+            owners = public_owners(db)
+            if not owners or not exists(db, 'characters'):
+                return ()
+            totals = {}
+            if exists(db, 'mine_crystal_extractions'):
+                for request, receipt in db.execute('SELECT request_json,receipt_json FROM mine_crystal_extractions'):
+                    request, receipt = json.loads(request), json.loads(receipt)
+                    for owner, amount in receipt['payouts'].items():
+                        earned_role = 2 if request['role'] == 2 else 3 if owner == request['defender'] else 1
+                        if owner in owners and earned_role == role:
+                            totals[owner] = totals.get(owner, 0) + amount
+            if role == 1 and exists(db, 'crystal_extractions'):
+                shared = (" AND NOT EXISTS (SELECT 1 FROM mine_crystal_extractions m "
+                          "WHERE m.match_id=e.match_id AND m.extractor=e.account)") if exists(db, 'mine_crystal_extractions') else ''
+                for owner, amount in db.execute('SELECT account,SUM(amount) FROM crystal_extractions e WHERE 1=1'+shared+' GROUP BY account'):
+                    if owner in owners:
+                        totals[owner] = totals.get(owner, 0) + amount
+            rows = [(identity, bytes(name), totals[owner], key.casefold())
+                    for identity, owner, name, key in db.execute('SELECT rowid,account,name,name_key FROM characters WHERE slot=1')
+                    if totals.get(owner, 0) > 0]
+            rows.sort(key=lambda row: (-row[2], row[3], row[0]))
+            return tuple((i, name, min(amount, 0xffffffff), place)
+                         for place, (i, name, amount, _) in enumerate(rows[:100], 1))
+
     def project(self,account,assets):
         # Native quotes GUI6ef364 reads character+240: AssetCount field5.
         return replace(assets,spectra_crystals=self.balance(account))
 
     def _rate(self,db):
-        rate,updated=db.execute('SELECT rate,updated FROM crystal_market WHERE id=1').fetchone()
-        steps=max(0,(int(self.clock())-updated)//POLICY['market_rise_interval'])
-        if steps:
-            rate+=steps*POLICY['market_rise_units']
-            db.execute('UPDATE crystal_market SET rate=?,updated=? WHERE id=1',(rate,updated+steps*POLICY['market_rise_interval']))
+        rate=POLICY['market_rate_units']
+        db.execute('UPDATE crystal_market SET rate=?,updated=? WHERE id=1 AND rate<>?',
+                   (rate,int(self.clock()),rate))
         self._observe(db,rate)
         return rate
 
@@ -169,7 +198,9 @@ class CrystalMarket:
         db.execute('INSERT INTO crystal_extractions VALUES (?,?,?)',(match_id,extractor,gross))
         db.execute('INSERT INTO mine_crystal_extractions VALUES (?,?,?,?,?,?,?,?)',
                    (match_id,extractor,claim['location'],gross,tax,claim_json,request_json,canonical(receipt)))
-        if gross:
+        from .mining import minimum_victory_crystals
+        level=POLICY['bands'][LOCATIONS[claim['location']]['band']][0]
+        if gross>=minimum_victory_crystals(level):
             from .mine_rounds import record_mission
             import time
             record_mission(db,match_id,1 if role==2 else 0,gross,now=time.time())
@@ -187,8 +218,6 @@ class CrystalMarket:
             if wallet[0]+credits>0xffffffff:raise ValueError('Credit balance overflow')
             db.execute('UPDATE crystal_wallets SET amount=amount-? WHERE account=?',(amount,account))
             db.execute('UPDATE wallets SET credits=credits+? WHERE account=?',(credits,account))
-            db.execute('UPDATE crystal_market SET rate=? WHERE id=1',(max(POLICY['market_min_rate_units'],rate-amount),))
-            self._observe(db,max(POLICY['market_min_rate_units'],rate-amount))
             db.execute('INSERT INTO crystal_sales(account,amount,credits,rate,sold) VALUES (?,?,?,?,?)',(account,amount,credits,rate,int(self.clock())))
             from .achievements import update
             update(db,account,maximum={'credits_peak':wallet[0]+credits})

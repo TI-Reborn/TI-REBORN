@@ -1,2898 +1,2898 @@
 {
- "version": 1,
- "source": "evidence/items_diagnostic.xml",
- "style": "Объёмная рисованная предметная иллюстрация в стиле набора weapon-icons-v1: потёртый металл, ткань и кожа, сдержанные тёплые блики, мягкая тень снизу, прозрачный фон, без подписей, рамок и галочек, предмет целиком в кадре.",
- "counts": {
-  "existing": 45,
-  "redraw": 43,
-  "render": 58
- },
- "items": [
-  {
-   "item_id": 3,
-   "name": "Ammo 9mm",
-   "kind": "ammo",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_3.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 4,
-   "name": "Shells",
-   "kind": "ammo",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_4.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 5,
-   "name": "5.56 x 45 mm",
-   "kind": "ammo",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_5.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 6,
-   "name": "7.62 x 51 mm",
-   "kind": "ammo",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_6.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 7,
-   "name": "7.62 x 39 mm",
-   "kind": "ammo",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_7.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 8,
-   "name": "Missile",
-   "kind": "ammo",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_8.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 9,
-   "name": "Bandages",
-   "kind": "medkit",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_9.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 10,
-   "name": "Small Medikit",
-   "kind": "medkit",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_10.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 11,
-   "name": "Big Medikit",
-   "kind": "medkit",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_11.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 12,
-   "name": "Magnum Rounds",
-   "kind": "ammo",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_12.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 13,
-   "name": "5.7 x 28 mm",
-   "kind": "ammo",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_13.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 14,
-   "name": "Vindicator Ammo",
-   "kind": "ammo",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_14.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 15,
-   "name": "9 x 19 mm Parabellum",
-   "kind": "ammo",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_15.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 16,
-   "name": "Crystal",
-   "kind": "other",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_16.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 17,
-   "name": "Repair Kit",
-   "kind": "other",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_17.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 18,
-   "name": "Advanced Repair Kit",
-   "kind": "other",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_18.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 19,
-   "name": "Super Repair Kit",
-   "kind": "other",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_19.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 20,
-   "name": "Health Injection",
-   "kind": "medkit",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_20.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 24,
-   "name": "Binoculars",
-   "kind": "binoculars",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_24.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 30,
-   "name": "Upgrade Kit",
-   "kind": "upgkit",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_30.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 32,
-   "name": "Dog Meat",
-   "kind": "medkit",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_32.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 33,
-   "name": "Champagne",
-   "kind": "medkit",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_33.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 34,
-   "name": "Candies",
-   "kind": "medkit",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_34.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 35,
-   "name": "Vision Injection",
-   "kind": "medkit",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_35.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 36,
-   "name": "Ammo 9x39 S",
-   "kind": "ammo",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_36.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 37,
-   "name": "Freak Ammo Nails",
-   "kind": "ammo",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_37.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 51,
-   "name": "Crystals",
-   "kind": "other",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_51.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 52,
-   "name": "Mining Drill",
-   "kind": "other",
-   "slot": "device",
-   "pipeline": "render",
-   "models": [
-    "item_gasdrill"
-   ],
-   "textures": [
-    ""
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_ii_52.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": [
-    "Модель найдена в base/models вручную; текстуру подобрать по имени модели."
-   ]
-  },
-  {
-   "item_id": 203,
-   "name": "Amulet",
-   "kind": "other",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_203.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 204,
-   "name": "Amulet2",
-   "kind": "other",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_204.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 205,
-   "name": "Bag",
-   "kind": "other",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_205.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 206,
-   "name": "Pantsu kudasai",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "man_armor_pantsukudasai"
-   ],
-   "textures": [
-    "chr_man_body.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_ii_206.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 208,
-   "name": "Helmet",
-   "kind": "armor",
-   "slot": "head",
-   "pipeline": "render",
-   "models": [
-    "man_armor_combat_light_head"
-   ],
-   "textures": [
-    "armor_combat.jpg"
-   ],
-   "masks": [
-    "armor_combat_mask.png"
-   ],
-   "current_image": "tio_ii_208.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 210,
-   "name": "Light Combat Armor",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "man_armor_combat_light_chest"
-   ],
-   "textures": [
-    "armor_combat.jpg"
-   ],
-   "masks": [
-    "armor_combat_mask.png"
-   ],
-   "current_image": "tio_ii_210.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 211,
-   "name": "Light Combat Helmet",
-   "kind": "armor",
-   "slot": "head",
-   "pipeline": "render",
-   "models": [
-    "man_armor_combat_light_head"
-   ],
-   "textures": [
-    "armor_combat.jpg"
-   ],
-   "masks": [
-    "armor_combat_mask.png"
-   ],
-   "current_image": "tio_ii_211.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 212,
-   "name": "Light Combat Longies",
-   "kind": "armor",
-   "slot": "legs",
-   "pipeline": "render",
-   "models": [
-    "man_armor_combat_light_legs"
-   ],
-   "textures": [
-    "armor_combat.jpg"
-   ],
-   "masks": [
-    "armor_combat_mask.png"
-   ],
-   "current_image": "tio_ii_212.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 213,
-   "name": "Medium Combat Helmet",
-   "kind": "armor",
-   "slot": "head",
-   "pipeline": "render",
-   "models": [
-    "man_armor_combat_medium_head"
-   ],
-   "textures": [
-    "armor_combat.jpg"
-   ],
-   "masks": [
-    "armor_combat_mask.png"
-   ],
-   "current_image": "tio_ii_213.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 214,
-   "name": "Medium Combat Armor",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "man_armor_combat_medium_chest"
-   ],
-   "textures": [
-    "armor_combat.jpg"
-   ],
-   "masks": [
-    "armor_combat_mask.png"
-   ],
-   "current_image": "tio_ii_214.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 215,
-   "name": "Medium Combat Longies",
-   "kind": "armor",
-   "slot": "legs",
-   "pipeline": "render",
-   "models": [
-    "man_armor_combat_medium_legs"
-   ],
-   "textures": [
-    "armor_combat.jpg"
-   ],
-   "masks": [
-    "armor_combat_mask.png"
-   ],
-   "current_image": "tio_ii_215.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 216,
-   "name": "Light Military Helmet",
-   "kind": "armor",
-   "slot": "head",
-   "pipeline": "render",
-   "models": [
-    "man_armor_military_light_head"
-   ],
-   "textures": [
-    "armor_military.jpg"
-   ],
-   "masks": [
-    "armor_military_mask.png"
-   ],
-   "current_image": "tio_ii_216.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 217,
-   "name": "Light Military Armor",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "man_armor_military_light_chest"
-   ],
-   "textures": [
-    "armor_military.jpg"
-   ],
-   "masks": [
-    "armor_military_mask.png"
-   ],
-   "current_image": "tio_ii_217.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 218,
-   "name": "Light Military Longies",
-   "kind": "armor",
-   "slot": "legs",
-   "pipeline": "render",
-   "models": [
-    "man_armor_military_light_legs"
-   ],
-   "textures": [
-    "armor_military.jpg"
-   ],
-   "masks": [
-    "armor_military_mask.png"
-   ],
-   "current_image": "tio_ii_218.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 219,
-   "name": "Medium Military Helmet",
-   "kind": "armor",
-   "slot": "head",
-   "pipeline": "render",
-   "models": [
-    "man_armor_military_medium_head"
-   ],
-   "textures": [
-    "armor_military.jpg"
-   ],
-   "masks": [
-    "armor_military_mask.png"
-   ],
-   "current_image": "tio_ii_219.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 220,
-   "name": "Medium Military Armor",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "man_armor_military_medium_chest"
-   ],
-   "textures": [
-    "armor_military.jpg"
-   ],
-   "masks": [
-    "armor_military_mask.png"
-   ],
-   "current_image": "tio_ii_220.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 221,
-   "name": "Medium Military Longies",
-   "kind": "armor",
-   "slot": "legs",
-   "pipeline": "render",
-   "models": [
-    "man_armor_military_medium_legs"
-   ],
-   "textures": [
-    "armor_military.jpg"
-   ],
-   "masks": [
-    "armor_military_mask.png"
-   ],
-   "current_image": "tio_ii_221.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 222,
-   "name": "Leather Jacket",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "man_armor_military_light_chest"
-   ],
-   "textures": [
-    "armor_military.jpg"
-   ],
-   "masks": [
-    "armor_military_mask.png"
-   ],
-   "current_image": "tio_ii_222.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 223,
-   "name": "Rags",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "man_armor_battle_heavy_chest"
-   ],
-   "textures": [
-    "armor_battle.jpg"
-   ],
-   "masks": [
-    "armor_battle_mask.png"
-   ],
-   "current_image": "tio_ii_223.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 224,
-   "name": "Rags Longines",
-   "kind": "armor",
-   "slot": "legs",
-   "pipeline": "render",
-   "models": [
-    "man_armor_battle_heavy_legs"
-   ],
-   "textures": [
-    "armor_battle.jpg"
-   ],
-   "masks": [
-    "armor_battle_mask.png"
-   ],
-   "current_image": "tio_ii_224.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 226,
-   "name": "Leather Longies",
-   "kind": "armor",
-   "slot": "legs",
-   "pipeline": "render",
-   "models": [
-    "man_armor_battle_heavy_legs"
-   ],
-   "textures": [
-    "armor_battle.jpg"
-   ],
-   "masks": [
-    "armor_battle_mask.png"
-   ],
-   "current_image": "tio_ii_226.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 227,
-   "name": "Superhero Helmet",
-   "kind": "armor",
-   "slot": "head",
-   "pipeline": "render",
-   "models": [
-    "man_armor_battle_heavy_head"
-   ],
-   "textures": [
-    "armor_battle.jpg"
-   ],
-   "masks": [
-    "armor_battle_mask.png"
-   ],
-   "current_image": "tio_ii_227.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 229,
-   "name": "Light Battle Armor",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "man_armor_battle_light_chest"
-   ],
-   "textures": [
-    "armor_battle.jpg"
-   ],
-   "masks": [
-    "armor_battle_mask.png"
-   ],
-   "current_image": "tio_ii_229.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 230,
-   "name": "Light Battle Helmet",
-   "kind": "armor",
-   "slot": "head",
-   "pipeline": "render",
-   "models": [
-    "man_armor_battle_light_head"
-   ],
-   "textures": [
-    "armor_battle.jpg"
-   ],
-   "masks": [
-    "armor_battle_mask.png"
-   ],
-   "current_image": "tio_ii_230.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 231,
-   "name": "Light Battle Longies",
-   "kind": "armor",
-   "slot": "legs",
-   "pipeline": "render",
-   "models": [
-    "man_armor_battle_light_legs"
-   ],
-   "textures": [
-    "armor_battle.jpg"
-   ],
-   "masks": [
-    "armor_battle_mask.png"
-   ],
-   "current_image": "tio_ii_231.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 232,
-   "name": "Medium Battle Armor",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "man_armor_battle_medium_chest"
-   ],
-   "textures": [
-    "armor_battle.jpg"
-   ],
-   "masks": [
-    "armor_battle_mask.png"
-   ],
-   "current_image": "tio_ii_232.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 233,
-   "name": "Medium Battle Helmet",
-   "kind": "armor",
-   "slot": "head",
-   "pipeline": "render",
-   "models": [
-    "man_armor_battle_medium_head"
-   ],
-   "textures": [
-    "armor_battle.jpg"
-   ],
-   "masks": [
-    "armor_battle_mask.png"
-   ],
-   "current_image": "tio_ii_233.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 234,
-   "name": "Medium Battle Longies",
-   "kind": "armor",
-   "slot": "legs",
-   "pipeline": "render",
-   "models": [
-    "man_armor_battle_medium_legs"
-   ],
-   "textures": [
-    "armor_battle.jpg"
-   ],
-   "masks": [
-    "armor_battle_mask.png"
-   ],
-   "current_image": "tio_ii_234.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 235,
-   "name": "Sunglasses1",
-   "kind": "other",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_235.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 236,
-   "name": "Raider Helmet",
-   "kind": "armor",
-   "slot": "head",
-   "pipeline": "render",
-   "models": [
-    "man_armor_battle_heavy_head"
-   ],
-   "textures": [
-    "armor_battle.jpg"
-   ],
-   "masks": [
-    "armor_battle_mask.png"
-   ],
-   "current_image": "tio_ii_236.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 237,
-   "name": "Raider Armor",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "man_armor_battle_heavy_chest"
-   ],
-   "textures": [
-    "armor_battle.jpg"
-   ],
-   "masks": [
-    "armor_battle_mask.png"
-   ],
-   "current_image": "tio_ii_237.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 238,
-   "name": "Raider Longies",
-   "kind": "armor",
-   "slot": "legs",
-   "pipeline": "render",
-   "models": [
-    "man_armor_battle_heavy_legs"
-   ],
-   "textures": [
-    "armor_battle.jpg"
-   ],
-   "masks": [
-    "armor_battle_mask.png"
-   ],
-   "current_image": "tio_ii_238.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 239,
-   "name": "Heavy Military Helmet",
-   "kind": "armor",
-   "slot": "head",
-   "pipeline": "render",
-   "models": [
-    "man_armor_military_heavy_head"
-   ],
-   "textures": [
-    "armor_military.jpg"
-   ],
-   "masks": [
-    "armor_military_mask.png"
-   ],
-   "current_image": "tio_ii_239.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 240,
-   "name": "Heavy Military Armor",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "man_armor_military_heavy_chest"
-   ],
-   "textures": [
-    "armor_military.jpg"
-   ],
-   "masks": [
-    "armor_military_mask.png"
-   ],
-   "current_image": "tio_ii_240.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 241,
-   "name": "Heavy Military Longies",
-   "kind": "armor",
-   "slot": "legs",
-   "pipeline": "render",
-   "models": [
-    "man_armor_military_heavy_legs"
-   ],
-   "textures": [
-    "armor_military.jpg"
-   ],
-   "masks": [
-    "armor_military_mask.png"
-   ],
-   "current_image": "tio_ii_241.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 242,
-   "name": "Heavy Battle Helmet",
-   "kind": "armor",
-   "slot": "head",
-   "pipeline": "render",
-   "models": [
-    "man_armor_battle_heavy_head"
-   ],
-   "textures": [
-    "armor_battle.jpg"
-   ],
-   "masks": [
-    "armor_battle_mask.png"
-   ],
-   "current_image": "tio_ii_242.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 243,
-   "name": "Heavy Battle Armor",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "man_armor_battle_heavy_chest"
-   ],
-   "textures": [
-    "armor_battle.jpg"
-   ],
-   "masks": [
-    "armor_battle_mask.png"
-   ],
-   "current_image": "tio_ii_243.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 244,
-   "name": "Heavy Battle Longies",
-   "kind": "armor",
-   "slot": "legs",
-   "pipeline": "render",
-   "models": [
-    "man_armor_battle_heavy_legs"
-   ],
-   "textures": [
-    "armor_battle.jpg"
-   ],
-   "masks": [
-    "armor_battle_mask.png"
-   ],
-   "current_image": "tio_ii_244.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 245,
-   "name": "Heavy Combat Helmet",
-   "kind": "armor",
-   "slot": "head",
-   "pipeline": "render",
-   "models": [
-    "man_armor_combat_heavy_head"
-   ],
-   "textures": [
-    "armor_combat.jpg"
-   ],
-   "masks": [
-    "armor_combat_mask.png"
-   ],
-   "current_image": "tio_ii_245.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 246,
-   "name": "Heavy Combat Armor",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "man_armor_combat_heavy_chest"
-   ],
-   "textures": [
-    "armor_combat.jpg"
-   ],
-   "masks": [
-    "armor_combat_mask.png"
-   ],
-   "current_image": "tio_ii_246.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 247,
-   "name": "Heavy Combat Longies",
-   "kind": "armor",
-   "slot": "legs",
-   "pipeline": "render",
-   "models": [
-    "man_armor_combat_heavy_legs"
-   ],
-   "textures": [
-    "armor_combat.jpg"
-   ],
-   "masks": [
-    "armor_combat_mask.png"
-   ],
-   "current_image": "tio_ii_247.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 248,
-   "name": "Heavy Combat Armor SE",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "man_armor_combat_heavy_chest"
-   ],
-   "textures": [
-    "armor_combatse.jpg"
-   ],
-   "masks": [
-    "armor_combatse_mask.png"
-   ],
-   "current_image": "tio_ii_248.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 249,
-   "name": "Heavy Combat Helmet SE",
-   "kind": "armor",
-   "slot": "head",
-   "pipeline": "render",
-   "models": [
-    "man_armor_combat_heavy_head"
-   ],
-   "textures": [
-    "armor_combatse.jpg"
-   ],
-   "masks": [
-    "armor_combatse_mask.png"
-   ],
-   "current_image": "tio_ii_249.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 250,
-   "name": "Heavy Combat Longies SE",
-   "kind": "armor",
-   "slot": "legs",
-   "pipeline": "render",
-   "models": [
-    "man_armor_combat_heavy_legs"
-   ],
-   "textures": [
-    "armor_combatse.jpg"
-   ],
-   "masks": [
-    "armor_combatse_mask.png"
-   ],
-   "current_image": "tio_ii_250.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 251,
-   "name": "Heavy Battle Helmet SE",
-   "kind": "armor",
-   "slot": "head",
-   "pipeline": "render",
-   "models": [
-    "man_armor_battlese_head"
-   ],
-   "textures": [
-    "armor_battlese.jpg"
-   ],
-   "masks": [
-    "armor_battlese_mask.png"
-   ],
-   "current_image": "tio_ii_251.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 252,
-   "name": "Heavy Battle Armor SE",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "man_armor_battlese_chest"
-   ],
-   "textures": [
-    "armor_battlese.jpg"
-   ],
-   "masks": [
-    "armor_battlese_mask.png"
-   ],
-   "current_image": "tio_ii_252.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 253,
-   "name": "Heavy Battle Longies SE",
-   "kind": "armor",
-   "slot": "legs",
-   "pipeline": "render",
-   "models": [
-    "man_armor_battlese_legs"
-   ],
-   "textures": [
-    "armor_battlese.jpg"
-   ],
-   "masks": [
-    "armor_battlese_mask.png"
-   ],
-   "current_image": "tio_ii_253.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 254,
-   "name": "Tank Armor",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "man_armor_tank"
-   ],
-   "textures": [
-    "armor_tank.jpg"
-   ],
-   "masks": [
-    "armor_tank_mask.png"
-   ],
-   "current_image": "tio_ii_254.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 255,
-   "name": "Dog Armor",
-   "kind": "armor",
-   "slot": "dog",
-   "pipeline": "render",
-   "models": [
-    "dog_armor_v01"
-   ],
-   "textures": [
-    "dog_items_v01.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_ii_255.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 256,
-   "name": "Tank Armor SE",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "man_armor_tankse"
-   ],
-   "textures": [
-    "armor_tankse.jpg"
-   ],
-   "masks": [
-    "armor_tankse_mask.png"
-   ],
-   "current_image": "tio_ii_256.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 257,
-   "name": "Santa Hat",
-   "kind": "armor",
-   "slot": "head",
-   "pipeline": "render",
-   "models": [
-    "man_armor_santahat"
-   ],
-   "textures": [
-    "armor_santahat.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_ii_257.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 258,
-   "name": "Freak Medium Armor",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "freakminer_medium_body"
-   ],
-   "textures": [
-    "miner.jpg"
-   ],
-   "masks": [
-    "miner_mask.png"
-   ],
-   "current_image": "tio_ii_258.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 259,
-   "name": "Freak Medium Longies",
-   "kind": "armor",
-   "slot": "legs",
-   "pipeline": "render",
-   "models": [
-    "freakminer_medium_legs"
-   ],
-   "textures": [
-    "miner.jpg"
-   ],
-   "masks": [
-    "miner_mask.png"
-   ],
-   "current_image": "tio_ii_259.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 260,
-   "name": "Freak Heavy Armor",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "freakminer_heavy_body"
-   ],
-   "textures": [
-    "miner.jpg"
-   ],
-   "masks": [
-    "miner_mask.png"
-   ],
-   "current_image": "tio_ii_260.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 261,
-   "name": "Freak Heavy Longies",
-   "kind": "armor",
-   "slot": "legs",
-   "pipeline": "render",
-   "models": [
-    "freakminer_heavy_legs"
-   ],
-   "textures": [
-    "miner.jpg"
-   ],
-   "masks": [
-    "miner_mask.png"
-   ],
-   "current_image": "tio_ii_261.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 262,
-   "name": "Freak Helmet",
-   "kind": "armor",
-   "slot": "head",
-   "pipeline": "render",
-   "models": [
-    "freakminer_heavy_helmet"
-   ],
-   "textures": [
-    "miner.jpg"
-   ],
-   "masks": [
-    "miner_mask.png"
-   ],
-   "current_image": "tio_ii_262.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 263,
-   "name": "Female Exo Armor",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "woman_armor_fea"
-   ],
-   "textures": [
-    "armor_fea.jpg"
-   ],
-   "masks": [
-    "armor_fea_mask.png"
-   ],
-   "current_image": "tio_ii_263.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 264,
-   "name": "Female Exo Armor SE",
-   "kind": "armor",
-   "slot": "body",
-   "pipeline": "render",
-   "models": [
-    "woman_armor_fease"
-   ],
-   "textures": [
-    "armor_fease.jpg"
-   ],
-   "masks": [
-    "armor_fease_mask.png"
-   ],
-   "current_image": "tio_ii_264.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 265,
-   "name": "Dog Solid Armor",
-   "kind": "armor",
-   "slot": "dog",
-   "pipeline": "render",
-   "models": [
-    "dog_solid_armor"
-   ],
-   "textures": [
-    "dog_solid_armor.jpg"
-   ],
-   "masks": [
-    "dog_solid_armor_mask.png"
-   ],
-   "current_image": "tio_ii_265.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 266,
-   "name": "Dog Solid Armor SE",
-   "kind": "armor",
-   "slot": "dog",
-   "pipeline": "render",
-   "models": [
-    "dog_solid_armor_se"
-   ],
-   "textures": [
-    "dog_solid_armor_se.jpg"
-   ],
-   "masks": [
-    "dog_solid_armor_se_mask.png"
-   ],
-   "current_image": "tio_ii_266.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 300,
-   "name": "Melee Combat",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_wi_300.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 301,
-   "name": "Beretta",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_beretta"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_301.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 302,
-   "name": "Shotgun",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_shotgun"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_302.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 303,
-   "name": "HK MP5",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_mp5"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_303.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 304,
-   "name": "AK 47",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_ak47"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_304.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 305,
-   "name": "UZI",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_uzi"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_305.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 306,
-   "name": "P90",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_p90"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_306.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 307,
-   "name": "Spas",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_spas"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_307.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 308,
-   "name": "Pancor Jackhammer",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_JackHammer"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_308.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 309,
-   "name": "Famas",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_famas"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_309.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 310,
-   "name": "SKS Carbine",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_sks"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_310.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 311,
-   "name": "Steyr Aug",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_aug"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_311.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 312,
-   "name": "AWP",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_awp"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_312.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 313,
-   "name": "HK G3SG/1",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_HKG3SG1"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_313.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 314,
-   "name": "M60",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_m60"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_314.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 315,
-   "name": "Minigun",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_minigun"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_315.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 316,
-   "name": "RPG",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_rpg"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_316.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 317,
-   "name": "Frag Grenade",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_wi_317.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 318,
-   "name": "Smoke Grenade",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_wi_318.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 319,
-   "name": "Molotov Koktail",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_wi_319.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 320,
-   "name": "Flash Grenade",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_wi_320.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 321,
-   "name": "Land Mine",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_wi_321.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 322,
-   "name": "Perforator",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_wi_322.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 323,
-   "name": "Grenade Launcher",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_rg6"
-   ],
-   "textures": [
-    "weapons_pak2.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_323.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 324,
-   "name": "Flamethrower",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_flametrower"
-   ],
-   "textures": [
-    "weapons_pak2.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_324.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 325,
-   "name": "Dynamite",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_wi_325.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 326,
-   "name": "Knife",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_knife"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_326.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 327,
-   "name": "Machete",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_machete"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_327.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 328,
-   "name": "Steel Pipe",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_pipe"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_328.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 329,
-   "name": "Wrench",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_wrench"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_329.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 330,
-   "name": "Colt M4",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_m4"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_330.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 331,
-   "name": "USP Match",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_usp"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_331.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 332,
-   "name": "Magnum",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_magnum"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_332.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 333,
-   "name": "Dog Fangs",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_wi_333.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 334,
-   "name": "Suicide Jacket",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "man_armor_suicidjack"
-   ],
-   "textures": [
-    "armor_suicidjack.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_334.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 335,
-   "name": "Freak Hammer",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "hammer_tx800p"
-   ],
-   "textures": [
-    "hammer_tx800p.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_335.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 336,
-   "name": "Freak Nailgun",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_nailgun"
-   ],
-   "textures": [
-    "weapons_diffuse2.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_336.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 337,
-   "name": "Freak Melee Combat",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_wi_337.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 338,
-   "name": "Vintorez",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_vintorez"
-   ],
-   "textures": [
-    "weapons_diffuse2.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_338.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 339,
-   "name": "Groza",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_groza"
-   ],
-   "textures": [
-    "weapons_diffuse2.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_339.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 340,
-   "name": "Groza Subgrenade",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_groza"
-   ],
-   "textures": [
-    "weapons_diffuse2.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_340.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 341,
-   "name": "Freak Shield",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "shield_minedoor"
-   ],
-   "textures": [
-    "shield_minedoor.jpg"
-   ],
-   "masks": [
-    "shield_minedoor_mask.png"
-   ],
-   "current_image": "tio_wi_341.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 5001,
-   "name": "Flare",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_wi_5001.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 5002,
-   "name": "Night Vision Goggles",
-   "kind": "medkit",
-   "slot": "device",
-   "pipeline": "render",
-   "models": [
-    "man_item_nightvision"
-   ],
-   "textures": [
-    ""
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_ii_5002.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": [
-    "Модель найдена в base/models вручную; текстуру подобрать по имени модели."
-   ]
-  },
-  {
-   "item_id": 5003,
-   "name": "Light Trainer",
-   "kind": "medkit",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_5003.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 5004,
-   "name": "Improved Trainer",
-   "kind": "medkit",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_5004.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 5005,
-   "name": "Ultra Trainer",
-   "kind": "medkit",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_5005.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 5006,
-   "name": "Light Tactic Advisor",
-   "kind": "medkit",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_5006.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 5007,
-   "name": "Improved Tactic Advisor",
-   "kind": "medkit",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_5007.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 5008,
-   "name": "Ultra Tactic Advisor",
-   "kind": "medkit",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_5008.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 5009,
-   "name": "Light Blocking Exp",
-   "kind": "medkit",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_5009.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 5010,
-   "name": "Improved Blocking Exp",
-   "kind": "medkit",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_5010.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 5011,
-   "name": "Ultra Blocking Exp",
-   "kind": "medkit",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_5011.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 5012,
-   "name": "Injection HP",
-   "kind": "medkit",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_5012.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 5013,
-   "name": "SVD",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [
-    "weapon_svd"
-   ],
-   "textures": [
-    "weapons_pak1.jpg"
-   ],
-   "masks": [
-    ""
-   ],
-   "current_image": "tio_wi_5013.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 65487,
-   "name": "Шкура заражённой собаки",
-   "kind": "other",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_65487.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 65488,
-   "name": "Мясо заражённой собаки",
-   "kind": "other",
-   "slot": "device",
-   "pipeline": "redraw",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_ii_65488.png",
-   "canvas": [
-    1024,
-    1024
-   ],
-   "notes": []
-  },
-  {
-   "item_id": 65489,
-   "name": "Infected Dog Bite",
-   "kind": "weapon",
-   "slot": "weapon",
-   "pipeline": "existing",
-   "models": [],
-   "textures": [],
-   "masks": [],
-   "current_image": "tio_wi_65489.png",
-   "canvas": [
-    2048,
-    1024
-   ],
-   "notes": []
-  }
- ]
+  "version": 1,
+  "source": "evidence/items_diagnostic.xml",
+  "style": "Объёмная рисованная предметная иллюстрация в стиле набора weapon-icons-v1: потёртый металл, ткань и кожа, сдержанные тёплые блики, мягкая тень снизу, прозрачный фон, без подписей, рамок и галочек, предмет целиком в кадре.",
+  "counts": {
+    "existing": 45,
+    "redraw": 43,
+    "render": 58
+  },
+  "items": [
+    {
+      "item_id": 3,
+      "name": "Ammo 9mm",
+      "kind": "ammo",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "ammo_9mm.tga",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 4,
+      "name": "Shells",
+      "kind": "ammo",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "ammo_shells.tga",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 5,
+      "name": "5.56 x 45 mm",
+      "kind": "ammo",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "ammo_aug.tga",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 6,
+      "name": "7.62 x 51 mm",
+      "kind": "ammo",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "ammo_awp.tga",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 7,
+      "name": "7.62 x 39 mm",
+      "kind": "ammo",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "ammo_ak47.tga",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 8,
+      "name": "Missile",
+      "kind": "ammo",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "missile.tga",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 9,
+      "name": "Bandages",
+      "kind": "medkit",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "bandages.tga",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 10,
+      "name": "Small Medikit",
+      "kind": "medkit",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "medkit1.tga",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 11,
+      "name": "Big Medikit",
+      "kind": "medkit",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "medkit2.tga",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 12,
+      "name": "Magnum Rounds",
+      "kind": "ammo",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "itm_ammo_magnum.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 13,
+      "name": "5.7 x 28 mm",
+      "kind": "ammo",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "itm_ammo_p90.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 14,
+      "name": "Vindicator Ammo",
+      "kind": "ammo",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "itm_ammo_vindicator.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 15,
+      "name": "9 x 19 mm Parabellum",
+      "kind": "ammo",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "itm_ammo_parabellum.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 16,
+      "name": "Crystal",
+      "kind": "other",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 17,
+      "name": "Repair Kit",
+      "kind": "other",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "itm_repairkit.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 18,
+      "name": "Advanced Repair Kit",
+      "kind": "other",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "itm_repairkit.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 19,
+      "name": "Super Repair Kit",
+      "kind": "other",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "itm_repair3.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 20,
+      "name": "Health Injection",
+      "kind": "medkit",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "itm_healthinjection.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 24,
+      "name": "Binoculars",
+      "kind": "binoculars",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "binoculars.tga",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 30,
+      "name": "Upgrade Kit",
+      "kind": "upgkit",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "itm_upgradekit.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 32,
+      "name": "Dog Meat",
+      "kind": "medkit",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "itm_dogmeat.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 33,
+      "name": "Champagne",
+      "kind": "medkit",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "itm_shampagne.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 34,
+      "name": "Candies",
+      "kind": "medkit",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "itm_candies.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 35,
+      "name": "Vision Injection",
+      "kind": "medkit",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "itm_buff_sight.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 36,
+      "name": "Ammo 9x39 S",
+      "kind": "ammo",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "qui_ico_762silent_004.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 37,
+      "name": "Freak Ammo Nails",
+      "kind": "ammo",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "ti_miner_png_08.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 51,
+      "name": "Crystals",
+      "kind": "other",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 52,
+      "name": "Mining Drill",
+      "kind": "other",
+      "slot": "device",
+      "pipeline": "render",
+      "models": [
+        "item_gasdrill"
+      ],
+      "textures": [
+        "item_gasdrill.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "itm_gasdrill.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": [
+        "Модель найдена в base/models вручную; текстуру подобрать по имени модели."
+      ]
+    },
+    {
+      "item_id": 203,
+      "name": "Amulet",
+      "kind": "other",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 204,
+      "name": "Amulet2",
+      "kind": "other",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 205,
+      "name": "Bag",
+      "kind": "other",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 206,
+      "name": "Pantsu kudasai",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "man_armor_pantsukudasai"
+      ],
+      "textures": [
+        "chr_man_body.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 208,
+      "name": "Helmet",
+      "kind": "armor",
+      "slot": "head",
+      "pipeline": "render",
+      "models": [
+        "man_armor_combat_light_head"
+      ],
+      "textures": [
+        "armor_combat.jpg"
+      ],
+      "masks": [
+        "armor_combat_mask.png"
+      ],
+      "current_image": "helmet.tga",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 210,
+      "name": "Light Combat Armor",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "man_armor_combat_light_chest"
+      ],
+      "textures": [
+        "armor_combat.jpg"
+      ],
+      "masks": [
+        "armor_combat_mask.png"
+      ],
+      "current_image": "itm_combat_armor_1.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 211,
+      "name": "Light Combat Helmet",
+      "kind": "armor",
+      "slot": "head",
+      "pipeline": "render",
+      "models": [
+        "man_armor_combat_light_head"
+      ],
+      "textures": [
+        "armor_combat.jpg"
+      ],
+      "masks": [
+        "armor_combat_mask.png"
+      ],
+      "current_image": "itm_combat_helmet_1.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 212,
+      "name": "Light Combat Longies",
+      "kind": "armor",
+      "slot": "legs",
+      "pipeline": "render",
+      "models": [
+        "man_armor_combat_light_legs"
+      ],
+      "textures": [
+        "armor_combat.jpg"
+      ],
+      "masks": [
+        "armor_combat_mask.png"
+      ],
+      "current_image": "itm_combat_legs_1.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 213,
+      "name": "Medium Combat Helmet",
+      "kind": "armor",
+      "slot": "head",
+      "pipeline": "render",
+      "models": [
+        "man_armor_combat_medium_head"
+      ],
+      "textures": [
+        "armor_combat.jpg"
+      ],
+      "masks": [
+        "armor_combat_mask.png"
+      ],
+      "current_image": "itm_combat_helmet_2.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 214,
+      "name": "Medium Combat Armor",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "man_armor_combat_medium_chest"
+      ],
+      "textures": [
+        "armor_combat.jpg"
+      ],
+      "masks": [
+        "armor_combat_mask.png"
+      ],
+      "current_image": "itm_combat_armor_2.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 215,
+      "name": "Medium Combat Longies",
+      "kind": "armor",
+      "slot": "legs",
+      "pipeline": "render",
+      "models": [
+        "man_armor_combat_medium_legs"
+      ],
+      "textures": [
+        "armor_combat.jpg"
+      ],
+      "masks": [
+        "armor_combat_mask.png"
+      ],
+      "current_image": "itm_combat_legs_2.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 216,
+      "name": "Light Military Helmet",
+      "kind": "armor",
+      "slot": "head",
+      "pipeline": "render",
+      "models": [
+        "man_armor_military_light_head"
+      ],
+      "textures": [
+        "armor_military.jpg"
+      ],
+      "masks": [
+        "armor_military_mask.png"
+      ],
+      "current_image": "itm_military_helmet_1.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 217,
+      "name": "Light Military Armor",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "man_armor_military_light_chest"
+      ],
+      "textures": [
+        "armor_military.jpg"
+      ],
+      "masks": [
+        "armor_military_mask.png"
+      ],
+      "current_image": "itm_military_armor_1.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 218,
+      "name": "Light Military Longies",
+      "kind": "armor",
+      "slot": "legs",
+      "pipeline": "render",
+      "models": [
+        "man_armor_military_light_legs"
+      ],
+      "textures": [
+        "armor_military.jpg"
+      ],
+      "masks": [
+        "armor_military_mask.png"
+      ],
+      "current_image": "itm_military_legs_1.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 219,
+      "name": "Medium Military Helmet",
+      "kind": "armor",
+      "slot": "head",
+      "pipeline": "render",
+      "models": [
+        "man_armor_military_medium_head"
+      ],
+      "textures": [
+        "armor_military.jpg"
+      ],
+      "masks": [
+        "armor_military_mask.png"
+      ],
+      "current_image": "itm_military_helmet_2.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 220,
+      "name": "Medium Military Armor",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "man_armor_military_medium_chest"
+      ],
+      "textures": [
+        "armor_military.jpg"
+      ],
+      "masks": [
+        "armor_military_mask.png"
+      ],
+      "current_image": "itm_military_armor_2.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 221,
+      "name": "Medium Military Longies",
+      "kind": "armor",
+      "slot": "legs",
+      "pipeline": "render",
+      "models": [
+        "man_armor_military_medium_legs"
+      ],
+      "textures": [
+        "armor_military.jpg"
+      ],
+      "masks": [
+        "armor_military_mask.png"
+      ],
+      "current_image": "itm_military_legs_2.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 222,
+      "name": "Leather Jacket",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "man_armor_military_light_chest"
+      ],
+      "textures": [
+        "armor_military.jpg"
+      ],
+      "masks": [
+        "armor_military_mask.png"
+      ],
+      "current_image": "jacket0b.tga",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 223,
+      "name": "Rags",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "man_armor_battle_heavy_chest"
+      ],
+      "textures": [
+        "armor_battle.jpg"
+      ],
+      "masks": [
+        "armor_battle_mask.png"
+      ],
+      "current_image": "itm_military_armor_1.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 224,
+      "name": "Rags Longines",
+      "kind": "armor",
+      "slot": "legs",
+      "pipeline": "render",
+      "models": [
+        "man_armor_battle_heavy_legs"
+      ],
+      "textures": [
+        "armor_battle.jpg"
+      ],
+      "masks": [
+        "armor_battle_mask.png"
+      ],
+      "current_image": "itm_military_legs_1.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 226,
+      "name": "Leather Longies",
+      "kind": "armor",
+      "slot": "legs",
+      "pipeline": "render",
+      "models": [
+        "man_armor_battle_heavy_legs"
+      ],
+      "textures": [
+        "armor_battle.jpg"
+      ],
+      "masks": [
+        "armor_battle_mask.png"
+      ],
+      "current_image": "",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 227,
+      "name": "Superhero Helmet",
+      "kind": "armor",
+      "slot": "head",
+      "pipeline": "render",
+      "models": [
+        "man_armor_battle_heavy_head"
+      ],
+      "textures": [
+        "armor_battle.jpg"
+      ],
+      "masks": [
+        "armor_battle_mask.png"
+      ],
+      "current_image": "helmet.tga",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 229,
+      "name": "Light Battle Armor",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "man_armor_battle_light_chest"
+      ],
+      "textures": [
+        "armor_battle.jpg"
+      ],
+      "masks": [
+        "armor_battle_mask.png"
+      ],
+      "current_image": "itm_battle_armor_1.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 230,
+      "name": "Light Battle Helmet",
+      "kind": "armor",
+      "slot": "head",
+      "pipeline": "render",
+      "models": [
+        "man_armor_battle_light_head"
+      ],
+      "textures": [
+        "armor_battle.jpg"
+      ],
+      "masks": [
+        "armor_battle_mask.png"
+      ],
+      "current_image": "itm_battle_helmet_1.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 231,
+      "name": "Light Battle Longies",
+      "kind": "armor",
+      "slot": "legs",
+      "pipeline": "render",
+      "models": [
+        "man_armor_battle_light_legs"
+      ],
+      "textures": [
+        "armor_battle.jpg"
+      ],
+      "masks": [
+        "armor_battle_mask.png"
+      ],
+      "current_image": "itm_battle_legs_1.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 232,
+      "name": "Medium Battle Armor",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "man_armor_battle_medium_chest"
+      ],
+      "textures": [
+        "armor_battle.jpg"
+      ],
+      "masks": [
+        "armor_battle_mask.png"
+      ],
+      "current_image": "itm_battle_armor_2.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 233,
+      "name": "Medium Battle Helmet",
+      "kind": "armor",
+      "slot": "head",
+      "pipeline": "render",
+      "models": [
+        "man_armor_battle_medium_head"
+      ],
+      "textures": [
+        "armor_battle.jpg"
+      ],
+      "masks": [
+        "armor_battle_mask.png"
+      ],
+      "current_image": "itm_battle_helmet_2.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 234,
+      "name": "Medium Battle Longies",
+      "kind": "armor",
+      "slot": "legs",
+      "pipeline": "render",
+      "models": [
+        "man_armor_battle_medium_legs"
+      ],
+      "textures": [
+        "armor_battle.jpg"
+      ],
+      "masks": [
+        "armor_battle_mask.png"
+      ],
+      "current_image": "itm_battle_legs_2.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 235,
+      "name": "Sunglasses1",
+      "kind": "other",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 236,
+      "name": "Raider Helmet",
+      "kind": "armor",
+      "slot": "head",
+      "pipeline": "render",
+      "models": [
+        "man_armor_battle_heavy_head"
+      ],
+      "textures": [
+        "armor_battle.jpg"
+      ],
+      "masks": [
+        "armor_battle_mask.png"
+      ],
+      "current_image": "itm_battle_helmet_1.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 237,
+      "name": "Raider Armor",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "man_armor_battle_heavy_chest"
+      ],
+      "textures": [
+        "armor_battle.jpg"
+      ],
+      "masks": [
+        "armor_battle_mask.png"
+      ],
+      "current_image": "itm_battle_armor_1.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 238,
+      "name": "Raider Longies",
+      "kind": "armor",
+      "slot": "legs",
+      "pipeline": "render",
+      "models": [
+        "man_armor_battle_heavy_legs"
+      ],
+      "textures": [
+        "armor_battle.jpg"
+      ],
+      "masks": [
+        "armor_battle_mask.png"
+      ],
+      "current_image": "itm_battle_legs_1.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 239,
+      "name": "Heavy Military Helmet",
+      "kind": "armor",
+      "slot": "head",
+      "pipeline": "render",
+      "models": [
+        "man_armor_military_heavy_head"
+      ],
+      "textures": [
+        "armor_military.jpg"
+      ],
+      "masks": [
+        "armor_military_mask.png"
+      ],
+      "current_image": "itm_military_helmet_3.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 240,
+      "name": "Heavy Military Armor",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "man_armor_military_heavy_chest"
+      ],
+      "textures": [
+        "armor_military.jpg"
+      ],
+      "masks": [
+        "armor_military_mask.png"
+      ],
+      "current_image": "itm_military_armor_3.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 241,
+      "name": "Heavy Military Longies",
+      "kind": "armor",
+      "slot": "legs",
+      "pipeline": "render",
+      "models": [
+        "man_armor_military_heavy_legs"
+      ],
+      "textures": [
+        "armor_military.jpg"
+      ],
+      "masks": [
+        "armor_military_mask.png"
+      ],
+      "current_image": "itm_military_legs_3.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 242,
+      "name": "Heavy Battle Helmet",
+      "kind": "armor",
+      "slot": "head",
+      "pipeline": "render",
+      "models": [
+        "man_armor_battle_heavy_head"
+      ],
+      "textures": [
+        "armor_battle.jpg"
+      ],
+      "masks": [
+        "armor_battle_mask.png"
+      ],
+      "current_image": "itm_battle_helmet_3.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 243,
+      "name": "Heavy Battle Armor",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "man_armor_battle_heavy_chest"
+      ],
+      "textures": [
+        "armor_battle.jpg"
+      ],
+      "masks": [
+        "armor_battle_mask.png"
+      ],
+      "current_image": "itm_battle_armor_3.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 244,
+      "name": "Heavy Battle Longies",
+      "kind": "armor",
+      "slot": "legs",
+      "pipeline": "render",
+      "models": [
+        "man_armor_battle_heavy_legs"
+      ],
+      "textures": [
+        "armor_battle.jpg"
+      ],
+      "masks": [
+        "armor_battle_mask.png"
+      ],
+      "current_image": "itm_battle_legs_3.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 245,
+      "name": "Heavy Combat Helmet",
+      "kind": "armor",
+      "slot": "head",
+      "pipeline": "render",
+      "models": [
+        "man_armor_combat_heavy_head"
+      ],
+      "textures": [
+        "armor_combat.jpg"
+      ],
+      "masks": [
+        "armor_combat_mask.png"
+      ],
+      "current_image": "itm_combat_helmet_3.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 246,
+      "name": "Heavy Combat Armor",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "man_armor_combat_heavy_chest"
+      ],
+      "textures": [
+        "armor_combat.jpg"
+      ],
+      "masks": [
+        "armor_combat_mask.png"
+      ],
+      "current_image": "itm_combat_armor_3.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 247,
+      "name": "Heavy Combat Longies",
+      "kind": "armor",
+      "slot": "legs",
+      "pipeline": "render",
+      "models": [
+        "man_armor_combat_heavy_legs"
+      ],
+      "textures": [
+        "armor_combat.jpg"
+      ],
+      "masks": [
+        "armor_combat_mask.png"
+      ],
+      "current_image": "itm_combat_legs_3.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 248,
+      "name": "Heavy Combat Armor SE",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "man_armor_combat_heavy_chest"
+      ],
+      "textures": [
+        "armor_combatse.jpg"
+      ],
+      "masks": [
+        "armor_combatse_mask.png"
+      ],
+      "current_image": "itm_combat_armor_m1_3.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 249,
+      "name": "Heavy Combat Helmet SE",
+      "kind": "armor",
+      "slot": "head",
+      "pipeline": "render",
+      "models": [
+        "man_armor_combat_heavy_head"
+      ],
+      "textures": [
+        "armor_combatse.jpg"
+      ],
+      "masks": [
+        "armor_combatse_mask.png"
+      ],
+      "current_image": "itm_combat_helmet_m1_3.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 250,
+      "name": "Heavy Combat Longies SE",
+      "kind": "armor",
+      "slot": "legs",
+      "pipeline": "render",
+      "models": [
+        "man_armor_combat_heavy_legs"
+      ],
+      "textures": [
+        "armor_combatse.jpg"
+      ],
+      "masks": [
+        "armor_combatse_mask.png"
+      ],
+      "current_image": "itm_combat_legs_m1_3.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 251,
+      "name": "Heavy Battle Helmet SE",
+      "kind": "armor",
+      "slot": "head",
+      "pipeline": "render",
+      "models": [
+        "man_armor_battlese_head"
+      ],
+      "textures": [
+        "armor_battlese.jpg"
+      ],
+      "masks": [
+        "armor_battlese_mask.png"
+      ],
+      "current_image": "itm_battle_helmet_se.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 252,
+      "name": "Heavy Battle Armor SE",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "man_armor_battlese_chest"
+      ],
+      "textures": [
+        "armor_battlese.jpg"
+      ],
+      "masks": [
+        "armor_battlese_mask.png"
+      ],
+      "current_image": "itm_battle_armor_se.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 253,
+      "name": "Heavy Battle Longies SE",
+      "kind": "armor",
+      "slot": "legs",
+      "pipeline": "render",
+      "models": [
+        "man_armor_battlese_legs"
+      ],
+      "textures": [
+        "armor_battlese.jpg"
+      ],
+      "masks": [
+        "armor_battlese_mask.png"
+      ],
+      "current_image": "itm_battle_legs_se.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 254,
+      "name": "Tank Armor",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "man_armor_tank"
+      ],
+      "textures": [
+        "armor_tank.jpg"
+      ],
+      "masks": [
+        "armor_tank_mask.png"
+      ],
+      "current_image": "itm_tank_armor.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 255,
+      "name": "Dog Armor",
+      "kind": "armor",
+      "slot": "dog",
+      "pipeline": "render",
+      "models": [
+        "dog_armor_v01"
+      ],
+      "textures": [
+        "dog_items_v01.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "itm_dog_armor.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 256,
+      "name": "Tank Armor SE",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "man_armor_tankse"
+      ],
+      "textures": [
+        "armor_tankse.jpg"
+      ],
+      "masks": [
+        "armor_tankse_mask.png"
+      ],
+      "current_image": "itm_tankse.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 257,
+      "name": "Santa Hat",
+      "kind": "armor",
+      "slot": "head",
+      "pipeline": "render",
+      "models": [
+        "man_armor_santahat"
+      ],
+      "textures": [
+        "armor_santahat.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "itm_santa_hat.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 258,
+      "name": "Freak Medium Armor",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "freakminer_medium_body"
+      ],
+      "textures": [
+        "miner.jpg"
+      ],
+      "masks": [
+        "miner_mask.png"
+      ],
+      "current_image": "ti_miner_png_02.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 259,
+      "name": "Freak Medium Longies",
+      "kind": "armor",
+      "slot": "legs",
+      "pipeline": "render",
+      "models": [
+        "freakminer_medium_legs"
+      ],
+      "textures": [
+        "miner.jpg"
+      ],
+      "masks": [
+        "miner_mask.png"
+      ],
+      "current_image": "ti_miner_png_04.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 260,
+      "name": "Freak Heavy Armor",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "freakminer_heavy_body"
+      ],
+      "textures": [
+        "miner.jpg"
+      ],
+      "masks": [
+        "miner_mask.png"
+      ],
+      "current_image": "ti_miner_png_01.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 261,
+      "name": "Freak Heavy Longies",
+      "kind": "armor",
+      "slot": "legs",
+      "pipeline": "render",
+      "models": [
+        "freakminer_heavy_legs"
+      ],
+      "textures": [
+        "miner.jpg"
+      ],
+      "masks": [
+        "miner_mask.png"
+      ],
+      "current_image": "ti_miner_png_03.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 262,
+      "name": "Freak Helmet",
+      "kind": "armor",
+      "slot": "head",
+      "pipeline": "render",
+      "models": [
+        "freakminer_heavy_helmet"
+      ],
+      "textures": [
+        "miner.jpg"
+      ],
+      "masks": [
+        "miner_mask.png"
+      ],
+      "current_image": "ti_miner_png_05.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 263,
+      "name": "Female Exo Armor",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "woman_armor_fea"
+      ],
+      "textures": [
+        "armor_fea.jpg"
+      ],
+      "masks": [
+        "armor_fea_mask.png"
+      ],
+      "current_image": "itm_female_exo_armor.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 264,
+      "name": "Female Exo Armor SE",
+      "kind": "armor",
+      "slot": "body",
+      "pipeline": "render",
+      "models": [
+        "woman_armor_fease"
+      ],
+      "textures": [
+        "armor_fease.jpg"
+      ],
+      "masks": [
+        "armor_fease_mask.png"
+      ],
+      "current_image": "itm_female_exo_armor_se.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 265,
+      "name": "Dog Solid Armor",
+      "kind": "armor",
+      "slot": "dog",
+      "pipeline": "render",
+      "models": [
+        "dog_solid_armor"
+      ],
+      "textures": [
+        "dog_solid_armor.jpg"
+      ],
+      "masks": [
+        "dog_solid_armor_mask.png"
+      ],
+      "current_image": "itm_dog_solid_armor.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 266,
+      "name": "Dog Solid Armor SE",
+      "kind": "armor",
+      "slot": "dog",
+      "pipeline": "render",
+      "models": [
+        "dog_solid_armor_se"
+      ],
+      "textures": [
+        "dog_solid_armor_se.jpg"
+      ],
+      "masks": [
+        "dog_solid_armor_se_mask.png"
+      ],
+      "current_image": "itm_dog_solid_armor_se.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 300,
+      "name": "Melee Combat",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "tio_wi_300.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 301,
+      "name": "Beretta",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_beretta"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_301.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 302,
+      "name": "Shotgun",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_shotgun"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_302.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 303,
+      "name": "HK MP5",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_mp5"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_303.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 304,
+      "name": "AK 47",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_ak47"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_304.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 305,
+      "name": "UZI",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_uzi"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_305.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 306,
+      "name": "P90",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_p90"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_306.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 307,
+      "name": "Spas",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_spas"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_307.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 308,
+      "name": "Pancor Jackhammer",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_JackHammer"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_308.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 309,
+      "name": "Famas",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_famas"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_309.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 310,
+      "name": "SKS Carbine",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_sks"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_310.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 311,
+      "name": "Steyr Aug",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_aug"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_311.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 312,
+      "name": "AWP",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_awp"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_312.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 313,
+      "name": "HK G3SG/1",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_HKG3SG1"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_313.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 314,
+      "name": "M60",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_m60"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_314.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 315,
+      "name": "Minigun",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_minigun"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_315.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 316,
+      "name": "RPG",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_rpg"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_316.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 317,
+      "name": "Frag Grenade",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "tio_wi_317.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 318,
+      "name": "Smoke Grenade",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "tio_wi_318.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 319,
+      "name": "Molotov Koktail",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "tio_wi_319.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 320,
+      "name": "Flash Grenade",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "tio_wi_320.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 321,
+      "name": "Land Mine",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "tio_wi_321.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 322,
+      "name": "Perforator",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "tio_wi_322.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 323,
+      "name": "Grenade Launcher",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_rg6"
+      ],
+      "textures": [
+        "weapons_pak2.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_323.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 324,
+      "name": "Flamethrower",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_flametrower"
+      ],
+      "textures": [
+        "weapons_pak2.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_324.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 325,
+      "name": "Dynamite",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "tio_wi_325.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 326,
+      "name": "Knife",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_knife"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_326.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 327,
+      "name": "Machete",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_machete"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_327.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 328,
+      "name": "Steel Pipe",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_pipe"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_328.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 329,
+      "name": "Wrench",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_wrench"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_329.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 330,
+      "name": "Colt M4",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_m4"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_330.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 331,
+      "name": "USP Match",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_usp"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_331.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 332,
+      "name": "Magnum",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_magnum"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_332.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 333,
+      "name": "Dog Fangs",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "tio_wi_333.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 334,
+      "name": "Suicide Jacket",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "man_armor_suicidjack"
+      ],
+      "textures": [
+        "armor_suicidjack.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_334.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 335,
+      "name": "Freak Hammer",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "hammer_tx800p"
+      ],
+      "textures": [
+        "hammer_tx800p.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_335.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 336,
+      "name": "Freak Nailgun",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_nailgun"
+      ],
+      "textures": [
+        "weapons_diffuse2.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_336.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 337,
+      "name": "Freak Melee Combat",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "tio_wi_337.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 338,
+      "name": "Vintorez",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_vintorez"
+      ],
+      "textures": [
+        "weapons_diffuse2.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_338.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 339,
+      "name": "Groza",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_groza"
+      ],
+      "textures": [
+        "weapons_diffuse2.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_339.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 340,
+      "name": "Groza Subgrenade",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_groza"
+      ],
+      "textures": [
+        "weapons_diffuse2.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_340.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 341,
+      "name": "Freak Shield",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "shield_minedoor"
+      ],
+      "textures": [
+        "shield_minedoor.jpg"
+      ],
+      "masks": [
+        "shield_minedoor_mask.png"
+      ],
+      "current_image": "tio_wi_341.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 5001,
+      "name": "Flare",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "tio_wi_5001.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 5002,
+      "name": "Night Vision Goggles",
+      "kind": "medkit",
+      "slot": "device",
+      "pipeline": "render",
+      "models": [
+        "man_item_nightvision"
+      ],
+      "textures": [
+        "item_nightvision.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "itm_nightvision.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": [
+        "Модель найдена в base/models вручную; текстуру подобрать по имени модели."
+      ]
+    },
+    {
+      "item_id": 5003,
+      "name": "Light Trainer",
+      "kind": "medkit",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "item_light_trainer.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 5004,
+      "name": "Improved Trainer",
+      "kind": "medkit",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "item_improved_trainer.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 5005,
+      "name": "Ultra Trainer",
+      "kind": "medkit",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "item_ultra_trainer.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 5006,
+      "name": "Light Tactic Advisor",
+      "kind": "medkit",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "item_light_advisor.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 5007,
+      "name": "Improved Tactic Advisor",
+      "kind": "medkit",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "item_improved_advisor.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 5008,
+      "name": "Ultra Tactic Advisor",
+      "kind": "medkit",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "item_ultra_advisor.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 5009,
+      "name": "Light Blocking Exp",
+      "kind": "medkit",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "itm_buff_sight.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 5010,
+      "name": "Improved Blocking Exp",
+      "kind": "medkit",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "itm_buff_sight.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 5011,
+      "name": "Ultra Blocking Exp",
+      "kind": "medkit",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "itm_buff_sight.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 5012,
+      "name": "Injection HP",
+      "kind": "medkit",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "itm_healthinjection.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 5013,
+      "name": "SVD",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [
+        "weapon_svd"
+      ],
+      "textures": [
+        "weapons_pak1.jpg"
+      ],
+      "masks": [
+        ""
+      ],
+      "current_image": "tio_wi_5013.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 65487,
+      "name": "Шкура заражённой собаки",
+      "kind": "other",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "infected_hide.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 65488,
+      "name": "Мясо заражённой собаки",
+      "kind": "other",
+      "slot": "device",
+      "pipeline": "redraw",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "infected_meat.png",
+      "canvas": [
+        1024,
+        1024
+      ],
+      "notes": []
+    },
+    {
+      "item_id": 65489,
+      "name": "Infected Dog Bite",
+      "kind": "weapon",
+      "slot": "weapon",
+      "pipeline": "existing",
+      "models": [],
+      "textures": [],
+      "masks": [],
+      "current_image": "tio_wi_65489.png",
+      "canvas": [
+        2048,
+        1024
+      ],
+      "notes": []
+    }
+  ]
 }

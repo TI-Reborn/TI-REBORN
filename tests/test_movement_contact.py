@@ -36,6 +36,13 @@ class MovementContactTests(unittest.TestCase):
                 path=tuple((x, 1) for x in range(2, 17))
                 self.assertEqual(decode_battle_move(field.move(10, BattleMove(1, path))).path, path)
 
+    def test_first_contact_stops_at_rounded_edge_of_sight(self):
+        field = self.field(enemy=BattleActor(2, 20, 12, 2, 15, 100, 100))
+        field._actors[1] = replace(field.actor(1), sight_radius=9)
+        reply = field.move(10, BattleMove(1, ((2, 1), (3, 1), (4, 1))))
+        self.assertEqual(decode_battle_move(reply).path, ((2, 1), (3, 1)))
+        self.assertIn(2, visible_actors(field, 10))
+
     def test_wall_hides_enemy_until_line_of_sight_opens(self):
         field=self.field(enemy=BattleActor(2, 20, 5, 1, 15, 100, 100), blocked={(3, 1)})
         field._actors[1]=replace(field.actor(1), sight_radius=9)

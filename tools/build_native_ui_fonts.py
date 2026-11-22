@@ -52,12 +52,18 @@ def ink(font, character):
     return result, (left+bounds[0], top+bounds[1])
 
 
-def build(output):
+ROBOTO = ("technical-roboto-condensed", "roboto", "RobotoCondensed-OFL.txt")
+# The login window draws only the native "pixel" role in Inter.
+INTER = ("clear-inter", "inter", "Inter-OFL.txt")
+
+
+def build(output, face_set=ROBOTO, roles=FONTS):
+    candidate_id, prefix, license_name = face_set
     output = Path(output).absolute()
     output.mkdir(parents=True, exist_ok=True)
     sources = ROOT / "reports/ui-hd-assets/fonts"
     source_manifest = json.loads((sources / "candidates.json").read_text(encoding="utf-8"))
-    candidate = next(c for c in source_manifest["candidates"] if c["id"] == "technical-roboto-condensed")
+    candidate = next(c for c in source_manifest["candidates"] if c["id"] == candidate_id)
     ttf = sources / candidate["id"] / "variable.ttf"
     if sha(ttf) != candidate["ttf"]["sha256"]:
         raise ValueError("Selected font source differs")
@@ -70,7 +76,7 @@ def build(output):
     with TTFont(ttf) as ft:
         coverage = set(ft.getBestCmap())
     fonts, assets = [], []
-    for stem in FONTS:
+    for stem in roles:
         original_path = baseline / (stem+".xml")
         prior = next(s for s in compatibility["sets"] if s["candidate"] == candidate["id"]
                      and s["percent"] == 100 and s["font_stem"] == stem)
@@ -115,7 +121,7 @@ def build(output):
                 raster, _ = ink(density_face,chr(glyph["codepoint"]))
                 cells.append(raster)  # no resizing at all
             atlas,rects=pack(cells)
-            relative=f"base/ui-hd/fonts/roboto-{stem}-{scale}.png"
+            relative=f"base/ui-hd/fonts/{prefix}-{stem}-{scale}.png"
             path=output/relative;path.parent.mkdir(parents=True,exist_ok=True)
             atlas.save(path,optimize=False,compress_level=9)
             for glyph,rect in zip(glyphs,rects):
@@ -135,12 +141,12 @@ def build(output):
                       "uniform_font_pixel_size_100":point_size,"weight":weight,
                       "optical_overhang_codepoints":overhangs,"glyphs":glyphs,"density_sets":density_sets})
     license_source=sources/candidate["id"]/"OFL.txt"
-    license_target=output/"base/ui-hd/licenses/RobotoCondensed-OFL.txt"
+    license_target=output/"base/ui-hd/licenses"/license_name
     license_target.parent.mkdir(parents=True,exist_ok=True)
     license_target.write_bytes(license_source.read_bytes())
-    assets.append({"path":"base/ui-hd/licenses/RobotoCondensed-OFL.txt","sha256":sha(license_target),
+    assets.append({"path":f"base/ui-hd/licenses/{license_name}","sha256":sha(license_target),
                    "bytes":license_target.stat().st_size})
-    manifest={"schema":1,"result":"PASS","family":"Roboto Condensed","scales":list(SCALES),
+    manifest={"schema":1,"result":"PASS","family":candidate["family"],"scales":list(SCALES),
               "selected_ttf_sha256":sha(ttf),"source_manifest_sha256":sha(sources/"candidates.json"),
               "builder_sha256":sha(Path(__file__)),"assets":assets,"fonts":fonts,
               "logical_metrics_changed":False,"per_glyph_raster_resizing":False,
@@ -154,7 +160,9 @@ def build(output):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output",type=Path,default=ROOT/"reports/ui-hd-assets/selected-fonts")
-    args=parser.parse_args();m=build(args.output)
+    parser.add_argument("--login-inter",action="store_true",help="Inter atlases for the login window's pixel role")
+    args=parser.parse_args()
+    m=build(args.output,INTER,("pixel",)) if args.login_inter else build(args.output)
     print(json.dumps({"result":m["result"],"font_roles":len(m["fonts"]),"assets":len(m["assets"]),
                       "manifest_sha256":sha(args.output/"manifest.json")}))
 

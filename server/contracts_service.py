@@ -8,6 +8,7 @@ from uuid import uuid4
 from xml.etree import ElementTree as ET
 
 from tio.db_transaction import connect, transaction
+from tio.locations import SHOOTING_RANGE
 from tio.travel_party import PartyStore
 from tio.pve_contracts import ContractStore
 from tio.party_travel import PartyTravel, PartyLocations
@@ -31,6 +32,9 @@ class ContractsService:
 
     def locations(self, base):
         return PartyLocations(base, self.travel)
+
+    def at_shooting_range(self, session) -> bool:
+        return session.locations.current(session.account) == SHOOTING_RANGE
 
     def map_query(self, session, packet):
         """Answer native79 tooltip polling without admitting a city or battle.
@@ -67,7 +71,8 @@ class ContractsService:
                        unknown_bytes=(int(values.get('minlevel', 1)), int(values.get('maxlevel', 20)), 0, 0))))
             # Enabled is the final native bool, after any territory extension.
             # Keep those public claim/schedule branches intact.
-            return (raw[:-1] + bytes((int(values.get('enabled') == '1'),)),)
+            from .world_runtime import project_town
+            return (project_town(session, raw[:-1] + bytes((int(values.get('enabled') == '1'),))),)
 
     def zones_xml(self):
         root = ET.fromstring((ROOT/'evidence/zones_diagnostic.xml').read_bytes())
@@ -202,6 +207,10 @@ class ContractsService:
     def _command(self, session, command, args):
         owner = session.account; party = self.member(session)
         action = args[0].lower() if args else 'help'
+        if ((command == '!party' and action in ('create', 'invite', 'accept'))
+                or (command == '!contracts' and action in ('list', 'take', 'start'))):
+            if self.at_shooting_range(session):
+                raise ValueError('Группы и контракты недоступны в Shooting Range')
         if command == '!contracts' and action == 'help':
             self.reply(session, '!contracts list | take camp/depot/checkpoint | status | start | cancel')
             return

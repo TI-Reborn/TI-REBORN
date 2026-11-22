@@ -33,7 +33,7 @@ ufw status numbered
 ```
 
 Сначала разрешается SSH. Текущую SSH-сессию оставить открытой и проверить новую.
-Если в панели хостинга (is*hosting) используется внешний firewall, добавить inbound
+Если используется Hetzner Cloud Firewall, привязать его к VPS и добавить inbound
 TCP 22 (IP администратора) и TCP 28512 (IP клиента). Не добавлять исходящих
 ограничений для этого рецепта. Если IP компьютера изменился, обновить оба firewall.
 
@@ -42,4 +42,5 @@ TCP 22 (IP администратора) и TCP 28512 (IP клиента). Не 
 Проверка протокола: `python deploy/check_connection.py --host PUBLIC_IPV4`.
 Последняя проверка занимает login-подключение; выполнять без активной игры.
 
-Источники: [Ubuntu UFW](https://ubuntu.com/server/docs/how-to/security/firewalls/).
+Источники: [Ubuntu UFW](https://ubuntu.com/server/docs/how-to/security/firewalls/),
+[Hetzner Cloud Firewall](https://docs.hetzner.com/cloud/firewalls/overview/).

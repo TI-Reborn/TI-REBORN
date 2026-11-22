@@ -24,6 +24,14 @@ class FixedRandom:
 
 
 class CombatTests(unittest.TestCase):
+    def test_rifle_can_hit_visible_dog_between_staggered_corners(self):
+        f,c=self.setup_combat(303,count=5,blocked={(1,2),(4,3)})
+        f.transparent_obstacles=frozenset()
+        f._actors[2]=replace(f.actor(2),x=5,y=5)
+        c.register(2,encode_item_list(2,()),human=False)
+        c.attack(7,AttackRequest(1,5,5))
+        self.assertLess(f.actor(2).health,100)
+
     def test_result_statistics_friendly_fire_healing_and_failed_attack(self):
         ally=BattleActor(3,7,5,2,15,50,100)
         f,c=self.setup_combat(317,None,extra=(ally,))

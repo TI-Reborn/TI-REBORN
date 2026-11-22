@@ -11,7 +11,7 @@ from server.team_arena import TeamArena
 from tio import battle_checkpoints
 from tio.owned_pets import OwnedPetStore
 from tio.protocol.equipment_batch import EquipmentBatchRequest, encode_equipment_batch, STAGE, COMMIT, CANCEL
-from tio.protocol.item_action import ItemAction
+from tio.protocol.item_action import ItemAction, encode_item_action
 from tio.protocol.item_list import encode_item_list, decode_item_list
 from tio.protocol.battle_turn import encode_end_turn
 
@@ -22,7 +22,7 @@ class SharedEquipmentBatchTests(unittest.TestCase):
         self.hub=self.case.hub;self.path=self.case.path
         with closing(sqlite3.connect(self.path)) as db,db:
             db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=1',
-                       (encode_item_list(1,(gear(101,301,16),gear(102,317),gear(103,208))),'alice'))
+                       (encode_item_list(1,(gear(101,301,16),gear(102,317),gear(103,208),gear(104,9,count=2))),'alice'))
         self.wall=1000.;self.hub.journal=BattleJournal(self.hub,self.path,wall=lambda:self.wall)
         for index in (0,1):self.case.send(index,b'\xba\3\0\1')
         for index in (0,1):self.case.send(index,b'\x36')
@@ -89,6 +89,32 @@ class SharedEquipmentBatchTests(unittest.TestCase):
         self.send(STAGE,batch=4);self.case.now=100;self.hub.tick()
         self.assertFalse(self.field.combat.equipment_batches)
         self.assertEqual(OwnedPetStore(self.path).inventory('alice',1),encode_item_list(1,decode_item_list(self.inventory)[1]))
+
+    def use_medkit(self):
+        return self.case.send(0,encode_item_action(ItemAction(self.actor,104,255)))
+
+    def test_item_use_keeps_preview_shown_and_confirmable(self):
+        actor=self.field.actor(self.actor)
+        self.field._actors[self.actor]=replace(actor,health=actor.max_health-5)
+        self.send(STAGE)
+        packets=self.use_medkit()
+        self.assertIn(self.owners[0],self.field.combat.equipment_batches)
+        shown={i.instance_id:i for i in decode_item_list([p for p in packets if p[0]==0x30][-1])[1]}
+        self.assertEqual((shown[102].client_slot,shown[104].count),(16,1))
+        self.assertEqual(self.field.actor(self.actor).action_points,self.points-1)
+        self.send(COMMIT)
+        self.assertEqual(self.field.actor(self.actor).action_points,self.points-3)
+        stored=decode_item_list(OwnedPetStore(self.path).inventory('alice',1))[1]
+        self.assertEqual(next(i.template_id for i in stored if i.client_slot==16),317)
+
+    def test_rejected_item_use_keeps_preview(self):
+        self.send(STAGE)
+        self.use_medkit()  # full health: the server refuses and changes nothing
+        field=self.battle['field']  # a refused action restores the journal copy
+        self.assertIn(self.owners[0],field.combat.equipment_batches)
+        self.assertEqual(field.actor(self.actor).action_points,self.points)
+        self.send(COMMIT)
+        self.assertEqual(self.battle['field'].actor(self.actor).action_points,self.points-2)
 
     def test_checkpoint_failure_rolls_back_db_ap_and_all_replies(self):
         self.send(STAGE)

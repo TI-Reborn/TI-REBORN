@@ -84,7 +84,7 @@
     <value key="assaultMap" val="assault\denver.xml" />
     <value key="privateStore" val="false" />
     <value key="market" val="false" />
-    <value key="shop" val="false" />
+    <value key="shop" val="true" />
   </town>
   <town id="7" name="Military Outpost Base">
     <value key="enabled" val="1" />
@@ -101,7 +101,7 @@
     <value key="assaultMap" val="assault\mo.xml" />
     <value key="privateStore" val="false" />
     <value key="market" val="false" />
-    <value key="shop" val="false" />
+    <value key="shop" val="true" />
     <value key="arena" val="false" />
     <value key="dragin" val="false" />
     <value key="dragInMaxEnhance" val="3" />
@@ -175,7 +175,7 @@
     <value key="assaultMap" val="assault\mo.xml" />
     <value key="privateStore" val="true" />
     <value key="market" val="false" />
-    <value key="shop" val="false" />
+    <value key="shop" val="true" />
   </town>
   <town id="12" name="MZ Base">
     <value key="enabled" val="1" />
@@ -192,7 +192,7 @@
     <value key="assaultMap" val="assault\mo.xml" />
     <value key="privateStore" val="true" />
     <value key="market" val="false" />
-    <value key="shop" val="false" />
+    <value key="shop" val="true" />
   </town>
   <town id="13" name="Mine 4-6">
     <value key="enabled" val="1" />
@@ -209,7 +209,7 @@
     <value key="drop" val="false" />
     <value key="privateStore" val="false" />
     <value key="market" val="false" />
-    <value key="shop" val="false" />
+    <value key="shop" val="true" />
     <value key="mercShop" val="false" />
   </town>
   <town id="14" name="Mine 7-10">
@@ -227,7 +227,7 @@
     <value key="drop" val="false" />
     <value key="privateStore" val="false" />
     <value key="market" val="false" />
-    <value key="shop" val="false" />
+    <value key="shop" val="true" />
     <value key="mercShop" val="false" />
   </town>
   <town id="15" name="Mine 11-15">
@@ -245,7 +245,7 @@
     <value key="drop" val="false" />
     <value key="privateStore" val="false" />
     <value key="market" val="false" />
-    <value key="shop" val="false" />
+    <value key="shop" val="true" />
     <value key="mercShop" val="false" />
   </town>
   <town id="16" name="Mine 16-20">
@@ -263,7 +263,7 @@
     <value key="drop" val="false" />
     <value key="privateStore" val="false" />
     <value key="market" val="false" />
-    <value key="shop" val="false" />
+    <value key="shop" val="true" />
     <value key="mercShop" val="false" />
   </town>
   <town id="17" name="Shooting Range">
@@ -281,7 +281,7 @@
     <value key="drop" val="false" />
     <value key="privateStore" val="false" />
     <value key="market" val="false" />
-    <value key="shop" val="false" />
+    <value key="shop" val="true" />
     <value key="mercShop" val="false" />
   </town>
   <town id="18" name="Detroit">
@@ -318,7 +318,7 @@
     <value key="assaultMap" val="assault\mo.xml" />
     <value key="privateStore" val="false" />
     <value key="market" val="false" />
-    <value key="shop" val="false" />
+    <value key="shop" val="true" />
     <value key="arena" val="false" />
     <value key="dragin" val="true" />
     <value key="dragInMaxEnhance" val="10" />
@@ -341,7 +341,7 @@
     <value key="assaultMap" val="assault\mo.xml" />
     <value key="privateStore" val="false" />
     <value key="market" val="false" />
-    <value key="shop" val="false" />
+    <value key="shop" val="true" />
     <value key="arena" val="false" />
     <value key="dragin" val="true" />
     <value key="dragInMaxEnhance" val="15" />
@@ -364,7 +364,7 @@
     <value key="assaultMap" val="assault\denver.xml" />
     <value key="privateStore" val="false" />
     <value key="market" val="false" />
-    <value key="shop" val="false" />
+    <value key="shop" val="true" />
     <value key="arena" val="false" />
     <value key="dragin" val="true" />
     <value key="dragInMaxEnhance" val="20" />
@@ -387,7 +387,7 @@
     <value key="assaultMap" val="assault\mo.xml" />
     <value key="privateStore" val="false" />
     <value key="market" val="false" />
-    <value key="shop" val="false" />
+    <value key="shop" val="true" />
     <value key="arena" val="false" />
     <value key="dragin" val="true" />
     <value key="dragInMaxEnhance" val="25" />

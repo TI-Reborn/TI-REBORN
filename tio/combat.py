@@ -15,14 +15,14 @@ from pathlib import Path
 import json
 import random
 import sqlite3
-from .protocol.item_list import decode_item_list,encode_item_list
+from .protocol.item_list import ItemRecord,decode_item_list,encode_item_list
 from .protocol.battle_attack import (AttackHit,AttackResult,encode_attack_result,
                                      RESULT_NORMAL,RESULT_MISS,RESULT_CRITICAL)
 from .protocol.action_points import encode_action_points
 from .visibility import clear_sight,visible_actors,field_sight
 from .combat_distance import combat_distance
 
-from .medical_items import medical_items
+from .medical_items import can_use_medical, medical_items
 
 MEDICAL_ITEMS = medical_items()
 
@@ -96,6 +96,10 @@ class Combat:
     def commit_equipment_batch(self,owner,request,turn_key,*,view=None):
         from .equipment_batch import commit
         return commit(self,owner,request,turn_key,view=view)
+
+    def rebase_equipment_batch(self,owner):
+        from .equipment_batch import rebase
+        return rebase(self,owner)
 
     def cancel_equipment_batch(self,owner,*,batch_id=None,forget_receipts=False):
         from .equipment_batch import cancel
@@ -171,7 +175,7 @@ class Combat:
         self.actor_owners=MappingProxyType(owners)
         self._field=field
 
-    def register(self,actor_id,inventory,*,human,path=None,account=None,pet_packet=None):
+    def register(self,actor_id,inventory,*,human,path=None,account=None,pet_packet=None,implant_health=None):
         actor=self.field._actors.get(actor_id)
         if actor is None and path is not None:raise ValueError('Persistent actor must belong to the field')
         if actor is not None:
@@ -199,14 +203,20 @@ class Combat:
         if pet_packet is not None:
             from .equipment_bonuses import training_profile,bonuses
             b=bonuses(inventory,self.resources[actor_id])
-            self.proficiencies[actor_id]=self.proficiency_rules.normalize(training_profile(pet_packet,human) if b['melee'] else pet_packet,human)
+            from .implants import active
+            implant_effects=active(rank_fields,inventory) if human else {}
+            self.proficiencies[actor_id]=self.proficiency_rules.normalize(training_profile(pet_packet,human) if b['melee'] or implant_effects else pet_packet,human)
             self.initial_proficiencies.setdefault(actor_id,self.proficiencies[actor_id])
             # Projected PetInfo includes level growth and learned carry bonuses.
             capacity=decode_pet_info(pet_packet,human_equipment=human).fields['0x8c4b57']
-            if capacity>0:self.weight_capacities[actor_id]=capacity-b['carry']
+            if capacity>0:
+                percent=implant_effects.get('carry',0)
+                self.weight_capacities[actor_id]=(capacity*100+99+percent)//(100+percent)-b['carry']
         # Projected PetInfo already accounts for whether armor is worn.
         self.miner_defense[actor_id]=(decode_pet_info(pet_packet,human_equipment=human).fields['0x8c4ac5']
                                      if pet_packet is not None and self.resources[actor_id]==6 else 0)
+        from .implant_battle import register
+        register(self,actor_id,implant_health)
 
     def configure_armor_display(self,actor_id,learned,catalog):
         # Keep the naked perk available when armor is removed during battle.
@@ -269,6 +279,8 @@ class Combat:
                'persistence','weight_capacities','proficiencies','initial_proficiencies','miner_defense',
                'learned','human_critical_bonuses','weapon_accuracy_bonuses','display_unarmored_bonuses','skill_lists')
         for name in names:setattr(staged,name,dict(getattr(self,name)))
+        from copy import deepcopy
+        staged.item_effects=deepcopy(self.item_effects)
         staged.initial_proficiencies.pop(actor_id,None)
         staged.register(actor_id,empty,human=human,pet_packet=profile)
         staged.configure_accuracy(actor_id,learned,catalog)
@@ -290,6 +302,7 @@ class Combat:
             '0x8c57d0':staged.weight_capacity(actor_id) if actor_id in staged.weight_capacities else fields['0x8c4b57']})
         encode_battle_soldier(native);skills=encode_abilities(actor_id,entries)
         for name in names:setattr(self,name,getattr(staged,name))
+        self.item_effects=staged.item_effects
         self.personal_inventories={**personal,actor_id:old}
         self.field._actors[actor_id]=state
         return native,skills
@@ -304,16 +317,26 @@ class Combat:
         if actor_id in self.display_unarmored_bonuses:
             base=self.display_unarmored_bonuses[actor_id] if naked(self.inventories[actor_id]) else 0
         from .battle_item_effects import armor_bonus
-        return total(base,self.inventories[actor_id],human,self.enhancement_caps[actor_id])+armor_bonus(self,actor_id)
+        from .implants import armor_bonus as implant_armor
+        fields=decode_pet_info(profile,human_equipment=human).fields if profile else None
+        implant=implant_armor(fields,self.inventories[actor_id]) if fields else 0
+        return total(base,self.inventories[actor_id],human,self.enhancement_caps[actor_id])+armor_bonus(self,actor_id)+implant
 
     def defense(self,actor_id):
         if actor_id in getattr(self,'npc_defense',{}):return self.npc_defense[actor_id]
         inventory=self.inventory_packet(actor_id) if actor_id in self.inventories else None
         from .miner_abilities import naked
         from .battle_item_effects import armor_bonus
+        from .implants import armor_bonus as implant_armor
+        from .protocol.pet_info import decode_pet_info
+        profile=self.proficiencies.get(actor_id)
+        fields=decode_pet_info(profile,human_equipment=self.human[actor_id]).fields if profile else None
+        implant=implant_armor(fields,inventory) if fields else 0
+        human_armor=fields['0x8c4ac5'] if fields and fields['0x8c446f'] in (1,2) else 0
         return (self.armor.defense(inventory,human=self.human.get(actor_id,True))
+                + human_armor
                 + (self.miner_defense.get(actor_id,0) if naked(inventory) else 0)
-                + self.dog_bonuses.get(actor_id,{}).get(15,0)+armor_bonus(self,actor_id))
+                + self.dog_bonuses.get(actor_id,{}).get(15,0)+armor_bonus(self,actor_id)+implant)
 
     def configure_accuracy(self,actor_id,learned,catalog):
         self.learned[actor_id]=tuple(learned)
@@ -341,29 +364,66 @@ class Combat:
         from .protocol.battle_attack import AttackRequest
         return self.attack(owner,AttackRequest(request.actor_id,request.x,request.y),view=view,_subgrenade=True)
 
-    def skill_packets(self,actor_id):
+    def skill_list_packet(self,actor_id:int)->bytes:
+        """Complete battle skill list for the owner's client, recorded as sent."""
         from .weapon_effects import battle_skills
         from .protocol.abilities import encode_abilities
         entries=battle_skills(self.learned.get(actor_id,()),self.inventories[actor_id],self.human[actor_id])
-        previous=self.skill_lists.get(actor_id,())
         self.skill_lists[actor_id]=entries
-        if entries==previous or not any(e.ability_id in (9,27) for e in (*entries,*previous)):return ()
-        return (encode_abilities(actor_id,entries),)
+        return encode_abilities(actor_id,entries)
+
+    def skill_packets(self,actor_id):
+        """Changed list after equipment changes, followed by its cooldown states.
+
+        Weapon-bound skills (9 scope, 22 slash, 27 subgrenade) appear and
+        disappear with the item in hand; native 80 replaces the whole list and
+        its states, so 7F/01 must restore cooldowns right after it.
+        """
+        from .weapon_effects import battle_skills
+        entries=battle_skills(self.learned.get(actor_id,()),self.inventories[actor_id],self.human[actor_id])
+        if entries==self.skill_lists.get(actor_id,()):return ()
+        actor=self.field.actor(actor_id)
+        return (self.skill_list_packet(actor_id),*self.field.ability_status_packets(actor.owner_id,(actor_id,)))
+
+    def deferred_break(self, item: ItemRecord) -> bool:
+        return item.instance_id in getattr(self, 'deferred_weapon_breaks', ()) and item.unknown_words[0] == 0
+
+    def item_is_broken(self, item: ItemRecord) -> bool:
+        from .durability import broken
+        return broken(item) and not self.deferred_break(item)
 
     def inventory_packet(self, actor_id, packet=None):
         from .enhancement_limits import project_inventory
-        return project_inventory(self.inventories[actor_id] if packet is None else packet,
-                                 self.enhancement_caps[actor_id])
+        from .implant_battle import fields
+        from .implants import project_inventory as project_implants
+        projected=project_inventory(self.inventories[actor_id] if packet is None else packet,
+                                    self.enhancement_caps[actor_id])
+        if getattr(self, 'deferred_weapon_breaks', None):
+            identity, items, flag = decode_item_list(projected)
+            # Native weapon controls disable firing at zero. The server still wears and repairs from zero.
+            projected = encode_item_list(identity, tuple(
+                replace(i, unknown_words=(1, *i.unknown_words[1:]))
+                if self.deferred_break(i) and i.template_id != 324 else i for i in items), flag)
+        profile=fields(self,actor_id)
+        return project_implants(projected,profile or None)
 
-    def turn_budget(self, actor_id, maximum):
+    def turn_budget(self, actor_id: int, maximum: int) -> int:
         from .weight import inventory_weight, turn_ap
-        if actor_id not in self.weight_capacities:return maximum
+        from .implant_battle import turn_penalty
+        maximum=max(0,maximum-turn_penalty(self,actor_id))
+        if getattr(self.field, 'practice', None) is not None or actor_id not in self.weight_capacities:
+            return maximum
         return turn_ap(maximum,inventory_weight(self.inventories[actor_id]),self.weight_capacity(actor_id))
 
     def weight_capacity(self, actor_id: int, inventory: bytes | None = None) -> int:
         from .equipment_bonuses import bonuses
         packet = self.inventories[actor_id] if inventory is None else inventory
-        return self.weight_capacities[actor_id]+bonuses(packet,self.resources[actor_id])['carry']
+        from .implants import active
+        from .protocol.pet_info import decode_pet_info
+        profile=self.proficiencies.get(actor_id)
+        effects=active(decode_pet_info(profile,human_equipment=self.human[actor_id]).fields,packet) if profile else {}
+        base=self.weight_capacities[actor_id]+bonuses(packet,self.resources[actor_id])['carry']
+        return min(65535,base*(100+effects.get('carry',0))//100)
 
     def weight_packet(self, actor_id, packet=None):
         from .weight import inventory_weight, encode_weight
@@ -381,8 +441,7 @@ class Combat:
         old=self.inventories[a.actor_id]
         _,items,unknown=decode_item_list(old)
         selected=next((i for i in items if i.instance_id==action.instance_id),None)
-        from .durability import broken
-        if selected is not None and broken(selected) and not selected.equipped:
+        if selected is not None and self.item_is_broken(selected) and not selected.equipped:
             raise ValueError('Сломанный предмет нельзя экипировать')
         from .equipment import armor_rules
         armor=armor_rules()
@@ -396,21 +455,24 @@ class Combat:
             raise ValueError('Unsupported equipment weapon')
         equip=not (action.option==255 and selected.equipped)
         if equip:
-            if (action.target_mask or 16)==16 and any(i.equipped and i.template_id==334 and i.client_slot==4 for i in items):
-                raise ValueError('Для жилета смертника нужно освободить основную руку')
             from .enhancement_limits import required_level
             from .protocol.pet_info import decode_pet_info
             profile=self.proficiencies.get(a.actor_id)
             level=decode_pet_info(profile,human_equipment=True).fields['0x8c4aef'] if profile is not None else 1
             if level<required_level(selected):raise ValueError('Weapon requires level '+str(required_level(selected)))
-        slot=action.target_mask or 16
+        from .equipment import weapon_slot,vacated_hand
+        slot=weapon_slot(items,action.target_mask)
+        hand=vacated_hand(selected,slot)
         updated=[]
         for i in items:
             if i.instance_id==selected.instance_id:
                 i=replace(i,unknown_u8_01=int(equip),location_raw=slot if equip else 0)
             elif equip and i.equipped and i.client_slot==slot:
-                i=replace(i,unknown_u8_01=0,location_raw=0)
+                i=replace(i,unknown_u8_01=int(bool(hand)),location_raw=hand)
             updated.append(i)
+        if equip:
+            from .equipment import require_no_suicide_jacket_weapon
+            require_no_suicide_jacket_weapon(updated)
         inventory=encode_item_list(a.actor_id,updated,unknown)
         state=replace(a,weapons=self.catalog.equipped(inventory,human=True,resource=self.resources[a.actor_id]))
         self._persist_inventory(a.actor_id,old,inventory)
@@ -433,8 +495,6 @@ class Combat:
         if a.action_points<2:raise ValueError('Insufficient action points to equip armor')
         if equip:
             resource=self.resources[a.actor_id]
-            if selected.template_id==334 and any(i.equipped and i.client_slot==16 for i in items):
-                raise ValueError('Для жилета смертника нужно освободить основную руку')
             allowed=resource==6 if rule.get('miner') else resource in (3,4,5) if rule['dog'] else resource in (1,2)
             if not allowed or (rule.get('female') and resource!=2):raise ValueError('Incompatible armor')
             from .protocol.pet_info import decode_pet_info
@@ -448,6 +508,9 @@ class Combat:
             elif equip and i.equipped and set(rule.get('covers',(slot,))) & set(armor.get(i.template_id,{}).get('covers',(i.client_slot,))):
                 i=replace(i,unknown_u8_01=0,location_raw=0)
             updated.append(i)
+        if equip:
+            from .equipment import require_no_suicide_jacket_weapon
+            require_no_suicide_jacket_weapon(updated)
         inventory=encode_item_list(a.actor_id,updated,unknown)
         self._persist_inventory(a.actor_id,old,inventory)
         self.inventories[a.actor_id]=inventory
@@ -471,9 +534,17 @@ class Combat:
         item=next((i for i in items if i.instance_id==action.instance_id),None)
         if item is None or item.template_id not in MEDICAL_ITEMS or action.option!=255:
             raise ValueError('Unsupported medical item action')
-        if item.template_id==32 and self.resources[a.actor_id] not in (3,4,5):
-            raise ValueError('Dog meat requires a dog')
+        if not can_use_medical(item.template_id, self.resources[a.actor_id]):
+            raise ValueError('Medical item is unavailable for this actor type')
         power,cost=MEDICAL_ITEMS[item.template_id]
+        from .implants import active
+        from .protocol.pet_info import decode_pet_info
+        profile=self.proficiencies.get(a.actor_id)
+        effects=active(decode_pet_info(profile,human_equipment=self.human[a.actor_id]).fields,old) if profile else {}
+        from .implant_battle import extras
+        from .implants import policy as implant_policy
+        extra_healing=implant_policy()['extra']['effects']['12']['percent'] if 12 in extras(self,a.actor_id) else 0
+        power=power*(100+effects.get('healing',0)+extra_healing)//100
         if a.health>=a.max_health:raise ValueError('Health is already full')
         if a.action_points<cost:raise ValueError('Insufficient action points')
         updated=tuple(replace(i,unknown_u32_01=i.count-1) if i==item else i
@@ -503,6 +574,8 @@ class Combat:
                 raise ValueError('Ambiguous weapon slot')
         if not any(i.equipped and i.client_slot in (16,128) for i in items):
             raise ValueError('No weapon to swap')
+        from .equipment import require_no_suicide_jacket_weapon
+        require_no_suicide_jacket_weapon(items)
         updated=tuple(replace(i,location_raw=128 if i.client_slot==16 else 16)
                       if i.equipped and i.client_slot in (16,128) else i for i in items)
         inventory=encode_item_list(actor_id,updated,unknown)
@@ -530,7 +603,9 @@ class Combat:
             if any(i.instance_id not in temporary for i in items):
                 raise ValueError('Restricted battle inventory contains a persistent item')
             return personal[owner]
-        return encode_item_list(owner,tuple(i for i in items if i.instance_id not in temporary),flag)
+        # Battle checkpoints retain zero-durability weapons. Saved bags omit them even if a battle is abandoned.
+        return encode_item_list(owner,tuple(i for i in items
+            if i.instance_id not in temporary and not self.deferred_break(i)),flag)
 
     def _persist_inventory(self,actor_id,old,inventory,trained=None,*,temporary_ids=None,_db=None):
         if actor_id in self.persistence:
@@ -602,6 +677,10 @@ class Combat:
                     record(db,self.persistence[identity][1],self.storage_ids.get(identity,identity),audit)
 
     def repair(self,owner,packet):
+        from .battle_item_effects import _atomic
+        return _atomic(self,lambda:self._repair(owner,packet))
+
+    def _repair(self,owner,packet):
         from .protocol.repair import decode_repair,repair_message
         from .durability import repair_inventory
         identity,target=decode_repair(packet)
@@ -659,8 +738,8 @@ class Combat:
         equipped=[i for i in items if i.equipped==1 and i.client_slot==16] if self.human[a.actor_id] else []
         if len(equipped)>1:raise ValueError('Ambiguous primary weapon')
         item=equipped[0] if equipped else None
-        from .durability import broken,wear_inventory
-        if item is not None and broken(item):raise ValueError('Сломанное оружие нельзя использовать')
+        from .durability import wear_inventory
+        if item is not None and self.item_is_broken(item):raise ValueError('Сломанное оружие нельзя использовать')
         if item is not None and item.template_id==324 and item.unknown_words[0]<9:
             raise ValueError('Недостаточно топлива огнемёта')
         weapon_id=item.template_id if item else (337 if self.resources[a.actor_id]==6 else 300 if self.human[a.actor_id] else self.catalog.npc_defaults.get(self.resources[a.actor_id],333))
@@ -694,7 +773,18 @@ class Combat:
         source=self.catalog.sources[weapon_id]
         if not grenade and source.get('weaponAttack') not in DIRECT_TYPES:
             raise ValueError('Weapon effect is not implemented')
-        if a.action_points<ap_cost:raise ValueError('Insufficient action points')
+        from .implant_battle import extras,state as implant_state,damage_percent
+        from .implants import policy as implant_policy
+        attack_extras=extras(self,a.actor_id)
+        implant_turn=implant_state(self).get(a.actor_id)
+        generation=f._ability_turns[a.actor_id]
+        first_shot=implant_turn is not None and implant_turn['shot']!=generation
+        if first_shot and 2 in attack_extras and self.rng.randrange(100)<implant_policy()['extra']['effects']['2']['chance_percent']:
+            ap_cost=max(1,(ap_cost+1)//2)
+        practice=getattr(f,'practice',None)
+        # Wear and proficiency still use the attack's nominal cost.
+        spent_ap=ap_cost if active_id else f.weapon_ap_cost(ap_cost)
+        if a.action_points<spent_ap:raise ValueError('Insufficient action points')
         distance=combat_distance((a.x,a.y),(request.x,request.y))
         # CFG minRange is the reference distance for damage/accuracy, not a
         # forbidden close-range zone. The original client sends49 below it.
@@ -734,7 +824,6 @@ class Combat:
             victims=[v for v in f._actors.values() if v.actor_id!=a.actor_id and v.health is not None and v.health>0
                      and combat_distance((a.x,a.y),(v.x,v.y))==1
                      and clear_sight((a.x,a.y),(v.x,v.y),f.blocked)]
-        practice=getattr(f,'practice',None)
         consume_id=weapon_id if thrown or _subgrenade else w.ammo_id
         if weapon_id==323:
             from .battle_hazards import rules
@@ -761,7 +850,7 @@ class Combat:
             if i.count>take or (i.template_id==52 and i.count==0):
                 updated.append(replace(i,unknown_u32_01=i.count-take))
         inventory=encode_item_list(a.actor_id,tuple(updated),unknown)
-        states={a.actor_id:replace(a,action_points=a.action_points-ap_cost,
+        states={a.actor_id:replace(a,action_points=a.action_points-spent_ap,
                                   weapons=self.catalog.equipped(inventory,human=self.human[a.actor_id],resource=self.resources[a.actor_id]))}
         hits=[]
         attack_flags=RESULT_NORMAL
@@ -772,6 +861,12 @@ class Combat:
         if skill is not None and w.weapon_type=='Melee':
             from .equipment_bonuses import bonuses
             skill=min(200,skill+bonuses(inventory,self.resources[a.actor_id])['melee'])
+        if skill is not None:
+            from .implants import active,skill_value
+            from .protocol.pet_info import decode_pet_info
+            fields=decode_pet_info(profile,human_equipment=self.human[a.actor_id]).fields
+            percent=active(fields,inventory).get(w.weapon_type,0)
+            if percent:skill=skill_value(skill,percent,fields['0x8c4aef'])
         if skill is not None:skill=min(skill,getattr(self,'ranked_limits',{}).get(a.actor_id,200))
         from .ranked_loadout import extra
         ranked_remainders=dict(getattr(self,'ranked_remainders',{}))
@@ -811,6 +906,7 @@ class Combat:
             landed=landed or hit
             if slash_rule:raw=raw*slash_rule[0]//100
             if bite_rule:raw=bite_rule[0]*(2 if critical else 1) if hit else 0
+            raw=raw*(100+damage_percent(self,a.actor_id,w.weapon_type))//100
             defense=self.defense(victim.actor_id)
             reduced,absorbed=mitigate(raw,defense)
             bonus_damage=extra(self,a.actor_id,1,reduced,ranked_remainders)
@@ -843,8 +939,12 @@ class Combat:
         from .premium import current as premium_current
         premium_kinds={i:premium_current(*self.persistence[i])[0] if i in self.persistence else 0 for i in {a.actor_id,*worn_damage}}
         wear_remainders=dict(self.premium_wear_remainders)
-        changes={a.actor_id:wear_inventory(inventory,weapon=None if item is None or thrown else item.instance_id,weapon_ap=ap_cost,
-            half_wear=premium_kinds[a.actor_id]==3,remainders=wear_remainders)}
+        from .mobs import MOB_RESOURCES
+        # Monster gear is never saved or repaired; wearing it would only break it mid-battle.
+        worn_weapon=None if item is None or thrown or self.resources.get(a.actor_id) in MOB_RESOURCES else item.instance_id
+        changes={a.actor_id:wear_inventory(inventory,weapon=worn_weapon,weapon_ap=ap_cost,
+            half_wear=premium_kinds[a.actor_id]==3,remainders=wear_remainders,weapon_type=w.weapon_type,
+            deferred_breaks=self.deferred_weapon_breaks if practice is not None else None)}
         for identity,damage in worn_damage.items():
             if damage:
                 worn=wear_inventory(changes.get(identity,self.inventories[identity]),armor_damage=damage,
@@ -884,6 +984,8 @@ class Combat:
                                '0x8c57d0':self.weight_capacity(a.actor_id)})
             if not any(i.equipped and i.client_slot==16 for i in updated):
                 fields['0x8c52cf' if self.human[a.actor_id] else '0x8c543f']=0
+            from .avatars import soldier_avatar
+            fields=soldier_avatar(f,a.actor_id,fields)
             skill_template=replace(t,fields=fields)
             state=states[a.actor_id]
             skill_packet=encode_battle_soldier(replace(skill_template,fields={**fields,
@@ -899,6 +1001,9 @@ class Combat:
         if trained is not None:self.proficiencies[a.actor_id]=trained
         self.inventories.update(changes)
         f._actors.update(states)
+        if implant_turn is not None:implant_turn['shot']=generation
+        from .implant_battle import on_hits
+        replies.extend(on_hits(self,a.actor_id,(victim.actor_id for victim,damage in experience_damage if damage>0),effects=attack_extras))
         self.sight_kill_victims=sight_awards
         if death_loot is not None:
             loot.boxes.update(death_loot[0]);loot.ground.update(death_loot[1])

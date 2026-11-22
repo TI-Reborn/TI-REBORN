@@ -24,12 +24,12 @@ class RankedRequeueTests(unittest.TestCase):
         self.assertEqual((ticket.actors, ticket.joined_at), ((2,), first.joined_at))
 
     def test_opponent_after_a_changed_selection_starts_with_the_latest_squad(self):
-        self.case.send(0, join((1,)))
-        self.case.send(0, join((1, 2)))
-        self.case.send(1, join((1,)))
+        self.case.send(0, join((1, 2, 3)))
+        self.case.send(0, join((1, 2, 3, 4)))
+        self.case.send(1, join((1, 2, 3, 4)))
         battle = self.hub.battles[self.owner(0)]
         self.assertIs(battle, self.hub.battles[self.owner(1)])
-        self.assertEqual(len(battle['field'].actor_ids(self.owner(0))), 2)
+        self.assertEqual(len(battle['field'].actor_ids(self.owner(0))), 4)
         self.assertFalse(self.hub.ranked_waiting)
 
     def test_identical_repeat_is_harmless(self):

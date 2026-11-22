@@ -10,15 +10,15 @@ from tio.visibility import field_sight
 
 
 def reference(combat, observer, target, *, field=None):
-    """The previous implementation, kept verbatim as the oracle."""
+    """Trace all rays before applying the current rounded tile distance."""
     if not observer.health: return False
     field = combat.field if field is None else field
     end = (target.x, target.y); start = (observer.x, observer.y)
     if not clear_item_sight(combat, start, end): return False
     state = initialize(combat); distance = (observer.x-target.x)**2 + (observer.y-target.y)**2
-    ordinary = distance <= observer.sight_radius**2
+    ordinary = distance < (observer.sight_radius + .5)**2
     illuminated = (not ordinary and is_dark(combat)
-        and distance <= normal_sight(combat, observer.actor_id)**2
+        and distance < (normal_sight(combat, observer.actor_id) + .5)**2
         and any(a['kind'] == 'flare' and (target.x-a['center'][0])**2 + (target.y-a['center'][1])**2 <= a['radius']**2
                 for a in state['areas'].values()))
     if (ordinary or illuminated) and field_sight(field, start, end): return True

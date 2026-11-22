@@ -88,6 +88,13 @@ def project_saved_roster(db,account,rows):
 
 
 def project_passives(packet,human,learned,catalog,*,inventory=None):
+    from .implants import project_stats
+    projected = _project_passives(packet,human,learned,catalog,inventory=inventory)
+    health_bonus=max((r.number('value') or 0 for r in catalog.records if r.ability_id==1),default=0)
+    return project_stats(projected,human,inventory,health_bonus=health_bonus)
+
+
+def _project_passives(packet,human,learned,catalog,*,inventory=None):
     from .weight import project_base_weight
     packet=project_base_weight(packet,human,inventory)
     packet=project_health(packet,human,learned,catalog)

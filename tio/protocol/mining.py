@@ -39,3 +39,16 @@ def battle_state(enabled):
 def can_quit(enabled):
     # Native 95E3A0 reads one byte (==1) and updates the CanQuit UI flag.
     return bytes((0xb2,0x16,int(bool(enabled))))
+
+
+def rating(role: int, rows: tuple[tuple[int, bytes, int, int], ...]) -> bytes:
+    # 834DC8 reads identity, CString name, earned crystals, then ranking place.
+    if role not in (1, 2, 3) or len(rows) > 100:
+        raise PacketError('Invalid mining rating page')
+    w = Writer().u8(0xb0).u8(0x29).u8(role).u16(len(rows))
+    for identity, name, amount, place in rows:
+        if not isinstance(name, bytes) or not 1 <= len(name) <= 255 or b'\0' in name:
+            raise PacketError('Invalid mining rating name')
+        w.u32(identity).data.extend(name+b'\0')
+        w.u32(amount).u16(place)
+    return w.build()

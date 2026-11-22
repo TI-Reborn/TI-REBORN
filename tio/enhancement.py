@@ -1,4 +1,4 @@
-"""Atomic ordinary Upgrade Kit attempts. Research: ENHANCEMENT.md."""
+"""Atomic Upgrade Kit attempts. Research: ENHANCEMENT.md."""
 
 from .db_transaction import connect, transaction
 from contextlib import closing
@@ -12,11 +12,14 @@ import xml.etree.ElementTree as ET
 from .owned_pets import OwnedPetStore
 from .protocol.item_list import ItemRecord, decode_item_list, encode_item_list
 from .protocol.enhancement import decode_enhancement_request, encode_enhancement_result
-from .item_catalog import items_root
 from .protocol.inventory_update import encode_inventory_item_update
+from .item_catalog import items_root
+from .warehouse import WarehouseStore
 from .warehouse_completion import current_town, exists, persist_scope, read_scope
 
 ROOT = Path(__file__).resolve().parents[1]
+LE_KIT = 129  # Native selection maps upgkit template 129 to LE mode.
+LE_EXCLUDED = frozenset((314, 315, 316))
 
 
 class EnhancementRules:
@@ -24,12 +27,13 @@ class EnhancementRules:
         self.config = json.loads(Path(path or ROOT/'config/enhancement.json').read_text())
         c = self.config
         for key in ('max_level', 'safe_levels', 'armor_success_percent', 'weapon_success_percent',
-                    'durability_per_level', 'kit_template_id'):
+                    'durability_per_level', 'kit_template_id', 'le_success_percent'):
             if type(c[key]) is not int:
                 raise ValueError('Invalid enhancement policy')
         if not (0 <= c['safe_levels'] <= c['max_level'] == 25 and
                 0 <= c['armor_success_percent'] <= 100 and 0 <= c['weapon_success_percent'] <= 100 and
-                0 < c['durability_per_level'] <= 1000 and c['kit_template_id'] == 30):
+                0 < c['durability_per_level'] <= 1000 and c['kit_template_id'] == 30
+                and 0 < c['le_success_percent'] < min(c['armor_success_percent'], c['weapon_success_percent'])):
             raise ValueError('Invalid enhancement policy')
         from .weapons import WeaponCatalog
         weapons = WeaponCatalog()
@@ -50,8 +54,10 @@ class EnhancementRules:
             self.items[identity] = dict(kind='armor' if armor else 'weapon',
                                        special=values.get('special') == '1', durability=durability)
 
-    def chance(self, level, kind):
-        return 100 if level < self.config['safe_levels'] else self.config[kind+'_success_percent']
+    def chance(self, level, kind, *, limited=False):
+        if level < self.config['safe_levels']:
+            return 100
+        return self.config['le_success_percent' if limited else kind+'_success_percent']
 
     def bonus(self, level, *, armor=False):
         safe = min(level, self.config['safe_levels'])
@@ -67,9 +73,11 @@ class EnhancementResult:
     replies: tuple[bytes, ...]
 
 
-def _usable_kit(item: ItemRecord, template: int) -> bool:
-    return (item.template_id == template and item.count >= 1 and not item.equipped
-            and not any(item.unknown_bytes_03) and not any(item.unknown_bytes_02[2:])
+def _usable_kit(item: ItemRecord, template: int, *, implant: bool) -> bool:
+    return (item.template_id == template and item.count >= 1
+            and not item.equipped and (not implant or item.count == 1)
+            and not any(item.unknown_bytes_03)
+            and not any(item.unknown_bytes_02[2:])
             and item.optional_u32 is None)
 
 
@@ -101,19 +109,22 @@ class EnhancementStore:
             if request.instance_id not in located:
                 raise ValueError('Owned enhancement item missing')
             owner, item = located[request.instance_id]
+            from .implants import catalog, policy
+            implant = item.template_id in catalog()
             rule = self.rules.items.get(item.template_id)
-            kit_template = self.rules.config['kit_template_id']
+            kit_template = policy()['upgrade']['template'] if implant else self.rules.config['kit_template_id']
             stock = {}
             if request.kit_id is None:
                 # Like quick repair, the RMB menu prefers personal stock when available.
-                if exists(db, 'warehouse_items') and current_town(db, account, required=False) is not None:
+                if not implant and exists(db, 'warehouse_items') and current_town(db, account, required=False) is not None:
                     stock = read_scope(db, account, required=True)
                     if located.keys() & stock.keys():
                         raise ValueError('Ambiguous item ID')
-                selected = next(((None, kit) for kit in stock.values() if _usable_kit(kit, kit_template)), None)
+                selected = next(((None, kit) for kit in stock.values()
+                                 if _usable_kit(kit, kit_template, implant=False)), None)
                 if selected is None:
                     selected = next((entry for _, entry in sorted(located.items())
-                                     if _usable_kit(entry[1], kit_template)), None)
+                                     if _usable_kit(entry[1], kit_template, implant=implant)), None)
                 if selected is None:
                     raise ValueError('Upgrade Kit required')
             else:
@@ -121,26 +132,36 @@ class EnhancementStore:
                 if selected is None:
                     raise ValueError('Owned enhancement item missing')
             kit_owner, kit = selected
-            if (rule is None or item.count != 1 or item.instance_id == kit.instance_id or
-                    not _usable_kit(kit, kit_template)):
+            limited = not implant and kit.template_id == LE_KIT
+            if limited and item.template_id in LE_EXCLUDED:
+                raise ValueError('Target incompatible with LE Upgrade Kit')
+            if ((rule is None and not implant) or item.count != 1 or item.instance_id == kit.instance_id or
+                    not _usable_kit(kit, LE_KIT if limited else kit_template, implant=implant)):
                 raise ValueError('Unsupported enhancement item')
             # Marked/rented and other upgrade systems require their own rules.
-            if any(item.unknown_bytes_02[2:]) or item.optional_u32 is not None or item.unknown_bytes_03[1]:
+            if (any(item.unknown_bytes_02[2:]) or item.optional_u32 is not None or
+                    item.unknown_bytes_03[1]):
                 raise ValueError('Unsupported enhancement item')
             level = item.unknown_bytes_03[0]
             if level >= self.rules.config['max_level']:
                 raise ValueError('Maximum enhancement reached')
-            chance = self.rules.chance(level, rule['kind'])
-            roll = None if chance == 100 else self.randbelow(100)
+            replacement = None
+            if implant:
+                from .implant_maintenance import upgrade
+                replacement, chance = upgrade(item, self.randbelow)
+            else:
+                chance = self.rules.chance(level, rule['kind'], limited=limited)
+            roll = None if implant or chance == 100 else self.randbelow(100)
             if roll is not None and (type(roll) is not int or not 0 <= roll < 100):
                 raise ValueError('Invalid enhancement random result')
-            success = roll is None or roll < chance
+            success = replacement is not None if implant else roll is None or roll < chance
             from .durability import special as is_special
-            special = is_special(item)
-            outcome = 'success' if success else 'reset' if special else 'destroyed'
-            new_level = level + 1 if success else 0
-            replacement = None
-            if outcome != 'destroyed':
+            special = not implant and is_special(item)
+            outcome = 'success' if success else 'preserved' if limited else 'reset' if special else 'destroyed'
+            new_level = level + 1 if success else level if limited else 0
+            if outcome == 'preserved':
+                replacement = item
+            elif not implant and outcome != 'destroyed':
                 # Manual p56: upgrade restores the theoretical maximum, not
                 # the maximum previously reduced by repairs (Tank 50/100->565).
                 durability = (rule['durability'] + new_level*self.rules.config['durability_per_level']
@@ -172,6 +193,15 @@ class EnhancementStore:
                 db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=?',
                            (inventory, account, changed_owner))
                 replies.append(inventory)
+                if implant and changed_owner == owner:
+                    from .implant_equipment import _save
+                    human, raw = db.execute('SELECT human,pet_packet FROM owned_pets WHERE account=? AND pet_id=?',
+                                            (account, owner)).fetchone()
+                    _save(db, account, owner, bool(human), raw, inventory)
+                    from .passive_stats import project_saved_pet
+                    raw = db.execute('SELECT pet_packet FROM owned_pets WHERE account=? AND pet_id=?',
+                                     (account, owner)).fetchone()[0]
+                    replies.append(project_saved_pet(db, account, owner, raw, bool(human)))
             if kit_owner is None:
                 from .protocol.asset_count import encode_asset_count
                 from .protocol.warehouse import encode_private_warehouse_snapshot

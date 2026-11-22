@@ -1,8 +1,4 @@
-"""Original95965c ->659094 C8/40; not a mine-device entitlement.
-
-This codec deliberately does not add a live route: the public catalog lacks
-MineFinder/MineDefuser definitions and their selection/search ABI is unproven.
-"""
+"""Original 95965c -> 659094 C8/40, with no selected device instance on the wire."""
 from dataclasses import dataclass
 from .binary import Reader, Writer, PacketError
 

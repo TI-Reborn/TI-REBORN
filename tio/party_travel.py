@@ -1,6 +1,7 @@
 """One durable route for a consenting party; coordinates never come from peers."""
 from contextlib import closing
 import secrets
+import sqlite3
 import struct
 import time
 
@@ -122,20 +123,24 @@ class PartyLocations:
     _position = staticmethod(LocationStore._position)
     _save = staticmethod(LocationStore._save)
 
-    def current(self, owner):
+    def current(self, owner, *, connection: sqlite3.Connection | None = None):
+        if connection is not None:
+            party = self.travel_service.parties.info(owner, connection=connection)
+            return None if party and party['state'] != 'city' else self.base.current(owner, connection=connection)
         with closing(connect(self.path)) as db, db:
             db.execute('BEGIN')
-            party = self.travel_service.parties.info(owner,connection=db)
-            return None if party and party['state'] != 'city' else self.base.current(owner,connection=db)
+            return self.current(owner, connection=db)
 
     def position(self, owner):
         return tuple(round(v) for v in self.travel_service.point(owner)[0])
 
-    def travelling(self, owner):
+    def travelling(self, owner, *, connection: sqlite3.Connection | None = None):
+        if connection is not None:
+            party = self.travel_service.parties.info(owner, connection=connection)
+            return bool(self.travel_service.route(party['id'], connection=connection)) if party else self.base.travelling(owner, connection=connection)
         with closing(connect(self.path)) as db, db:
             db.execute('BEGIN')
-            party = self.travel_service.parties.info(owner,connection=db)
-            return bool(self.travel_service.route(party['id'],connection=db)) if party else self.base.travelling(owner,connection=db)
+            return self.travelling(owner, connection=db)
 
     def _view(self, owner):
         """One read snapshot for a single response; never retained between calls."""

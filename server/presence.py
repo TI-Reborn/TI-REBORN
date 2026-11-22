@@ -16,7 +16,22 @@ class Presence:
     def __init__(self):
         self.lock=threading.RLock()
         self.players={};self.queues={};self.messages={};self.rate={};self.next_id=0x20000000
+        self.private_messages: dict[object, deque[bytes]] = {}
         self.online_clock={}
+        self.towns={}
+
+    def project_town(self, packet: bytes) -> bytes:
+        """Keep public town metadata and project connected character counts."""
+        if packet[:2] != b'\xc8\x2d' or len(packet) < 6:
+            return packet
+        town = int.from_bytes(packet[2:4], 'little')
+        from tio.locations import TOWNS
+        if town not in TOWNS:
+            return packet  # Private contract markers belong only to their party.
+        with self.lock:
+            self.towns[town] = packet
+            count = sum(location == town for location, _ in self.players.values())
+            return packet[:4] + min(count, 65535).to_bytes(2, 'little') + packet[6:]
 
     def sync(self,session):
         now=time.monotonic()
@@ -24,6 +39,13 @@ class Presence:
         session.presence_next_sync=now+.5
         from .world_runtime import heartbeat
         prison_replies=heartbeat(session)
+        moderation_reply = None
+        if login := getattr(session, 'authenticated_account', None):
+            from .player_admin import role
+            from tio.protocol.system_message import encode_moderation_role
+            enabled = role(session.database, login)
+            if enabled != getattr(session, 'moderation_role', False):
+                moderation_reply = encode_moderation_role(enabled)
         from .avatar_service import sync as sync_avatars
         sync_avatars(self,session)
         town=session.locations.current(session.account) if session.locations else 3
@@ -50,7 +72,12 @@ class Presence:
         from .friends_service import sync as sync_friends
         with self.lock:sync_friends(self,session)
         with self.lock:
-            if session in self.messages:self.messages[session].extend(prison_replies[:max(0,128-len(self.messages[session]))])
+            if session in self.messages:
+                queue = self.messages[session]
+                if moderation_reply is not None and len(queue) < 128:
+                    queue.append(moderation_reply)
+                    session.moderation_role = enabled
+                queue.extend(prison_replies[:max(0,128-len(queue))])
         if session.database is not None and getattr(session,'owned_pet_probe',False):
             from .clan_service import sync as sync_clan
             from tio.clans import ClanRejected
@@ -74,7 +101,8 @@ class Presence:
             if town is not None and location==town:local.append(p)
         # Clear is also the native completion of the loading user-list spinner.
         # 4F fans out to Location (0), Trade (6), Help (8) in the original DLL.
-        return (encode_clear(),encode_players(records),encode_location_clear(),encode_location_players(local))
+        return (encode_clear(),encode_players(records),encode_location_clear(),encode_location_players(local),
+                *(self.project_town(p) for p in self.towns.values()))
 
     def refresh(self):
         # Global changes reach every town. Coalesce complete snapshots, preserving
@@ -99,7 +127,7 @@ class Presence:
         if packet[:1] in (b'\x82',b'\x59') or packet[:2] in (b'\xaf\x0e',b'\xaf\x06'):
             from .clan_service import handle as clan_handle
             return clan_handle(self,session,packet)
-        if packet[:1]==b'\x68':
+        if packet[:1]==b'\x68' or packet[:2] in (b'\x51\0', b'\xab\1'):
             self.profile(session,packet)
             return True
         if packet[:1]==b'\x21':
@@ -112,21 +140,58 @@ class Presence:
         return True
 
     def profile(self,session,packet):
-        from .public_profile import read_profile
-        from tio.protocol.public_profile import decode_request,encode_profile
+        from .public_profile import prisoner_card
+        from tio.protocol.public_profile import decode_edit_request, decode_jail_request, decode_view_request
         from tio.protocol.system_message import encode_shop_error
+        with self.lock:
+            if session not in self.players:return
         try:
             now=time.monotonic()
-            if now<getattr(session,'profile_next_request',0):return
-            session.profile_next_request=now+.5
-            name=decode_request(packet)
-            profile=read_profile(session.database,name=name)
-            if profile is None:raise ValueError('Персонаж не найден')
-            with self.lock:
-                target=next((s for s,(_,p) in self.players.items() if p.name.lower()==name.lower()),None)
-                entry=self.players[target][1] if target else None
-                live=time.monotonic()-self.online_clock.get(target,time.monotonic()) if target else 0
-            reply=encode_profile(entry.identity if entry else 0,profile.name,profile.level,profile.summary,
+            if packet[0] == 0x51:
+                from tio.player_profile_text import save
+                texts = decode_edit_request(packet)
+                if now < getattr(session, 'profile_next_edit', 0):
+                    raise ValueError('Подождите перед следующим сохранением карточки')
+                session.profile_next_edit = now + .5
+                save(session.database, session.account, session.probe_character_name, texts)
+                if deadlines := getattr(session, 'profile_query_deadlines', None):
+                    deadlines.pop(0, None)
+                return
+            kind, name = (3, decode_jail_request(packet)) if packet[0] == 0xab else decode_view_request(packet)
+            deadlines = getattr(session, 'profile_query_deadlines', None)
+            if deadlines is None:
+                session.profile_query_deadlines = deadlines = {}
+            if now < deadlines.get(kind, 0):return
+            deadlines[kind] = now + .5
+            if kind == 0:
+                replies = self._character_profile(session, name)
+            elif kind == 3:
+                replies = (prisoner_card(session.database, name),)
+            else:
+                from .public_clan_profile import clan_card
+                with self.lock:
+                    online = {s.account for s in self.players}
+                replies = (clan_card(session.database, name, online, view_alliance=kind == 2),)
+        except ValueError as exc:
+            replies = (encode_shop_error(str(exc)),)
+        with self.lock:
+            queue = self.messages.get(session)
+            if queue is not None and len(queue) + len(replies) <= 128:
+                queue.extend(replies)
+
+    def _character_profile(self, session, name: bytes) -> tuple[bytes, bytes]:
+        from .public_profile import read_profile
+        from tio.locations import TOWNS
+        from tio.protocol.public_profile import encode_profile, encode_tournament_statistics
+
+        profile=read_profile(session.database,name=name)
+        if profile is None:raise ValueError('Персонаж не найден')
+        with self.lock:
+            target=next((s for s,(_,p) in self.players.items() if p.name.lower()==name.lower()),None)
+            town, entry = self.players[target] if target else (None, None)
+            now = time.monotonic()
+            live = now - self.online_clock.get(target, now)
+        packet = encode_profile(entry.identity if entry else 0,profile.name,profile.level,profile.summary,
                                  rating=profile.rating,wins=profile.wins,losses=profile.losses,
                                  kills=profile.kills,deaths=profile.deaths,damage_dealt=profile.damage_dealt,
                                  damage_received=profile.damage_received,squad_rank=profile.squad_rank,
@@ -135,11 +200,11 @@ class Presence:
                                  clan_name=profile.clan_name,clan_crest_id=profile.clan_crest_id,
                                  alliance_name=profile.alliance_name,alliance_crest_id=profile.alliance_crest_id,
                                  online_hours=int((profile.online_seconds+live)//3600),
+                                 avatar_id=profile.avatar_id,town=town if town in TOWNS and 0 < town < 256 else 0,
+                                 website=profile.website,contact=profile.contact,jailed=profile.jailed,
+                                 assault_place=profile.assault_place,assault_bonus=profile.assault_bonus,
                                  online=entry is not None,in_battle=bool(entry and entry.status==1))
-        except ValueError as exc:
-            reply=encode_shop_error(str(exc))
-        with self.lock:
-            if session in self.messages and len(self.messages[session])<128:self.messages[session].append(reply)
+        return packet, encode_tournament_statistics(profile.tournament_places)
 
     def chat(self,session,packet):
         from tio.protocol.chat import decode_send,encode_message
@@ -148,6 +213,12 @@ class Presence:
         # running battle. No unsupported selector is sent to the old client.
         try:
             channel,text,_=decode_send(packet)
+            command, *arguments = text.strip().split(maxsplit=1)
+            from .player_admin import COMMANDS, require_chat
+            action = command.casefold()
+            if action in COMMANDS:
+                self.admin_chat(session, channel, action, arguments[0] if arguments else '')
+                return
             from .economy_runtime import private_command
             if private_command(packet):raise ValueError("Для операций банка и рынка вернитесь в город")
             contracts = getattr(getattr(session, 'router', None), 'contracts', None)
@@ -165,6 +236,8 @@ class Presence:
                     if session in self.messages:
                         self.messages[session].extend(replies[:max(0,128-len(self.messages[session]))])
                 return
+            if login := getattr(session, 'authenticated_account', None):
+                require_chat(session.database, login)
         except ValueError as exc:
             with self.lock:
                 if session in self.messages and len(self.messages[session])<128:
@@ -206,10 +279,7 @@ class Presence:
                 if channel==2 and not clan_targets:raise ValueError('Вы не состоите в клане')
                 if channel==7 and not clan_targets:raise ValueError('Вы не состоите в действующем альянсе')
                 if text.startswith('/'):raise ValueError('Команды чата пока не поддерживаются')
-                now=time.monotonic();recent=self.rate.setdefault(session,deque())
-                while recent and recent[0]<now-5:recent.popleft()
-                if len(recent)>=5:raise ValueError('Подождите перед следующим сообщением')
-                recent.append(now)
+                self.check_chat_rate(session)
                 town,player=self.players[session]
                 if channel==1:
                     targets=[s for s,(_,p) in self.players.items() if p.name.lower()==recipient.lower()]
@@ -227,15 +297,57 @@ class Presence:
                     # Echoing the server copy duplicates it in every shared
                     # channel (private chat has always followed this rule).
                     if target is session:continue
-                    if len(self.messages[target])<128:
-                        self.messages[target].append(reply);delivered+=1
+                    queue = (self.private_messages.setdefault(target, deque())
+                             if channel == 1 else self.messages[target])
+                    if len(queue) < 128:
+                        queue.append(reply)
+                        delivered += 1
+                    elif channel == 1:
+                        raise ValueError('Очередь личных сообщений получателя заполнена')
                 LOG.info('chat_message account=%s channel=%d recipients=%d',session.account,channel,delivered)
             except ValueError as exc:
                 if len(self.messages[session])<128:self.messages[session].append(encode_shop_error(str(exc)))
 
+    def check_chat_rate(self, session: object) -> None:
+        now = time.monotonic()
+        recent = self.rate.setdefault(session, deque())
+        while recent and recent[0] < now - 5:
+            recent.popleft()
+        if len(recent) >= 5:
+            raise ValueError('Подождите перед следующим сообщением')
+        recent.append(now)
+
+    def admin_chat(self, session, channel: int, action: str, arguments: str) -> None:
+        from contextlib import nullcontext
+        from .player_admin import moderate
+        from tio.locations import TOWNS
+        from tio.protocol.chat import encode_system_message
+
+        with self.lock:
+            entry = self.players.get(session)
+            if entry is None:
+                return
+            self.check_chat_rate(session)
+        router = getattr(session, 'router', None)
+        arena = getattr(router, 'team_arena', None)
+        if channel != 0 or entry[0] not in TOWNS or arena and arena.in_battle(session, include_results=True):
+            raise ValueError('Команда доступна в местном чате города вне боя.')
+        with arena.lock if arena else nullcontext():
+            reply, banned = moderate(session.database, getattr(session, 'authenticated_account', None), action, arguments)
+            if banned and router is not None:
+                router.disconnect_banned(banned)
+        with self.lock:
+            if session in self.messages and len(self.messages[session]) < 128:
+                # Native channel 9 shows the notice independently of the selected tab.
+                self.messages[session].append(encode_system_message(9, b'Moderation', reply))
+
     def drain(self,session,connection,cipher):
+        # Battle state can take TeamArena.lock. Read it before taking Presence.lock.
+        private_ready = session.private_chat_delivery_ready()
         with self.lock:
             packets=tuple(self.queues.get(session,()))+tuple(self.messages.get(session,()))
+            if private_ready:
+                packets += tuple(self.private_messages.pop(session, ()))
             if session in self.queues:self.queues[session].clear()
             if session in self.messages:self.messages[session].clear()
         from .warehouse_capacity import frames as capacity_frames
@@ -255,6 +367,7 @@ class Presence:
             disconnect_friends(self,session)
             old=self.players.pop(session,None);self.queues.pop(session,None)
             self.messages.pop(session,None);self.rate.pop(session,None)
+            self.private_messages.pop(session, None)
             if old:
                 self.refresh()
                 LOG.info('presence_leave account=%s town=%s',session.account,old[0])

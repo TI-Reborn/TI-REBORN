@@ -11,7 +11,6 @@ import sqlite3
 import struct
 import unittest
 from unittest.mock import patch
-from battle_exit_fixture import place_squad_at_edge
 
 import test_shared_team_arena as fixtures
 from server.battle_journal import BattleJournal
@@ -141,6 +140,14 @@ class SharedMineArenaTests(unittest.TestCase):
         with self.hub.journal.unit(battle):
             field._actors[identity]=replace(field.actor(identity),x=x,y=y)
         return identity
+
+    def extract_at_map_exit(self, battle, index):
+        owner = self.owners[index]
+        with self.hub.journal.unit(battle):
+            self.hub.battle_action(owner, b'\x2a\x01')
+        replies = tuple(self.hub.queues[owner])
+        self.hub.queues[owner].clear()
+        return replies
 
     def assert_scene_actor_bootstrap(self,battle,index,packets):
         """A native scene must register live models before its ready marker."""
@@ -283,7 +290,7 @@ class SharedMineArenaTests(unittest.TestCase):
         with self.hub.journal.unit(battle):self.park_mutants(battle)
         self.assertEqual(mine.round,0);deadline=mine.lift_blocked_until
         self.assertEqual(deadline,5)
-        self.assertIn(b'\xb2\x16\0',self.loaded_packets[0])
+        self.assertFalse(self.hub.mine_can_quit(battle,self.owners[0]))
         for index in (0,1,2):self.send(index,bytes((0xb0,0x14,index+1)))
         self.assertEqual((mine.round,mine.lift_blocked_until),(0,deadline))
         self.carry_at_exit(battle,0,100)
@@ -291,8 +298,8 @@ class SharedMineArenaTests(unittest.TestCase):
         self.assertIs(self.hub.battles[self.owners[0]],battle)
         self.advance_round(battle,deadline)
         self.assertEqual(battle['field'].mining.round,deadline)
-        self.assertIn(b'\xb2\x16\1',self.hub.queues[self.owners[0]])
-        self.send(0,b'\x2a\1')
+        self.assertTrue(self.hub.mine_can_quit(battle,self.owners[0]))
+        self.extract_at_map_exit(battle,0)
         self.assertIn(self.owners[0],self.hub.results)
         self.assertTrue(battle['finished'])
         self.assertTrue(set(self.owners[:3])<=self.hub.results)
@@ -302,7 +309,7 @@ class SharedMineArenaTests(unittest.TestCase):
         with self.hub.journal.unit(battle):self.park_mutants(battle)
         self.advance_round(battle,mine.lift_blocked_until)
         identity=self.carry_at_exit(battle,0,101)
-        result=self.send(0,b'\x2a\1')
+        result=self.extract_at_map_exit(battle,0)
         self.assertTrue(any(p[:1]==b'\x4c' for p in result))
         self.assertNotIn(identity,battle['field']._actors)
         self.assertEqual((CrystalMarket(self.path).balance('alice'),CrystalMarket(self.path).balance('carol')),(50,41))
@@ -361,8 +368,9 @@ class SharedMineArenaTests(unittest.TestCase):
     def test_raider_extraction_finishes_shared_mission_without_escort_payments(self):
         battle=self.enter();field=battle['field']
         with self.hub.journal.unit(battle):self.park_mutants(battle)
+        self.advance_round(battle,5)
         self.carry_at_exit(battle,1,101)
-        self.send(1,b'\x2a\1')
+        self.extract_at_map_exit(battle,1)
         self.assertEqual(CrystalMarket(self.path).balance('bob'),101)
         self.assertTrue(battle['finished'])
         self.assertNotIn(self.owners[0],self.hub.battles)
@@ -371,30 +379,33 @@ class SharedMineArenaTests(unittest.TestCase):
         with closing(sqlite3.connect(self.path)) as db:
             self.assertEqual(db.execute('SELECT gross,tax FROM mine_crystal_extractions ORDER BY extractor').fetchall(),[(0,0),(101,0),(0,0)])
 
-    def test_interior_escape_rejected_then_edge_departure_grants_no_extraction(self):
+    def test_interior_exit_with_carried_crystals_is_rejected(self):
         battle=self.enter();field=battle['field'];identity=field.actor_ids(self.owners[1])[0]
         mine=field.mining;position=next(p for p in mine.deposits if p not in mine.layout.raider_exits)
         with self.hub.journal.unit(battle):
             field._actors[identity]=replace(field.actor(identity),x=position[0],y=position[1])
             drill=next(iter(field.loot.boxes.values()))[0]
             field.combat.inventories[identity]=encode_item_list(identity,(replace(drill,unknown_u32_01=100),))
-        self.send(1,b'\x2a\1')
-        self.assertIn(self.owners[1], self.hub.battles)
-        place_squad_at_edge(field, self.owners[1])
-        self.send(1,b'\x2a\1')
+        replies=self.send(1,b'\x2a\1')
+        self.assertTrue(any(p[:2]==b'\xf0\x8a' for p in replies))
         self.assertEqual(CrystalMarket(self.path).balance('bob'),0)
         self.assertNotIn(self.owners[1],self.hub.results)
+        self.assertIs(self.hub.battles[self.owners[1]],battle)
         self.assertIs(self.hub.battles[self.owners[0]],battle)
         with closing(sqlite3.connect(self.path)) as db:
-            self.assertEqual(db.execute('SELECT gross,tax FROM mine_crystal_extractions WHERE extractor=?',('bob',)).fetchone(),(0,0))
+            self.assertIsNone(db.execute('SELECT gross,tax FROM mine_crystal_extractions WHERE extractor=?',('bob',)).fetchone())
 
-    def test_no_drill_departure_is_not_a_victory_for_miner_raider_or_unproductive_escort(self):
+    def test_menu_requires_drill_and_empty_drill_loses_for_each_role(self):
         battle=self.enter()
         with self.hub.journal.unit(battle):self.park_mutants(battle)
         self.advance_round(battle,5)
         for index in (1,0,2):
             self.move_to_exit(battle,index)
-            result=self.send(index,b'\x2a\1')
+            rejected=self.send(index,b'\x2a\x01')
+            self.assertTrue(any(p[0]==0xf0 for p in rejected))
+            self.assertNotIn(self.owners[index],self.hub.results)
+            self.carry_at_exit(battle,index,0)
+            result=self.extract_at_map_exit(battle,index)
             summary=next(p for p in result if p[0]==0x4c)
             self.assertEqual(summary[3],0)
             self.assertEqual(CrystalMarket(self.path).balance(self.case.sessions[index].account),0)
@@ -405,7 +416,7 @@ class SharedMineArenaTests(unittest.TestCase):
         battle=self.enter()
         with self.hub.journal.unit(battle):self.park_mutants(battle)
         self.advance_round(battle,5)
-        self.carry_at_exit(battle,0,101);self.send(0,b'\x2a\1')
+        self.carry_at_exit(battle,0,101);self.extract_at_map_exit(battle,0)
         self.send(0,b'\x2a\1') # Ordinary result acknowledgement and city return.
         self.assertNotIn(self.owners[0],self.hub.battles)
         self.assertNotIn(self.owners[0],self.hub.completed)
@@ -419,7 +430,7 @@ class SharedMineArenaTests(unittest.TestCase):
         battle=self.enter()
         with self.hub.journal.unit(battle):self.park_mutants(battle)
         self.advance_round(battle,5)
-        self.carry_at_exit(battle,0,101);self.send(0,b'\x2a\1')
+        self.carry_at_exit(battle,0,101);self.extract_at_map_exit(battle,0)
         result=tuple(self.hub.queues[self.owners[2]])
         self.assertEqual(next(p for p in result if p[0]==0x4c)[3],1)
         with closing(sqlite3.connect(self.path)) as db:
@@ -471,7 +482,7 @@ class SharedMineArenaTests(unittest.TestCase):
             inventories=[decode_item_list(p)[0] for p in self.hub.queues[self.owners[index]] if p[0]==0x30]
             self.assertTrue(all(i in field.actor_ids(self.owners[index]) for i in inventories))
         self.advance_round(battle,5);self.carry_at_exit(battle,0,101)
-        replies=self.send(0,b'\x2a\1');summary=next(p for p in replies if p[0]==0x4c)
+        replies=self.extract_at_map_exit(battle,0);summary=next(p for p in replies if p[0]==0x4c)
         self.assertEqual(summary[28],1)
         self.assertEqual(struct.unpack_from('<II',summary,29),(ids[0],gain))
         updates=[p for p in replies if p[0]==0x4e and int.from_bytes(p[1:5],'little')==ids[0]
@@ -523,11 +534,11 @@ class SharedMineArenaTests(unittest.TestCase):
         before=self.rows();queues=self.queues();settle=CrystalMarket.settle_mine
         def fail(*args,**kw):settle(*args,**kw);raise RuntimeError('Injected after crystal/tax writes')
         with patch.object(CrystalMarket,'settle_mine',side_effect=fail),self.assertRaises(BattleSettlementError):
-            self.hub.battle_action(self.owners[0],b'\x2a\1')
+            self.extract_at_map_exit(battle,0)
         self.assertEqual(self.rows(),before);self.assertEqual(self.queues(),queues)
         self.assertNotIn(self.owners[0],battle['field'].mining.exited)
         self.assertIs(self.hub.battles[self.owners[0]],battle)
-        self.send(0,b'\x2a\1');paid=self.economic_rows()
+        self.extract_at_map_exit(battle,0);paid=self.economic_rows()
         self.send(0,b'\x36')
         self.assertEqual(self.economic_rows(),paid)
         self.assertEqual((CrystalMarket(self.path).balance('alice'),CrystalMarket(self.path).balance('carol')),(50,41))
@@ -564,8 +575,9 @@ class SharedMineArenaTests(unittest.TestCase):
             self.assertIs(self.hub.battles[self.owners[index]],battle)
             self.send(index,b'\x36')
         self.hub.tick();self.park_mutants(battle)
+        self.advance_round(battle,5)
         self.carry_at_exit(battle,1,101)
-        self.send(1,b'\x2a\1')
+        self.extract_at_map_exit(battle,1)
         self.assertTrue(battle['finished'])
         self.assertEqual(set(self.hub.completed),set(self.owners))
         self.assertEqual((CrystalMarket(self.path).balance('bob'),CrystalMarket(self.path).balance('dave')),(50,51))
@@ -646,6 +658,5 @@ class SharedMineArenaTests(unittest.TestCase):
         self.assertIn(self.owners[0],clone.returning)
         clone.queues[self.owners[0]].clear()
         self.assertEqual(skills(clone,0,miner),[(miner,(AbilityEntry(22,1,0,1),))])
-
 
 if __name__=='__main__':unittest.main()

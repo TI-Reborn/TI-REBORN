@@ -1,6 +1,7 @@
 """Shared city economy, offline timers and private inventory refreshes."""
 from contextlib import closing
 import hashlib
+import sqlite3
 import time
 
 from tio.db_transaction import connect,transaction,current
@@ -24,15 +25,35 @@ def private_command(packet):
 
 
 def city_idle(session):
+    locations=getattr(session,'locations',None)
+    return bool(getattr(session,'probe_character_id',None) is not None and locations
+        and city_location_idle(locations, session.account) and city_session_idle(session))
+
+
+def city_location_idle(locations, account: str, *, connection: sqlite3.Connection | None = None) -> bool:
+    if connection is None:
+        return locations.current(account) is not None and not locations.travelling(account)
+    return (locations.current(account, connection=connection) is not None
+            and not locations.travelling(account, connection=connection))
+
+
+def city_session_idle(session, *, include_assault: bool = True) -> bool:
     router=getattr(session,'router',None);hub=getattr(router,'team_arena',None)
     character=getattr(session,'probe_character_id',None)
-    locations=getattr(session,'locations',None)
-    return bool(character is not None and locations and locations.current(session.account) is not None
-        and not locations.travelling(session.account)
-        and not (hub and (hub.busy(session) or hub.retained(session.account)))
+    return bool(character is not None
+        and not (hub and ((hub.busy(session) if include_assault else hub.busy(session, include_assault=False))
+                          or hub.retained(session.account)))
         and not session.arena._fields
         and not any(character in room.members for room in session.arena.rooms.snapshot())
         and not session.survival.searching(character))
+
+
+def retained_accounts(db: sqlite3.Connection) -> set[str]:
+    accounts = set()
+    for table in ('battle_checkpoint_members', 'battle_settlement_jobs'):
+        if db.execute('SELECT 1 FROM sqlite_master WHERE name=?', (table,)).fetchone():
+            accounts.update(row[0] for row in db.execute('SELECT account FROM ' + table))
+    return accounts
 
 
 def busy_accounts(router,db=None):
@@ -41,9 +62,7 @@ def busy_accounts(router,db=None):
     busy.update(account for account in hub.account_owners if hub.retained(account))
     # Retained journals include results/recovery and process-crash leases.
     if db is not None:
-        for table in ('battle_checkpoint_members','battle_settlement_jobs'):
-            if db.execute('SELECT 1 FROM sqlite_master WHERE name=?',(table,)).fetchone():
-                busy.update(r[0] for r in db.execute('SELECT account FROM '+table))
+        busy.update(retained_accounts(db))
     with router.lock:sessions=tuple(router.active_accounts.values())
     for session in sessions:
         if getattr(session,'account',None) and getattr(session,'probe_character_id',None) is not None and not city_idle(session):

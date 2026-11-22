@@ -43,8 +43,17 @@ def action(arena, owner, packet, *, view=None):
         return (*restores, encode_shop_error(str(error)[:180]))
 
 
+# Item action33 and container requests are sent from the open inventory
+# window itself, so a staged preview must survive them until OK or cancel.
+PREVIEW_KEEPING_OPCODES = frozenset((0x33, 0x40, 0x46, 0xf5))
+
+
+def keeps_preview(packet) -> bool:
+    return isinstance(packet, bytes) and packet[:1] != b'' and packet[0] in PREVIEW_KEEPING_OPCODES
+
+
 def inventory_mutation(method):
-    """Accepted inventory actions discard any older private preview."""
+    """Accepted actions discard an older private preview, or carry it over."""
     @wraps(method)
     def wrapped(arena, owner, *args, **kwargs):
         result = method(arena, owner, *args, **kwargs)
@@ -53,9 +62,13 @@ def inventory_mutation(method):
         combat = getattr(field, 'combat', None)
         from .battle_item_effects import refresh_sight
         effects=() if combat is None else refresh_sight(combat)
+        replies = (result,) if isinstance(result, bytes) else tuple(result or ())
+        if combat is not None and args and keeps_preview(args[0]):
+            # After the authoritative reply, so the window shows the preview.
+            previews = combat.rebase_equipment_batch(owner)
+            return (*replies, *effects, *previews) if previews or effects else result
         restores = () if combat is None else combat.cancel_equipment_batch(owner)
         if not restores and not effects:
             return result
-        replies = (result,) if isinstance(result, bytes) else tuple(result or ())
         return (*restores, *replies,*effects)
     return wrapped

@@ -11,19 +11,21 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import hashlib
 import sqlite3
+import struct
 import time
 
 from tio.db_transaction import current, transaction
 from tio.character_identity import owner_for_slot, alias
 from tio import warehouse_completion as completion
-from tio.clans import ClansStore, require, VIEW_WAREHOUSE, VIEW_SAFE, MONEY_IDS
+from tio.clans import (CLAN_ITEM_START, REPAIR_POINTS_ID, ClansStore, require,
+                      safe_asset_rows, VIEW_WAREHOUSE, VIEW_SAFE)
 from tio.protocol.asset_count import encode_asset_count
 from tio.protocol.binary import PacketError
 from tio.protocol.warehouse import (encode_private_warehouse_snapshot,
-    encode_warehouse_list, warehouse_item_from_inventory, WarehouseItem,
-    decode_warehouse_list)
+    encode_warehouse_list, warehouse_item_from_inventory)
 from tio.protocol.warehouse_capacity import OPT_IN, Snapshot, encode_snapshot, encode_clear
 from tio.protocol.transport import InitialCipher, encode_initial_frame
+from .item_mark_service import listing as mark_listing
 
 
 @dataclass
@@ -158,8 +160,7 @@ def _data(session, db, kind, context):
         capacity = completion.clan_capacity(db, authorised['id'], kind)
         used = len(items)
         if kind == 2:
-            items.extend(WarehouseItem(key, template, authorised[column], 0, 0, 0)
-                         for key, (column, template, _) in MONEY_IDS.items() if authorised[column])
+            items.extend(safe_asset_rows(authorised))
         accessible = len(items)
         packets = (encode_warehouse_list(kind, 1, 0, items),)
     from tio.bank_economy import project_marks
@@ -201,7 +202,7 @@ def opt_in(session, packet):
     return changed
 
 
-def query(session, packet):
+def query(session, packet: bytes, *, refresh_marks: bool = False) -> tuple[bytes, ...] | None:
     """Replace only 69/0..2, without constructors that initialise SQL tables."""
     if packet[:1] != b'\x69': return None
     if len(packet) != 2: raise PacketError('Invalid warehouse query length')
@@ -210,17 +211,18 @@ def query(session, packet):
     with readonly(session) as db:
         context = _context(session, db)
         snapshot, packets = _data(session, db, kind, context)
+        marks = (mark_listing(db, session.account, int(time.time())),) if kind == 0 or refresh_marks else ()
     value = state(session)
     prefix = _bind(value, context) if value.enabled else ()
     if value.enabled:
         value.kind = kind
         value.signatures[kind] = hashlib.sha256(snapshot+b''.join(packets)).digest()
-        return prefix+(snapshot,)+packets
-    return packets
+        return prefix+(snapshot,)+marks+packets
+    return marks+packets
 
 
-def transfer(session, packet, *, capacity):
-    """Canonical 6B mutation commits before any matching outward snapshot."""
+def transfer(session, packet: bytes, *, capacity: int) -> tuple[bytes, ...]:
+    """Commit a warehouse transfer before publishing its snapshots."""
     from tio.warehouse_service import transfer_private_items
     from tio.protocol.warehouse_transfer import decode_warehouse_transfer
     request = decode_warehouse_transfer(packet)
@@ -231,17 +233,41 @@ def transfer(session, packet, *, capacity):
             _context(session, db)
             packets = transfer_private_items(session.database, session.account, packet, capacity=capacity)
         # Store scopes cannot commit the outer unit. Re-read only after commit.
-        fresh = query(session, bytes((0x69, request.warehouse_type)))
+        repairs = request.warehouse_type == 2 and any(
+            key == REPAIR_POINTS_ID for key, _ in (*request.first_items, *request.second_items))
+        personal = query(session, b'\x69\x00') if repairs else ()
+        fresh = query(session, bytes((0x69, request.warehouse_type)),
+                      refresh_marks=request.warehouse_type == 1 and request.actor_id is not None)
         if fresh is None: raise PacketError('Unknown transfer warehouse kind')
+        if request.actor_id is None:
+            fresh += query(session, b'\x69\x00')
         from .economy_runtime import note_warehouse_transfer
         note_warehouse_transfer(session, packets)
-        result = []
+        result = list(personal)
         inserted = False
         for packet in packets:
             if packet[:1] == b'\x6a':
                 if not inserted: result.extend(fresh); inserted = True
             else: result.append(packet)
         return tuple(result)
+
+
+def repair_clan_item(session, packet: bytes) -> tuple[bytes, ...] | None:
+    from tio.protocol.repair import decode_repair, repair_message
+
+    if not packet.startswith(b'\xc2\x03'):
+        return None
+    actor, target = decode_repair(packet)
+    if target < CLAN_ITEM_START or getattr(session, 'router', None) is None:
+        return None
+    router, _ = _active(session)
+    with router.team_arena.lock:
+        with transaction(session.database) as db:
+            _context(session, db)
+            if not ClansStore(session.database).repair_warehouse_item(session.account, actor, target):
+                return None
+        return (*query(session, b'\x69\x02'), *query(session, b'\x69\x01', refresh_marks=True),
+                repair_message(112))
 
 
 def purchase_replies(session, result) -> tuple[bytes, ...]:
@@ -322,7 +348,10 @@ def frames(session, packet, cipher):
         return b''.join(encode_initial_frame(p, cipher) for p in _invalidate(value)+(packet,))
     if packet[:1] != b'\x6a': return None
     try:
-        kind, total, segment, _ = decode_warehouse_list(packet)
+        # Passive callers may already have attached marker names. Only the
+        # header identifies the segment; the item body is rebuilt from SQL.
+        if len(packet) < 13: raise PacketError('Invalid warehouse header')
+        kind, total, segment = struct.unpack_from('<IHH', packet, 1)
         if kind not in (0, 1, 2): raise PacketError('Unknown capacity warehouse kind')
         if segment: return b''
         if total > 1: value.pending_segments[kind] = total

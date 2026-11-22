@@ -268,8 +268,7 @@ class WarehouseCompletionTests(unittest.TestCase):
             db.executemany('INSERT INTO clan_items VALUES (?,?,?,?)',
                 [(self.clan,2,0x50000000+n,encode_item_list(0,(replace(kit,instance_id=0x50000000+n),))) for n in range(33)])
         self.clans.exchange('alice',1,2,withdrawals=((0x50000000,1),))
-        # Upgrade Kits stack: the remaining 32 units share one safe cell.
-        self.assertEqual([i.count for i in self.clans.items('alice',2)],[32])
+        self.assertEqual(len(self.clans.items('alice',2)),32)
 
     def test_auction_can_select_shared_warehouse_item_from_another_town(self):
         from test_player_auction import create_packet

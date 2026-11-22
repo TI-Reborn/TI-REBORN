@@ -4,7 +4,7 @@ import sqlite3,struct,unittest
 import test_shared_team_arena as shared
 from tio.owned_pets import OwnedPetStore
 from tio.wallets import WalletStore
-from tio.protocol.pet_info import decode_pet_info
+from tio.protocol.pet_info import decode_pet_info,encode_pet_info
 from tio.protocol.asset_count import decode_asset_count
 from tio.protocol.player_auction import encode_settings
 from tio.battle_recovery import CREDITS_PER_HP
@@ -85,7 +85,8 @@ class PostBattleTreatmentTests(unittest.TestCase):
 
     def test_tariff_in_settings_matches_charge_policy(self):
         self.assertEqual(struct.unpack('<f',encode_settings(1800000000)[2:6])[0],CREDITS_PER_HP)
-        for value in (0,-1,float('nan'),float('inf')):
+        self.assertEqual(struct.unpack('<f',encode_settings(1800000000,heal_price=0)[2:6])[0],0)
+        for value in (-1,float('nan'),float('inf')):
             with self.assertRaises(ValueError):encode_settings(1800000000,heal_price=value)
 
     def test_previous_result_mapping_cannot_heal_during_new_search(self):
@@ -98,40 +99,78 @@ class PostBattleTreatmentTests(unittest.TestCase):
 
 
 class TreatmentTCPTests(unittest.TestCase):
-    def test_two_accounts_finish_then_treat_in_one_write(self):
+    def test_two_accounts_treat_mixed_squads_by_each_fighters_level(self):
         import test_multi_account as tcp
         from tio.protocol.arena import ArenaCreateRequest,encode_create_request
         from tio.protocol.transport import encode_initial_frame
         from tio.protocol.system_message import encode_current_town
+        from tio.protocol.item_list import encode_item_list
+        from tio.level_progression import FLOORS,LEVEL,XP
         case=tcp.MultiAccountTests();case.setUp();self.addCleanup(case.doCleanups);case.start()
-        peers=[]
+        store=OwnedPetStore(case.config.database);wallet=WalletStore(case.config.database)
+        peers=[];settings=[]
         for account,name in (('alice','Alice'),('bob','Bob')):
-            peer=case.handoff(case.begin(account));case.enter(peer,name);peers.append(peer)
-            peer.send(encode_create_request(ArenaCreateRequest(1,0,4,2,40,1,1,0,0)))
+            peer=case.handoff(case.begin(account));peers.append(peer)
+            receive=peer.receive
+            def capture(receive=receive, account=account):
+                packet=receive()
+                if packet[:2]==b'\xc8\x37':settings.append((account,struct.unpack('<f',packet[2:6])[0]))
+                return packet
+            peer.receive=capture
+            case.enter(peer,name)
+            pet=decode_pet_info(store.list(account)[0][1],human_equipment=True)
+            recruit=replace(pet,fields={**pet.fields,'0x8c43eb':2,'0x8c44a6':2})
+            store.ensure(account,encode_pet_info(recruit),encode_item_list(2,()),human=True)
+            peer.send(encode_create_request(ArenaCreateRequest(1,0,4,2,40,2,2,0,0)))
             peer.until(b'\x25');peer.send(b'\x2e')
         for peer in peers:peer.until(b'\x41',max_packets=512)
+        self.assertCountEqual(settings,[('alice',0),('bob',0)])
         hub=case.server.multi.team_arena
         with hub.lock:
             sessions=[case.server.multi.active_accounts[n] for n in ('alice','bob')]
             owners=[hub.identities[s] for s in sessions];battle=hub.battles[owners[0]]
-            field=battle['field'];identity=field.actor_ids(owners[1])[0]
-            for i,actor in tuple(field._actors.items()):
-                field._actors[i]=replace(actor,health=0 if field.teams[actor.owner_id]==1 else actor.health)
+            self.assertEqual(battle['city_id'],3)
+            field=battle['field'];requests=[]
+            for session,owner,paid_id in zip(sessions,owners,(2,1)):
+                ids=field.actor_ids(owner)
+                self.assertEqual({field.combat.storage_ids[i] for i in ids},{1,2})
+                requests.append(b'\x7c\x02'+struct.pack('<II',*ids))
+                for identity in ids:
+                    local=field.combat.storage_ids[identity]
+                    actor=field.actor(identity)
+                    field._actors[identity]=replace(actor,health=0 if paid_id==1 else actor.max_health-10)
+                    level=3 if local==paid_id else 2
+                    xp=FLOORS[3]-1 if local==paid_id else FLOORS[level-1]
+                    raw=store.list(session.account)[local-1][1]
+                    saved=decode_pet_info(raw,human_equipment=True)
+                    packet=encode_pet_info(replace(saved,fields={**saved.fields,LEVEL:level,XP:xp}))
+                    with closing(sqlite3.connect(case.config.database)) as db,db:
+                        db.execute('UPDATE owned_pets SET pet_packet=? WHERE account=? AND pet_id=?',
+                                   (packet,session.account,local))
+                    if local==paid_id:field.combat.experience.totals[identity]=1
+            reserve=replace(pet,fields={**pet.fields,'0x8c43eb':3,'0x8c44a6':0,LEVEL:4,'0x8c4ab1':0})
+            store.ensure('alice',encode_pet_info(reserve),encode_item_list(3,()),human=True)
             hub.finish(battle)
         for peer in peers:peer.until(b'\x4c',max_packets=512)
-        store=OwnedPetStore(case.config.database);wallet=WalletStore(case.config.database)
-        before=wallet.ensure('bob').credits
-        saved=decode_pet_info(store.list('bob')[0][1],human_equipment=True)
-        maximum=saved.fields['0x8c4a07'];self.assertEqual(saved.fields['0x8c4ab1'],0)
-        other=(store.list('alice'),wallet.ensure('alice'))
-        request=b'\x7c\x01'+struct.pack('<I',identity);peer=peers[1]
-        peer.sock.sendall(encode_initial_frame(b'\x2a\x01',peer.outbound)+encode_initial_frame(request,peer.outbound))
-        peer.until(encode_current_town(3),max_packets=512)
-        assets=decode_asset_count(peer.until(b'\xc8\x39',max_packets=512))
-        pet=decode_pet_info(peer.until(b'\x66',max_packets=512),human_equipment=True)
-        self.assertEqual(pet.fields['0x8c4ab1'],maximum)
-        self.assertEqual(assets.credits,before-maximum*CREDITS_PER_HP)
-        peer.send(request);peer.until(b'\xc8\x39');peer.until(b'\x66')
-        self.assertEqual(wallet.ensure('bob').credits,assets.credits)
-        self.assertEqual((store.list('alice'),wallet.ensure('alice')),other)
-        peers[0].send(b'\x2a\x01');case.ping(peers[0])
+        for account,other,peer,request,paid_id in zip(('alice','bob'),('bob','alice'),peers,requests,(2,1)):
+            with self.subTest(account=account):
+                before=wallet.ensure(account).credits
+                other_before=(store.list(other),wallet.ensure(other))
+                roster={i:decode_pet_info(p,human_equipment=True).fields for i,p,_ in store.list(account) if i in (1,2)}
+                self.assertEqual({i:f[LEVEL] for i,f in roster.items()},{paid_id:4,3-paid_id:2})
+                missing={i:f['0x8c4a07']-f['0x8c4ab1'] for i,f in roster.items()}
+                self.assertTrue(all(hp>0 for hp in missing.values()))
+                cost=missing[paid_id]*CREDITS_PER_HP
+                rate=next(rate for owner,rate in reversed(settings) if owner==account)
+                self.assertEqual(round(sum(missing.values())*rate),cost)
+                peer.sock.sendall(encode_initial_frame(b'\x2a\x01',peer.outbound)+encode_initial_frame(request,peer.outbound))
+                peer.until(encode_current_town(3),max_packets=512)
+                assets=decode_asset_count(peer.until(b'\xc8\x39',max_packets=512))
+                self.assertEqual(assets.credits,before-cost)
+                for _ in roster:peer.until(b'\x66',max_packets=512)
+                for i,packet,_ in store.list(account):
+                    fields=decode_pet_info(packet,human_equipment=True).fields
+                    self.assertEqual(fields['0x8c4ab1'],0 if i==3 else fields['0x8c4a07'])
+                peer.send(request)
+                self.assertEqual(decode_asset_count(peer.until(b'\xc8\x39',max_packets=512)).credits,assets.credits)
+                self.assertEqual((store.list(other),wallet.ensure(other)),other_before)

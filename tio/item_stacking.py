@@ -5,7 +5,7 @@ separate. The first instance survives, so existing destination IDs stay usable.
 """
 
 from .db_transaction import connect
-from .durability import KITS
+from .durability import SELECTABLE_KITS
 from contextlib import closing
 from dataclasses import replace
 import sqlite3
@@ -19,7 +19,7 @@ ENCOUNTER_MATERIALS = frozenset((65487,65488))
 # Ordinary Upgrade Kit: one cell per location, count shown by the client.
 UPGRADE_KITS = frozenset((30,))
 # Repair Kits merge only with equal remaining resource; partial use splits one off.
-REPAIR_KITS = frozenset(KITS)
+REPAIR_KITS = frozenset(SELECTABLE_KITS)
 STACKABLE = AMMUNITION | MEDICAL | ENCOUNTER_MATERIALS | UPGRADE_KITS | REPAIR_KITS
 # Native UI calculations use signed Delphi integers. Leave another stack when
 # combining would exceed their positive range; never truncate quantities.

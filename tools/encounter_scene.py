@@ -69,6 +69,7 @@ def prepare_encounter(path,account,ticket,catalog,*,seed=None,policy=None,biome=
     field=BattleField(layout.ground.width,layout.ground.height,actors,blocked=layout.blocked,step_cost=1,
                      teams={owner:0,enemy:1},transparent_obstacles=layout.transparent_obstacles)
     combat.field=field;field.combat=combat;field.battle_mode=7
+    field.avatar_ids = {i: previous.avatar_ids.get(i, 0) for i in ticket.actors}
     for attr in ('_healing_rules','_slash_rules','_dog_rules'):
         setattr(field,attr,{key:value for key,value in getattr(previous,attr).items() if key[0] in ticket.actors})
     for identity in ticket.actors:field._turn_points[identity]=previous._turn_points[identity]

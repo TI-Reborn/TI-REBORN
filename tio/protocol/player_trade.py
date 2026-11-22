@@ -1,4 +1,4 @@
-"""Original Silver barter ABI: 84/86/88/8B requests, 85/87/89/8A/8C replies.
+"""Original Silver barter ABI: 84/86/88/8B requests, 85/87/89/8A/8C and F0 replies.
 
 713F18,71402C,714368,71493C are the original request writers. Trade records
 641B28 use the WarehouseItem subset; 642654 reads a u32 list length.
@@ -59,3 +59,8 @@ def start(items):
     return Writer().u8(0x87).u32(len(values)).build()+b''.join(record(i) for i in values)
 
 def item_update(item,*,own):return bytes((0x89 if own else 0x8a,))+record(item)
+
+
+def confirmation(*, own: bool) -> bytes:
+    """F0/131 marks the local offer; F0/125 marks the partner's offer."""
+    return Writer().u8(0xf0).u32(131 if own else 125).u32(0).build()

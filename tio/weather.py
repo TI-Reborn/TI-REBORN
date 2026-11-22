@@ -4,6 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 import hashlib,json
 from types import SimpleNamespace
+from .combat_distance import rounded_radius_squared
 from .protocol.weather import encode_weather,MAX_CELLS
 from .visibility import field_sight
 
@@ -53,12 +54,13 @@ def packet(field,owner):
     roofs=sheltered(field);combat=getattr(field,'combat',None);cells=[]
     # Necessary condition of can_observe: ordinary/illuminated range of some
     # observer, or a recon footprint. Skips most cells without the full check.
-    reach=[(a.x,a.y,a.sight_radius**2) for a in observers]
+    reach=[(a.x,a.y,rounded_radius_squared(a.sight_radius)) for a in observers]
     recons=()
     if combat is not None:
         from .battle_item_effects import initialize,is_dark,normal_sight
         if is_dark(combat):
-            reach=[(a.x,a.y,max(a.sight_radius,normal_sight(combat,a.actor_id))**2) for a in observers]
+            reach=[(a.x,a.y,rounded_radius_squared(max(a.sight_radius,normal_sight(combat,a.actor_id))))
+                   for a in observers]
         recons=tuple(initialize(combat)['recon'].values())
     from .recon_geometry import contains
     for y in range(field.height):
@@ -68,7 +70,8 @@ def packet(field,owner):
                     and not any(contains(r,x,y) for r in recons)):continue
             target=SimpleNamespace(x=x,y=y)
             if any(can_observe(combat,a,target,field=field) if combat else
-                   ((a.x-x)**2+(a.y-y)**2<=a.sight_radius**2 and field_sight(field,(a.x,a.y),(x,y)))
+                   ((a.x-x)**2+(a.y-y)**2<=rounded_radius_squared(a.sight_radius)
+                    and field_sight(field,(a.x,a.y),(x,y)))
                    for a in observers):cells.append((x,y))
     thunder=sum(getattr(field,'_ability_turns',{}).values())//4
     return encode_weather(bool(cells),thunder if cells else 0,cells[:MAX_CELLS])

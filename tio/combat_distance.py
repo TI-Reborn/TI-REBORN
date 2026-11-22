@@ -7,3 +7,8 @@ def combat_distance(start,end):
     floor=isqrt(squared)
     # An integer squared distance cannot produce an exact half-integer root.
     return floor+int(4*squared>(2*floor+1)**2)
+
+
+def rounded_radius_squared(radius: int) -> int:
+    """Largest integer squared distance that rounds to this radius or less."""
+    return radius * (radius + 1)

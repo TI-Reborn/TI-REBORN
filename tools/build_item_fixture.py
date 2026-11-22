@@ -22,6 +22,8 @@ def main():
         source_records[fields['item_id']]=dict(fields)
         # Match the hosted M60 range requested by the user on 2026-10-19.
         if fields['item_id']=='314':fields['maxRange']='12'
+        # TIO manual p.60 specifies 100 for the SKS Carbine; the shipped CFG has 80.
+        if fields['item_id']=='310':fields['weight']='100'
         # Legacy CFG infers clothing from bodypart; XML loader defaults missing
         # itype to weapon1. Its explicit armor branch sets type9 at a715da.
         if 'itype' not in fields and fields.get('bodypart') in {'head','chest','legs','complexarmor'}:

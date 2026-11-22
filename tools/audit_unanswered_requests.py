@@ -22,7 +22,7 @@ CASES={
     'b804':'Marked items list C8/29; empty until marker ownership service exists',
     'b809':'Assault clan ranking B8/0A; not a warehouse operation',
     'b811':'Asset refresh C8/39; clears warehouse waiting',
-    'c101':'Bond config request sent on Engine.EnterWorld; hosted securities_service replies C1/02',
+    'c101':'Bonds/pyramid subsystem; exact request meaning pending',
     'c501':'Equipment templates',
     '5003':'Town/panel notification; roster refresh only after battle completion',
     '6901':'Clan warehouse; empty kind1 plus access unavailable',

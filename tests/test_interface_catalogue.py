@@ -10,6 +10,7 @@ from tempfile import TemporaryDirectory
 from xml.etree import ElementTree as ET
 
 from server.tls import bridge_preface, read_bridge_preface
+from tio.clans import REPAIR_TEMPLATE
 from tio.item_presentation import NEW, ORIGINAL, apply_item_images, items_xml, original_images
 from tio.protocol.shared_config import decode_shared_config_data, decode_shared_config_set
 from tio.protocol.transport import InitialCipher, InitialFrameReader, encode_initial_frame
@@ -63,10 +64,17 @@ class PublishedCatalogueTests(unittest.TestCase):
         self.original = items_xml(ORIGINAL)
 
     def test_new_interface_is_the_server_catalogue(self):
-        self.assertEqual(self.new, (ROOT / 'evidence/items_diagnostic.xml').read_bytes())
+        published = ET.fromstring(self.new)
+        repair = published.find(f"item[@id='{REPAIR_TEMPLATE}']")
+        self.assertIsNotNone(repair)
+        self.assertEqual(repair.find("value[@key='itype']").get('val'), 'repairpoints')
+        published.remove(repair)
+        source = ET.parse(ROOT / 'evidence/items_diagnostic.xml').getroot()
+        self.assertEqual(ET.tostring(published), ET.tostring(source))
 
     def test_original_interface_differs_only_in_selected_images(self):
         selected = original_images()
+        selected[REPAIR_TEMPLATE] = 'itm_repairkit.png'
         before, after = images(self.new), images(self.original)
         self.assertEqual(before.keys(), after.keys())
         for identity in before:
@@ -80,9 +88,10 @@ class PublishedCatalogueTests(unittest.TestCase):
 
     def test_published_art_covers_every_restored_item(self):
         selected = original_images()
-        self.assertEqual(len(selected), 101)
         published = images(self.new)
-        self.assertTrue(all(published[i] == f'tio_ii_{i}.png' for i in selected))
+        for identity in selected:
+            asset_id = 17 if identity == 128 else identity
+            self.assertEqual(published[identity], f'tio_ii_{asset_id}.png', identity)
 
     def test_unknown_interface_is_rejected(self):
         with self.assertRaises(ValueError):

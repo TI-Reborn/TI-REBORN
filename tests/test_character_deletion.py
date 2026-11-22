@@ -6,7 +6,7 @@ import unittest
 import test_character_slots as fixture
 from tio.characters import CharacterStore
 from tio.character_identity import auth_account, owner_for_name
-from tio.wallets import WalletStore
+from tio.wallets import NEW_CHARACTER_CREDITS, WalletStore
 from tio.protocol.character_select import decode_character_list
 
 
@@ -28,7 +28,7 @@ class CharacterDeletionTests(unittest.TestCase):
         self.assertEqual(auth_account(self.path, old), 'alice')
         self.assertEqual(auth_account(self.path, new), 'alice')
         self.assertEqual(WalletStore(self.path).ensure(old).credits, 123)
-        self.assertEqual(WalletStore(self.path).ensure(new).credits, 3000)
+        self.assertEqual(WalletStore(self.path).ensure(new).credits, NEW_CHARACTER_CREDITS)
         self.assertEqual(self.accounts.verify(b'alice', fixture.PASSWORD.encode()), 'alice')
         with closing(sqlite3.connect(self.path)) as db:
             self.assertIsNone(owner_for_name(db, b'AliceTwo'))

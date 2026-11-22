@@ -3,11 +3,21 @@
 Ordinary arena bots use tactical inventory/combat planning. Mine hunters retain
 their individual patrol policy. Every action uses the authoritative services.
 """
+from collections import deque
+from typing import TYPE_CHECKING
+
+from .combat_distance import rounded_radius_squared
+from .protocol.battle_attack import (
+    AttackRequest, decode_attack_result, encode_attack_request, encode_attack_result,
+)
 from .protocol.battle_move import BattleMove, encode_move_request
 from .protocol.action_points import encode_action_points
 from .protocol.battle_turn import encode_end_turn
-from collections import deque
-from .visibility import visible_actors, field_sight
+from .protocol.health import encode_health
+from .visibility import VisibilityView, field_sight, visible_actors, visible_attack
+
+if TYPE_CHECKING:
+    from .arena_service import ArenaService
 
 
 def bot_known(field, owner, actor_id):
@@ -23,7 +33,7 @@ def bot_known(field, owner, actor_id):
     return frozenset(a.actor_id for a in field._actors.values()
                      if field.allied(a.owner_id, owner) or
                      (observer.health != 0 and a.health != 0 and
-                      (observer.x-a.x)**2 + (observer.y-a.y)**2 <= observer.sight_radius**2 and
+                      (observer.x-a.x)**2 + (observer.y-a.y)**2 <= rounded_radius_squared(observer.sight_radius) and
                       field_sight(field, (observer.x, observer.y), (a.x, a.y))))
 
 
@@ -64,7 +74,37 @@ def approach_path(field, actor_id, targets, known, *, destination=None, allowed=
     return ()
 
 
-def play_turn(arena, room_id, bot_owner, *, view=None):
+def attack_for_view(arena: 'ArenaService', owner: int, request: AttackRequest,
+                    view: VisibilityView | None) -> tuple[bytes, ...] | None:
+    """Run a bot attack and project its private scene replies, or return None if rejected."""
+    if view is not None:
+        visible_before = view.visible
+        registered_hidden = view.hidden_living.keys() | view.resident_corpses
+        shooter_visible = request.actor_id in visible_before
+        health_before = {i: view.field.actor(i).health for i in visible_before} if not shooter_visible else {}
+    try:
+        replies = arena.attack(owner, encode_attack_request(request), view=view)
+    except ValueError:
+        return None
+    if view is None:
+        return replies
+    packets = []
+    hit_updates = set()
+    for reply in replies:
+        if reply[0] == 0x4b:
+            shown = visible_attack(decode_attack_result(reply), visible_before, registered_hidden)
+            if shown is not None:
+                packets.append(encode_attack_result(shown))
+                hit_updates.update(hit.actor_id for hit in shown.hits)
+        elif reply[0] in (0x3b, 0x43, 0x44) or (reply[0] == 0x4e and shooter_visible):
+            packets.append(reply)
+    packets.extend(encode_health(i, view.field.actor(i).health) for i, hp in health_before.items()
+                   if i in view.visible and i not in hit_updates and view.field.actor(i).health != hp)
+    packets.extend(view.refresh())
+    return tuple(packets)
+
+
+def play_turn(arena, room_id, bot_owner, *, view=None, objective=None):
     field = arena._fields[room_id]
     room = next(r for r in arena.rooms.snapshot() if r.room_id == room_id)
     actors = field.living_actor_ids(bot_owner)
@@ -88,7 +128,7 @@ def play_turn(arena, room_id, bot_owner, *, view=None):
             continue
         if getattr(field,'combat',None) is not None:
             from .tactical_bot import play_actor
-            packets.extend(play_actor(arena,room_id,bot_owner,actor_id,view=view))
+            packets.extend(play_actor(arena, room_id, bot_owner, actor_id, view=view, objective=objective))
             if room_id not in arena._turns:return tuple(packets)
             continue
         known=bot_known(field,bot_owner,actor_id)
@@ -134,29 +174,15 @@ def play_turn(arena, room_id, bot_owner, *, view=None):
         if getattr(field,'battle_mode',0):
             # New team bots use the same ammo, range, LOS, armour and AP rules
             # as a human. No synthetic damage, teleport or free refill.
-            from .protocol.battle_attack import AttackRequest,encode_attack_request
             for _ in range(32):
                 known=bot_known(field,bot_owner,actor_id)
                 targets=sorted((v for v in field._actors.values() if v.health and
                                 not field.allied(v.owner_id,bot_owner) and v.actor_id in known),
                                key=lambda v:(abs(v.x-field.actor(actor_id).x)+abs(v.y-field.actor(actor_id).y),v.actor_id))
                 for target in targets:
-                    visible_before=frozenset() if view is None else view.visible
-                    health_before={i:field.actor(i).health for i in visible_before}
-                    try:
-                        replies=arena.attack(bot_owner,encode_attack_request(AttackRequest(actor_id,target.x,target.y)),view=view)
-                    except ValueError:continue
-                    if view is None:packets.extend(replies)
-                    else:
-                        # Attack result already hides unseen hit recipients.
-                        # Never deliver another owner's inventory or skill UI.
-                        packets.extend(p for p in replies if p[:1] in (b'\x3b',b'\x43',b'\x44') or
-                                       (p[:1] in (b'\x4b',b'\x4e') and actor_id in visible_before))
-                        if actor_id not in visible_before:
-                            from .protocol.health import encode_health
-                            packets.extend(encode_health(i,field.actor(i).health) for i,hp in health_before.items()
-                                           if i in view.visible and field.actor(i).health!=hp)
-                        packets.extend(view.refresh())
+                    replies=attack_for_view(arena,bot_owner,AttackRequest(actor_id,target.x,target.y),view)
+                    if replies is None:continue
+                    packets.extend(replies)
                     break
                 else:break
                 if room_id not in arena._turns:return tuple(packets)

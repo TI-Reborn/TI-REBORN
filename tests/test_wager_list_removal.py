@@ -20,6 +20,7 @@ class WagerListRemovalTests(unittest.TestCase):
             elif p[:2]==b'\xc8\x2c':self.rows.update((r.identity,r) for r in decode_room_list(p))
 
     def observe(self):
+        self.f.now+=.25
         self.hub.tick();packets=tuple(self.hub.queues[self.viewer]);self.hub.queues[self.viewer].clear();self.apply(packets);return packets
 
     def create(self,index=0):

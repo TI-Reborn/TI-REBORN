@@ -97,7 +97,8 @@ class EncounterService:
                 seed=self.rng.randrange(2**63);biome=biomes[seed%len(biomes)]
                 prepared=prepare_encounter(self.path,account,ticket,catalog,seed=seed,policy=self.policy,biome=biome)
                 prepared.field.return_position=(x,y)
-                room,replies=self.arena.start_survival(character,name,prepared)
+                from .clan_benefits import account_crests
+                room,replies=self.arena.start_survival(character,name,prepared,crest_id=account_crests(db,(account,))[account])
                 self.locations._save(db,account,None,x,y)
                 db.execute('DELETE FROM map_journeys WHERE account=?',(account,))
                 db.execute('UPDATE world_encounter_state SET distance=0,last_event=?,route_start=NULL,progress=0 WHERE account=?',(now,account))

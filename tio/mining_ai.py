@@ -128,22 +128,10 @@ def _choose_target(field, actor_id, enemies, known, state, unavailable):
 
 
 def _attack(arena, owner, actor_id, target, view):
-    from .protocol.battle_attack import AttackRequest, encode_attack_request
-    field = arena._fields[next(r.room_id for r in arena.rooms.snapshot() if owner in r.members)]
-    before = frozenset() if view is None else view.visible
-    health_before = {i:field.actor(i).health for i in before}
-    try:
-        replies = arena.attack(owner,encode_attack_request(AttackRequest(actor_id,target.x,target.y)),view=view)
-    except ValueError:return False, ()
-    if view is None:return True, replies
-    packets = [p for p in replies if p[:1] in (b'\x3b',b'\x43',b'\x44') or
-               (p[:1] in (b'\x4b',b'\x4e') and actor_id in before)]
-    if actor_id not in before:
-        from .protocol.health import encode_health
-        packets.extend(encode_health(i,field.actor(i).health) for i,hp in health_before.items()
-                       if i in view.visible and field.actor(i).health != hp)
-    packets.extend(view.refresh())
-    return True, tuple(packets)
+    from .protocol.battle_attack import AttackRequest
+    from .training_bot import attack_for_view
+    replies = attack_for_view(arena, owner, AttackRequest(actor_id, target.x, target.y), view)
+    return (False, ()) if replies is None else (True, replies)
 
 
 def play_hunter(arena, room_id, owner, actor_id, *, view=None):

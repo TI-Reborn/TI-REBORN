@@ -12,7 +12,7 @@ from server.contracts_ui import execute, snapshot
 from server.team_arena import TeamArena
 from server.contracts_service import ContractsService
 from server.battle_journal import BattleJournal
-from tio.contract_loot import roll_upgrade, UPGRADE_WEIGHTS
+from tio.contract_loot import roll_upgrade, stage_boss_loot, UPGRADE_WEIGHTS
 from tio.owned_pets import OwnedPetStore
 from tio.wallets import WalletStore
 from tio.protocol.battle_position import BattlePositionRequest, encode_position_request
@@ -27,10 +27,26 @@ class ExpansionTests(unittest.TestCase):
     setUp = combat_fixture.ContractsCombatTests.setUp
     rows = combat_fixture.ContractsCombatTests.rows
     clear_enemies = combat_fixture.ContractsCombatTests.clear_enemies
-    collect_boss = combat_fixture.ContractsCombatTests.collect_boss
-    clear_and_collect = combat_fixture.ContractsCombatTests.clear_and_collect
     group = combat_fixture.ContractsCombatTests.group
     start = combat_fixture.ContractsCombatTests.start
+
+    def collect_boss(self, battle, hub=None):
+        hub = hub or self.hub
+        with hub.journal.unit(battle):
+            field = battle['field']
+            stage_boss_loot(field)
+            position = field.contract_metadata['boss_position']
+            item, = field.loot.boxes[position]
+            owner = min(battle['humans'])
+            actor = field.actor(field.actor_ids(owner)[0])
+            field._actors[actor.actor_id] = replace(actor, x=position[0], y=position[1], action_points=20)
+            battle['arena']._turns[battle['room'].room_id] = (owner, frozenset((actor.actor_id,)), self.now+60)
+            hub.perform_action(battle, owner, encode_position_request(BattlePositionRequest(actor.actor_id, *position)))
+            hub.perform_action(battle, owner, encode_loot_transfer(LootTransfer(actor.actor_id, *position, (), ((item.instance_id, 1),))))
+
+    def clear_and_collect(self, battle):
+        self.clear_enemies(battle)
+        self.collect_boss(battle)
 
     def solo(self, template='solo_dogs'):
         self.service.parties.create('alice', (1,))

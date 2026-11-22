@@ -9,6 +9,7 @@ import test_city_inventory_wait as network_fixture
 from tio.protocol.asset_count import decode_asset_count
 from tio.protocol.city_catalogs import decode_item_shop
 from tio.protocol.shop_purchase import ShopPurchase
+from tio.locations import SHOOTING_RANGE
 
 
 class SCShopLocationTests(unittest.TestCase):
@@ -19,8 +20,8 @@ class SCShopLocationTests(unittest.TestCase):
             database.execute('UPDATE character_locations SET town_id=? WHERE account=?',
                              (town, 'alice'))
 
-    def test_catalogue_opens_in_every_city_mine_and_base(self):
-        for town in (2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22):
+    def test_catalogue_opens_in_every_city_mine_base_and_range(self):
+        for town in (2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, SHOOTING_RANGE, 18, 19, 20, 21, 22):
             with self.subTest(town=town):
                 self.locate(town)
                 reply, = self.sc.handle('alice', fixture.sc(4))
@@ -37,14 +38,13 @@ class SCShopLocationTests(unittest.TestCase):
             self.assertEqual(tuple(database.iterdump()), before)
 
     def test_ordinary_shop_opens_in_the_same_locations(self):
-        for town in (2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22):
+        for town in (2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, SHOOTING_RANGE, 18, 19, 20, 21, 22):
             with self.subTest(town=town):
                 self.locate(town)
                 category, offers = decode_item_shop(self.shop.catalog('alice', 0))
                 self.assertEqual(category, 0)
                 self.assertTrue(offers)
-                self.assertTrue(all(int(self.shop.completion.values[o.item_id].get(
-                    'level_required', '1')) <= self.shop.completion.towns[town]
+                self.assertTrue(all(self.shop.completion.allowed(o.item_id, town)
                                     for o in offers))
 
     def test_mine_and_training_base_keep_their_level_bands(self):
@@ -97,18 +97,20 @@ class SCShopLocationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.sc.handle('alice', fixture.sc(9, next(iter(self.sc.offers))))
 
-    def test_prison_shooting_range_world_and_unknown_stay_rejected(self):
-        for town in (-1, 0, 10, 17, 65535):
+    def test_prison_world_and_unknown_stay_rejected(self):
+        for town in (-1, 0, 10, 65535):
             self.locate(town)
             with self.subTest(town=town), self.assertRaises(ValueError):
                 self.sc.handle('alice', fixture.sc(4))
 
 
 class ShopLocationTCPTests(unittest.TestCase):
-    setUp = network_fixture.CityInventoryWaitTCPTests.setUp
     collect = network_fixture.CityInventoryWaitTCPTests.collect
 
-    def test_two_accounts_open_both_shops_in_mine_and_reservation(self):
+    def setUp(self):
+        network_fixture.CityInventoryWaitTCPTests.setUp(self, towns=(SHOOTING_RANGE, SHOOTING_RANGE))
+
+    def test_two_accounts_open_both_shops_at_the_range(self):
         for peer in self.peers.values():
             peer.send(b'\x73\x00')
             rows = self.collect(peer)

@@ -23,6 +23,7 @@ from tio.wallets import WalletStore
 from tio.shop import ShopStore
 from tio.city_catalogs import CityCatalogs
 from tio.protocol.shop_purchase import ShopPurchase
+from tio.implants import catalog as implant_catalog, policy as implant_policy
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -33,16 +34,28 @@ class WeightTests(unittest.TestCase):
 
     def test_all_item_weights_match_imported_original_source(self):
         source=json.loads((ROOT/'evidence/items_diagnostic_provenance.json').read_text())['records']
+        extension=json.loads((ROOT/'config/battle_item_catalog_extension.json').read_text())
         actual=item_weights()
-        self.assertEqual(set(actual),{int(r['id']) for r in source}|{51,52,353,65513,65487,65488,65489,65490})
-        self.assertEqual({i:actual[i] for i in (65487,65488)},{65487:(20,0),65488:(15,0)})
-        self.assertEqual({i:actual[i] for i in (65489,65490)},{65489:(0,0),65490:(0,0)})
-        # New mining resources absent from legacy items.cfg; native GUI fixes
-        # drill100 + crystal payload, mobs.udf fixes the NPC weapon353 identity.
-        self.assertEqual({i:actual[i] for i in (51,52,353)},{51:(1,0),52:(100,51),353:(0,0)})
+        expected = {
+            51: (1, 0), 52: (100, 51), 129: (50, 0), 353: (0, 0), 5013: (200, 0),
+            65487: (20, 0), 65488: (15, 0), 65489: (0, 0), 65490: (0, 0),
+            65513: (0, 0), 65514: (0, 0),
+        }
         for record in source:
             fields=record['source_fields']
-            self.assertEqual(actual[int(record['id'])],(int(fields.get('weight',0)),int(fields.get('containedItemId',0))))
+            expected[int(record['id'])] = (int(fields.get('weight', 0)),
+                                           int(fields.get('containedItemId', 0)))
+        for record in extension['items']:
+            expected[record['id']] = (int(record['fields']['weight']), 0)
+        expected[35] = (int(extension['amendments']['35']['weight']), 0)
+        expected[310] = (100, 0)  # Manual p.60: SKS Carbine.
+        expected.update(dict.fromkeys(implant_catalog(), (5, 0)))
+        for tool in ('battery', 'repair', 'extraction', 'upgrade'):
+            expected[implant_policy()[tool]['template']] = (5, 0)
+        self.assertEqual(set(actual), set(expected))
+        for template, weight in expected.items():
+            with self.subTest(template=template):
+                self.assertEqual(actual[template], weight)
 
     def test_stacks_and_equipment_conserve_mass(self):
         items=(item(1,301,equipped=True),item(2,5,32),item(3,5,40),
@@ -57,7 +70,7 @@ class WeightTests(unittest.TestCase):
         for weight,stage in ((0,0),(499,0),(500,1),(665,1),(666,2),(799,2),(800,3),(999,3),(1000,4),(50000,4)):
             self.assertEqual(overload_stage(weight,1000),stage)
             self.assertEqual(turn_ap(15,weight,1000),15-3*stage)
-        for resource,capacity,ap in ((1,1000,15),(2,1000,15),(3,150,17),(4,150,17),(5,150,17),(6,1000,14)):
+        for resource,capacity,ap in ((1,1315,15),(2,1315,15),(3,150,17),(4,150,17),(5,150,17),(6,1510,14)):
             self.assertEqual(base_capacity(resource,1),capacity)
             self.assertEqual(base_capacity(resource,5),capacity+200)
             self.assertEqual(turn_ap(ap,capacity,capacity),ap-12)
@@ -83,7 +96,7 @@ class WeightTests(unittest.TestCase):
     def test_medical_consumption_and_repeated_turns_use_original_ap_maximum(self):
         mass=item_weights()[9][0]
         self.assertGreater(mass,0)
-        quantity=(500+mass-1)//mass
+        quantity=(658+mass-1)//mass
         inventory=encode_item_list(1,(item(1,9,quantity),))
         pet=project_base_weight(self.pet,True,inventory)
         field=BattleField(10,10,[BattleActor(1,7,1,1,15,20,100)],step_cost=1)
@@ -97,7 +110,7 @@ class WeightTests(unittest.TestCase):
         combat.use_medical(7,ItemAction(1,1,255))
         self.assertEqual(field.actor(1).action_points,11)
         self.assertEqual(inventory_weight(combat.inventories[1]),(quantity-1)*mass)
-        self.assertEqual(combat.weight_packet(1),encode_weight(1,(quantity-1)*mass,1000))
+        self.assertEqual(combat.weight_packet(1),encode_weight(1,(quantity-1)*mass,1315))
         field.prepare_turn(7,(1,))
         self.assertEqual(field.actor(1).action_points,15)
         self.assertEqual(field._turn_points[1],15)
@@ -123,6 +136,7 @@ class WeightTests(unittest.TestCase):
                 projected=project_saved_pet(db,'alice',1,row[0],True)
             fields=decode_pet_info(projected,human_equipment=True).fields
             self.assertEqual(fields['0x8c4b6d'],20*item_weights()[5][0])
+            self.assertEqual(fields['0x8c4b57'],1315)
             self.assertEqual(city_weight_update(path,'alice',inventory),encode_weight(1,fields['0x8c4b6d']))
 
     def test_survival_first_turn_and_visibility_snapshot_apply_overload(self):
@@ -134,7 +148,7 @@ class WeightTests(unittest.TestCase):
         catalog=AbilityCatalog(AbilityLevel(r['id'],r['level'],r['fields']) for r in source['records'])
         with tempfile.TemporaryDirectory() as folder:
             path=Path(folder)/'state.db'
-            inventory=encode_item_list(1,(item(1,5,1000),))
+            inventory=encode_item_list(1,(item(1,5,1315),))
             pets=OwnedPetStore(path);pets.ensure('alice',self.pet,inventory,human=True)
             ticket=SurvivalQueue().join(42,pets.list('alice'))
             scene=prepare_survival(path,'alice',ticket,catalog)
@@ -145,6 +159,6 @@ class WeightTests(unittest.TestCase):
                 self.assertEqual(snapshot.fields['0x8c5694'],15)
                 self.assertEqual(snapshot.fields['0x8c571d'],3)
                 self.assertEqual(snapshot.fields['0x8c57e7'],inventory_weight(inventory))
-                self.assertEqual(snapshot.fields['0x8c57d0'],1000)
+                self.assertEqual(snapshot.fields['0x8c57d0'],1315)
                 scene.field.prepare_turn(actor.owner_id,(actor_id,))
                 self.assertEqual(scene.field.actor(actor_id).action_points,3)

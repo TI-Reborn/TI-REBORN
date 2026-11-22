@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "base_roster_capacity": 7,
-  "roster_expansion": [[1, 2000], [2, 5800], [3, 11400], [4, 18800], [5, 28000]],
+  "roster_expansion": [[1, 2000], [2, 5800], [3, 11400], [4, 18800], [5, 28000], [6, 39000], [7, 51800], [8, 66400]],
   "hire_credits": {"1": 500, "2": 500, "3": 2500, "4": 2500, "5": 2500, "6": 3500},
   "extra_starter_mercenaries": 2,
   "starter_resources": [1, 2],
@@ -10,5 +10,5 @@
   "minimum_saved_skill": 0,
   "forgetting_mode": "all_ranks",
   "forgetting_credits_per_rank": 100,
-  "notes": "Manual pp7/42: main character plus two random human starters; p22 detailed table sets capacity7->12 (p18 says15 inconsistently); p18 hire500/2500/3500; p23 skill decrease5 for1000. Name/appearance distributions, skill floor0 and forgetting all ranks for100credits per learned rank are explicit emulator policies: original forgetting fees and exact server semantics were not recovered. Only fresh durable character creation receives starters/tutorial; existing saves never receive a retroactive grant."
+  "notes": "Manual pp7/42: main character plus two random human starters; p22 details capacity7->12. Emulator levels 6-8 extend capacity to 15, as stated on p18, and continue the original price curve. p18 hire500/2500/3500; p23 skill decrease5 for1000. Name/appearance distributions, skill floor0 and forgetting all ranks for100credits per learned rank are explicit emulator policies: original forgetting fees and exact server semantics were not recovered. Only fresh durable character creation receives starters/tutorial; existing saves never receive a retroactive grant."
 }

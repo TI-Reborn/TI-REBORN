@@ -64,5 +64,5 @@ class EnglishLocalizationTests(unittest.TestCase):
                 self.assertEqual(port,31001);self.assertEqual(port.language,locale);self.assertEqual(b.recv(6),b'native')
         a,b=socket.socketpair()
         with a,b:
-            raw=bytearray(bridge_preface(31001));raw[5]=4;a.sendall(raw)
+            raw=bytearray(bridge_preface(31001));raw[5]=2;a.sendall(raw)
             with self.assertRaises(ValueError):read_bridge_preface(b,time.monotonic()+1)

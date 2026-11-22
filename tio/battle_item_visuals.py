@@ -59,8 +59,5 @@ def packets(field, owner):
         and actor.actor_id in initialize(combat)['night_vision']))
     from .weather import packet as weather_packet
     result=(encode_item_visuals(visible_cells(field, owner)), encode_night_vision_state(active),weather_packet(field,owner))
-    if hasattr(field,'avatar_ids'):
-        from .avatars import encode_assignments
-        from .visibility import visible_actors
-        result+=(encode_assignments((i,field.avatar_ids.get(i,0)) for i in sorted(visible_actors(field,owner))[:31]),)
-    return result
+    from .avatars import battle_assignments
+    return result+battle_assignments(field,owner)

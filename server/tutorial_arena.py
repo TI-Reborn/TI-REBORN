@@ -245,9 +245,13 @@ class TutorialArena:
         return super().prepare_settlements(battle,requests)
 
     def to_city(self,owner):
-        tutorial=self.completed.get(owner,{}).get('kind')=='tutorial'
+        battle=self.completed.get(owner,{})
+        tutorial=battle.get('kind')=='tutorial'
         result=super().to_city(owner)
-        if tutorial:self.players[owner]._battle_treatment_ids=None
+        if tutorial:
+            self.players[owner]._battle_treatment_ids=None
+            if battle['tutorial_events'] == 15 and not battle['tutorial_replay']:
+                self.put(owner,encode_system_message(3,b'Reservation','Поговорите с Рут Восс в Резервации.'))
         return result
 
     def abort_tutorial(self,battle,reason):
