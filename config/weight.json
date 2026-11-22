@@ -1,6 +1,6 @@
 {
-  "base_capacity": {"1": 1000, "2": 1000, "3": 150, "4": 150, "5": 150, "6": 1000},
+  "base_capacity": {"1": 1315, "2": 1315, "3": 150, "4": 150, "5": 150, "6": 1510},
   "capacity_per_level": 50,
   "ap_penalties": [0, 3, 6, 9, 12],
-  "source": "TIO manual pp23,42,43: base capacities, +50 per level, penalty endpoints3/12. Equal intermediate steps6/9 reconstructed; common level growth applied to all three classes. Native9B300C thresholds inclusive0.5/0.666/0.8/1.0."
+  "source": "TIO manual pp23,42,43: original base capacities, +50 per level, penalty endpoints3/12. Rebalanced human base by +315 and miner base by +510. Equal intermediate steps6/9 reconstructed; common level growth applied to all three classes. Native9B300C thresholds inclusive0.5/0.666/0.8/1.0."
 }

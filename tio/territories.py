@@ -12,6 +12,7 @@ from datetime import datetime
 import json
 from pathlib import Path
 import random
+import sqlite3
 import time
 import uuid
 
@@ -323,15 +324,18 @@ class TerritoriesStore:
         with closing(connect(self.path)) as db:
             return self._group(db, group_id)
 
-    def own_group(self, account, event_id=None):
-        with closing(connect(self.path)) as db:
-            sql = '''SELECT m.group_id FROM warfare_group_members m JOIN warfare_events e ON e.id=m.event_id
-                     WHERE m.account=? AND m.active=1 AND e.finalized=0'''
-            args = [account]
-            if event_id is not None:
-                sql += ' AND m.event_id=?'; args.append(event_id)
-            row = db.execute(sql+' ORDER BY e.starts DESC LIMIT 1', args).fetchone()
-            return self._group(db, row[0]) if row else None
+    def own_group(self, account, event_id=None, *, connection: sqlite3.Connection | None = None):
+        if connection is None:
+            with closing(connect(self.path)) as db:
+                return self.own_group(account, event_id, connection=db)
+        db = connection
+        sql = '''SELECT m.group_id FROM warfare_group_members m JOIN warfare_events e ON e.id=m.event_id
+                 WHERE m.account=? AND m.active=1 AND e.finalized=0'''
+        args = [account]
+        if event_id is not None:
+            sql += ' AND m.event_id=?'; args.append(event_id)
+        row = db.execute(sql+' ORDER BY e.starts DESC LIMIT 1', args).fetchone()
+        return self._group(db, row[0]) if row else None
 
     def _member_group(self, db, account):
         row = db.execute('''SELECT m.group_id FROM warfare_group_members m JOIN warfare_events e ON e.id=m.event_id

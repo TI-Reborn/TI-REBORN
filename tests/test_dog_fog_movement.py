@@ -43,14 +43,14 @@ class DogFogTests(unittest.TestCase):
                 route = tuple((x, 6) for x in range(2, 13))
                 field._actors[2] = replace(dog, x=12, action_points=6)
                 packet = encode_battle_move(BattleMove(2, route))
-                for view, first in zip(views, (4, 8)):
+                for view, first in zip(views, (3, 7)):
                     replies = movement_packets(view, before, packet)
                     dog_packets = [p for p in replies if int.from_bytes(p[1:5], 'little') == 2]
                     self.assertEqual([p[0] for p in dog_packets], [0x3b, 0x3d, 0x3b])
                     shown, moved, hidden = dog_packets
                     self.assertEqual(decode_battle_soldier(shown, human_equipment=False).position, (first, 6))
                     self.assertEqual(decode_battle_move(moved), BattleMove(
-                        2, tuple((x, 6) for x in range(first + 1, first + 3))))
+                        2, tuple((x, 6) for x in range(first + 1, first + 5))))
                     final = decode_battle_soldier(hidden, human_equipment=False)
                     self.assertEqual((final.position, final.fields['0x8c57bb']), ((255, 255), 1))
                     self.assertNotIn(2, view.visible)

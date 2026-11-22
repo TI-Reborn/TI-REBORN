@@ -204,7 +204,7 @@ class MinersTownShopProtocolTests(unittest.TestCase):
         # A frozen active native map journey remains in transit while queries
         # are processed; its normal movement projection need not write SQLite.
         with closing(sqlite3.connect(self.path)) as db, db:
-            db.execute('INSERT INTO map_journeys(account,x,y,tx,ty,started,arrives) VALUES (?,?,?,?,?,?,?)',
+            db.execute('INSERT INTO map_journeys VALUES (?,?,?,?,?,?,?)',
                        (self.exchange.account,0,0,1,1,1000,2000))
         self.exchange.locations.clock = lambda: 1500
         self.ping()

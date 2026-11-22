@@ -35,7 +35,7 @@ static class NativeFlameStream
     internal static bool Apply(IntPtr process,uint silver,string image)
     {
         using var file=File.OpenRead(image);
-        if(NativePasswordLimit.CompatibilityHash(File.ReadAllBytes(image))!=Plan.Sha256)return false;
+        if(!SilverRegions.Matches(File.ReadAllBytes(image),"flame"))return false;
         var memory=VirtualAllocEx(process,IntPtr.Zero,(nuint)Plan.Size,0x3000,0x04);
         if(memory==IntPtr.Zero || memory.ToInt64()>uint.MaxValue)throw new IOException("Cannot allocate flame stream adapter.");
         uint allocation=checked((uint)memory.ToInt64());var code=Build(allocation,silver);

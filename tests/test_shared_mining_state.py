@@ -244,7 +244,7 @@ class SharedMiningStateTests(unittest.TestCase):
         self.assertFalse(mine.register_owner(43,2));self.assertEqual(mine.lift_blocked_until,6)
         raider=field.actor_ids(43)[0];position=next(iter(mine.layout.raider_exits))
         field._actors[raider]=replace(field.actor(raider),x=position[0],y=position[1])
-        self.assertEqual(mine.exit(43),0)
+        with self.assertRaises(ValueError):mine.exit(43)
         field.remove_owner(43)
         for generation in range(2,6):mine.advance(generation)
         self.assertEqual(mine.round,5)

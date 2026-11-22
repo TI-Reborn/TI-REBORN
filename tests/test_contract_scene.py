@@ -84,7 +84,7 @@ class ContractSceneTests(unittest.TestCase):
                 self.assertIsInstance(skills[actor], bytes)
         self.assertEqual(field.living_sides(), {('team', 0), ('team', 1)})
         self.assertEqual((decode_battle_ground(ground).width, decode_battle_ground(ground).height), (38, 38))
-        self.assertFalse(field.loot.boxes)
+        self.assertTrue(field.loot.boxes)
 
     def test_npcs_have_native_existing_models_equipment_and_no_persistent_account(self):
         record = self.record('checkpoint')
@@ -121,16 +121,17 @@ class ContractSceneTests(unittest.TestCase):
     def test_npc_equipment_does_not_turn_into_transferable_death_loot(self):
         field, _, _, _, bot = prepare(self.seats(), self.record())
         before = self.rows()
+        crates = dict(field.loot.boxes)
         states = {identity: replace(field.actor(identity), health=0) for identity in field.actor_ids(bot)}
         changes = {}
         boxes, ground = field.loot.stage_deaths(states, changes)
         self.assertFalse(boxes)
         self.assertFalse(ground)
         self.assertFalse(changes)
-        self.assertFalse(field.loot.boxes)
+        self.assertEqual(field.loot.boxes, crates)
         self.assertEqual(self.rows(), before)
 
-    def test_all_three_maps_reproduce_their_seed_and_keep_native_footprints(self):
+    def test_maps_reproduce_their_seed_and_keep_native_footprints(self):
         for name in self.templates:
             with self.subTest(name=name):
                 record = self.record(name)
@@ -151,7 +152,8 @@ class ContractSceneTests(unittest.TestCase):
                         if field.inside(*point) and point not in field.blocked and point not in reached:
                             reached.add(point); pending.append(point)
                 self.assertTrue(all((a.x, a.y) in reached for a in field._actors.values()))
-                self.assertFalse(field.loot.boxes)
+                self.assertTrue(field.loot.boxes)
+                self.assertEqual(field.loot.boxes, second[0].loot.boxes)
                 for actor_id in field._actors:
                     self.assertNotIn((field.actor(actor_id).x, field.actor(actor_id).y), field.doors.states)
                 changed = prepare(self.seats(), self.record(name, seed=902))

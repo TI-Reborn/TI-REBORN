@@ -1,4 +1,9 @@
-"""Bounded native MDJX skinned-mesh reader/writer; preserve rig tails verbatim."""
+"""Bounded native MDJX mesh reader/writer; preserve rig tails verbatim.
+
+Skinned meshes carry bones and per-vertex weights. Static meshes (most
+weapons) have no bones; a few (minigun, RPG) carry one bone while their
+vertices still have zero joint influences.
+"""
 from dataclasses import dataclass,replace
 from pathlib import Path
 import math,struct
@@ -25,15 +30,15 @@ class Mesh:
 
 def read(path):
     raw=Path(path).read_bytes();nv,ni,nb,flag=struct.unpack_from('<4I',raw)
-    assert 0<nv<100000 and 0<ni<1000000 and ni%3==0 and 0<nb<512 and flag==1
+    assert 0<nv<100000 and 0<ni<1000000 and ni%3==0 and 0<=nb<512 and flag==1
     at=16;vertices=[]
     for _ in range(nv):
-        n=struct.unpack_from('<I',raw,at)[0];assert 0<n<=8
+        n=struct.unpack_from('<I',raw,at)[0];assert (0<=n<=8) if nb else n==0
         floats=struct.unpack_from('<8f',raw,at+4);extra=struct.unpack_from('<I',raw,at+36)[0]
         joints=struct.unpack_from('<'+str(n)+'I',raw,at+40)
         weights=struct.unpack_from('<'+str(n)+'f',raw,at+40+4*n)
-        assert max(joints)<nb and all(math.isfinite(v) for v in (*floats,*weights))
-        assert all(w>=0 for w in weights) and abs(sum(weights)-1)<.002
+        assert all(j<nb for j in joints) and all(math.isfinite(v) for v in (*floats,*weights))
+        assert all(w>=0 for w in weights) and (abs(sum(weights)-1)<.002 if n else True)
         vertices.append(Vertex(floats[:3],floats[3:6],floats[6:],extra,joints,weights));at+=40+8*n
     indices=struct.unpack_from('<'+str(ni)+'I',raw,at);assert max(indices)<nv;at+=ni*4
     tail=raw[at:];bones=[]
@@ -53,7 +58,7 @@ def read(path):
 def encode(mesh):
     out=bytearray(struct.pack('<4I',len(mesh.vertices),len(mesh.indices),len(mesh.bones),mesh.flag))
     for v in mesh.vertices:
-        n=len(v.joints);assert n==len(v.weights) and 0<n<=4
+        n=len(v.joints);assert n==len(v.weights) and ((0<=n<=4) if mesh.bones else n==0)
         out+=struct.pack('<I8fI',n,*v.position,*v.normal,*v.uv,v.extra)
         out+=struct.pack('<'+str(n)+'I',*v.joints)+struct.pack('<'+str(n)+'f',*v.weights)
     out+=struct.pack('<'+str(len(mesh.indices))+'I',*mesh.indices)+mesh.tail

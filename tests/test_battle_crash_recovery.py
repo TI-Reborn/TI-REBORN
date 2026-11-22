@@ -73,6 +73,11 @@ class CrashRecoveryTests(unittest.TestCase):
         self.assertEqual(b['match_id'],self.battle['match_id']);self.assertEqual(b['ground'],self.battle['ground'])
         self.assertEqual(set(hub.account_owners),{'alice','bob'})
 
+    def test_shared_action_serializes_only_the_durable_checkpoint(self):
+        with patch.object(battle_snapshot, 'dumps', wraps=battle_snapshot.dumps) as encode:
+            self.medical()
+        self.assertEqual(encode.call_count, 1)
+
     def test_checkpoint_failure_rolls_back_gameplay_writes_memory_and_notifications(self):
         before=self.rows();queues={o:tuple(q) for o,q in self.case.hub.queues.items()}
         real=checkpoints.save
@@ -151,6 +156,23 @@ class CrashRecoveryTests(unittest.TestCase):
     def test_account_cannot_bind_to_two_checkpoints(self):
         with transaction(self.case.path) as db,self.assertRaisesRegex(ValueError,'another durable'):
             checkpoints.save(db,'different',checkpoints.read(self.case.path)[0][1],{'alice':55})
+
+    def test_checkpoint_reuses_unchanged_members_and_updates_changed_roster(self):
+        match = self.battle['match_id']
+        with transaction(self.case.path) as db:
+            members = dict(db.execute('SELECT account,owner_id FROM battle_checkpoint_members WHERE match_id=?', (match,)))
+            db.execute('CREATE TEMP TABLE binding_writes(kind, account)')
+            for verb, row in (('INSERT', 'NEW'), ('UPDATE', 'NEW'), ('DELETE', 'OLD')):
+                db.execute(f"CREATE TEMP TRIGGER record_{verb} AFTER {verb} ON battle_checkpoint_members "
+                           f"BEGIN INSERT INTO binding_writes VALUES ('{verb}', {row}.account); END")
+            checkpoints.save(db, match, 'same roster', members)
+            self.assertEqual(db.execute('SELECT * FROM binding_writes').fetchall(), [])
+            changed = {'alice': members['alice'] + 100, 'carol': 123}
+            checkpoints.save(db, match, 'changed roster', changed)
+            self.assertEqual(dict(db.execute('SELECT account,owner_id FROM battle_checkpoint_members WHERE match_id=?', (match,))), changed)
+            self.assertEqual(db.execute('SELECT payload FROM battle_checkpoints WHERE match_id=?', (match,)).fetchone(), ('changed roster',))
+            self.assertCountEqual(db.execute('SELECT * FROM binding_writes').fetchall(),
+                                  [('UPDATE', 'alice'), ('DELETE', 'bob'), ('INSERT', 'carol')])
 
     def test_pending_terminal_reports_take_precedence_over_active_checkpoint(self):
         from tio import battle_settlement

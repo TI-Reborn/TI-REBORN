@@ -34,6 +34,8 @@ from .item_ids import next_item_id
 ROOT = Path(__file__).resolve().parents[1]
 WEEK = 604800
 MONDAY = 345600  # 1970-01-05 UTC.
+SC_ENHANCED_LOT_BASE = 0x20000000
+SC_LOT_REVISION_STEP = 0x1000000
 
 
 def _transaction(db):
@@ -48,12 +50,12 @@ def _identity(identity):
 
 
 def _shop_level_limits(configured: Mapping[int, int]) -> dict[int, int]:
-    """Known city, base and mine shops use their authoritative world bands."""
+    """Shops use their location's authoritative world level band."""
     from .cities import CITIES
-    from .locations import BASE_LOCATIONS, MINE_LOCATIONS, location_levels
+    from .locations import BASE_LOCATIONS, MINE_LOCATIONS, SHOOTING_RANGE, location_levels
     from .world_completion import policy
     bases = {row['id'] for row in policy()['locations'] if row['kind'] == 'base'}
-    eligible = {*CITIES, *BASE_LOCATIONS, *MINE_LOCATIONS, *bases}
+    eligible = {*CITIES, *BASE_LOCATIONS, *MINE_LOCATIONS, *bases, SHOOTING_RANGE}
     limits = {town: location_levels(town)[1] for town in eligible}
     limits.update(configured)
     return limits
@@ -81,8 +83,8 @@ class ShopCompletion:
         for rule in p['stock'].values():
             if rule['mode'] == 'infinite':
                 if set(rule) != {'mode'}: raise ValueError('Invalid infinite stock rule')
-            elif rule['mode'] == 'weekly':
-                if set(rule) != {'mode', 'capacity'}: raise ValueError('Invalid weekly stock rule')
+            elif rule['mode'] in ('weekly', 'finite'):
+                if set(rule) != {'mode', 'capacity'}: raise ValueError('Invalid stock rule')
             elif rule['mode'] == 'threshold':
                 if (set(rule) != {'mode', 'capacity', 'threshold', 'delay_seconds'}
                         or type(rule['threshold']) is not int or not 0 <= rule['threshold'] < rule['capacity']
@@ -141,11 +143,16 @@ class ShopCompletion:
     def allowed(self, template, town, *, gold=False):
         values = self.values.get(template)
         if values is None: return False
+        if values.get('itype') == 'implant': return True
+        if template in (260, 261) and town != 9:
+            return False
         return int(values.get('level_required', '1')) <= self.towns[town]
 
     def rule(self, template, gold):
+        from .enhancement import LE_KIT
         values = self.values[template]
-        kind = ('premium' if gold else 'armor' if values.get('itype') == 'armor'
+        kind = ('le_kit' if template == LE_KIT
+                else 'premium' if gold else 'armor' if values.get('itype') == 'armor'
                 else 'weapon' if template in self.weapons else 'ammo' if values.get('itype') == 'ammo' else 'supply')
         return self.policy['stock'][kind]
 
@@ -154,6 +161,8 @@ class ShopCompletion:
         _transaction(db)
         rule = self.rule(template, bool(currency))
         if rule['mode'] == 'infinite': return None
+        if rule['mode'] == 'finite':
+            town, currency = 0, 1  # Keep the stock key used before the shop merge.
         now = self.stamp() if now is None else now
         week = MONDAY + ((now - MONDAY) // WEEK) * WEEK
         row = db.execute('SELECT quantity,week,refill_at FROM shop_global_stock WHERE version=? AND town=? AND currency=? AND offer_id=?',
@@ -174,17 +183,19 @@ class ShopCompletion:
         if not self.allowed(offer.item_id, town, gold=gold):
             raise ValueError('Товар недоступен в этом городе')
         now = self.stamp()
-        state = self.stock(db, town, int(gold), offer.unknown_u32_01, offer.item_id, now=now)
+        currency = int(gold)
+        state = self.stock(db, town, currency, offer.unknown_u32_01, offer.item_id, now=now)
         if state is None: return
         remaining, week, refill_at = state
         if not 1 <= quantity <= remaining: raise ValueError('Товар закончился; обновите магазин')
         remaining -= quantity
         rule = self.rule(offer.item_id, gold)
+        if rule['mode'] == 'finite': town, currency = 0, 1
         if rule['mode'] == 'threshold' and remaining < rule['threshold'] and refill_at is None:
             refill_at = now + rule['delay_seconds']
         db.execute('''INSERT INTO shop_global_stock VALUES (?,?,?,?,?,?,?)
             ON CONFLICT(version,town,currency,offer_id) DO UPDATE SET quantity=excluded.quantity,week=excluded.week,refill_at=excluded.refill_at''',
-                   (self.policy['version'], town, int(gold), offer.unknown_u32_01, remaining, week, refill_at))
+                   (self.policy['version'], town, currency, offer.unknown_u32_01, remaining, week, refill_at))
 
     def offers(self, db, account, category, *, gold=False):
         _transaction(db)
@@ -253,15 +264,18 @@ class ShopCompletion:
             raise ValueError('Экипированный, меченый, арендованный или неизвестно изменённый предмет нельзя продать')
         level = item.unknown_bytes_03[0]
         eligible = self.enhancement.items.get(item.template_id)
+        from .implants import catalog, policy
+        implant = item.template_id in catalog()
         if (level > 25 or item.unknown_bytes_02[0] > level
-                or (level and eligible is None)
+                or (level and eligible is None and not implant)
                 or (item.unknown_bytes_03[2] and not self.values[item.template_id].get('special') == '1')):
             raise ValueError('Неизвестное улучшение предмета')
         expected = offer.durability + level*self.enhancement.config['durability_per_level']
         current, maximum, theoretical = item.unknown_words
         if theoretical != expected or not 0 <= current <= maximum <= expected or expected <= 0:
             raise ValueError('Некорректная прочность предмета')
-        value = Fraction(offer.unknown_u32_03, offer.unknown_u32_02) + level*self.prices[30]['credits']
+        kit = policy()['upgrade']['template'] if implant else 30
+        value = Fraction(offer.unknown_u32_03, offer.unknown_u32_02) + level*self.prices[kit]['credits']
         return int(value * quantity * Fraction(65, 100) * Fraction(current, expected))
 
     def enhanced_offers(self):
@@ -270,7 +284,7 @@ class ShopCompletion:
             price = self.prices.get(identity)
             if price is None or not price['credits'] or price['credit_pack'] != 1: continue
             for level in self.policy['sc']['enhancements']:
-                lot = 0x20000000 + self.ready_prices.revision*0x1000000 + level*65536 + identity
+                lot = SC_ENHANCED_LOT_BASE + self.ready_prices.revision*SC_LOT_REVISION_STEP + level*65536 + identity
                 credits = self.ready_prices.quote(price['credits'], self.prices[30]['credits'], level,
                                                  kind=rule['kind'], special=rule['special'])
                 durability = rule['durability'] + level*self.enhancement.config['durability_per_level']
@@ -308,6 +322,12 @@ class CompletedSCShopStore:
                 identity TEXT,packet TEXT NOT NULL,recipient INTEGER,selection TEXT,cost INTEGER,accepted INTEGER NOT NULL DEFAULT 0,
                 UNIQUE(account,identity))''')
             db.execute("CREATE TRIGGER IF NOT EXISTS sc_cart_terms_no_update BEFORE UPDATE ON sc_cart_terms BEGIN SELECT RAISE(ABORT,'SC cart terms are frozen'); END")
+            current_lots = SC_ENHANCED_LOT_BASE + self.completion.ready_prices.revision*SC_LOT_REVISION_STEP
+            # Keep supply carts and discard quotes from previous equipment price revisions.
+            stale_bounds = (SC_ENHANCED_LOT_BASE, current_lots)
+            for table in ('sc_cart', 'sc_cart_terms'):
+                if db.execute(f'SELECT 1 FROM {table} WHERE lot_id>=? AND lot_id<? LIMIT 1', stale_bounds).fetchone():
+                    db.execute(f'DELETE FROM {table} WHERE lot_id>=? AND lot_id<?', stale_bounds)
             for operation in ('UPDATE', 'DELETE'):
                 db.execute(f"CREATE TRIGGER IF NOT EXISTS sc_receipts_no_{operation.lower()} BEFORE {operation} ON sc_receipts WHEN OLD.accepted=1 BEGIN SELECT RAISE(ABORT,'SC receipts are immutable'); END")
 

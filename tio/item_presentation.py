@@ -13,6 +13,8 @@ from pathlib import Path
 import re
 from xml.etree import ElementTree as ET
 
+from .clans import REPAIR_TEMPLATE
+
 ROOT = Path(__file__).resolve().parents[1]
 CATALOGUE = ROOT / 'evidence/items_diagnostic.xml'
 ORIGINAL_IMAGES = ROOT / 'config/original_item_images.json'
@@ -78,11 +80,22 @@ def _original_catalogue(source: bytes, images: bytes) -> bytes:
     return apply_item_images(source, selected)
 
 
+@lru_cache(maxsize=2)
+def _with_repair_points(source: bytes, interface: str) -> bytes:
+    root = ET.fromstring(source)
+    points = ET.SubElement(root, 'item', id=str(REPAIR_TEMPLATE), name='Repair Points')
+    image = 'itm_repairkit.png' if interface == ORIGINAL else 'tio_ii_17.png'
+    # Native HideRepairPoints filters this type from backpacks and item lists.
+    for key, value in (('image', image), ('itype', 'repairpoints'), ('durability', '1'), ('stackable', '1')):
+        ET.SubElement(points, 'value', key=key, val=value)
+    return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+
+
 def items_xml(interface: str) -> bytes:
     """Return the client item catalogue for one session's interface."""
     validate(interface)
     source = CATALOGUE.read_bytes()
-    if interface == NEW:
-        return source
-    original_images()  # validate the data before caching its transformation
-    return _original_catalogue(source, ORIGINAL_IMAGES.read_bytes())
+    if interface == ORIGINAL:
+        original_images()  # validate the data before caching its transformation
+        source = _original_catalogue(source, ORIGINAL_IMAGES.read_bytes())
+    return _with_repair_points(source, interface)

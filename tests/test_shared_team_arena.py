@@ -277,6 +277,41 @@ class SharedTeamTests(unittest.TestCase):
         self.assertEqual(battle['arena']._turns[1][0],owners[1])
         self.assertIn(b'\xc8\x17'+owners[1].to_bytes(4,'little')+(40).to_bytes(4,'little'),self.hub.queues[owners[0]])
 
+    def test_move_delivery_measures_sender_and_observer(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tio.protocol.battle_move import BattleMove, encode_move_request
+        from tio.protocol.transport import InitialCipher, InitialFrameReader
+
+        owners, battle = self.open_battle()
+        field = battle['field']
+        identity = field.actor_ids(owners[0])[0]
+        frames = []
+        sink = SimpleNamespace(sendall=frames.append, settimeout=lambda _: None)
+        with patch('server.team_arena.observe') as observe:
+            request = encode_move_request(BattleMove(identity, ((field.actor(identity).x, 6),)))
+            self.hub.handle(self.sessions[0], request, received_at=0.0)
+            for session in self.sessions[:2]:
+                self.hub.drain(session, sink, InitialCipher('S2C'))
+                reader = InitialFrameReader(InitialCipher('S2C'))
+                self.assertTrue(any(p[0] == 0x3d for frame in frames for p in reader.feed(frame)))
+                frames.clear()
+        names = [call.args[0] for call in observe.call_args_list]
+        self.assertCountEqual(names, ['battle.move.receive_to_publish', 'battle.move.lock_wait',
+                                     'battle.move.own.publish_to_send', 'battle.move.peer.publish_to_send',
+                                     'battle.sendall', 'battle.sendall'])
+
+    def test_rejected_move_is_not_counted_as_published(self):
+        from unittest.mock import patch
+        from tio.protocol.battle_move import BattleMove, encode_move_request
+
+        owners, battle = self.open_battle()
+        identity = battle['field'].actor_ids(owners[0])[0]
+        with patch('server.team_arena.observe') as observe:
+            replies = self.send(0, encode_move_request(BattleMove(identity, ((255, 255),))))
+        self.assertTrue(any(p.startswith(b'\xf0\x8a\x01\0\0') for p in replies))
+        observe.assert_not_called()
+
     def test_ap_exhaustion_finishes_without_waiting_for_timeout(self):
         from tio.protocol.battle_move import BattleMove,encode_move_request
         owners,battle=self.open_battle();field=battle['field'];identity=field.actor_ids(owners[0])[0]
@@ -309,6 +344,41 @@ class SharedTeamTests(unittest.TestCase):
         result=decode_attack_result(next(p for p in other if p[0]==0x4b))
         self.assertEqual(result.actor_id,attacker)
         self.assertEqual(result.hits[0].actor_id,victim)
+
+    def test_shot_from_fog_reaches_victim_without_revealing_shooter_model(self):
+        from test_combat import FixedRandom,item
+        from tio.protocol.battle_attack import AttackRequest,decode_attack_result,encode_attack_request
+        from tio.protocol.battle_soldier import decode_battle_soldier
+
+        owners,battle=self.open_battle();field=battle['field']
+        attacker=field.actor_ids(owners[0])[0];victim=field.actor_ids(owners[1])[0]
+        field._actors[victim]=replace(field.actor(victim),x=5,y=13)
+        for identity,actor in field._actors.items():
+            if field.allied(actor.owner_id,owners[1]):
+                field._actors[identity]=replace(actor,sight_radius=2)
+        equipment=(item(901,312,equipped=True),item(902,6,2))
+        field.combat.inventories[attacker]=encode_item_list(attacker,equipment)
+        with closing(sqlite3.connect(self.path)) as db,db:
+            db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=?',
+                       (encode_item_list(1,equipment),'alice'))
+        field.combat.rng=FixedRandom()
+        view=battle['views'][owners[1]]
+        hidden=next(p for p in view.refresh() if p[0]==0x3b and
+                    int.from_bytes(p[1:5],'little')==attacker)
+        self.assertEqual(decode_battle_soldier(hidden,human_equipment=True).position,(255,255))
+
+        replies=self.send(0,encode_attack_request(AttackRequest(attacker,5,13)))
+        other=tuple(self.hub.queues[owners[1]])
+        sent, = [decode_attack_result(p) for p in replies if p[0]==0x4b]
+        received, = [decode_attack_result(p) for p in other if p[0]==0x4b]
+        self.assertEqual(received,sent)
+        self.assertEqual((received.actor_id,received.origin,received.weapon_id),(attacker,(5,5),312))
+        hit, = received.hits
+        self.assertEqual((hit.actor_id,hit.left_hp),(victim,field.actor(victim).health))
+        self.assertLess(hit.left_hp,100)
+        self.assertNotIn(attacker,view.visible)
+        self.assertFalse(any(p[0] in (0x30,0x3b,0x3d,0x4e) and
+                             int.from_bytes(p[1:5],'little')==attacker for p in other))
 
     def test_subgrenade_shared_damage_and_account_local_ammunition(self):
         from test_combat import item,FixedRandom

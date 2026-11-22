@@ -37,7 +37,10 @@ class TradeTransportTests(unittest.TestCase):
         item=self.buy();before=self.state();self.begin_trade()
         self.a.send(wire.offer_request(item.instance_id,7));self.a.until(b'\x89');self.b.until(b'\x8a')
         self.b.send(wire.offer_request(wire.CREDITS_ID,120));self.b.until(b'\x89');self.a.until(b'\x8a')
-        self.a.send(wire.confirm_request());self.fixture.ping(self.a);self.assertEqual(self.state(),before)
+        self.a.send(wire.confirm_request())
+        self.assertEqual(self.a.until(b'\xf0\x83'), bytes.fromhex('f08300000000000000'))
+        self.assertEqual(self.b.until(b'\xf0\x7d'), bytes.fromhex('f07d00000000000000'))
+        self.assertEqual(self.state(),before)
         self.b.send(wire.confirm_request());self.a.until(b'\x8c');self.b.until(b'\x8c');after=self.state()
         self.assertEqual(after[0][0][1],before[0][0][1]+120);self.assertEqual(after[0][1][1],before[0][1][1]-120)
         with closing(sqlite3.connect(self.path)) as db:
@@ -56,7 +59,10 @@ class TradeTransportTests(unittest.TestCase):
     def test_peer_disconnect_after_confirmation_cancels_without_writes(self):
         self.begin_trade();self.a.send(wire.offer_request(wire.CREDITS_ID,100))
         self.a.until(b'\x89');self.b.until(b'\x8a');before=self.state()
-        self.a.send(wire.confirm_request());self.fixture.ping(self.a);self.b.sock.close()
+        self.b.send(wire.confirm_request())
+        self.assertEqual(self.b.until(b'\xf0\x83'), bytes.fromhex('f08300000000000000'))
+        self.assertEqual(self.a.until(b'\xf0\x7d'), bytes.fromhex('f07d00000000000000'))
+        self.b.sock.close()
         self.a.until(b'\x8c');self.assertEqual(self.state(),before)
         self.assertEqual(self.server.multi.player_trade.by_session,{})
 

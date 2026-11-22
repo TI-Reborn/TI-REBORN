@@ -247,8 +247,8 @@ class MineClaimAndTaxTests(unittest.TestCase):
         self.assertEqual([(i.instance_id,i.count) for i in crystals],[(CRYSTAL_MONEY_ID,1000)])
         self.assertFalse(any(i.template_id==51 for i in decode_item_list(self.pets.inventory('defender',1))[1]))
         credits=WalletStore(self.path).ensure('defender').credits
-        self.assertEqual(self.market.sell('defender',1000),1000)
-        self.assertEqual((self.market.balance('defender'),WalletStore(self.path).ensure('defender').credits),(0,credits+1000))
+        self.assertEqual(self.market.sell('defender',1000),10_000)
+        self.assertEqual((self.market.balance('defender'),WalletStore(self.path).ensure('defender').credits),(0,credits+10_000))
 
     def test_extraction_requires_outer_transaction(self):
         with closing(connect(self.path)) as db:

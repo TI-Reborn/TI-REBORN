@@ -23,9 +23,9 @@ def runtime(patched=False):
     return u,obj
 
 
-def writer(withdrawals=(),deposits=()):
+def writer(deposits=(),withdrawals=()):
     u,obj=runtime()
-    for address,rows in ((DATA+0x4000,withdrawals),(DATA+0x8000,deposits)):
+    for address,rows in ((DATA+0x4000,deposits),(DATA+0x8000,withdrawals)):
         put32(u,address-4,len(rows))
         for n,(i,count) in enumerate(rows):put32(u,address+n*656+0x28,i);put32(u,address+n*656+0x1c,count)
     u.reg_write(UC_X86_REG_EAX,17);u.reg_write(UC_X86_REG_EDX,18);u.reg_write(UC_X86_REG_ECX,DATA+0x4000)

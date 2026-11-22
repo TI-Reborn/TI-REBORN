@@ -22,6 +22,7 @@ from tio.services_completion import ServiceRejected
 from tio.owned_pets import OwnedPetStore
 from tio.protocol.pet_info import decode_pet_info,encode_pet_info,PetInfo
 from tio.protocol.item_list import encode_item_list,decode_item_list
+from tio.protocol.asset_count import decode_asset_count
 
 
 class ServiceOperationTests(unittest.TestCase):
@@ -95,6 +96,31 @@ class ServiceOperationTests(unittest.TestCase):
         session=SimpleNamespace(router=self.case.router,database=self.case.path,account='alice')
         with self.assertRaises(ServiceRejected):services_runtime.native(session,command='/changename Unknown NewName')
         self.assertEqual(before,self.case.rows())
+
+    def test_native_rename_identifies_the_selected_recruit_by_id(self):
+        store = OwnedPetStore(self.case.path)
+        pet = decode_pet_info(store.list('alice')[0][1], human_equipment=True)
+        for owner, pet_id in (('alice', 2), ('alice', 3), ('bob', 3)):
+            fields = {**pet.fields, '0x8c43eb': pet_id, '0x8c4489': 'Иван Смирнов'.encode('cp1251')}
+            store.ensure(owner, encode_pet_info(PetInfo(True, fields)), encode_item_list(pet_id, ()), human=True)
+        session = SimpleNamespace(router=self.case.router, database=self.case.path, account='alice')
+        before = self.wallet('alice')
+        other = self.wallet('bob')
+
+        request = b'\xb9\x06\x03\0\0\0NewName\0'
+        packets = services_runtime.native(session, rename_packet=request)
+        services_runtime.native(session, rename_packet=request)
+
+        def names(owner):
+            return {pet_id: decode_pet_info(raw, human_equipment=True).fields['0x8c4489'].decode('cp1251')
+                    for pet_id, raw, _ in store.list(owner) if pet_id != 1}
+
+        self.assertEqual(names('alice'), {2: 'Иван Смирнов', 3: 'NewName'})
+        self.assertEqual(names('bob'), {3: 'Иван Смирнов'})
+        self.assertEqual(self.wallet('alice'), (before[0] - 3000, before[1]))
+        self.assertEqual(self.wallet('bob'), other)
+        self.assertEqual(decode_asset_count(next(p for p in packets if p.startswith(b'\xc8\x39'))).credits,
+                         before[0] - 3000)
 
     def test_facade_uses_same_registry_and_binds_authenticated_principal(self):
         facade=ServicesV2(self.case.path,self.case.router.team_arena.lock,

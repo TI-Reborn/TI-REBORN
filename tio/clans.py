@@ -6,6 +6,9 @@ persistent sequence, independent of each account's local character ID.
 """
 from contextlib import closing
 from dataclasses import replace
+from ast import literal_eval
+import json
+import sqlite3
 import time
 import unicodedata
 from .db_transaction import connect
@@ -36,6 +39,9 @@ KNOWN_RIGHTS=(INVITE|VIEW_WAREHOUSE|WITHDRAW_WAREHOUSE|KICK|CREST|UPGRADE|ASSAUL
 DEFAULT_RIGHTS=VIEW_WAREHOUSE|VIEW_SAFE
 CAPACITY=32  # Server storage policy, not an inferred historical clan limit.
 MEMBER_LIMITS=(10,16,20)
+CLAN_ITEM_START = 0x40000000
+REPAIR_TEMPLATE = 115
+REPAIR_POINTS_ID = 0xffff0073
 # Original item51 is Crystals (items_diagnostic.xml); native7d4e58 copies
 # personal character+240 into that currency record. IDs here are server-issued
 # projections, not persistent inventory objects or recovered original IDs.
@@ -48,13 +54,13 @@ class ClanRejected(WarehouseRejected):pass
 
 
 def schema(db):
-    db.execute('''CREATE TABLE IF NOT EXISTS clans (
+    db.execute(f'''CREATE TABLE IF NOT EXISTS clans (
         id INTEGER PRIMARY KEY AUTOINCREMENT,name BLOB NOT NULL,name_key TEXT NOT NULL UNIQUE,
         leader TEXT NOT NULL UNIQUE,level INTEGER NOT NULL DEFAULT 0 CHECK(level BETWEEN 0 AND 2),
         influence INTEGER NOT NULL DEFAULT 0 CHECK(influence BETWEEN 0 AND 4294967295),
         credits INTEGER NOT NULL DEFAULT 0 CHECK(credits BETWEEN 0 AND 4294967295),
         gold INTEGER NOT NULL DEFAULT 0 CHECK(gold BETWEEN 0 AND 4294967295),
-        revision INTEGER NOT NULL DEFAULT 1,next_item INTEGER NOT NULL DEFAULT 1073741824)''')
+        revision INTEGER NOT NULL DEFAULT 1,next_item INTEGER NOT NULL DEFAULT {CLAN_ITEM_START})''')
     db.execute('''CREATE TABLE IF NOT EXISTS clan_members (
         id INTEGER PRIMARY KEY AUTOINCREMENT,account TEXT NOT NULL UNIQUE,clan_id INTEGER NOT NULL,
         permissions INTEGER NOT NULL,title INTEGER NOT NULL DEFAULT 0,contribution INTEGER NOT NULL DEFAULT 0,
@@ -70,6 +76,8 @@ def schema(db):
         operation TEXT NOT NULL,detail TEXT NOT NULL,created REAL NOT NULL)''')
     db.execute('''CREATE TABLE IF NOT EXISTS clan_crystals (
         clan_id INTEGER PRIMARY KEY,amount INTEGER NOT NULL CHECK(amount BETWEEN 0 AND 4294967295))''')
+    db.execute('''CREATE TABLE IF NOT EXISTS clan_repair (
+        clan_id INTEGER PRIMARY KEY,amount INTEGER NOT NULL CHECK(amount BETWEEN 0 AND 2147483647))''')
     db.execute('''CREATE TABLE IF NOT EXISTS crystal_wallets (
         account TEXT PRIMARY KEY,amount INTEGER NOT NULL CHECK(amount BETWEEN 0 AND 4294967295))''')
 
@@ -87,10 +95,55 @@ def membership(db,account):
     result=dict(zip(keys,row));result['name']=bytes(result['name']);result['capacity']=CAPACITY
     crystals=db.execute('SELECT amount FROM clan_crystals WHERE clan_id=?',(result['id'],)).fetchone() if db.execute("SELECT 1 FROM sqlite_master WHERE name='clan_crystals'").fetchone() else None
     result['crystals']=crystals[0] if crystals else 0
+    from .warehouse_completion import exists
+    repair=db.execute('SELECT amount FROM clan_repair WHERE clan_id=?',(result['id'],)).fetchone() if exists(db,'clan_repair') else None
+    result['repair']=repair[0] if repair else 0
     result['leader_name']=character(db,result['leader'])
     from .clan_benefits import crest_id
     result['crest_id']=crest_id(db,result['id'])
     return result
+
+
+def safe_asset_rows(clan: dict) -> tuple:
+    from .protocol.warehouse import WarehouseItem
+
+    funds = tuple(WarehouseItem(key, template, clan[column], 0, 0, 0)
+                  for key, (column, template, _) in MONEY_IDS.items() if clan[column])
+    if clan['repair']:
+        funds += (WarehouseItem(REPAIR_POINTS_ID, REPAIR_TEMPLATE, clan['repair'], 0, 0, 0),)
+    return funds
+
+
+def _change_safe_repair(db, clan_id: int, amount: int) -> None:
+    if not 0 <= amount <= 0x7fffffff:
+        raise ClanRejected('Недостаточно ремонтных очков или переполнение сейфа')
+    db.execute('''INSERT INTO clan_repair VALUES (?,?)
+                  ON CONFLICT(clan_id) DO UPDATE SET amount=excluded.amount''', (clan_id, amount))
+
+
+def _exchange_repair_points(db, account: str, clan: dict, give: int, take: int) -> None:
+    from .durability import KITS
+    from .repair import debit_warehouse_kits, reserve_item_id, warehouse_kits
+    from .warehouse_completion import persist_scope, read_scope, stash
+
+    if take:
+        require(db, account, WITHDRAW_REPAIR)
+    _change_safe_repair(db, clan['id'], clan['repair'] + give - take)
+    if give:
+        before = read_scope(db, account, required=True)
+        kits = warehouse_kits(before.values(), KITS)
+        after, assignments, _ = debit_warehouse_kits(db, account, before, kits, give)
+        persist_scope(db, account, before, after.values(), assignments)
+    else:
+        # The client exchanges points. Materialize them as ordinary personal kits.
+        template = 17
+        capacity = KITS[template]
+        whole, remainder = divmod(take, capacity)
+        kits = tuple(ItemRecord(reserve_item_id(db, account), template, bytes(2), count, 0, 0,
+                                (resource, capacity, capacity), bytes(4), None, bytes(3))
+                     for count, resource in ((whole, capacity), (int(bool(remainder)), remainder)) if count)
+        stash(db, account, kits, origin='clan-safe-repair', overflow=False)
+    record(db, clan['id'], account, 'repair_transfer', f'{give}:{take}')
 
 
 def character(db,account):
@@ -131,6 +184,35 @@ def record(db,clan,account,operation,detail=''):
     db.execute('INSERT INTO clan_ledger(clan_id,account,operation,detail,created) VALUES (?,?,?,?,?)',
                (clan,account,operation,str(detail),time.time()))
     db.execute('UPDATE clans SET revision=revision+1 WHERE id=?',(clan,))
+
+
+def warehouse_log(db: sqlite3.Connection, account: str, page: int) -> tuple[list[tuple], bool]:
+    if type(page) is not int or not 1 <= page <= 999999:
+        raise ClanRejected('Укажите номер страницы журнала от 1 до 999999')
+    clan = require(db, account, VIEW_WAREHOUSE)
+    size = 5
+    rows = db.execute("""
+        SELECT l.created,l.detail,
+               (SELECT name FROM characters WHERE account=l.account ORDER BY slot LIMIT 1)
+        FROM clan_ledger l
+        WHERE l.clan_id=? AND l.operation='items' AND l.detail LIKE '1:%'
+              AND l.detail<>'1:[]:[]'
+        ORDER BY l.id DESC LIMIT ? OFFSET ?
+    """, (clan['id'], size + 1, (page - 1) * size)).fetchall()
+    entries = []
+    for created, detail, name in rows[:size]:
+        payload = detail[2:]
+        if payload.startswith('{'):
+            data = json.loads(payload)
+            actor, deposits, withdrawals = data['actor'], data['deposits'], data['withdrawals']
+        else:
+            # Legacy rows kept only source instance IDs and quantities.
+            deposits, withdrawals = (literal_eval(part) for part in payload.split(':', 1))
+            deposits = [(None, key, count) for key, count in deposits]
+            withdrawals = [(None, key, count) for key, count in withdrawals]
+            actor = bytes(name).decode('cp1251') if name is not None else 'Бывший участник'
+        entries.append((created, actor, deposits, withdrawals))
+    return entries, len(rows) > size
 
 
 class ClansStore:
@@ -279,13 +361,14 @@ class ClansStore:
             from .mine_claims import configured_owner
             if configured_owner(db,clan_id):
                 raise ClanRejected('Перед роспуском освободите принадлежащие клану блокпосты')
-            if clan['credits'] or clan['gold'] or clan['crystals'] or db.execute('SELECT 1 FROM clan_items WHERE clan_id=?',(clan_id,)).fetchone():
+            if clan['credits'] or clan['gold'] or clan['crystals'] or clan['repair'] or db.execute('SELECT 1 FROM clan_items WHERE clan_id=?',(clan_id,)).fetchone():
                 raise ClanRejected('Перед роспуском заберите клановые активы')
             record(db,clan_id,account,'dissolve')
             from .social_completion import departed
             departed(db,account,clan_id,'dissolve',now=self.clock())
             db.execute('DELETE FROM clan_invitations WHERE clan_id=?',(clan_id,))
             db.execute('DELETE FROM clan_members WHERE clan_id=?',(clan_id,))
+            db.execute('DELETE FROM clan_repair WHERE clan_id=?',(clan_id,))
             db.execute('DELETE FROM clans WHERE id=?',(clan_id,))
 
     def upgrade(self,account,action):
@@ -316,17 +399,60 @@ class ClansStore:
             db.execute('BEGIN');clan=require(db,account,VIEW_WAREHOUSE if kind==1 else VIEW_SAFE)
             return tuple(self._items(db,clan['id'],kind).values())
 
-    def warehouse_packets(self,account,kind):
-        from .protocol.warehouse import encode_warehouse_list,warehouse_item_from_inventory,WarehouseItem
+    def warehouse_packets(self, account: str, kind: int, *, include_marks: bool = False) -> tuple[bytes, ...]:
+        from .protocol.warehouse import encode_warehouse_list,warehouse_item_from_inventory
         with closing(connect(self.path)) as db:
             db.execute('BEGIN');clan=require(db,account,VIEW_WAREHOUSE if kind==1 else VIEW_SAFE)
             items=[warehouse_item_from_inventory(i) for i in self._items(db,clan['id'],kind).values()]
             if kind==2:
-                items.extend(WarehouseItem(key,template,clan[column],0,0,0) for key,(column,template,_) in MONEY_IDS.items() if clan[column])
-            return (encode_warehouse_list(kind,1,0,items),)
+                items.extend(safe_asset_rows(clan))
+            packet = encode_warehouse_list(kind, 1, 0, items)
+            if include_marks:
+                from .bank_economy import project_marks
+                packet = project_marks(db, account, packet)
+            return (packet,)
 
-    def exchange(self,account,pet_id,kind,*,deposits=(),withdrawals=()):
+    def repair_warehouse_item(self, account: str, pet_id: int, target: int) -> bool:
+        """Repair a shared item with the same maximum wear rule as a personal kit."""
+        from .durability import repair_item
+        from .warehouse_completion import current_town
+
+        with closing(connect(self.path)) as db, db:
+            db.execute('BEGIN IMMEDIATE')
+            clan = membership(db, account)
+            if clan is None:
+                return False
+            raw = db.execute('SELECT item_packet FROM clan_items WHERE clan_id=? AND kind=1 AND instance_id=?',
+                             (clan['id'], target)).fetchone()
+            if raw is None:
+                return False
+            current_town(db, account)
+            row = db.execute('SELECT human,pet_packet,inventory_packet FROM owned_pets WHERE account=? AND pet_id=?',
+                             (account, pet_id)).fetchone()
+            if row is None or OwnedPetStore.validate(row[1], row[2], bool(row[0])) != pet_id:
+                raise ClanRejected('Owned mercenary required')
+            if any(i.instance_id == target for i in decode_item_list(row[2])[1]):
+                return False
+            require(db, account, VIEW_WAREHOUSE | VIEW_SAFE | WITHDRAW_REPAIR)
+            if not clan['repair']:
+                raise ClanRejected('В клановом сейфе нет ремонтных очков')
+            item = decode_item_list(raw[0])[1][0]
+            kit = ItemRecord(REPAIR_POINTS_ID, 17, bytes(2), 1, 0, 0, (clan['repair'], 0, 0), bytes(4), None, bytes(3))
+            fixed, _, spent, loss = repair_item(item, kit)
+            _change_safe_repair(db, clan['id'], clan['repair'] - spent)
+            db.execute('UPDATE clan_items SET item_packet=? WHERE clan_id=? AND instance_id=?',
+                       (encode_item_list(0, (fixed,)), clan['id'], target))
+            record(db, clan['id'], account, 'repair_item', f'{target}:{spent}:{loss}')
+            return True
+
+    def exchange(self, account: str, pet_id: int | None, kind: int, *,
+                 deposits: tuple[tuple[int, int], ...] = (),
+                 withdrawals: tuple[tuple[int, int], ...] = ()) -> tuple[bytes | None, tuple[ItemRecord, ...]]:
+        """Exchange clan stock. A missing mercenary identifies a personal warehouse donation."""
         if kind not in (1,2):raise ClanRejected('Unknown clan warehouse')
+        from_personal = pet_id is None
+        if from_personal and (kind != 1 or withdrawals or not deposits):
+            raise ClanRejected('Некорректная передача на склад клана')
         selections=[]
         for pairs in (deposits,withdrawals):
             chosen={}
@@ -340,12 +466,17 @@ class ClansStore:
         with closing(connect(self.path)) as db,db:
             db.execute('BEGIN IMMEDIATE');clan=require(db,account,VIEW_WAREHOUSE if kind==1 else VIEW_SAFE)
             if withdrawals and kind==1:require(db,account,WITHDRAW_WAREHOUSE)
-            row=db.execute('SELECT human,pet_packet,inventory_packet FROM owned_pets WHERE account=? AND pet_id=?',(account,pet_id)).fetchone()
-            if row is None or OwnedPetStore.validate(row[1],row[2],bool(row[0]))!=pet_id:raise ClanRejected('Owned mercenary required')
+            if not from_personal:
+                row=db.execute('SELECT human,pet_packet,inventory_packet FROM owned_pets WHERE account=? AND pet_id=?',(account,pet_id)).fetchone()
+                if row is None or OwnedPetStore.validate(row[1],row[2],bool(row[0]))!=pet_id:raise ClanRejected('Owned mercenary required')
             # Server-issued virtual wallet/safe instances travel through the
             # original6B arrays. They never become physical inventory items.
             money=[]
             if kind==2:
+                give_repair = deposits.pop(REPAIR_POINTS_ID, 0)
+                take_repair = withdrawals.pop(REPAIR_POINTS_ID, 0)
+                if give_repair or take_repair:
+                    _exchange_repair_points(db, account, clan, give_repair, take_repair)
                 for key,(column,template,right) in MONEY_IDS.items():
                     give=deposits.pop(key,0);take=withdrawals.pop(key,0)
                     if not (give or take):continue
@@ -361,50 +492,78 @@ class ClansStore:
                     if not 0<=personal<=0xffffffff or not 0<=shared<=0xffffffff:
                         raise ClanRejected('Недостаточно средств или переполнение баланса')
                     money.append((column,personal,shared,give,take))
-            _,original,unknown=decode_item_list(row[2]);inventory={i.instance_id:i for i in original}
-            if len(inventory)!=len(original):raise ClanRejected('Duplicate inventory item IDs')
+            from .warehouse_completion import clan_capacity, current_town, persist_scope
+            personal_stock = WarehouseStore._read(db, account)
+            if from_personal:
+                current_town(db, account)
+                personal = personal_stock.copy()
+            else:
+                _,original,unknown=decode_item_list(row[2]);personal={i.instance_id:i for i in original}
+                if len(personal)!=len(original):raise ClanRejected('Duplicate inventory item IDs')
             warehouse=self._items(db,clan['id'],kind)
             initial_count=len(warehouse)
-            for selection,source in ((deposits,inventory),(withdrawals,warehouse)):
+            from .durability import LE_REPAIR_KIT
+            for selection,source in ((deposits,personal),(withdrawals,warehouse)):
                 for key,count in selection.items():
                     item=source.get(key)
                     if item is None:raise ClanRejected('Selected item is not in the owned source')
+                    if source is personal and item.template_id == LE_REPAIR_KIT:
+                        raise ClanRejected('Repair Kit LE нельзя передавать клану')
                     if count>item.count:raise ClanRejected('Insufficient item quantity')
                     if item.equipped or item.slot:raise ClanRejected('Unequip item before transferring')
                     from .item_boosters import nontransferable
                     if nontransferable(item.template_id):raise ClanRejected('Бустеры нельзя продавать и передавать')
-                    if item.unknown_bytes_02[2] or item.unknown_bytes_02[3] or item.optional_u32 is not None:
-                        raise ClanRejected('Помеченные, арендованные и временные предметы нельзя передавать клану')
+                    if item.unknown_bytes_02[3] or item.optional_u32 is not None:
+                        raise ClanRejected('Арендованные и временные предметы нельзя передавать клану')
+                    if item.unknown_bytes_02[2]:
+                        from .bank_economy import clan_mark_holder, table
+                        holder=account if source is personal else clan_mark_holder(clan['id'])
+                        if (kind!=1 or count!=1 or item.count!=1 or not table(db,'bank_item_marks')
+                                or db.execute("SELECT count(*) FROM bank_item_marks WHERE holder=? AND current_instance=? AND template=? AND state='active'",
+                                              (holder,key,item.template_id)).fetchone()[0]!=1):
+                            raise ClanRejected('Активная метка предмета не найдена')
                     if kind==2:
                         right={30:WITHDRAW_UPGRADES}.get(item.template_id)
                         if right is None:raise ClanRejected('В клановом сейфе доступны только Upgrade Kit')
                         if source is warehouse:require(db,account,right)
-            seen=set(WarehouseStore._read(db,account))
+            seen=set(personal_stock)
             for packet, in db.execute('SELECT inventory_packet FROM owned_pets WHERE account=?',(account,)):
                 for i in decode_item_list(packet)[1]:
                     if i.instance_id in seen:raise ClanRejected('Item ID exists in multiple locations')
                     seen.add(i.instance_id)
             next_personal=next_item_id(db,account,seen)
             next_shared=db.execute('SELECT next_item FROM clans WHERE id=?',(clan['id'],)).fetchone()[0]
-            for selection,source,destination in ((withdrawals,warehouse,inventory),(deposits,inventory,warehouse)):
+            incoming, outgoing = [], []
+            for selection,source,destination in ((withdrawals,warehouse,personal),(deposits,personal,warehouse)):
                 for key,count in selection.items():
                     item=source[key]
-                    new=next_shared if source is inventory else next_personal
+                    if kind==1:
+                        (incoming if source is personal else outgoing).append((item.template_id,key,count))
+                    new=next_shared if source is personal else next_personal
                     if new>=0xffff0000:raise ClanRejected('Item ID space exhausted')
-                    if source is inventory:next_shared+=1
+                    if source is personal:next_shared+=1
                     else:next_personal+=1
                     if count==item.count:source.pop(key)
                     else:source[key]=replace(item,unknown_u32_01=item.count-count)
                     destination[new]=replace(item,instance_id=new,unknown_u32_01=count)
+                    if item.unknown_bytes_02[2]:
+                        from .bank_economy import clan_mark_holder
+                        shared_holder=clan_mark_holder(clan['id'])
+                        holder,target=(account,shared_holder) if source is personal else (shared_holder,account)
+                        db.execute("UPDATE bank_item_marks SET holder=?,current_instance=? WHERE holder=? AND current_instance=? AND state='active'",
+                                   (target,new,holder,key))
             warehouse={i.instance_id:i for i in merge_stacks(warehouse.values())}
-            inventory={i.instance_id:i for i in merge_stacks(inventory.values())}
-            from .warehouse_completion import clan_capacity
             if len(warehouse)>max(initial_count,clan_capacity(db,clan['id'],kind)):raise ClanRejected('Warehouse capacity exceeded')
-            validate_capacity(original,inventory,error=ClanRejected)
-            updated=encode_item_list(pet_id,tuple(inventory.values()),unknown)
             from .protocol.warehouse import encode_warehouse_snapshot
             encode_warehouse_snapshot(kind,warehouse.values())
-            db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=?',(updated,account,pet_id))
+            updated = None
+            if from_personal:
+                persist_scope(db, account, personal_stock, personal.values(), {})
+            else:
+                personal={i.instance_id:i for i in merge_stacks(personal.values())}
+                validate_capacity(original,personal,error=ClanRejected)
+                updated=encode_item_list(pet_id,tuple(personal.values()),unknown)
+                db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=?',(updated,account,pet_id))
             db.execute('DELETE FROM clan_items WHERE clan_id=? AND kind=?',(clan['id'],kind))
             db.executemany('INSERT INTO clan_items VALUES (?,?,?,?)',[(clan['id'],kind,k,encode_item_list(0,(i,))) for k,i in warehouse.items()])
             db.execute('INSERT INTO item_sequences VALUES (?,?) ON CONFLICT(account) DO UPDATE SET next_id=excluded.next_id',(account,next_personal))
@@ -419,7 +578,12 @@ class ClansStore:
                     db.execute(f'UPDATE wallets SET {column}=? WHERE account=?',(personal,account))
                     db.execute(f'UPDATE clans SET {column}=? WHERE id=?',(shared,clan['id']))
                 record(db,clan['id'],account,'money',f'{column}:{give}:{take}')
-            record(db,clan['id'],account,'items',f'{kind}:{list(deposits.items())}:{list(withdrawals.items())}')
+            if kind==1:
+                if incoming or outgoing:
+                    detail = dict(actor=character(db,account).decode('cp1251'), deposits=incoming, withdrawals=outgoing)
+                    record(db,clan['id'],account,'items','1:'+json.dumps(detail,ensure_ascii=False))
+            else:
+                record(db,clan['id'],account,'items',f'{kind}:{list(deposits.items())}:{list(withdrawals.items())}')
             return updated,tuple(warehouse.values())
 
 
@@ -464,10 +628,13 @@ def append_money(packet,assets):
     """
     owner,items,unknown=decode_item_list(packet)
     if owner!=1:return packet
-    physical=tuple(i for i in items if i.instance_id not in MONEY_IDS)
+    physical=tuple(i for i in items if i.instance_id not in MONEY_IDS and i.instance_id != REPAIR_POINTS_ID)
     def amount(column):return getattr(assets,'spectra_crystals' if column=='crystals' else column)
     money=tuple(ItemRecord(key,template,b'\0\0',amount(column),0,0,(0,0,0),bytes(4),None,bytes(3))
         for key,(column,template,_) in MONEY_IDS.items() if column!='crystals' or amount(column))
+    if assets.repair_points:
+        money += (ItemRecord(REPAIR_POINTS_ID, REPAIR_TEMPLATE, bytes(2), assets.repair_points, 0, 0,
+                             (0, 0, 0), bytes(4), None, bytes(3)),)
     return encode_item_list(owner,(*physical,*money),unknown)
 
 
@@ -480,7 +647,11 @@ def project_inventory(path,account,packet):
         if row is None:return packet
         from .protocol.asset_count import AssetCount
         crystals=db.execute('SELECT amount FROM crystal_wallets WHERE account=?',(account,)).fetchone() if db.execute("SELECT 1 FROM sqlite_master WHERE name='crystal_wallets'").fetchone() else None
-        return append_money(packet,AssetCount(*row,spectra_crystals=crystals[0] if crystals else 0))
+        from .durability import KITS
+        from .repair import warehouse_kits
+        kits = warehouse_kits(WarehouseStore._read(db, account).values(), KITS)
+        repair = min(sum(i.count * i.unknown_words[0] for i in kits), 0x7fffffff)
+        return append_money(packet,AssetCount(*row,spectra_crystals=crystals[0] if crystals else 0, unknown_u32_08=repair))
 
 
 def project_asset_packet(path,account,packet):

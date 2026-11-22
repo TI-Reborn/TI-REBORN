@@ -4,7 +4,6 @@ import json,random,sqlite3,tempfile,unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
-from battle_exit_fixture import place_squad_at_edge
 
 from server.accounts import Accounts
 from server.battle_journal import BattleJournal
@@ -82,6 +81,12 @@ class TutorialTests(unittest.TestCase):
         actor=battle['field'].actor(battle['tutorial_player'])
         return self.send(name,encode_move_request(BattleMove(actor.actor_id,((actor.x,actor.y+1),))))
 
+    def leave_at_edge(self, battle):
+        field = battle['field']
+        actor_id = battle['tutorial_player']
+        field._actors[actor_id] = replace(field.actor(actor_id), x=1)
+        return self.send('alice', b'\x2a\x01')
+
     def defeat(self,battle,name='alice'):
         replies=[]
         for attempt in range(100):
@@ -94,6 +99,8 @@ class TutorialTests(unittest.TestCase):
 
     def test_creation_exactly_two_starters_atomic_once_and_prepare_no_backfill(self):
         self.assertEqual(self.create('alice'),(2,3));self.assertEqual([r[0] for r in OwnedPetStore(self.path).list('alice')],[1,2,3])
+        with transaction(self.path) as db:
+            db.execute("UPDATE wallets SET credits=20 WHERE account='alice'")
         before=self.profile('alice')
         with transaction(self.path):self.assertEqual(initialize_created(self.path,'alice'),(2,3))
         prepare(self.path,'alice');self.assertEqual(self.profile('alice'),before)
@@ -132,7 +139,9 @@ class TutorialTests(unittest.TestCase):
         self.assertEqual(self.profile('alice'),before);self.assertEqual(self.rewards(),[])
         owner=self.hub.identities[self.sessions['alice']]
         self.assertTrue(any(p[0]==0x4c for p in replies))
-        self.send('alice',b'\x2a\x01');self.assertFalse(self.hub.busy(self.sessions['alice']))
+        city = self.send('alice', b'\x2a\x01')
+        self.assertTrue(any('Поговорите с Рут Восс'.encode('utf-16le') in packet for packet in city))
+        self.assertFalse(self.hub.busy(self.sessions['alice']))
         self.assertIsNone(self.sessions['alice']._battle_treatment_ids)
 
     def test_early_kill_does_not_fake_endturn_or_leave_mission_stuck(self):
@@ -173,8 +182,7 @@ class TutorialTests(unittest.TestCase):
 
     def test_early_leave_preserves_facts_then_continuation_not_replay(self):
         self.create('alice');before=self.profile('alice');battle=self.start();self.move(battle)
-        place_squad_at_edge(battle['field'], self.hub.identities[self.sessions['alice']])
-        self.send('alice',b'\x2a\x01');state=tutorial_status(self.path,'alice')
+        self.leave_at_edge(battle);state=tutorial_status(self.path,'alice')
         self.assertEqual((state['step'],state['match_id'],state['completed']),(1,None,False))
         self.assertTrue(self.hub.tutorial_command(self.sessions['alice'],'/tutorial'))
         next_battle=self.hub.battles[self.hub.identities[self.sessions['alice']]]
@@ -183,8 +191,7 @@ class TutorialTests(unittest.TestCase):
 
     def test_verified_early_kill_survives_closed_attempt_without_second_kill(self):
         self.create('alice');battle=self.start();self.defeat(battle)
-        place_squad_at_edge(battle['field'], self.hub.identities[self.sessions['alice']])
-        self.send('alice',b'\x2a\x01')
+        self.leave_at_edge(battle)
         self.assertEqual(tutorial_status(self.path,'alice')['observed_events'],10)
         self.assertTrue(self.hub.tutorial_command(self.sessions['alice'],'/tutorial'))
         resumed=self.hub.battles[self.hub.identities[self.sessions['alice']]]

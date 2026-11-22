@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Security;
@@ -25,6 +26,7 @@ internal sealed class TlsBridge : IAsyncDisposable
     readonly string language;
     readonly string presentation;
     readonly LaunchVerification? verification;
+    readonly Action<string> diagnostic;
     readonly byte[] contractsToken = RandomNumberGenerator.GetBytes(32);
     readonly SemaphoreSlim contractsRequests = new(1);
     readonly X509ChainPolicy? testChainPolicy;
@@ -43,10 +45,11 @@ internal sealed class TlsBridge : IAsyncDisposable
     internal IPAddress BoundAddress => ((IPEndPoint)login.LocalEndpoint).Address;
     internal Task<Exception> Failure => failure.Task;
 
-    internal TlsBridge(TlsEndpoint endpoint, X509ChainPolicy? testChainPolicy = null, string language = "russian", LaunchVerification? verification = null, string presentation = GameInterface.New)
+    internal TlsBridge(TlsEndpoint endpoint, X509ChainPolicy? testChainPolicy = null, string language = "russian", LaunchVerification? verification = null, string presentation = GameInterface.New, Action<string>? diagnostic = null)
     {
         this.endpoint = endpoint;
         this.verification = verification;
+        this.diagnostic = diagnostic ?? WriteDiagnostic;
         GameLanguage.Validate(language); this.language = language;
         GameInterface.Validate(presentation); this.presentation = presentation;
         this.testChainPolicy = testChainPolicy;
@@ -137,7 +140,15 @@ internal sealed class TlsBridge : IAsyncDisposable
         using (native)
         using (var channel = CancellationTokenSource.CreateLinkedTokenSource(stopping.Token))
         {
+            byte[] trace = RandomNumberGenerator.GetBytes(16);
+            RelayEnd? first = null;
+            void Record(string operation, Exception? error)
+            {
+                Interlocked.CompareExchange(ref first, new RelayEnd(DateTime.UtcNow, operation, error), null);
+            }
+
             bool authenticated = false;
+            string phase = "vps_connect";
             try
             {
                 native.NoDelay = true;
@@ -146,10 +157,13 @@ internal sealed class TlsBridge : IAsyncDisposable
                 using (connection.Tcp)
                 using (connection.Tls)
                 {
+                    phase = "vps_bootstrap_write";
                     if (verification is not null)
                     {
-                        byte[] preface=verification.Preface(SessionPort, language, presentation);preface[4]=3;
-                        await connection.Tls.WriteAsync(preface.Concat(contractsToken).ToArray(), channel.Token);
+                        byte[] preface = verification.Preface(SessionPort, language, presentation);
+                        preface[4] = 4;
+                        byte[] envelope = [..preface, ..contractsToken, ..trace];
+                        await connection.Tls.WriteAsync(envelope, channel.Token);
                     }
                     else if (initial)
                     {
@@ -157,8 +171,9 @@ internal sealed class TlsBridge : IAsyncDisposable
                         await connection.Tls.WriteAsync(preface, channel.Token);
                     }
                     using var local = native.GetStream();
-                    var toServer = local.CopyToAsync(connection.Tls, channel.Token);
-                    var toNative = connection.Tls.CopyToAsync(local, channel.Token);
+                    phase = "relay";
+                    var toServer = Copy(local, connection.Tls, "native_read", "vps_write", Record, channel.Token);
+                    var toNative = Copy(connection.Tls, local, "vps_read", "native_write", Record, channel.Token);
                     try { await await Task.WhenAny(toServer, toNative); }
                     finally
                     {
@@ -171,11 +186,81 @@ internal sealed class TlsBridge : IAsyncDisposable
                     }
                 }
             }
-            catch (OperationCanceledException) when (stopping.IsCancellationRequested) { }
-            catch (Exception ex) when (authenticated && ex is IOException or SocketException or ObjectDisposedException) { }
-            catch (Exception ex) { failure.TrySetResult(ex); }
-            finally { slots.Release(); }
+            catch (OperationCanceledException ex) when (stopping.IsCancellationRequested) { Record(phase, ex); }
+            catch (Exception ex) when (authenticated && ex is IOException or SocketException or ObjectDisposedException) { Record(phase, ex); }
+            catch (Exception ex) { Record(phase, ex); failure.TrySetResult(ex); }
+            finally
+            {
+                slots.Release();
+                if (first is not null)
+                {
+                    string kind = initial ? "login" : "game";
+                    diagnostic($"{first.Time:O} tls_relay_end trace_id={Convert.ToHexStringLower(trace)} kind={kind} " +
+                               $"operation={first.Operation} event={first.Event} error={first.ErrorName} socket_error={first.SocketCode}");
+                }
+            }
         }
+    }
+
+    static async Task Copy(Stream source, Stream target, string read, string write,
+        Action<string, Exception?> record, CancellationToken token)
+    {
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(81920);
+        string operation = read;
+        try
+        {
+            while (true)
+            {
+                operation = read;
+                int size = await source.ReadAsync(buffer.AsMemory(), token);
+                if (size == 0)
+                {
+                    record(operation, null);
+                    return;
+                }
+                operation = write;
+                await target.WriteAsync(buffer.AsMemory(0, size), token);
+            }
+        }
+        catch (Exception error)
+        {
+            record(operation, error);
+            throw;
+        }
+        finally { ArrayPool<byte>.Shared.Return(buffer, clearArray: true); }
+    }
+
+    sealed record RelayEnd(DateTime Time, string Operation, Exception? Error)
+    {
+        SocketError? SocketErrorCode => (Error as SocketException ?? Error?.InnerException as SocketException)?.SocketErrorCode;
+        internal string SocketCode => SocketErrorCode?.ToString() ?? "-";
+        internal string ErrorName => Error?.GetType().Name ?? "-";
+        internal string Event => SocketErrorCode switch
+        {
+            SocketError.ConnectionReset or SocketError.NetworkReset => "reset",
+            SocketError.TimedOut => "timeout",
+            _ => Error switch
+            {
+                null => "eof",
+                OperationCanceledException => Operation == "vps_connect" ? "timeout_or_cancelled" : "cancelled",
+                _ => "error"
+            }
+        };
+    }
+
+    static readonly object LogLock = new();
+
+    static void WriteDiagnostic(string line)
+    {
+        try
+        {
+            string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TioLauncher");
+            Directory.CreateDirectory(folder);
+            lock (LogLock)
+                File.AppendAllText(Path.Combine(folder, $"tls-relay-{Environment.ProcessId}.log"), line + Environment.NewLine);
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
     }
 
     internal async Task<JsonElement> Contracts(object request, CancellationToken token)

@@ -1,6 +1,7 @@
-"""Original B1 services; permanent personal upgrades confirmed by the manual.
+"""Permanent personal upgrades through the original B1 services protocol.
 
 services.cfg confirms IDs/powers; current silver.dll reads services.xml.
+Warehouse levels 1/2 use recovered powers/prices; levels 3..6 are owner policy.
 Clan services and services without recovered prices are not offered.
 """
 
@@ -11,7 +12,8 @@ from .protocol.binary import Reader,Writer,PacketError
 from .protocol.city_catalogs import ServiceOffer,ServiceOption,encode_service_shop
 
 from .roster_progression import roster_expansion
-OFFERS={1:((8,5000),(16,15000)),2:roster_expansion()}
+OFFERS={1:((8,5000),(16,15000),(32,30000),(64,60000),
+           (128,120000),(256,240000)),2:roster_expansion()}
 
 
 def level(db,account,service):
@@ -30,7 +32,10 @@ def shared_xml():
     root=Element('services')
     for identity,options in OFFERS.items():
         node=SubElement(root,'service',id=str(identity),name=f'se{identity:02}',target='self',expireType='never',canSellBack='false')
-        for number,(value,_) in enumerate(options,1):SubElement(node,'level',val=str(number),power=str(value))
+        for number,(value,_) in enumerate(options,1):
+            tier=SubElement(node,'level',val=str(number),power=str(value))
+            # Native XMLGetValue reads child key/val entries, not attributes.
+            SubElement(tier,'value',key='power',val=str(value))
     return tostring(root,encoding='utf-8',xml_declaration=True)
 
 

@@ -23,13 +23,15 @@ def require_unjailed(session):
 
 
 def project_town(session,packet):
-    """Attach native training schedule only to this account's current TownInfo."""
+    """Attach the public training schedule and shared online population."""
     if packet[:2]!=b'\xc8\x2d' or len(packet)<4:return packet
     town=int.from_bytes(packet[2:4],'little')
     hub=getattr(getattr(session,'router',None),'team_arena',None)
     locations=getattr(session,'locations',None)
     if town in (19,20,21,22) and locations is not None and locations.current(session.account)==town and hub is not None and hasattr(hub,'training_path'):
-        with hub.lock:return hub.training_town_packet(town)
+        with hub.lock:packet=hub.training_town_packet(town)
+    presence=getattr(getattr(session,'router',None),'presence',None)
+    if presence is not None:packet=presence.project_town(packet)
     return packet
 
 

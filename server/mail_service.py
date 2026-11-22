@@ -1,6 +1,7 @@
 """Native character mail: quotes are inert, commits use durable escrow tokens."""
 from contextlib import closing
 from dataclasses import dataclass
+from math import ceil
 import time
 import uuid
 
@@ -18,6 +19,8 @@ from tio.wallets import WalletStore
 from .clan_service import enqueue
 
 CREDITS_ID=0xffff0001
+COMPOSE_PRICE_ID = 0xffffffff
+COMPOSE_SEND_KIND = 3
 PAGE_SIZE=20
 
 
@@ -58,18 +61,24 @@ def attachments(row):
     return values
 
 
+def lifetime_days(expires_at: int, now: int) -> int:
+    return max(0, ceil((expires_at - now) / 86400))
+
+
 def body(row):
     items=attachments(row)
+    days = lifetime_days(row['expires_at'], int(time.time()))
     return wire.encode_body(wire.MailBody(row['id'],row['sender_name'].decode('ascii'),row['subject'],
-        row['created_at'],10,False,bool(items),row['body'],0,items))
+        row['created_at'],days,False,bool(items),row['body'],0,items))
 
 
 def listing(store,owner,page=1):
     if page<1:raise ValueError('Недопустимая страница почты')
-    rows=store.listing(owner);pages=max(1,(len(rows)+PAGE_SIZE-1)//PAGE_SIZE)
+    now = int(time.time())
+    rows=store.listing(owner,now=now);pages=max(1,(len(rows)+PAGE_SIZE-1)//PAGE_SIZE)
     if page>pages:raise ValueError('Страница почты не найдена')
     entries=tuple(wire.MailSummary(r['id'],r['sender_name'].decode('ascii'),r['subject'],r['created_at'],
-        (r['attachments']+bool(r['credits'] and not r.get('money_claimed',False))) if r['state']=='pending' else 0,not r['read'],0)
+        lifetime_days(r['expires_at'], now),not r['read'],0)
         for r in rows[(page-1)*PAGE_SIZE:page*PAGE_SIZE])
     return wire.encode_list(entries,pages=pages,page=page)
 
@@ -87,19 +96,26 @@ def warehouse(store,owner):
     return wire.encode_post_warehouse(entries)
 
 
-def draft(session,request):
-    store=current(session)
-    if request.kind!=0:raise ValueError('Этот тип письма не поддерживается')
-    subject=_text(request.subject,store.rules['maximum_subject_bytes'])
-    text=_text(request.body,store.rules['maximum_body_bytes'])
+def selected_assets(selection: tuple[tuple[int, int], ...]) -> tuple[int, list[tuple[int, int]]]:
     money=0;items=[];seen=set()
-    for ident,count in request.items:
+    for ident,count in selection:
         if ident in seen or not count:raise ValueError('Недопустимое или повторное вложение')
         seen.add(ident)
         if ident==CREDITS_ID:money=count
         elif ident>=0xffff0000:raise ValueError('По почте можно передавать только кредиты и вещи')
         else:items.append((ident,count))
+    return money, items
+
+
+def draft(session, request: wire.DraftRequest) -> Draft:
+    store=current(session)
+    if request.kind not in (0, COMPOSE_SEND_KIND):raise ValueError('Этот тип письма не поддерживается')
+    subject=_text(request.subject,store.rules['maximum_subject_bytes'])
+    text=_text(request.body,store.rules['maximum_body_bytes'])
+    money, items = selected_assets(request.items)
     fee=store.quote(money,items)
+    if request.kind == COMPOSE_SEND_KIND and fee != getattr(session, 'mail_compose_price', None):
+        raise ValueError('Обновите стоимость отправки письма')
     with closing(connect(session.database)) as db:
         db.execute('BEGIN')
         owner=owner_for_name(db,request.recipient.decode('ascii'))
@@ -119,7 +135,8 @@ def draft(session,request):
     reply=wire.encode_body(wire.MailBody(0,recipient.decode('ascii'),subject,int(time.time()),10,
         False,bool(preview),text,fee,tuple(preview)))
     result=Draft(recipient,subject,text,money,tuple(items),uuid.uuid4().hex,reply)
-    session.mail_draft=result
+    if request.kind == 0:
+        session.mail_draft = result
     return result
 
 
@@ -184,7 +201,18 @@ def handle(presence,session,packet):
             refresh_assets(presence,session);refresh_post(presence,session)
         elif packet[:2]==b'\xb7\x0d':enqueue(presence,session,listing(store,session.account,wire.decode_page(packet)))
         elif packet[:2]==b'\xb7\x07':
-            mutable(session);value=draft(session,wire.decode_draft(packet));enqueue(presence,session,value.preview)
+            mutable(session)
+            request = wire.decode_draft(packet)
+            if request.kind == COMPOSE_SEND_KIND:
+                previous = getattr(session, 'mail_submission', None)
+                if previous is not None and previous[0] == request:
+                    value = previous[1]
+                else:
+                    value = draft(session, request)
+                    session.mail_submission = (request, value)
+                finalize(presence, session, value)
+            else:
+                enqueue(presence, session, draft(session, request).preview)
         elif packet[:2]==b'\xb7\x08':
             mutable(session);calculate,identity=wire.decode_recalculate(packet)
             value=getattr(session,'mail_draft',None)
@@ -207,7 +235,15 @@ def handle(presence,session,packet):
                 enqueue(presence,session,body(store.read(session.account,request.identity)))
             else:
                 mutable(session)
-                if request.action==1 and not request.identity:
+                if request.action == 1 and request.identity == COMPOSE_PRICE_ID:
+                    # The compose window asks for postage before it sends the recipient.
+                    money, items = selected_assets(tuple((i.identity, i.count) for i in request.items))
+                    price = store.quote(money, items)
+                    session.mail_compose_price = price
+                    session.mail_submission = None
+                    enqueue(presence, session, wire.encode_body(wire.MailBody(
+                        0, '', '', int(time.time()), 10, False, False, '', price)))
+                elif request.action==1 and not request.identity:
                     value=getattr(session,'mail_draft',None)
                     if value is None:raise ValueError('Сначала создайте черновик письма')
                     if request.subject!=value.subject or request.body!=value.body:
@@ -215,7 +251,11 @@ def handle(presence,session,packet):
                     # Echoed assets/durability/price never confer ownership.
                     finalize(presence,session,value)
                 elif request.action==1:
-                    store.take_money(session.account,request.identity);refresh_assets(presence,session)
+                    if request.items:
+                        store.take_money(session.account, request.identity)
+                    else:
+                        store.claim(session.account, request.identity)
+                    refresh_assets(presence, session)
                     enqueue(presence,session,body(store.read(session.account,request.identity)),
                         listing(store,session.account))
                     refresh_post(presence,session)

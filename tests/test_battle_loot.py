@@ -175,14 +175,19 @@ class BattleLootTests(unittest.TestCase):
         self.assertEqual(self.combat.inventories[1],self.initial)
 
     def test_owned_equipment_loses_half_current_on_deposit_only(self):
-        weapon=replace(item(150,301),unknown_words=(101,250,300))
+        weapon=replace(item(150,301,equipped=True),unknown_words=(101,250,300))
         self.initial=encode_item_list(1,(weapon,));self.combat.inventories[1]=self.initial
         with closing(sqlite3.connect(self.path)) as db,db:db.execute('UPDATE owned_pets SET inventory_packet=?',(self.initial,))
         self.loot.open(7,self.request,1)
+        with self.assertRaisesRegex(ValueError,'Unequip'):
+            self.loot.transfer(7,LootTransfer(1,1,1,((150,1),)),1)
+        self.assertEqual(self.saved(),self.initial)
         self.loot.transfer(7,LootTransfer(1,2,2,((150,1),),()),1)
+        self.assertFalse(decode_item_list(self.saved())[1])
         deposited=next(i for i in self.loot.boxes[(2,2)] if i.instance_id not in self.combat.temporary_items)
         self.assertNotEqual(deposited.instance_id,150)
         self.assertEqual(deposited.unknown_words,(50,250,300))
+        self.assertEqual((deposited.equipped,deposited.slot),(0,0))
         self.loot.open(7,self.request,1);self.take((deposited,))
         self.assertEqual(decode_item_list(self.saved())[1][0].unknown_words,(50,250,300))
 
@@ -211,6 +216,34 @@ class BattleLootTests(unittest.TestCase):
         self.assertEqual(self.field.actor(1).action_points,points-2)
         self.assertEqual(self.saved(),self.initial)
 
+    def test_live_crate_deposit_removes_equipped_weapon_and_armor(self):
+        weapon,armor=self.supply((301,1),(210,1))
+        self.take((weapon,armor))
+        for gear in (weapon,armor):
+            self.combat.equip(7,ItemAction(1,gear.instance_id,255))
+        self.loot.open(7,self.request,1)
+        self.assertGreater(self.combat.defense(1),0)
+        self.assertEqual(self.field.actor(1).weapons,self.combat.catalog.equipped(
+            self.combat.inventories[1],human=True))
+        points=self.field.actor(1).action_points
+        request=LootTransfer(1,2,2,((weapon.instance_id,1),(armor.instance_id,1)),
+                             live=True,nonce=1)
+        replies=self.loot.transfer(7,request,1)
+        self.assertEqual(decode_item_list(replies[0])[1],decode_item_list(self.initial)[1])
+        self.assertEqual(decode_container(replies[1])[3],(weapon,armor))
+        self.assertEqual(self.loot.boxes[2,2],(weapon,armor))
+        self.assertEqual(self.field.actor(1).weapons,(self.combat.catalog.weapons[300],))
+        self.assertEqual(self.combat.defense(1),0)
+        self.assertEqual(self.field.actor(1).action_points,points)
+        self.assertIn(1,self.loot.sessions)
+        self.assertEqual(self.loot.transfer(7,request,1),replies)
+        self.assertEqual(self.saved(),self.initial)
+
+        self.loot.open(8,BattlePositionRequest(2,2,2),1)
+        self.loot.transfer(8,LootTransfer(2,2,2,withdrawals=((weapon.instance_id,1),)),1)
+        self.assertEqual(decode_item_list(self.combat.inventories[2])[1],(weapon,))
+        self.assertEqual(self.loot.boxes[2,2],(armor,))
+
     def test_failed_transfer_is_atomic_and_stale_sessions_rejected(self):
         supplies=self.supply((3,30),(301,1))
         before=(self.combat.inventories[1],dict(self.loot.boxes),set(self.combat.temporary_items),self.field.actor(1))
@@ -218,7 +251,9 @@ class BattleLootTests(unittest.TestCase):
                              (LootTransfer(1,2,2,(),((supplies[0].instance_id,1),)),2)):
             with self.assertRaises(ValueError):self.loot.transfer(7,request,turn)
             self.assertEqual((self.combat.inventories[1],dict(self.loot.boxes),set(self.combat.temporary_items),self.field.actor(1)),before)
-        with closing(sqlite3.connect(self.path)) as db,db:db.execute('UPDATE owned_pets SET inventory_packet=?',(b'changed',))
+        changed=encode_item_list(1,(item(100,9,1),item(101,3,10)))
+        with closing(sqlite3.connect(self.path)) as db,db:
+            db.execute('UPDATE owned_pets SET inventory_packet=?',(changed,))
         with self.assertRaisesRegex(ValueError,'outside battle'):self.take(supplies)
         self.assertEqual((self.combat.inventories[1],dict(self.loot.boxes),set(self.combat.temporary_items),self.field.actor(1)),before)
 

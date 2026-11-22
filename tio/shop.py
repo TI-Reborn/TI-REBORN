@@ -20,6 +20,7 @@ from .item_stacking import merge_stacks, stack_key
 from .inventory_capacity import validate_capacity
 from .shop_completion import ShopCompletion
 from .item_ids import next_item_id
+from . import reservation_quests
 
 # The A2 shop sends owner 0 for "buy to warehouse"; mercenary IDs start at 1.
 WAREHOUSE = 0
@@ -62,6 +63,7 @@ class ShopStore:
         WalletStore(path)
         WarehouseStore(path)
         with closing(connect(self.path)) as db, db:
+            reservation_quests.schema(db)
             db.execute('CREATE TABLE IF NOT EXISTS item_sequences (account TEXT PRIMARY KEY, next_id INTEGER NOT NULL)')
             db.execute('''CREATE TABLE IF NOT EXISTS shop_receipts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,account TEXT NOT NULL,operation TEXT NOT NULL,
@@ -96,7 +98,7 @@ class ShopStore:
         if row is None:return None
         if row[7]!=operation or row[1]!=request:raise PurchaseRejected('Conflicting shop operation retry')
         if row[2] is None:raise PurchaseRejected('Incomplete shop receipt')
-        if operation=='purchase' and owner==WAREHOUSE:
+        if operation in ('purchase','sale') and owner==WAREHOUSE:
             wallet=db.execute('SELECT credits,gold FROM wallets WHERE account=?',(account,)).fetchone()
             if wallet is None:raise PurchaseRejected('Shop recipient no longer exists')
             stored=tuple(completion.read_scope(db,account).values())
@@ -148,12 +150,17 @@ class ShopStore:
             self._completed('town',db,account)
             sale_town=self._sale_town(db,account,town)
             wallet = db.execute('SELECT credits,gold FROM wallets WHERE account=?', (account,)).fetchone()
-            row = db.execute('SELECT human,pet_packet,inventory_packet FROM owned_pets WHERE account=? AND pet_id=?',
-                             (account, request.owner_id)).fetchone()
-            if wallet is None or row is None:
+            if wallet is None:
                 raise PurchaseRejected('Wallet or owned recipient missing')
-            OwnedPetStore.validate(row[1], row[2], bool(row[0]))
-            owner, items, unknown = decode_item_list(row[2])
+            if request.owner_id == WAREHOUSE:
+                owner, items, unknown = WAREHOUSE, tuple(completion.read_scope(db, account, required=True).values()), 0
+            else:
+                row = db.execute('SELECT human,pet_packet,inventory_packet FROM owned_pets WHERE account=? AND pet_id=?',
+                                 (account, request.owner_id)).fetchone()
+                if row is None:
+                    raise PurchaseRejected('Wallet or owned recipient missing')
+                OwnedPetStore.validate(row[1], row[2], bool(row[0]))
+                owner, items, unknown = decode_item_list(row[2])
             item = next((i for i in items if i.instance_id == request.instance_id), None)
             if item is None:
                 raise PurchaseRejected('Sale item missing or unsupported')
@@ -163,7 +170,9 @@ class ShopStore:
             if nontransferable(item.template_id):raise PurchaseRejected('Предметный бустер нельзя продать')
             if request.quantity > item.count or (stack_key(item) is None and (item.count != 1 or request.quantity != 1)):
                 raise PurchaseRejected('Invalid sale quantity')
-            offers = [o for group in self.catalogs.items.values() for o in group if o.item_id == item.template_id]
+            from .implants import catalog, family
+            sale_template = family(item.template_id) if item.template_id in catalog() else item.template_id
+            offers = [o for group in self.catalogs.items.values() for o in group if o.item_id == sale_template]
             from .encounter_loot import material_sale
             material_proceeds=material_sale(item,request.quantity)
             if material_proceeds is None and len(offers) != 1:
@@ -176,6 +185,8 @@ class ShopStore:
             updated = tuple(replace(i, unknown_u32_01=i.count-request.quantity) if i == item else i
                             for i in items if i != item or i.count > request.quantity)
             inventory = encode_item_list(owner, updated, unknown)
+            if owner == WAREHOUSE:
+                encode_private_warehouse_snapshot(updated)
             receipt_id=self._begin(db,account,'sale',identity,payload)
             proceeds=sales_tax(db,account,f'shop:{receipt_id}',sale_town,gross)['net']
             if wallet[0] + proceeds > 0xffffffff:
@@ -184,11 +195,15 @@ class ShopStore:
             db.execute('INSERT INTO item_sequences VALUES (?,?) ON CONFLICT(account) DO UPDATE SET next_id=MAX(next_id,excluded.next_id)',
                        (account, item.instance_id+1))
             db.execute('UPDATE wallets SET credits=? WHERE account=?', (wallet[0]+proceeds, account))
-            db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=?',
-                       (inventory, account, owner))
+            if owner == WAREHOUSE:
+                completion.persist_scope(db, account, {i.instance_id: i for i in items}, updated, {})
+            else:
+                db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=?',
+                           (inventory, account, owner))
             from .achievements import update
             update(db,account,maximum={'credits_peak':wallet[0]+proceeds})
-            result=self._finish(db,receipt_id,inventory,(wallet[0]+proceeds,wallet[1]),-proceeds)
+            result=self._finish(db,receipt_id,inventory,(wallet[0]+proceeds,wallet[1]),-proceeds,
+                                result=partial(WarehousePurchaseResult, updated) if owner == WAREHOUSE else None)
         return result
 
     def purchase_premium(self, account, packet, *, identity=None):
@@ -249,6 +264,9 @@ class ShopStore:
             balances[currency] -= cost
             db.execute('UPDATE wallets SET credits=?,gold=? WHERE account=?', (*balances, account))
             delivery.persist()
+            if not _gold and (offer.item_id in reservation_quests.ARMOR or offer.item_id in self.completion.weapons):
+                reservation_quests.purchase(db, account, offer.item_id, town=self.completion.town(db, account),
+                                           weapon=offer.item_id in self.completion.weapons)
             from .achievements import update,event,influence_received
             if _gold:
                 from .clan_benefits import premium_gold_spent

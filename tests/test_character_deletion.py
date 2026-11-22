@@ -6,7 +6,7 @@ import unittest
 import test_character_slots as fixture
 from tio.characters import CharacterStore
 from tio.character_identity import auth_account, owner_for_name
-from tio.wallets import WalletStore
+from tio.wallets import NEW_CHARACTER_CREDITS, WalletStore
 from tio.protocol.character_select import decode_character_list
 
 
@@ -17,6 +17,7 @@ class CharacterDeletionTests(unittest.TestCase):
     def test_delete_then_recreate_never_reuses_archived_wallet_or_save(self):
         self.create()
         old = self.store.owner('alice', 2)
+        self.assertEqual(WalletStore(self.path).ensure(old).credits, NEW_CHARACTER_CREDITS)
         with closing(sqlite3.connect(self.path)) as db, db:
             db.execute('UPDATE wallets SET credits=123 WHERE account=?', (old,))
         self.store.delete('alice', 2, now=1000)
@@ -28,7 +29,7 @@ class CharacterDeletionTests(unittest.TestCase):
         self.assertEqual(auth_account(self.path, old), 'alice')
         self.assertEqual(auth_account(self.path, new), 'alice')
         self.assertEqual(WalletStore(self.path).ensure(old).credits, 123)
-        self.assertEqual(WalletStore(self.path).ensure(new).credits, 3000)
+        self.assertEqual(WalletStore(self.path).ensure(new).credits, 0)
         self.assertEqual(self.accounts.verify(b'alice', fixture.PASSWORD.encode()), 'alice')
         with closing(sqlite3.connect(self.path)) as db:
             self.assertIsNone(owner_for_name(db, b'AliceTwo'))
@@ -41,6 +42,7 @@ class CharacterDeletionTests(unittest.TestCase):
         self.assertEqual([r.record_id for r in self.store.list('alice')], [2])
         self.store.create('alice', fixture.CharacterCreateRequest(b'AliceNew',0,(1,0,0,0)))
         self.assertNotEqual(self.store.owner('alice', 1), 'alice')
+        self.assertEqual(WalletStore(self.path).ensure(self.store.owner('alice', 1)).credits, 0)
         self.assertEqual(self.store.list('bob'), before)
         self.assertEqual(self.accounts.verify(b'alice', fixture.PASSWORD.encode()), 'alice')
 

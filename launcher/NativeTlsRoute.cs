@@ -100,10 +100,10 @@ internal static class NativeTlsRoute
         if (!WriteProcessMemory(process, new IntPtr(address), bytes, (nuint)bytes.Length, out var count) || count != (nuint)bytes.Length)
             throw new IOException(L.Text("Не удалось установить защищённый маршрут игры."));
     }
-    static uint RemoteExport(IntPtr process, ProcessModule[] modules, string moduleName, string exportName, int depth = 0)
+    internal static uint RemoteExport(IntPtr process, ProcessModule[] modules, string moduleName, string exportName, int depth = 0)
     {
         if (depth > 4) throw new InvalidDataException(L.Text("Слишком длинный системный переход API."));
-        var module = modules.Single(m => m.ModuleName.Equals(moduleName, StringComparison.OrdinalIgnoreCase));
+        var module = modules.Single(m => m.BaseAddress.ToInt64() > 0 && m.BaseAddress.ToInt64() <= uint.MaxValue && m.ModuleName.Equals(moduleName, StringComparison.OrdinalIgnoreCase));
         uint basis = checked((uint)module.BaseAddress.ToInt64());
         uint pe = basis + BitConverter.ToUInt32(Read(process, basis + 0x3c, 4));
         if (BitConverter.ToUInt32(Read(process, pe, 4)) != 0x4550 || BitConverter.ToUInt16(Read(process, pe + 24, 2)) != 0x10b)
@@ -154,6 +154,7 @@ internal static class NativeTlsRoute
             byte[] jump = Read(process, export, 5);
             if (Phase(process) != 3 || jump[0] != 0xe9 || unchecked(export + 5 + BitConverter.ToUInt32(jump, 1)) != Thunk ||
                 !Read(process, 0x718ff4, 5).SequenceEqual(Convert.FromHexString("a380da7600")) ||
+                VirtualQueryEx(process, new IntPtr(export), out var entry, (nuint)Marshal.SizeOf<MemoryRegion>()) == 0 || entry.Protect != 0x20 ||
                 VirtualQueryEx(process, new IntPtr(Allocation), out var code, (nuint)Marshal.SizeOf<MemoryRegion>()) == 0 ||
                 code.AllocationBase.ToInt64() != Allocation || code.Protect != 0x20 ||
                 VirtualQueryEx(process, new IntPtr(Allocation + 4096), out var state, (nuint)Marshal.SizeOf<MemoryRegion>()) == 0 || state.Protect != 0x04)
@@ -161,7 +162,7 @@ internal static class NativeTlsRoute
         }
     }
 
-    sealed class X86Code(uint address)
+    internal sealed class X86Code(uint address)
     {
         internal readonly List<byte> Bytes = new();
         readonly Dictionary<string, int> labels = new();
@@ -171,6 +172,7 @@ internal static class NativeTlsRoute
         internal void Label(string name) => labels.Add(name, Bytes.Count);
         internal void Branch(byte condition, string label) { Emit(0x0f, condition); branches.Add((Bytes.Count, label)); U32(0); }
         internal void Call(uint function) { Emit(0xb8); U32(function); Emit(0xff, 0xd0, 0x85, 0xc0); Branch(0x84, "fail"); }
+        internal void Goto(string label) { Emit(0xe9); branches.Add((Bytes.Count,label)); U32(0); }
         internal void Push(uint value) { Emit(0x68); U32(value); }
         internal void Store(uint location, uint value) { Emit(0xc7, 0x05); U32(location); U32(value); }
         internal byte[] Finish()
@@ -217,7 +219,8 @@ internal static class NativeTlsRoute
         code.Push(data); code.Push(0x40); code.Push(5); code.Emit(0x56); code.Call(virtualProtect);
         code.Emit(0xc6, 0x06, 0xe9, 0xb8); code.U32(thunk);
         code.Emit(0x29, 0xf0, 0x83, 0xe8, 0x05, 0x89, 0x46, 0x01);
-        code.Push(data + 8); code.Emit(0xff, 0x35); code.U32(data); code.Push(5); code.Emit(0x56); code.Call(virtualProtect);
+        // The unpacker leaves its export page RW; the installed entry must be RX for DEP.
+        code.Push(data + 8); code.Push(0x20); code.Push(5); code.Emit(0x56); code.Call(virtualProtect);
         code.Push(data + 4); code.Push(0x40); code.Push(5); code.Push(0x718ff4); code.Call(virtualProtect);
         code.Store(0x718ff4, 0x76da80a3); code.Emit(0xc6, 0x05); code.U32(0x718ff8); code.Emit(0);
         code.Push(data + 8); code.Emit(0xff, 0x35); code.U32(data + 4); code.Push(5); code.Push(0x718ff4); code.Call(virtualProtect);

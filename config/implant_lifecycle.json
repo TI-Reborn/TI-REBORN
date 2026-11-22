@@ -1,0 +1,167 @@
+{
+  "version": 1,
+  "battery": {
+    "template": 6120,
+    "capacity": 3600,
+    "credits": 1800,
+    "crystals_per_point": 1,
+    "capacity_loss_percent": 3
+  },
+  "repair": {
+    "template": 6121,
+    "resource": 1200,
+    "credits": 1200
+  },
+  "extraction": {
+    "template": 6123,
+    "credits": 1200
+  },
+  "upgrade": {
+    "template": 6122,
+    "credits": 1050,
+    "maximum": 25,
+    "safe_levels": 2,
+    "success_percent": 63,
+    "durability_per_level": 65
+  },
+  "combo": {
+    "families": [
+      6100,
+      6101,
+      6102,
+      6103,
+      6104,
+      6105,
+      6106,
+      6107,
+      6108,
+      6109,
+      6110
+    ],
+    "template_start": 6600,
+    "variant_start": 10000,
+    "alias_start": 20000,
+    "minimum_level": 5,
+    "success_percent": 63,
+    "new_extra_percent": 20,
+    "policy": "Owner approved 2026-11-02: any two different base implants retain both bonuses. Same upgrade from +5; failure destroys both. Retain one existing extra; choose uniformly between two different extras. If neither source has an extra, 20 percent chance of one random extra. No guaranteed regeneration."
+  },
+  "steps_basis_points": {
+    "Melee": [
+      500,
+      100
+    ],
+    "Light": [
+      500,
+      100
+    ],
+    "Heavy": [
+      500,
+      100
+    ],
+    "Distance": [
+      500,
+      100
+    ],
+    "Automatic": [
+      500,
+      100
+    ],
+    "Throwing": [
+      500,
+      100
+    ],
+    "health": [
+      100,
+      50
+    ],
+    "armor": [
+      2000,
+      100
+    ],
+    "healing": [
+      1000,
+      100
+    ],
+    "carry": [
+      100,
+      50
+    ],
+    "mining": [
+      1000,
+      200
+    ]
+  },
+  "extra": {
+    "chance_percent": 20,
+    "milestones": [
+      5,
+      10,
+      15,
+      20,
+      25
+    ],
+    "effects": {
+      "2": {
+        "kind": "quick_shot",
+        "chance_percent": 8
+      },
+      "3": {
+        "kind": "damage",
+        "weapon": "Light",
+        "percent": 5
+      },
+      "4": {
+        "kind": "damage",
+        "weapon": "Automatic",
+        "percent": 5
+      },
+      "5": {
+        "kind": "damage",
+        "weapon": "Melee",
+        "percent": 5
+      },
+      "6": {
+        "kind": "damage",
+        "weapon": "Throwing",
+        "percent": 5
+      },
+      "7": {
+        "kind": "damage",
+        "weapon": "Distance",
+        "percent": 5
+      },
+      "8": {
+        "kind": "damage",
+        "weapon": "Heavy",
+        "percent": 5
+      },
+      "9": {
+        "kind": "regeneration",
+        "health": 5,
+        "ceiling_percent": 80
+      },
+      "12": {
+        "kind": "healing",
+        "percent": 5
+      },
+      "14": {
+        "kind": "blind",
+        "chance_percent": 7,
+        "turns": 3,
+        "sight": 4
+      },
+      "15": {
+        "kind": "concussion",
+        "chance_percent": 7,
+        "turns": 3,
+        "ap": 3
+      },
+      "19": {
+        "kind": "mine_damage",
+        "percent": 5
+      }
+    }
+  },
+  "policy": "Base upgrade formulas and extra effect descriptions follow the archived TI manual and russian.lng. Extra chance and milestones: owner approved 2026-10-30. Battery capacity/prices and blind duration/sight are explicit emulator balance. Effects do not stack when several implants grant the same extra. Charge is spent only on the fighter owner's turn, with fractional seconds carried across turns."
+}

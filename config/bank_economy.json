@@ -18,6 +18,7 @@
   "marks": {
     "credits_per_day": 100,
     "maximum_days": 365,
+    "window_days": 7,
     "pin_digits": [
       4,
       12

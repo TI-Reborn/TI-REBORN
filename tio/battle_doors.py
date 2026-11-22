@@ -3,7 +3,8 @@ from dataclasses import replace
 from .protocol.battle_door import encode_door_state
 from .protocol.battle_door import DoorRequest
 from .protocol.action_points import encode_action_points
-from .visibility import clear_sight
+from .visibility import object_visible
+from .battle_state import BattleField
 
 
 class BattleDoors:
@@ -19,16 +20,16 @@ class BattleDoors:
     def _sync(self):
         self.field.blocked=self.solid|frozenset(p for p,opened in self.states.items() if not opened)
 
-    def visible_updates(self,owner,remembered):
-        observers=[a for a in self.field._actors.values() if self.field.allied(a.owner_id,owner) and a.health!=0]
+    def visible_updates(self,owner: int,remembered: dict[tuple[int, int], bool],*,
+                        field: BattleField | None = None) -> tuple[bytes, ...]:
+        field=self.field if field is None else field
+        observers=[a for a in field._actors.values() if a.health and field.allied(a.owner_id,owner)]
         replies=[]
         for p,opened in self.states.items():
             if remembered.get(p)==opened:continue
             # Adjacent door surfaces are interactive even across a wall corner.
             # This exposes only the door state; actor/terrain sight is unchanged.
-            if any((a.x-p[0])**2+(a.y-p[1])**2<=a.sight_radius**2 and
-                   (max(abs(a.x-p[0]),abs(a.y-p[1]))<=1 or
-                    clear_sight((a.x,a.y),p,self.field.blocked-{p})) for a in observers):
+            if object_visible(field,observers,p,adjacent_door=True):
                 replies.append(encode_door_state(DoorRequest(0,opened,*p)))
                 remembered[p]=opened
         return tuple(replies)

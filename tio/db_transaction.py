@@ -58,20 +58,36 @@ def transaction(path):
     db=sqlite3.connect(path)
     token=None
     started=time.perf_counter()
+    begin_elapsed = commit_elapsed = rollback_elapsed = None
     try:
         db.execute('PRAGMA synchronous=FULL')
         waiting=time.perf_counter()
-        db.execute('BEGIN IMMEDIATE')
-        observe('sql.begin_wait',time.perf_counter()-waiting)
+        try:
+            db.execute('BEGIN IMMEDIATE')
+        finally:
+            begin_elapsed = time.perf_counter() - waiting
         token=_current.set((identity,db))
         yield db
-        db.commit()
+        committing = time.perf_counter()
+        try:
+            db.commit()
+        finally:
+            commit_elapsed = time.perf_counter() - committing
     except BaseException:
-        db.rollback();raise
+        rolling_back = time.perf_counter()
+        try:
+            db.rollback()
+        finally:
+            rollback_elapsed = time.perf_counter() - rolling_back
+        raise
     finally:
         if token is not None:_current.reset(token)
         db.close()
-        observe('sql.transaction',time.perf_counter()-started)
+        elapsed = time.perf_counter() - started
+        for name, duration in (('sql.begin_wait', begin_elapsed), ('sql.commit', commit_elapsed),
+                               ('sql.rollback', rollback_elapsed), ('sql.transaction', elapsed)):
+            if duration is not None:
+                observe(name, duration)
 
 
 def current():

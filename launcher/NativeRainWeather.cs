@@ -20,7 +20,7 @@ internal static class NativeRainWeather
     internal static bool Apply(IntPtr process, uint silver, string image)
     {
         byte[] raw = File.ReadAllBytes(image);
-        if (NativePasswordLimit.CompatibilityHash(raw) != NativePasswordLimit.OriginalSha256) return false;
+        if (!SilverRegions.Matches(raw, "rain")) return false;
         NativeTlsRoute.GuardedPatch(process, checked(silver + PathRva), Before(), After());
         return true;
     }
@@ -28,7 +28,7 @@ internal static class NativeRainWeather
     internal static void Test(string image, string output)
     {
         byte[] raw = File.ReadAllBytes(image);
-        if (NativePasswordLimit.CompatibilityHash(raw) != NativePasswordLimit.OriginalSha256)
+        if (!SilverRegions.Matches(raw, "rain"))
             throw new InvalidDataException("Unrecognized weather image");
         // This release has identical raw/RVA mapping in the appended section.
         int pe = BitConverter.ToInt32(raw, 0x3c), sections = BitConverter.ToUInt16(raw, pe + 6);
@@ -47,9 +47,9 @@ internal static class NativeRainWeather
         byte[] changed = (byte[])raw.Clone(); After().CopyTo(changed, offset);
         Before().CopyTo(changed, offset);
         if (!changed.AsSpan().SequenceEqual(raw)) throw new InvalidDataException("Unrelated bytes changed");
-        raw[0] ^= 1;
-        if (NativePasswordLimit.CompatibilityHash(raw) == NativePasswordLimit.OriginalSha256)
+        raw[offset] ^= 1;
+        if (SilverRegions.Matches(raw, "rain"))
             throw new InvalidDataException("Unknown weather image accepted");
-        File.WriteAllText(output, "PASS: exact image, Unicode weather texture, constant length, bounded region and unknown-image rejection");
+        File.WriteAllText(output, "PASS: exact image, Unicode weather texture, constant length, bounded region and changed-constant rejection");
     }
 }

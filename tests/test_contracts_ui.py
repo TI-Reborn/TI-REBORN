@@ -5,10 +5,14 @@ import secrets
 import struct
 import time
 import unittest
+from unittest.mock import patch
 
 from tests import test_contracts_service as fixture
 from server.contracts_ui import execute,handle,snapshot
 from server.tls import read_bridge_preface,ContractsControl
+from tio import reservation_quests
+from tio.db_transaction import transaction
+from tio.locations import SHOOTING_RANGE, center
 
 
 class ContractsUITests(unittest.TestCase):
@@ -17,6 +21,18 @@ class ContractsUITests(unittest.TestCase):
         request=dict(action=action,request_id=request_id or secrets.token_hex(16))
         if value is not None: request['value']=value
         return execute(self.service,self.sessions[index],request)
+    def test_shooting_range_disallows_new_groups_and_contracts(self):
+        session = self.sessions[0]
+        with transaction(self.path) as db:
+            session.locations._save(db, session.account, SHOOTING_RANGE, *center(SHOOTING_RANGE))
+        state = snapshot(self.service, session)
+        self.assertFalse(state['permissions']['create'])
+        self.assertFalse(state['permissions']['take'])
+        with self.assertRaisesRegex(ValueError, 'Shooting Range'):
+            self.call(0, 'create')
+        with self.assertRaisesRegex(ValueError, 'Shooting Range'):
+            self.call(0, 'take', 'solo_dogs')
+        self.assertIsNone(self.service.member(session))
     def test_private_snapshot_and_invitation_consent(self):
         self.call(0,'create');self.call(0,'invite','Bob')
         a=snapshot(self.service,self.sessions[0]);b=snapshot(self.service,self.sessions[1]);c=snapshot(self.service,self.sessions[2])
@@ -51,6 +67,17 @@ class ContractsUITests(unittest.TestCase):
         self.assertEqual(handle(router,session.contracts_ui_token,{'action':'state'})['code'],'rate_limited')
         session.stopping.set()
         self.assertEqual(handle(router,session.contracts_ui_token,{'action':'state'})['code'],'not_authenticated')
+    def test_contracts_refresh_does_not_throttle_opening_the_ruth_dialogue(self):
+        router = SimpleNamespace(contracts=self.service)
+        token = self.sessions[0].contracts_ui_token = secrets.token_bytes(32)
+        with transaction(self.path) as db:
+            reservation_quests.schema(db)
+        dialogue = {'action': 'ruth', 'value': 'state'}
+        with patch('server.contracts_ui.time.monotonic', return_value=42):
+            self.assertTrue(handle(router, token, {'action': 'state'})['ok'])
+            self.assertTrue(handle(router, token, {'action': 'location_npcs'})['ok'])
+            self.assertTrue(handle(router, token, dialogue)['ok'])
+            self.assertEqual(handle(router, token, dialogue)['code'], 'rate_limited')
     def test_frozen_roster_and_foreign_fighter_rejected(self):
         self.call(0,'create')
         with self.assertRaises(ValueError):self.call(0,'select',[999999])
@@ -92,11 +119,6 @@ class ContractsTLSLiveTests(unittest.TestCase):
     def test_two_authenticated_tls_accounts_share_only_their_party(self):
         from dataclasses import replace
         import test_game_tls as tls_fixture
-        import tempfile
-        from unittest.mock import patch
-        from tls_test_certificates import create
-        certificates = self.enterContext(tempfile.TemporaryDirectory())
-        self.enterContext(patch.object(tls_fixture, 'FIXTURES', create(certificates)))
         tls=tls_fixture.GameTLSTests();tls.setUp();self.addCleanup(tls.doCleanups)
         tls.case.config=replace(tls.case.config,contracts_enabled=True)
         tls.case.start();original=tls.connect;binding=[secrets.token_bytes(32)]

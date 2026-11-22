@@ -71,17 +71,17 @@ def encode_scores(points):
                                2,points.scores[1],points.increments()[1])
 
 
-def encode_turn(side,owner,actor):
+def encode_turn(side: int,owner: int,actor: int,*,squad: bool=False) -> bytes:
     # 953884 selects the active soldier from the C6/13 owner/actor roster.
-    return b'\xc6\x14'+struct.pack('<4I',0,side,owner,actor)
+    return b'\xc6\x14'+struct.pack('<4I',int(squad),side,owner,actor)
 
 
-def encode_roster(field,names,limit=1000,*,viewer=None,character_id=None):
+def encode_roster(field,names,limit=1000,*,viewer=None,character_id=None,bots=()):
     w=Writer().u8(0xc6).u8(0x13).u8(1).u32(limit).u32(len(field._actors))
     for identity,a in field._actors.items():
         w.u32(field.teams[a.owner_id]).u32(character_id if a.owner_id==viewer else a.owner_id);_name_write(w,names[a.owner_id])
         from .pet_info import decode_pet_info
-        name=decode_pet_info(field.combat.proficiencies[identity],human_equipment=field.combat.human[identity]).fields['0x8c4489']
+        name=names[a.owner_id] if a.owner_id in bots else decode_pet_info(field.combat.proficiencies[identity],human_equipment=field.combat.human[identity]).fields['0x8c4489']
         w.u32(identity);_name_write(w,name)
     return w.build()
 

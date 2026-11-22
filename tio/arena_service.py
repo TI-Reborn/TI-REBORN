@@ -23,6 +23,7 @@ class ArenaService:
         self._records = {}
         self._loading = {}
         self._turns = {}
+        self._turn_starts = {}
         self._fields = {}
         self._last_turn = {}
         self._match_ids = {}
@@ -34,11 +35,12 @@ class ArenaService:
         self._turn_finish_effects = {}
         self._end_turn_fences: dict[int, float] = {}
 
-    def start_survival(self, character_id, name, prepared, *, existing_room=None):
+    def start_survival(self, character_id, name, prepared, *, existing_room=None, crest_id: int = 0):
         """Server-created training match; preparation must finish before entry.
 
         No create-room packet is accepted from the player for this path.
         The bot is already loaded; the human still acknowledges with36.
+        crest_id is the player's clan crest, drawn left of the turn-timer name.
         """
         from .protocol.arena import ArenaCreateRequest
         from .protocol.battle_ground import decode_battle_ground
@@ -72,7 +74,7 @@ class ArenaService:
         settings = BattleSettings(1,policy.players,mode,seconds,2,name,bytes((0,0,len(selected),0,1)),0,0)
         records = tuple(BattleMemberRecord(owner,name if owner==character_id else
                        getattr(prepared.field,'enemy_name',(b'Training bot' if not mode else (b'Ally ' if index%2==0 else b'Enemy ')+str(index//2+1).encode())),
-                       0,bytes((1,1,index,index%2,1,1))) for index,owner in enumerate(members))
+                       crest_id if owner==character_id else 0,bytes((1,1,index,index%2,1,1))) for index,owner in enumerate(members))
         replies = (b'\x6c'+encode_battle_settings_body(settings),encode_battle_members(mode,0,records),*packets)
         room = existing_room or self.rooms.create(character_id,request)
         try:
@@ -224,7 +226,12 @@ class ArenaService:
         if not (packet==b'\x4a\xff\xff\xff\xff' or
                 (len(packet)==2 and packet[0]==0x50)):return ()
         from .owned_pets import OwnedPetStore
-        return tuple(p for _,pet,inventory in OwnedPetStore(path).list(account) for p in (pet,inventory))
+        roster=tuple(p for _,pet,inventory in OwnedPetStore(path).list(account) for p in (pet,inventory))
+        if character_id in self._map_returned:
+            # F0/449 tears the scene down asynchronously, after the first map reply.
+            from .locations import LocationStore
+            return (*roster,*LocationStore(path).resume(account,character_id))
+        return roster
 
     def inventory_packets(self, character_id, actor_ids):
         """Return the current own battle bags, or None outside a combat scene.
@@ -390,8 +397,9 @@ class ArenaService:
         from .combat import MEDICAL_ITEMS
         from .protocol.item_list import decode_item_list
         items=decode_item_list(field.combat.inventories.get(request.pet_id,b''))[1]
-        from .durability import KITS
-        kit=next((i for i in items if i.instance_id==request.instance_id and i.template_id in KITS),None)
+        from .durability import SELECTABLE_KITS
+        from .implants import policy
+        kit=next((i for i in items if i.instance_id==request.instance_id and i.template_id in (*SELECTABLE_KITS,policy()['repair']['template'])),None)
         if kit is not None:
             if kit.unknown_words[0]<=0:raise ValueError('Ремкомплект израсходован')
             from .protocol.repair import repair_message
@@ -402,7 +410,10 @@ class ArenaService:
         if any(i.instance_id==request.instance_id and i.template_id in MEDICAL_ITEMS for i in items):
             return field.combat.use_medical(character_id,request)
         from .battle_item_effects import handles_use,use
+        from .battle_hazards import find_mines, is_mine_finder
         selected=next((i for i in items if i.instance_id==request.instance_id),None)
+        if selected is not None and is_mine_finder(selected.template_id):
+            return find_mines(field.combat, character_id, request, view=view)
         if selected is not None and handles_use(selected.template_id):
             return use(field.combat,character_id,request)
         points=field.actor(request.pet_id).action_points
@@ -484,7 +495,9 @@ class ArenaService:
 
     def mine_action(self,character_id,packet,*,view=None):
         from .protocol.battle_mines import decode_mine_deploy
-        request=decode_mine_deploy(packet)
+        from .protocol.mine_defuse import decode_mine_defuse
+        disarming = packet[:2] == b'\xc8\x40'
+        request = decode_mine_defuse(packet) if disarming else decode_mine_deploy(packet)
         room=next((r for r in self.rooms.snapshot() if character_id in r.members),None)
         turn=None if room is None else self._turns.get(room.room_id)
         if turn is None or turn[0]!=character_id or self._clock()>=turn[2]:
@@ -492,6 +505,9 @@ class ArenaService:
         if request.actor_id not in turn[1]:raise ValueError('Actor is not selected for this turn')
         field=self._fields.get(room.room_id)
         if field is None or not hasattr(field,'combat'):raise ValueError('Combat is not prepared')
+        if disarming:
+            from .battle_hazards import defuse_mine
+            return defuse_mine(field.combat, character_id, request, view=view)
         return field.combat.deploy_mine(character_id,request,view=view)
 
     def rejected_mine_packets(self,character_id,packet):
@@ -529,6 +545,7 @@ class ArenaService:
             # A queued legacy skip can arrive only after the next turn starts.
             self._end_turn_fences[room.room_id] = self._clock() + END_TURN_REPEAT_SECONDS
         self._turns[room.room_id]=(character_id,actors,deadline)
+        self._turn_starts[room.room_id]=deadline-seconds
         return reply
 
     def begin_turn_packets(self, character_id, actor_ids, seconds):
@@ -539,8 +556,13 @@ class ArenaService:
         room=next(r for r in self.rooms.snapshot() if character_id in r.members)
         field=self._fields.get(room.room_id)
         updates=() if field is None else tuple(encode_action_points(i,field.actor(i).action_points) for i in actors)
-        skills=() if field is None else field.ability_status_packets(character_id,actors)
         combat=None if field is None else getattr(field,'combat',None)
+        # Native 80 binds to an existing battle actor, and the city-to-battle
+        # teardown clears skills of actors created earlier. Resend each list
+        # on the actor's first turn, after loading, ahead of its 7F/01 status.
+        lists=() if combat is None else tuple(combat.skill_list_packet(i) for i in actors
+                                              if field._ability_turns[i]==1 and i in combat.inventories)
+        skills=() if field is None else (*lists,*field.ability_status_packets(character_id,actors))
         effects=() if combat is None else combat.turn_effects(character_id,actors)
         # Burns can kill or reduce an actor after the turn budget was restored.
         updates=() if field is None else tuple(encode_action_points(i,field.actor(i).action_points) for i in actors)
@@ -588,7 +610,8 @@ class ArenaService:
             from .battle_item_effects import end_turn
             combat=getattr(field,'combat',None)
             effect_actors=turn[1] if getattr(field,'battle_mode',None)==21 else field.actor_ids(turn[0])
-            self._turn_finish_effects[turn[0]]=() if combat is None else end_turn(combat,turn[0],effect_actors)
+            elapsed=max(0,min(turn[2],self._clock())-self._turn_starts.get(room_id,min(turn[2],self._clock())))
+            self._turn_finish_effects[turn[0]]=() if combat is None else end_turn(combat,turn[0],effect_actors,seconds=min(3600,elapsed))
             for identity in field.living_actor_ids(turn[0]):
                 field._actors[identity]=replace(field.actor(identity),action_points=0)
 
@@ -724,6 +747,7 @@ class ArenaService:
                 self._last_turn[room_id]=character_id
         self._loading={room_id:loaded-{character_id} for room_id,loaded in self._loading.items() if room_id in live_rooms}
         self._turns={room_id:turn for room_id,turn in self._turns.items() if room_id in live_rooms and turn[0]!=character_id}
+        self._turn_starts={room_id:start for room_id,start in self._turn_starts.items() if room_id in self._turns}
         self._fields={room_id:field for room_id,field in self._fields.items() if room_id in live_rooms}
         for field in self._fields.values():
             field.remove_owner(character_id)

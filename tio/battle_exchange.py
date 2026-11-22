@@ -1,8 +1,6 @@
 """Atomic exchange of loose items between adjacent living mercenaries of ONE owner."""
 from dataclasses import replace
-from .protocol.item_list import decode_item_list,encode_item_list
 from .protocol.action_points import encode_action_points
-from .item_stacking import merge_stacks
 from .visibility import clear_sight
 
 
@@ -38,39 +36,11 @@ def exchange(combat,owner,request,generation):
     if opened!=snapshot:raise ValueError('Окно обмена устарело. Откройте его заново')
     # Native opening is local. The explicit empty6E hook binds a confirmation
     # to these inventories, positions and the actor's current turn generation.
-    bags=[];flags=[]
-    for packet in old:
-        _,items,flag=decode_item_list(packet)
-        bag={i.instance_id:i for i in items}
-        if len(bag)!=len(items):raise ValueError('Duplicate exchange item identity')
-        bags.append(bag);flags.append(flag)
-    if set(bags[0])&set(bags[1]):raise ValueError('Duplicate exchange ownership')
-    loot=field.loot;next_id=loot.allocation_floor();temporary=set(combat.temporary_items)
-    for selection,source,target in ((request.withdrawals,bags[1],bags[0]),(request.deposits,bags[0],bags[1])):
-        for identity,count in selection:
-            item=source.get(identity)
-            if item is None or not (0<count<=item.count or item.template_id==52 and count==item.count==0):
-                raise ValueError('Предмет или его количество изменились')
-            if item.equipped or item.slot:raise ValueError('Сначала снимите передаваемое снаряжение')
-            if item.template_id==52 and count!=item.count:raise ValueError('Бур с кристаллами передаётся целиком')
-            if count==item.count:source.pop(identity)
-            else:
-                if next_id>0xffffffff:raise ValueError('Item identity space exhausted')
-                source[identity]=replace(item,unknown_u32_01=item.count-count)
-                item=replace(item,instance_id=next_id,unknown_u32_01=count)
-                if identity in temporary:temporary.add(next_id)
-                next_id+=1
-            # Same account: preserve durability, upgrade, marker and rental data.
-            target[item.instance_id]=item
-    changes={}
-    for index,bag in enumerate(bags):
-        values=tuple(bag.values())
-        merged=(*merge_stacks(i for i in values if i.instance_id not in temporary),
-                *merge_stacks(i for i in values if i.instance_id in temporary))
-        from .inventory_capacity import validate_capacity
-        validate_capacity(decode_item_list(old[index])[1],merged,limit=loot.policy['inventory_slots'],
-                          error=lambda _:ValueError('В инвентаре бойца недостаточно места'))
-        changes[ids[index]]=encode_item_list(ids[index],merged,flags[index])
+    from .item_exchange import exchange_items
+    loot = field.loot
+    changes, next_id, temporary = exchange_items(
+        *old, request, loot.allocation_floor(), temporary=combat.temporary_items,
+        limit=loot.policy['inventory_slots'])
     # Prepare every reply before persistence; no DB failure can partially move
     # an item, spend AP, reserve an ID or change temporary-item ownership.
     replies=[]

@@ -33,19 +33,19 @@ class CityServices:
             db.execute('CREATE TABLE IF NOT EXISTS services_v2_receipts(account TEXT NOT NULL,identity TEXT NOT NULL,request TEXT NOT NULL,receipt TEXT NOT NULL,PRIMARY KEY(account,identity))')
             for verb in ('UPDATE','DELETE'):
                 db.execute(f"CREATE TRIGGER IF NOT EXISTS services_v2_receipts_no_{verb.lower()} BEFORE {verb} ON services_v2_receipts BEGIN SELECT RAISE(ABORT,'Services receipts are immutable'); END")
-    def _status(self,db,data,owner,blocked):
-        base=self.operations._status(db,data,owner,blocked,int(self.operations.clock()))
+    def _status(self,db,data,owner,blocked,*,unselected: set[str] | None = None):
+        base=self.operations._status(db,data,owner,blocked,int(self.operations.clock()),unselected=unselected)
         allowed=base['canOperate']
         clan=membership(db,owner) if owner else None
         return dict(version=2,**{key:base[key] for key in ('username','slot','characters','character','canOperate','balances')},
-            services=self.helper.status(owner,allowed=allowed) if owner and base['balances'] else None,
+            services=self.helper.status(owner,allowed=allowed,connection=db) if owner and base['balances'] else None,
             personalWarehouse=warehouse.status(db,owner) if owner and base['balances'] else None,
             clanWarehouse=warehouse.clan_status(db,owner) if clan and base['balances'] else None)
     def status(self,data):
-        validate(data);self.operations._running()
-        with self.router.team_arena.lock,transaction(self.path) as db:
-            self.operations._running();owner=self.operations._resolve(db,data,optional=True)
-            return self._status(db,data,owner,busy_accounts(self.router,db))
+        validate(data)
+        with self.operations.status_snapshot() as (db, blocked, unselected):
+            owner = self.operations._resolve(db, data, optional=True)
+            return self._status(db, data, owner, blocked, unselected=unselected)
     def invalidate(self,owner):
         with self.router.lock:
             for session in self.router.active_accounts.values():

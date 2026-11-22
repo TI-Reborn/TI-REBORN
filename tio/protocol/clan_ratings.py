@@ -59,7 +59,8 @@ def encode_ratings(kind: int, selector: int, rows) -> bytes:
         w.u32(row.id)
         _cstring(w, row.name)
         _cstring(w, row.leader)
-        w.u16(row.members).u16(row.capacity).u8(row.level)
+        # Native row +206/+208 is displayed as current/capacity (841CE0).
+        w.u16(row.capacity).u16(row.members).u8(row.level)
         for value in (row.crest_id, row.influence, row.rating,
                       row.alliance_crest_id, row.unknown_u32_3, row.unknown_u32_4):
             w.u32(value)

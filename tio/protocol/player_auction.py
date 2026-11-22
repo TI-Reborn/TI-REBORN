@@ -6,6 +6,10 @@ Names are CP1251 C strings; descriptions are UTF-16LE C strings.
 from dataclasses import dataclass
 from .binary import Reader, Writer, PacketError
 
+BID = 0x0d
+BUYOUT = 0x0e
+CANCEL = 0x0f
+
 
 def boolean(r):
     n = r.u8()
@@ -91,10 +95,10 @@ def decode_action(packet):
     if r.u8() != 0xc8:
         raise PacketError('Expected auction action')
     op = r.u8()
-    if op not in (13, 14, 15):
+    if op not in (BID, BUYOUT, CANCEL):
         raise PacketError('Unknown auction action')
     lot = r.u32()
-    bid, index = (r.u32(), r.u32()) if op == 13 else (None, None)
+    bid, index = (r.u32(), r.u32()) if op == BID else (None, None)
     r.finish()
     return op, lot, bid, index
 
@@ -134,7 +138,8 @@ def encode_added(lots):
     return w.build()
 
 
-def encode_settings(now, pledge_percent=5, *, heal_price=None,clan_warfare=False,mail=False):
+def encode_settings(now, pledge_percent=5, *, heal_price=None,clan_warfare=False,mail=False,
+                    enhancement: tuple[int,int,int] | None = None, tournament_free_entry: bool = False):
     """C8/37 full settings (651fec), retaining zero defaults for other fields.
 
     Alliance fees and Assault4 limits use the original C8/37 fields when the
@@ -144,13 +149,16 @@ def encode_settings(now, pledge_percent=5, *, heal_price=None,clan_warfare=False
     if heal_price is None:
         from ..battle_recovery import CREDITS_PER_HP
         heal_price=CREDITS_PER_HP
-    if not math.isfinite(heal_price) or heal_price<=0:raise PacketError('Invalid treatment tariff')
+    if not math.isfinite(heal_price) or heal_price<0:raise PacketError('Invalid treatment tariff')
     w=Writer().u8(0xc8).u8(0x37)
     w.data.extend(struct.pack('<f',heal_price))
     w.u8(0)  # external billing disabled
     if type(clan_warfare) is not bool:raise PacketError('Invalid clan warfare setting')
-    for _ in range(4+2):
-        w.u32(0)  # upgrade/mark settings and empty helper/sheriff arrays
+    values=(0,0,0) if enhancement is None else enhancement
+    if (len(values)!=3 or any(type(value) is not int or not 0<=value<=100 for value in values)
+            or values[0]>25):raise PacketError('Invalid enhancement settings')
+    for value in (*values,0,0,0):
+        w.u32(value)  # enhancement settings, mark price, empty helpers/sheriffs
     prices=(50_000,10_000,25_000,5_000,100_000,20_000) if clan_warfare else (0,)*6
     for value in prices:w.u32(value)
     if type(mail) is not bool:raise PacketError('Invalid mail setting')
@@ -162,6 +170,6 @@ def encode_settings(now, pledge_percent=5, *, heal_price=None,clan_warfare=False
     else:
         for _ in range(3):w.u32(0)
     w.data.extend(struct.pack('<Q',now))
-    w.u32(0).u8(0).u8(0).u8(1).u32(pledge_percent).u32(0)
+    w.u32(0).u8(0).u8(int(tournament_free_entry)).u8(1).u32(pledge_percent).u32(0)
     for value in ((4,4,3,1) if clan_warfare else (0,)*4):w.u32(value)
     return w.build()

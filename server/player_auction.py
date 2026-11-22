@@ -6,11 +6,13 @@ from dataclasses import asdict
 from .market_operations import market_unit,prepare_market,execute_market
 from tio.protocol.player_auction import decode_create
 from tio.protocol.binary import Reader, Writer, PacketError
-from tio.protocol.player_auction import decode_list, decode_action, encode_lots, encode_added
+from tio.protocol.player_auction import BUYOUT, CANCEL, decode_list, decode_action, encode_lots, encode_added
 from tio.protocol.asset_count import encode_asset_count
 from tio.protocol.warehouse import encode_private_warehouse_snapshot
 from tio.wallets import WalletStore
 from tio.warehouse import WarehouseStore
+
+LOT_PAGE_SIZE = 10
 
 
 def item_type(item):
@@ -31,14 +33,15 @@ class AuctionSession:
         self.gate,self.lock=gate,lock
         self.session=secrets.token_hex(16)
         self.query=None
-        self.seen=store.revision()
+        self.seen: int | None = None
+        self.personal: dict[int, int] = {}
         self.next_refresh=0
 
     def balances(self):
         return (encode_asset_count(WalletStore(self.store.path).ensure(self.account)),
                 *encode_private_warehouse_snapshot(WarehouseStore(self.store.path).items(self.account)))
 
-    def listing(self, query):
+    def listing(self, query) -> bytes:
         kind,request,page,ids,types,enhance,durability,order=query
         lots=self.store.lots(closed=bool(kind))
         def match(item):
@@ -48,7 +51,9 @@ class AuctionSession:
             percent=100*item.unknown_words[0]//max(1,item.unknown_words[1])
             if durability and not durability[0]<=percent<=durability[1]:return False
             return True
-        lots=[lot for lot in lots if any(match(item) for item in lot[1])]
+        # The native Buy tab hides the seller's own rows after reading the page.
+        lots = [lot for lot in lots if (kind or lot[0]['seller'] != self.account)
+                and any(match(item) for item in lot[1])]
         if order and order[1] in (1,2):
             # UI 8fb52e..8fb649: lot, ending time, buyout, current price.
             fields={1:'id',2:'ends',3:'buyout',4:'bid'}
@@ -59,12 +64,28 @@ class AuctionSession:
                 return value or 0,row['id']
             lots.sort(key=key,reverse=order[1]==2)
         # Bound pages even with 30-item lots and long descriptions.
-        size=10
+        size = LOT_PAGE_SIZE
         pages=max(1,(len(lots)+size-1)//size)
         # Native 902D9A starts at 1; 907BEA clears the list on page 1.
         # Accept legacy probes' zero as the first page as well.
         page=max(1,page)
         return encode_lots(request,page,pages,lots[(page-1)*size:page*size])
+
+    def personal_updates(self) -> tuple[bytes, ...]:
+        active = self.store.active_for(self.account)
+        current = {row['id']: row['bid_index'] for row, _ in active}
+        changed = [(row, items) for row, items in active
+                   if self.personal.get(row['id']) != row['bid_index']]
+        replies = [encode_added(changed[i:i+LOT_PAGE_SIZE])
+                   for i in range(0, len(changed), LOT_PAGE_SIZE)]
+        for lot in self.personal.keys() - current.keys():
+            found = self.store.get(lot)
+            if found is not None:
+                row, _ = found
+                opcode = 5 if row['state'] == 'cancelled' else 4
+                replies.append(Writer().u8(0xc8).u8(opcode).u32(lot).build())
+        self.personal = current
+        return tuple(replies)
 
     def handle(self, packet):
         if packet[:2] not in (b'\xc8\x0a',b'\xc8\x0d',b'\xc8\x0e',b'\xc8\x0f'):
@@ -80,7 +101,6 @@ class AuctionSession:
             store=self.store,allowed=True,now=int(time.time()),name=self.name,session=self.session,recheck=self.gate)
 
     def _handle(self, packet):
-        revision_before=self.store.revision()
         if packet[:2]==b'\xc8\x10':
             from tio.protocol.player_auction import write_lot
             r=Reader(packet[2:]);lot=r.u32();r.finish()
@@ -91,7 +111,7 @@ class AuctionSession:
         if packet[:2]==b'\xc8\x06':
             from tio.protocol.player_auction import boolean
             from contextlib import closing
-            r=Reader(packet[2:]);lot=r.u32();page=r.u32() if boolean(r) else 0;r.finish()
+            r=Reader(packet[2:]);lot=r.u32();page=r.u32() if boolean(r) else 1;r.finish()
             if self.store.get(lot) is None:raise ValueError('Лот не найден')
             with closing(self.store._connection(self.store.path)) as db:
                 records=db.execute('SELECT * FROM player_auction_history WHERE lot=? ORDER BY id',(lot,)).fetchall()
@@ -103,8 +123,13 @@ class AuctionSession:
             found=self.store.get(lot)[0]
             names[found['seller']]=found['seller_name']
             if found['bidder']:names[found['bidder']]=found['bidder_name']
-            w=Writer().u8(0xc8).u8(7).u32(lot).u32(page).u32(max(1,(len(records)+29)//30))
-            records=records[page*30:(page+1)*30];w.u32(len(records))
+            # Native previous/next clamp to the range [1, total pages].
+            size = 30
+            pages = max(1, (len(records)+size-1)//size)
+            page = min(max(1, page), pages)
+            w = Writer().u8(0xc8).u8(7).u32(lot).u32(page).u32(pages)
+            records = records[(page-1)*size:page*size]
+            w.u32(len(records))
             actions={'created':1,'cancelled':2,'bid':3,'sold':4,'expired':4,'buyout':5}
             for event in records:
                 w.u32(actions[event['action']]).u32(event['amount'])
@@ -122,15 +147,15 @@ class AuctionSession:
             replies=(b'\xc8\x0c'+request.to_bytes(4,'little'),encode_added((self.store.get(lot),)),*self.balances())
         elif packet[:2] in (b'\xc8\x0d',b'\xc8\x0e',b'\xc8\x0f'):
             op,lot,amount,index=decode_action(packet)
-            if op==14:
+            if op==CANCEL:
                 self._execute('auction_cancel',f'{self.session}:cancel:{lot}',dict(lotId=lot))
                 replies=(b'\xc8\x05'+lot.to_bytes(4,'little'),*self.balances())
             else:
-                kind='auction_buyout' if op==15 else 'auction_bid'
-                args=dict(lotId=lot) if op==15 else dict(lotId=lot,amount=amount,index=index)
+                kind='auction_buyout' if op==BUYOUT else 'auction_bid'
+                args=dict(lotId=lot) if op==BUYOUT else dict(lotId=lot,amount=amount,index=index)
                 self._execute(kind,f'{self.session}:{op}:{lot}:{index}:{amount}',args)
                 row=self.store.get(lot)[0]
-                if op==15:
+                if op==BUYOUT:
                     update=b'\xc8\x04'+lot.to_bytes(4,'little')
                 else:
                     w=Writer().u8(0xc8).u8(2).u32(lot).u32(row['ends'])
@@ -139,8 +164,6 @@ class AuctionSession:
                 replies=(update,*self.balances())
         else:
             raise PacketError('Unsupported player auction request')
-        if self.query:replies=(*replies,self.listing(self.query))
-        self.seen=revision_before
         return replies
 
     def refresh(self):
@@ -148,7 +171,9 @@ class AuctionSession:
         self.next_refresh=time.monotonic()+2
         current=self.store.revision()
         if current==self.seen:return ()
-        self.seen=current
-        replies=self.balances()
-        if self.query:replies=(*replies,self.listing(self.query))
+        replies = (*self.balances(), *self.personal_updates())
+        if self.query:
+            kind, request, _, *filters = self.query
+            replies = (*replies, self.listing((kind, request, 1, *filters)))
+        self.seen = current
         return replies

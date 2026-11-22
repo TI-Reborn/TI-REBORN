@@ -1,5 +1,4 @@
 from wallet_fixture import fund_wallet
-from battle_exit_fixture import place_squad_at_edge
 from contextlib import closing
 from dataclasses import replace
 import json
@@ -19,6 +18,8 @@ from tio.protocol.battle_turn import encode_end_turn
 from tio.protocol.pet_info import decode_pet_info,encode_pet_info
 from tio.wallets import WalletStore
 from tio.locations import LocationStore
+from tio.owned_pets import OwnedPetStore
+from tio.protocol.item_list import encode_item_list
 from server.team_arena import TeamArena
 from server.battle_journal import BattleJournal
 import test_shared_team_arena as fixture
@@ -26,6 +27,14 @@ import test_shared_team_arena as fixture
 
 def join_packet(identity=1):
     return b'\xc6\x21'+bytes(2)+struct.pack('<III',1,identity,0)+b'\0'
+
+
+def reserve_fighters(path, session, count=4):
+    store=OwnedPetStore(path)
+    pet=decode_pet_info(store.list(session.account)[0][1],human_equipment=True)
+    for identity in range(2,count+1):
+        fields={**pet.fields,'0x8c43eb':identity,'0x8c44a6':0}
+        store.ensure(session.account,encode_pet_info(replace(pet,fields=fields)),encode_item_list(identity,()),human=True)
 
 
 class RatingTests(unittest.TestCase):
@@ -72,7 +81,6 @@ class RatingTests(unittest.TestCase):
         for match in ('four','five'):self.apply(match,self.report(1))
         with closing(sqlite3.connect(self.path)) as db:self.assertEqual(db.execute("SELECT league FROM ranked_players WHERE account='alice'").fetchone()[0],2)
         self.apply('six',self.report(1))
-        # The hosted May3 rules require four losses for demotion.
         with closing(sqlite3.connect(self.path)) as db:self.assertEqual(db.execute("SELECT league,loss_streak FROM ranked_players WHERE account='alice'").fetchone(),(2,3))
         self.apply('seven',self.report(1))
         with closing(sqlite3.connect(self.path)) as db:self.assertEqual(db.execute("SELECT league,loss_streak FROM ranked_players WHERE account='alice'").fetchone(),(3,4))
@@ -137,15 +145,8 @@ class RankedServerTests(unittest.TestCase):
                 s.locations._save(db,s.account,2,*(-367,-424))
 
     def start(self,journal=False):
-        # Rated cases require two full human squads; smaller sides now gain
-        # transient bots and follow the Team/Wall unrated policy.
-        from tio.owned_pets import OwnedPetStore
-        from tio.protocol.item_list import encode_item_list
         from test_ranked_squads import join
-        for session in self.case.sessions[:2]:
-            store=OwnedPetStore(self.path);pet=decode_pet_info(store.list(session.account)[0][1],human_equipment=True)
-            for identity in (2,3,4):
-                store.ensure(session.account,encode_pet_info(replace(pet,fields={**pet.fields,'0x8c43eb':identity,'0x8c44a6':0})),encode_item_list(identity,()),human=True)
+        for s in self.case.sessions[:2]:reserve_fighters(self.path,s)
         if journal:self.hub.journal=BattleJournal(self.hub,self.path,wall=lambda:1000)
         self.case.send(0,join((1,2,3,4)));self.assertFalse(self.hub.battles)
         self.assertTrue(self.hub.busy(self.case.sessions[0]))
@@ -184,7 +185,7 @@ class RankedServerTests(unittest.TestCase):
     def test_score_ticks_once_on_skip_and_expiration(self):
         owners,b=self.start();self.hub.tick();self.assertEqual(b['points'].scores,[0,0])
         self.case.send(0,encode_end_turn());self.hub.tick();self.hub.tick();self.assertEqual(b['points'].scores,[5,5])
-        self.case.now=41;self.hub.tick();self.assertEqual(b['points'].scores,[10,10])
+        self.case.now=121;self.hub.tick();self.assertEqual(b['points'].scores,[10,10])
 
     def test_elimination_precedes_point_draw(self):
         owners,b=self.start();b['points'].scores=[1000,1000]
@@ -209,8 +210,8 @@ class RankedServerTests(unittest.TestCase):
             self.assertEqual(db.execute('SELECT count(*) FROM ranked_matches').fetchone()[0],1)
 
     def test_escape_winner_and_city_and_no_ordinary_rating(self):
-        owners,b=self.start();place_squad_at_edge(b['field'],owners[0])
-        self.case.send(0,b'\x2a\1');self.hub.tick()
+        from test_ranked_squads import move_to_exit
+        owners,b=self.start();move_to_exit(b,owners[0]);self.case.send(0,b'\x2a\1');self.hub.tick()
         with closing(sqlite3.connect(self.path)) as db:
             self.assertEqual(db.execute('SELECT account,wins,losses FROM ranked_players ORDER BY account').fetchall(),[('alice',0,1),('bob',1,0)])
         self.assertEqual(self.case.sessions[0].locations.current('alice'),2)
@@ -221,7 +222,7 @@ class RankedServerTests(unittest.TestCase):
         restored=TeamArena(clock=lambda:0);restored.journal=BattleJournal(restored,self.path,wall=lambda:1000)
         restored.journal.recover();new=restored.battles[owners[0]]
         self.assertEqual(new['points'].scores,[995,0]);self.assertTrue(new['point_turn_pending'])
-        restored.clock=lambda:41;new['arena']._clock=restored.clock;restored.tick()
+        restored.clock=lambda:121;new['arena']._clock=restored.clock;restored.tick()
         self.assertTrue(new['finished'])
         with closing(sqlite3.connect(self.path)) as db:self.assertEqual(db.execute('SELECT count(*) FROM ranked_matches').fetchone()[0],1)
 

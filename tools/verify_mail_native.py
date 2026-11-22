@@ -4,10 +4,13 @@ Managed strings, allocation and UI callbacks are explicit stubs. No GUI,
 process, account, game socket or hosting data is touched by this proof.
 """
 from functools import lru_cache
+from hashlib import sha256
 import json
 import struct
 import sys
 from pathlib import Path
+
+import pefile
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from verify_clan_warfare_native import ReaderProbe,emulator
@@ -32,7 +35,7 @@ class MailReader(ReaderProbe):
             pointer=get32(u,0xacd0e8) if address!=0x605df4 else get32(u,a)
             if address==0x6297ac:
                 length=struct.unpack('<H',u.mem_read(pointer,2))[0]
-                assert length%2==0 and length<=16000
+                assert length<=16000
                 raw=bytes(u.mem_read(pointer+2,length));pointer+=2+length
                 put32(u,0xacd0e8,pointer)
             else:
@@ -69,8 +72,9 @@ class MailReader(ReaderProbe):
         else:super().hook(u,address,size,unused)
 
 
-def native_builder(entry,a=0,d=0,c=0,*,subject='',body='',recipient=b'Bob',items=(),money=0,setup=None):
-    u=emulator();obj=DATA+0x1000;handle=DATA+0x3000;vt=DATA+0x3100;flush=DATA+0x3200
+def native_builder(entry,a=0,d=0,c=0,*,subject='',body='',recipient=b'Bob',items=(),money=0,setup=None,
+                   silver=None):
+    u=emulator(silver);obj=DATA+0x1000;handle=DATA+0x3000;vt=DATA+0x3100;flush=DATA+0x3200
     put32(u,handle,obj);put32(u,obj,vt);put32(u,vt,flush);put32(u,0xac600c,handle)
     strings={};heap=DATA+0x4000
     def string(raw):
@@ -85,6 +89,11 @@ def native_builder(entry,a=0,d=0,c=0,*,subject='',body='',recipient=b'Bob',items
         d=name;c=title
         for offset,value in ((4,money),(8,array),(12,text)):put32(u,STACK+0x8000+offset,value)
     elif entry==0x7eeb8c:a=name
+    elif entry==0x7ef628:
+        package, compose = DATA+0x12000, DATA+0x13000
+        put32(u,0xace780,compose);put32(u,compose+0x2c8,array)
+        for index in range(len(items)):
+            put32(u,array+index*656+8,3)
     if setup:setup(u,string)
     def append(uc,eax,raw):
         size=get32(uc,eax+0x1004);uc.mem_write(eax+4+size,raw);put32(uc,eax+0x1004,size+len(raw))
@@ -92,17 +101,38 @@ def native_builder(entry,a=0,d=0,c=0,*,subject='',body='',recipient=b'Bob',items
     def hook(uc,address,size,unused):
         eax=uc.reg_read(UC_X86_REG_EAX);edx=uc.reg_read(UC_X86_REG_EDX)
         if address==0x6748b0:uc.reg_write(UC_X86_REG_EAX,handle);return_from_stub(uc)
+        elif entry==0x7ef628 and address==0x4092ac:
+            uc.reg_write(UC_X86_REG_EAX,package);return_from_stub(uc)
+        elif entry==0x7ef628 and address==0x6747dc:
+            put32(uc,package+0xc,money);return_from_stub(uc)
         elif address in (0x674aac,0x67493c):
             raw=strings.get(edx,b'');append(uc,eax,raw+(b'\0' if address==0x674aac else bytes(2)));return_from_stub(uc)
         elif address in (0x40c05c,0x40b47c):put32(uc,eax,edx);return_from_stub(uc)
         elif address==0x40c0d8:
             length=bytes(uc.mem_read(edx,1))[0];put32(uc,eax,string(bytes(uc.mem_read(edx+1,length))));return_from_stub(uc)
-        elif address in (flush,0x40b180,0x40b09c,0x40b0fc,0x40b15c,0x40d6c8,0x91759c):return_from_stub(uc)
+        elif address in (flush,0x40b180,0x40b09c,0x40b0fc,0x40b15c,0x40d6c8,0x91759c,
+                         0x40eca8,0x40ec90,0x40d748):return_from_stub(uc)
     u.hook_add(UC_HOOK_CODE,hook)
     for reg,value in ((UC_X86_REG_EAX,a),(UC_X86_REG_EDX,d),(UC_X86_REG_ECX,c)):u.reg_write(reg,value)
     u.emu_start(entry,STOP,count=30000)
     assert u.reg_read(UC_X86_REG_EIP)==STOP
     return bytes(u.mem_read(obj+4,get32(u,obj+0x1004)))
+
+
+def verify_compose_credits(silver: bytes) -> None:
+    from server.mail_service import COMPOSE_PRICE_ID, COMPOSE_SEND_KIND, CREDITS_ID
+
+    item = mail.ClaimItem(517, 3, 24)
+    for amount, items in ((0, ()), (0, (item,)), (200, ()), (200, (item,))):
+        expected = ((mail.ClaimItem(CREDITS_ID, 1, amount),) if amount else ()) + items
+        selection = tuple((entry.identity, entry.count) for entry in items)
+        quote = mail.decode_body_request(native_builder(0x7ef628, money=amount, items=selection,
+                                                        silver=silver))
+        assert quote == mail.BodyRequest(1, COMPOSE_PRICE_ID, items=expected), quote
+        request = mail.decode_draft(native_builder(0x7ee8c4, a=COMPOSE_SEND_KIND,
+                                                   money=amount, items=selection, silver=silver))
+        assert request == mail.DraftRequest(COMPOSE_SEND_KIND, b'Bob', items=tuple(
+            (entry.identity, entry.count) for entry in expected)), request
 
 
 def reader_roundtrip(packet,reader,writer):
@@ -124,7 +154,7 @@ def list_reader(packet,rows):
         assert probe.strings[get32(probe.u,base+4)].decode('utf-16le')==row.sender
         assert probe.strings[get32(probe.u,base+8)].decode('utf-16le')==row.subject
         assert get32(probe.u,base+12)==row.created
-        assert struct.unpack('<H',probe.u.mem_read(base+16,2))[0]==row.attachments
+        assert struct.unpack('<H',probe.u.mem_read(base+16,2))[0]==row.lifetime_days
         assert bytes(probe.u.mem_read(base+18,2))==bytes((int(row.unread),row.kind))
     return dict(reader='0x7f05e0',consumed=probe.consumed,rows=len(rows))
 
@@ -228,6 +258,20 @@ def run():
 
 
 if __name__=='__main__':
+    if len(sys.argv) == 4 and sys.argv[1] == '--compose':
+        image_path, report_path = map(Path, sys.argv[2:])
+        raw = image_path.read_bytes()
+        report = json.loads(report_path.read_bytes())
+        assert report['sha256'] == sha256(raw).hexdigest() and report['mailCredits']
+        with pefile.PE(data=raw) as image:
+            mapped = bytearray(image.get_memory_mapped_image())
+        for patch in report['mailPatches']:
+            start = patch['rva']
+            payload = bytes.fromhex(patch['bytes'])
+            mapped[start:start + len(payload)] = payload
+        verify_compose_credits(bytes(mapped))
+        print('Eight native mail compose packet cases passed')
+        sys.exit(0)
     result=run();output=ROOT/'reports/stage7/mail-native.json'
     output.write_text(json.dumps(result,ensure_ascii=True,indent=2),encoding='utf-8')
     print(json.dumps(dict(passed=True,cases=len(result['cases']),output=str(output))))

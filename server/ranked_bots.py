@@ -38,7 +38,7 @@ def fill_seats(hub,seats,teams):
 def patrol(field,points):
     """Reachable flag-neighbour cells, never the blocked flag model itself."""
     goals=[]
-    for cx,cy in (points.positions[2],*points.positions[:2]):
+    for cx,cy in (points.positions[-1],*points.positions[:-1]):
         cells=[(cx+dx,cy+dy) for dx,dy in ((-1,0),(0,-1),(0,1),(1,0))
                if field.inside(cx+dx,cy+dy) and (cx+dx,cy+dy) not in field.blocked]
         if cells:goals.append(min(cells))

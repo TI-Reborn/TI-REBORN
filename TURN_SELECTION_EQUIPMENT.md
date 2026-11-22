@@ -32,6 +32,14 @@ Untargeted double-click/use is an explicit toggle: invoking it on an equipped
 item removes that item. Dragging to an explicit valid slot is idempotent.
 These rules were not changed during this audit.
 
+2026-11-13: an untargeted click on a bag weapon fills a free hand, primary
+first, then secondary; it replaces the primary weapon only when both hands are
+occupied. One rule (`tio.equipment.weapon_slot`) serves city equipment and
+both battle routes (staged F6 and direct action33). Dragging an equipped
+weapon onto the other occupied hand exchanges the two weapons
+(`tio.equipment.vacated_hand`); only a weapon brought from the bag sends the
+displaced one back to the bag.
+
 In battle, selections are private previews until confirmation. A changed actor
 costs2AP per confirmed batch; no-op explicit rewear and duplicate confirmation
 do not charge again. Cancel, invalid actions, turn end and reconnect restore

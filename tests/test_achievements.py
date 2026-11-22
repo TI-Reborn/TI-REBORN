@@ -141,12 +141,11 @@ class AchievementTests(unittest.TestCase):
         from tio.sc_shop import SCShopStore
         from test_sc_shop import request as sc_request
         shop=SCShopStore(self.path)
-        lot=next(o.lot_id for o in shop.offers.values() if o.item_id==314 and o.enhancement==0)
-        shop.handle('alice',sc_request(9,lot))
+        shop.handle('alice',sc_request(9,100314))
         self.assertNotIn(36,self.earned())
-        with self.assertRaises(ValueError):shop.handle('alice',sc_request(6,lot,999,1))
+        with self.assertRaises(ValueError):shop.handle('alice',sc_request(6,100314,999,2))
         self.assertNotIn(36,self.earned())
-        shop.handle('alice',sc_request(6,lot,1,1))  # Currency 1: SC accepts credits only.
+        shop.handle('alice',sc_request(6,100314,1,2))
         self.assertIn(36,self.earned())
         from tio.enhancement import EnhancementStore
         from test_enhancement import item,request

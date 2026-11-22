@@ -109,19 +109,11 @@ def frozen_city(db, match_id):
 def exists(db, table):return bool(db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",(table,)).fetchone())
 
 
-def players(db, *, sort='rating', limit=100):
-    """Internal rows include save-owner routing key; only public fields go wire."""
-    if sort not in set(policy()['ranking']['sorts'])|{'kills','bronze','silver','gold'} or type(limit) is not int or not 1<=limit<=100:raise ValueError('Unsupported public rating query')
-    if not exists(db,'characters') or not exists(db,'accounts'):return ()
+def public_owners(db: sqlite3.Connection) -> set[str]:
+    """Authenticated, active character owners eligible for public standings."""
     from .character_identity import alias
-    from .protocol.pet_info import decode_pet_info
-    from .ranks import signed
-    try:
-        from .achievement_benefits import total_rating
-    except ModuleNotFoundError as error:
-        if error.name!='tio.achievement_benefits':raise
-        total_rating=lambda db,account,base:base
     from .rating_visibility import excluded
+    if not exists(db,'accounts'):return set()
     logins={r[0] for r in db.execute('SELECT login FROM accounts') if not excluded(db,r[0],include_retired=False)};owners=set(logins)
     if exists(db,'character_identities'):
         for login,slot,owner in db.execute('SELECT login,slot,owner FROM character_identities'):
@@ -135,6 +127,22 @@ def players(db, *, sort='rating', limit=100):
                 if not valid_key(login, slot, owner):raise ValueError('Corrupt public character identity')
                 owners.add(owner)
     owners = {owner for owner in owners if not excluded(db, owner)}
+    return owners
+
+
+def players(db, *, sort='rating', limit=100):
+    """Internal rows include save-owner routing key; only public fields go wire."""
+    if sort not in set(policy()['ranking']['sorts'])|{'kills','bronze','silver','gold'} or type(limit) is not int or not 1<=limit<=100:raise ValueError('Unsupported public rating query')
+    if not exists(db,'characters') or not exists(db,'accounts'):return ()
+    from .protocol.pet_info import decode_pet_info
+    from .ranks import signed
+    try:
+        from .achievement_benefits import total_rating
+    except ModuleNotFoundError as error:
+        if error.name!='tio.achievement_benefits':raise
+        total_rating=lambda db,account,base:base
+    from .rating_visibility import excluded
+    owners=public_owners(db)
     characters=list(db.execute('SELECT account,name,name_key FROM characters WHERE slot=1'))
     ratings=dict(db.execute('''SELECT s.account,SUM(s.rating) FROM soldier_ratings s
         JOIN owned_pets p ON p.account=s.account AND p.pet_id=s.pet_id GROUP BY s.account''')) if exists(db,'soldier_ratings') and exists(db,'owned_pets') else {}

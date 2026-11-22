@@ -16,27 +16,23 @@ from test_weapon_proficiency import profile
 from tio.weapon_proficiency import ProficiencyRules
 
 
-BASE=1_000_000
-
-
 class PremiumTests(unittest.TestCase):
     def setUp(self):
         tmp=tempfile.TemporaryDirectory();self.addCleanup(tmp.cleanup)
         self.path=Path(tmp.name)/'state.db';self.now=int(time.time())
-        # Premium is sold for credits now (gold is retired); prices come from config.
-        for a in ('alice','bob'):fund_wallet(self.path, a, credits=BASE, gold=0)
+        for a in ('alice','bob'):fund_wallet(self.path, a, credits=10_000, gold=10_000)
 
     def buy(self,offer=1,now=None,account='alice'):
         return premium.purchase(self.path,account,premium.encode_purchase(offer,premium.OFFERS[offer][1]),now=self.now if now is None else now)
 
     def test_purchase_duplicate_concurrency_extension_switch_expiry_isolation(self):
         with ThreadPoolExecutor(max_workers=4) as pool:list(pool.map(lambda _:self.buy(),range(8)))
-        self.assertEqual(WalletStore(self.path).ensure('alice').credits,BASE-premium.OFFERS[1][1])
+        self.assertEqual(WalletStore(self.path).ensure('alice').gold,9990)
         self.assertEqual(premium.current(self.path,'alice',self.now),(1,86400))
         self.assertEqual(premium.current(self.path,'bob',self.now),(0,0))
         self.buy(4,now=self.now+10)
         self.assertEqual(premium.current(self.path,'alice',self.now+10),(3,31*86400-10))
-        self.assertEqual(WalletStore(self.path).ensure('alice').credits,BASE-premium.OFFERS[1][1]-premium.OFFERS[4][1])
+        self.assertEqual(WalletStore(self.path).ensure('alice').gold,9790)
         self.assertEqual(premium.current(self.path,'alice',self.now+31*86400),(0,0))
         self.buy(2,now=self.now+40*86400)
         self.assertEqual(premium.current(self.path,'alice',self.now+40*86400),(1,30*86400))
@@ -45,18 +41,14 @@ class PremiumTests(unittest.TestCase):
     def test_invalid_and_insufficient_funds_do_not_charge(self):
         for packet in (b'\xc8\x3a',premium.encode_purchase(1,1),premium.encode_purchase(1,10)+b'!'):
             with self.assertRaises(ValueError):premium.purchase(self.path,'alice',packet)
-        short=premium.OFFERS[1][1]-1
-        with closing(sqlite3.connect(self.path)) as db,db:db.execute('UPDATE wallets SET credits=? WHERE account=?',(short,'alice'))
+        with closing(sqlite3.connect(self.path)) as db,db:db.execute('UPDATE wallets SET gold=9 WHERE account=?',('alice',))
         with self.assertRaises(ValueError):self.buy()
-        self.assertEqual(WalletStore(self.path).ensure('alice').credits,short)
+        self.assertEqual(WalletStore(self.path).ensure('alice').gold,9)
         self.assertEqual(premium.current(self.path,'alice'),(0,0))
 
     def test_xml_prices_and_status_projection_expire(self):
         root=ET.fromstring(premium.shared_xml())
-        # The native attribute is still called goldCost; it carries the credit price.
-        self.assertEqual([(int(n.get('id')),int(n.get('hours')),int(n.get('goldCost'))) for n in root],
-                         [(i,hours,cost) for i,(hours,cost) in premium.OFFERS.items()])
-        self.assertEqual([h for h,_ in premium.OFFERS.values()],[24,720,24,720])
+        self.assertEqual([(int(n.get('id')),int(n.get('hours')),int(n.get('goldCost'))) for n in root],[(1,24,10),(2,720,200),(3,24,10),(4,720,200)])
         self.buy()
         with closing(sqlite3.connect(self.path)) as db:
             self.assertEqual(premium.project(db,'alice',WalletStore(self.path).ensure('alice'),self.now).optional_raw,(86400,1))
@@ -110,7 +102,7 @@ class PremiumTests(unittest.TestCase):
 
 class PremiumShopTests(ShopTests):
     def test_discount_catalog_matches_charge_and_base_catalog_unchanged(self):
-        premium.purchase(self.path,'alice',premium.encode_purchase(1,premium.OFFERS[1][1]))
+        premium.purchase(self.path,'alice',premium.encode_purchase(1,10))
         from tio.protocol.city_catalogs import decode_item_shop
         from tio.protocol.shop_purchase import ShopPurchase
         base=self.store.catalogs.item_shop(0)
@@ -123,7 +115,7 @@ class PremiumShopTests(ShopTests):
 
     def test_gold_discount_rounding_matches_catalog_and_no_resale_arbitrage(self):
         from test_original_shop_prices import gold_request
-        premium.purchase(self.path,'alice',premium.encode_purchase(1,premium.OFFERS[1][1]))
+        premium.purchase(self.path,'alice',premium.encode_purchase(1,10))
         result=self.store.purchase_premium('alice',gold_request(304,2))
         self.assertEqual(result.charged_gold,10)  # 6 * .8 -> 5 gold per displayed pack.
         self.assertEqual(result.assets.gold,9980)

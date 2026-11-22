@@ -9,6 +9,7 @@ from functools import lru_cache
 from pathlib import Path
 import hashlib
 import json
+import sqlite3
 import struct
 import time
 
@@ -224,6 +225,25 @@ def crest_id(db, clan_id):
     row=db.execute('SELECT crest_id FROM clan_crests WHERE clan_id=?',(clan_id,)).fetchone();return row[0] if row else 0
 
 
+def account_crests(db, accounts) -> dict[str, int]:
+    """Clan crest blob ID per account; 0 without a clan or an uploaded crest."""
+    accounts = tuple(dict.fromkeys(accounts))
+    result = dict.fromkeys(accounts, 0)
+    if not accounts or not exists(db, 'clan_members') or not exists(db, 'clan_crests'):return result
+    marks = ','.join('?' for _ in accounts)
+    rows = db.execute('SELECT m.account,c.crest_id FROM clan_members m JOIN clan_crests c ON c.clan_id=m.clan_id '
+                      'WHERE m.account IN ('+marks+')', accounts)
+    result.update((account, crest) for account, crest in rows)
+    return result
+
+
+def path_crest(path, account) -> int:
+    """One account's clan crest ID read from its own database file."""
+    from contextlib import closing
+    from .db_transaction import connect
+    with closing(connect(path)) as db:return account_crests(db, (account,))[account]
+
+
 def crest_content(db, identity):
     integer(identity)
     row=db.execute('SELECT bmp,digest FROM clan_crest_blobs WHERE id=?',(identity,)).fetchone() if exists(db,'clan_crest_blobs') else None
@@ -388,12 +408,16 @@ def close_week(db, start, *, now=None):
     db.execute('INSERT INTO clan_weeks VALUES (?,?)',(start,canonical(result)));return result
 
 
+def active_weekly_badge(db: sqlite3.Connection, clan_id: int, *, now: float | None = None) -> tuple[int, int]:
+    if not exists(db,'clan_weekly_badges'):return 0, 0
+    stamp=int(time.time() if now is None else now)
+    row=db.execute('SELECT place,rank_per_kill FROM clan_weekly_badges WHERE clan_id=? AND starts<=? AND expires>? ORDER BY starts DESC LIMIT 1',(clan_id,stamp,stamp)).fetchone()
+    return row if row else (0, 0)
+
+
 def rank_per_kill(db, account, *, now=None):
     clan=membership(db,account)
-    if clan is None or not exists(db,'clan_weekly_badges'):return 0
-    stamp=int(time.time() if now is None else now)
-    row=db.execute('SELECT rank_per_kill FROM clan_weekly_badges WHERE clan_id=? AND starts<=? AND expires>? ORDER BY starts DESC LIMIT 1',(clan['id'],stamp,stamp)).fetchone()
-    return row[0] if row else 0
+    return active_weekly_badge(db, clan['id'], now=now)[1] if clan else 0
 
 
 def deliver_prizes(db, account, *, capacity=3000):

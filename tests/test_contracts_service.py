@@ -224,7 +224,7 @@ class ContractsServiceTests(unittest.TestCase):
 
     def test_map_tooltip_unknown_malformed_and_cancelled_slots_stay_private(self):
         from tio.protocol.town_info import decode_town_info
-        for packet in (b'\x79', b'\x79\x17\0', b'\x79\0', b'\x79\x1a', b'\x79\xff'):
+        for packet in (b'\x79', b'\x79\x12\0', b'\x79\0', b'\x79\x1a', b'\x79\xff'):
             self.assertEqual(self.service.map_query(self.sessions[2], packet), ())
         self.assertIsNone(self.service.map_query(self.sessions[0], b'\x75'))
         self.send(0, '!party create'); self.send(0, '!party invite Bob')

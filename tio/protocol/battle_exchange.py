@@ -1,6 +1,6 @@
 """Native mercenary exchange6E (silver98F478), distinct from ground transfer40.
 
-First array is right-to-left, second is left-to-right (9DCF92). Empty arrays
+First array is left-to-right, second is right-to-left (9DCF92). Empty arrays
 are emitted by our client opening hook to bind confirmation to a turn/snapshot.
 """
 from dataclasses import dataclass
@@ -17,7 +17,7 @@ class BattleExchange:
 
 def encode_exchange(request):
     w=Writer().u8(0x6e).u32(request.actor_id).u32(request.target_id)
-    for rows in (request.withdrawals,request.deposits):
+    for rows in (request.deposits,request.withdrawals):
         w.u32(len(rows))
         for identity,count in rows:w.u32(identity).u32(count)
     return w.build()
@@ -37,4 +37,4 @@ def decode_exchange(packet):
         selections.append(rows)
     r.finish()
     if {i for i,n in selections[0]} & {i for i,n in selections[1]}:raise PacketError('Item moves both ways')
-    return BattleExchange(actor,target,*selections)
+    return BattleExchange(actor,target,selections[1],selections[0])

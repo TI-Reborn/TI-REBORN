@@ -10,6 +10,7 @@ import json
 import time
 
 from .db_transaction import transaction
+from . import market_inventory
 from .protocol.arena import encode_create_request
 
 MAX_CREDITS = 0xffffffff
@@ -178,14 +179,11 @@ def settle(db, match_id, report, *, now=None):
         amounts.update({a: share+int(i < extra) for i, a in enumerate(winners)})
     if sum(amounts.values()) != pot:
         raise ValueError('Призовой фонд не совпадает с выплатами')
-    for account, amount in amounts.items():
-        wallet = db.execute('SELECT credits FROM wallets WHERE account=?', (account,)).fetchone()
-        if wallet is None or wallet[0]+amount > MAX_CREDITS:
-            raise ValueError('Выплата ставки превышает допустимый баланс')
+    market_inventory.initialise(db)
     receipts = {}
     for account, amount in amounts.items():
         kind = 'refund' if winner is None else 'win' if account in winners else 'lose'
-        db.execute('UPDATE wallets SET credits=credits+? WHERE account=?', (amount, account))
+        market_inventory.credit(db, account, amount)
         db.execute('INSERT INTO wager_receipts VALUES (?,?,?,?)', (match_id, account, kind, amount))
         receipts[account] = (kind, amount)
     db.execute('UPDATE wager_matches SET status=?,outcome=?,completed_at=? WHERE match_id=?',

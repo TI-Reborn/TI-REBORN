@@ -68,8 +68,10 @@ request `46 03000000 12 0B` refers to actor3 opening `(18,11)`.
 ## Server behavior
 
 - First opening of each crate costs 4 AP; later openings cost 1 AP. Each46
-  request represents an opening. An unchanged dialog closes without a40,
-  so suppressing same-turn requests would make legitimate reopening free.
+  request represents an opening. At zero AP the shared server lets the player
+  finish using the open crate until the normal turn deadline or window close.
+  The updated client sends an empty 40 when the player closes the window
+  without pending changes.
 - The crate is generated once per match and shared by actors in that match.
   Reopening never rerolls. An empty crate remains empty.
 - Checks living actor ownership, selected actor/current unexpired turn,
@@ -91,8 +93,9 @@ request `46 03000000 12 0B` refers to actor3 opening `(18,11)`.
   restarting therefore cannot export crate loot to the warehouse/city.
 - Dropping one's own loose supplies into a crate removes them from the saved
   bag; retrieving them restores permanent ownership. Deliberately abandoned
-  supplies remain abandoned. Equipped, marked/rented and SE items cannot be
-  deposited through this subset of the container protocol.
+  supplies remain abandoned. Equipped weapons and armor can be moved whole
+  into an open crate. The same transfer clears their equipment slots, and
+  a live transfer refreshes the open window. Marked/rented items are rejected.
 - Duplicate/stale transfers are rejected; no partial mutation on validation
   or snapshot conflicts. Rejection sends the authoritative owned inventory
   to restore the client's optimistic drag state and release its wait flag.

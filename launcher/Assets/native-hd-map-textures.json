@@ -1,0 +1,18 @@
+{
+  "code": "5589e581ec10060000505253565789d685f60f84190100008b4efc83f9080f8c0d01000081f9800200000f8701010000e8000000005f81c71401000031db89c883e80839c30f8fe600000085db740866837c5efe5c75278d145e5131c90fb7044a83f841720883f85a770383c820663b044f75094183f90872e359eb045943ebbd8dbdfcf9ffff66c785f0f9ffffb00466c785f2f9ffff0200c785f4f9ffffffffffff8d41098985f8f9ffff515689d9fcf366a5c7076800640066c747045c0083c7065e59568d345e29d9f366a55ec7072e003200c7470478002e00c747086800640066c7470c00008d85fcf9ffff50ff150894780083f8ff7404a810742a83adf8f9ffff03c7072e006800c74704640000008d85fcf9ffff50ff150894780083f8ff740ca81075088d95fcf9ffffeb068b95e8f9ffff8b85ecf9ffffe8428f4be05f5e5b89ec5dc3730065007400740069006e0067005c00cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc5589e5565031f6837a082d72248b4204813889504e4775198178040d0a1a0a751083782100750a81782574694f7375014658ff750cff7508e8d3fe60e085f6741c85c0741883780c007412d16814d16818d1681cd16820d16824d168285e5dc20800",
+  "callSite": 7017209,
+  "callSiteBytes": "e8867de0ff",
+  "dimensionsSite": 7017274,
+  "dimensionsSiteBytes": "e8d1edf5ff",
+  "dimensionsOffset": 512,
+  "relocations": [
+    {
+      "offset": 318,
+      "target": 4952196
+    },
+    {
+      "offset": 569,
+      "target": 6357264
+    }
+  ]
+}

@@ -11,6 +11,14 @@ from tio.protocol.known_mines import encode_known_mines
 from tio.weapons import WeaponStats
 from tio.visibility import VisibilityView
 from tools.survival_scene import prepare_survival,PreparedSurvival
+from tio.mobs import SICK_MINER,MINE_MUTANTS
+
+
+def _mob_kinds(count,policy):
+    """Melee Sick Miners first, then the configured Wild Miner gunners last."""
+    gunners=policy['gunners']
+    if type(gunners['count']) is not int or not 0<=gunners['count']<=count:raise ValueError('Invalid mine gunner count')
+    return (None,)*(count-gunners['count'])+(gunners,)*gunners['count']
 
 
 def prepare_mining(path,account,ticket,catalog,*,role=1,seed=None,shared=False):
@@ -42,23 +50,29 @@ def prepare_mining(path,account,ticket,catalog,*,role=1,seed=None,shared=False):
     combat.catalog.weapons[353]=weapon
     combat.catalog.sources[353]={'weaponAttack':'None','weaponType':'Melee','accuracy':'100'}
     combat.npc_defense={}
-    for index,(x,y) in enumerate(layout.arena.bot_spawns):
+    spawns=layout.arena.bot_spawns;kinds=_mob_kinds(len(spawns),POLICY)
+    for index,((x,y),kind) in enumerate(zip(spawns,kinds)):
         identity=0x71000000+index
-        actors.append(BattleActor(identity,enemy,x,y,mob_ap,hp,hp,sight_radius=6+item_rules()['policy']['dark_sight_penalty'],weapons=(weapon,)))
+        mob_weapon=weapon if kind is None else combat.catalog.weapons[kind['weapon']]
+        action_points=mob_ap if kind is None else kind['action_points']
+        actors.append(BattleActor(identity,enemy,x,y,action_points,hp,hp,sight_radius=6+item_rules()['policy']['dark_sight_penalty'],weapons=(mob_weapon,)))
         fields={key:(b'' if reader=='CString' else 0) for key,size,reader in SCHEMAS[True]}
-        fields.update({'0x8c5088':identity,'0x8c50ea':enemy,'0x8c50fb':100,'0x8c5116':b'Sick Miner',
+        fields.update({'0x8c5088':identity,'0x8c50ea':enemy,'0x8c50fb':SICK_MINER if kind is None else kind['resource'],
+                       '0x8c5116':b'Sick Miner' if kind is None else kind['name'].encode('ascii'),
                        '0x8c5134':maximum,'0x8c519b':x,'0x8c51af':y,'0x8c5187':1,'0x8c5173':1,
-                       '0x8c566a':hp,'0x8c57bb':hp,'0x8c567f':6,'0x8c571d':mob_ap,'0x8c5694':mob_ap,'0x8c52cf':353,
+                       '0x8c566a':hp,'0x8c57bb':hp,'0x8c567f':6,'0x8c571d':action_points,'0x8c5694':action_points,'0x8c52cf':mob_weapon.template_id,
                        '0x8c5731':armor})
         for key,(control,expected) in CONDITIONS.items():
             if not (bool(fields[control]) if expected is None else fields[control]==expected):fields.pop(key,None)
         templates[identity]=BattleSoldier(True,fields)
-        item=ItemRecord(0x72000000+index,353,bytes(2),1,1,16,(1,1,1),bytes(4),None,bytes(3))
-        combat.register(identity,encode_item_list(identity,(item,)),human=True)
-        combat.resources[identity]=100;combat.npc_defense[identity]=armor
+        item=ItemRecord(0x72000000+index,mob_weapon.template_id,bytes(2),1,1,16,(1,1,1) if kind is None else (int(combat.catalog.sources[mob_weapon.template_id]['durability']),)*3,bytes(4),None,bytes(3))
+        items=(item,) if kind is None else (item,ItemRecord(0x72000000+len(spawns)+index,kind['ammunition'],bytes(2),kind['rounds'],0,0,(0,0,0),bytes(4),None,bytes(3)))
+        combat.register(identity,encode_item_list(identity,items),human=True)
+        combat.resources[identity]=SICK_MINER if kind is None else kind['resource'];combat.npc_defense[identity]=armor
         combat.rank_profiles[identity]=(maximum,0)
     field=BattleField(60,60,actors,blocked=layout.arena.blocked,step_cost=1,teams={owner:0,enemy:1},transparent_obstacles=layout.arena.transparent_obstacles)
     combat.field=field;field.combat=combat;field.battle_mode=7
+    field.avatar_ids = previous.avatar_ids
     for attr in ('_healing_rules','_slash_rules','_dog_rules'):
         setattr(field,attr,{key:v for key,v in getattr(previous,attr).items() if key[0] in ticket.actors})
     for identity in ticket.actors:field._turn_points[identity]=previous._turn_points[identity]
@@ -112,14 +126,16 @@ def append_mining_owner(field,path,account,ticket,catalog,*,role,templates):
         raise ValueError('Squad does not match this mine level range')
     occupied={(a.x,a.y) for a in field._actors.values() if a.health!=0}
     mutants={(a.x,a.y) for a in field._actors.values()
-             if a.health!=0 and field.combat.resources.get(a.actor_id)==100}
+             if a.health!=0 and field.combat.resources.get(a.actor_id) in MINE_MUTANTS}
     spawns=spawn_positions(mine.layout,role,len(ticket.actors),occupied=occupied,mutants=mutants)
     source=prepare_survival(path,account,replace(ticket,mode=0),catalog,arena_map=mine.layout.arena)
     identity=mine.next_actor_id
     identities=tuple(range(identity,identity+len(ticket.actors)))
     if not identities or identities[-1]>=0x71000000 or any(i in field.combat.actor_owners for i in identities):
         raise ValueError('Mine actor identities exhausted')
-    side=1 if role==2 else 0;color=len(mine.roles)
+    side=1 if role==2 else 0
+    # The first miner is registered before its models are appended.
+    color=tuple(mine.roles).index(owner) if owner in mine.roles else len(mine.roles)
     plans=[]
     for local,global_id,position in zip(ticket.actors,identities,spawns):
         actor=source.field.actor(local);old=source.field.combat;resource=old.resources[local]
@@ -143,8 +159,10 @@ def append_mining_owner(field,path,account,ticket,catalog,*,role,templates):
         field._turn_points[identity]=source.field._turn_points[local]
         field._ability_turns[identity]=0
         field.combat.register(identity,inventory,human=old.human[local],path=path,
-                              account=account,pet_packet=old.proficiencies[local])
+                              account=account,pet_packet=old.proficiencies[local],
+                              implant_health=(old.item_effects['implants'][local]['base'],old.item_effects['implants'][local]['health_bonus']))
         field.combat.storage_ids[identity]=local
+        field.avatar_ids[identity] = source.field.avatar_ids.get(local, 0)
         for name in ('miner_defense','dog_bonuses','weapon_accuracy_bonuses','human_critical_bonuses',
                      'weight_capacities','display_unarmored_bonuses','learned','skill_lists'):
             if local in getattr(old,name):getattr(field.combat,name)[identity]=getattr(old,name)[local]
@@ -200,11 +218,12 @@ def prepare_shared_mining(path,entries,catalog,*,seed=None):
         blocked=old.blocked,step_cost=old.step_cost,teams={enemy:2},
         transparent_obstacles=old.transparent_obstacles)
     field.battle_mode=7;field.combat=Combat(field,old.combat.catalog)
+    field.avatar_ids = {}
     field.mine_mutant_sight_version=1
     field.combat.npc_defense={};templates={}
     for identity in npc_ids:
         field.combat.register(identity,old.combat.inventories[identity],human=True)
-        field.combat.resources[identity]=100
+        field.combat.resources[identity]=old.combat.resources[identity]
         field.combat.npc_defense[identity]=old.combat.npc_defense[identity]
         field.combat.rank_profiles[identity]=old.combat.rank_profiles[identity]
         template=base.visibility.templates[identity]

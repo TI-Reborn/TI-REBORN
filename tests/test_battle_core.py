@@ -21,13 +21,36 @@ from tio.abilities import AbilityCatalog,AbilityLevel
 
 
 class RollsTests(unittest.TestCase):
-    def test_partial_burst_full_miss_and_full_hit_keep_whole_burst_scale(self):
-        rolls=iter([0,99,0,99,0])
-        rng=SimpleNamespace(randrange=lambda n:next(rolls),randint=lambda a,b:50)
-        self.assertEqual(burst(rng,50,75,65,5,0),(30,True,False))
-        for roll,expected in ((99,(0,False,False)),(10,(53,True,False))):
-            rng=SimpleNamespace(randrange=lambda n:roll,randint=lambda a,b:53)
-            self.assertEqual(burst(rng,50,75,65,5,0),expected)
+    def test_all_projectiles_hit_for_full_burst_damage(self):
+        for rounds in (1,4,5,10):
+            with self.subTest(rounds=rounds):
+                rolls=iter((0,99)*rounds)
+                damage=iter((53,)*rounds)
+                rng=SimpleNamespace(randrange=lambda n:next(rolls),randint=lambda a,b:next(damage))
+                self.assertEqual(burst(rng,50,75,65,rounds,5),(53,True,False))
+                self.assertEqual(tuple(rolls),())
+                self.assertEqual(tuple(damage),())
+
+    def test_full_miss_does_not_roll_damage_or_critical(self):
+        rolls=iter((65,)*5)
+        rng=SimpleNamespace(randrange=lambda n:next(rolls),randint=lambda a,b:self.fail('Miss rolled damage'))
+        self.assertEqual(burst(rng,50,75,65,5,5),(0,False,False))
+        self.assertEqual(tuple(rolls),())
+
+    def test_each_landed_projectile_rolls_its_own_damage(self):
+        rolls = iter((65, 64, 65, 64, 64))
+        damage = iter((50, 65, 75))
+        rng = SimpleNamespace(randrange=lambda n: next(rolls),
+                              randint=lambda low, high: next(damage))
+        self.assertEqual(burst(rng, 50, 75, 65, 5, 0), (38, True, False))
+        self.assertEqual(tuple(rolls), ())
+        self.assertEqual(tuple(damage), ())
+
+    def test_critical_doubles_only_the_projectile_that_hit(self):
+        rolls=iter((65,64,4,65,65,65))
+        rng=SimpleNamespace(randrange=lambda n:next(rolls),randint=lambda a,b:53)
+        self.assertEqual(burst(rng,50,75,65,5,5),(22,True,True))
+        self.assertEqual(tuple(rolls),())
 
     def setup_scene(self,weapon=301):
         f=BattleField(24,24,[BattleActor(1,7,2,2,40,100,100,sight_radius=20),
@@ -44,7 +67,7 @@ class RollsTests(unittest.TestCase):
         damages=[]
         for rank in (0,4):
             f,c=self.setup_scene()
-            c.configure_accuracy(1,() if not rank else (AbilityEntry(4,rank,0),),catalog)
+            c.configure_accuracy(1,() if not rank else (AbilityEntry(4,rank,0,0),),catalog)
             c.rng=SimpleNamespace(randrange=lambda n:8,randint=lambda a,b:a)
             result=decode_attack_result(c.attack(7,AttackRequest(1,5,2))[0]);damages.append(result.hits[0].damage)
             self.assertEqual(result.flags,4 if rank else 0)

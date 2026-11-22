@@ -4,7 +4,7 @@ from contextlib import closing
 from dataclasses import replace
 from pathlib import Path
 from tio.wallets import WalletStore
-from tio.crystal_market import CrystalMarket,SCALE
+from tio.crystal_market import CrystalMarket
 from tio.mining import band
 from tio.mine_map import generate
 
@@ -20,15 +20,15 @@ class MarketTests(unittest.TestCase):
                 market.extract(db,'a','match',2500);market.extract(db,'a','match',2500)
             self.assertEqual(market.balance('a'),2500)
             with self.assertRaises(ValueError):market.sell('a',999)
-            self.assertEqual(market.sell('a',1000),1000)
+            self.assertEqual(market.sell('a',1000),50_000)
             self.assertEqual(market.balance('a'),1500)
-            self.assertAlmostEqual(market.rate(),.9999)
+            self.assertEqual(market.rate(),50)
             with self.assertRaises(ValueError):market.sell('a',2000)
             self.assertEqual(market.balance('a'),1500)
             now[0]=1201
-            self.assertAlmostEqual(market.rate(),1.0199)
+            self.assertEqual(market.rate(),50)
             self.assertEqual(WalletStore(path).ensure('a').spectra_crystals,1500)
-            self.assertEqual(WalletStore(path).ensure('a').credits,11000)
+            self.assertEqual(WalletStore(path).ensure('a').credits,60_000)
 
     def test_strict_bands_and_maps(self):
         for levels in ((1,),(3,),(4,7),(20,21)):
@@ -91,10 +91,11 @@ class MiningTests(unittest.TestCase):
         self.assertEqual(self.field.actor(self.identity).sight_radius,5)
         for i in self.field.actor_ids(self.scene.bot_owner):
             a=self.field.actor(i)
-            self.assertEqual((a.health,a.action_points),(150,20))
-            self.assertEqual(self.field.combat.defense(i),160)
-            self.assertEqual(self.scene.visibility.templates[i].fields['0x8c5731'],160)
-            self.assertEqual(self.scene.visibility.templates[i].fields['0x8c50fb'],100)
+            resource=self.scene.visibility.templates[i].fields['0x8c50fb']
+            self.assertEqual((a.health,a.action_points),(150,15 if resource==102 else 20))
+            self.assertEqual(self.field.combat.defense(i),128)
+            self.assertEqual(self.scene.visibility.templates[i].fields['0x8c5731'],128)
+            self.assertIn(resource,(100,102))
         self.assertFalse(arena.finish_training(42,self.path,'probe_user'))
 
     def test_hidden_enemies_registered_off_map_without_hp_or_movement_leak(self):
@@ -402,7 +403,10 @@ class MiningTests(unittest.TestCase):
         view.refresh()
         self.assertIn(mob,view.visible)
         self.field._actors[self.identity]=replace(self.field.actor(self.identity),x=1,y=1)
-        self.assertIn(b'\x43'+mob.to_bytes(4,'little'),view.refresh())
+        packets=view.refresh()
+        self.assertNotIn(b'\x43'+mob.to_bytes(4,'little'),packets)
+        hidden=decode_battle_soldier(next(p for p in packets if p[:5]==b'\x3b'+mob.to_bytes(4,'little')),human_equipment=True)
+        self.assertEqual((hidden.fields['0x8c519b'],hidden.fields['0x8c51af'],hidden.fields['0x8c57bb']),(255,255,1))
         self.field._actors[self.identity]=replace(self.field.actor(self.identity),x=10,y=10)
         packet=next(p for p in view.refresh() if p[:5]==b'\x3b'+mob.to_bytes(4,'little'))
         restored=decode_battle_soldier(packet,human_equipment=True)
@@ -477,5 +481,11 @@ class MiningTests(unittest.TestCase):
             items=decode_item_list(next(p for p in replies if p[0]==0x30))[1]
             self.assertTrue(any(i.template_id==52 and i.count==0 for i in items))
         finally:
-            client.close();thread.join(4);exchange.stop();server.close()
+            # Let the handler flush the remaining battle replies before closing
+            # the client socket, which would reset the connection on Windows.
+            client.shutdown(socket.SHUT_WR)
+            thread.join(4)
+            client.close()
+            exchange.stop()
+            server.close()
         self.assertFalse(thread.is_alive())

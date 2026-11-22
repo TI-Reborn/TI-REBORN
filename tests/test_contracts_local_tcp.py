@@ -1,7 +1,6 @@
 """Authenticated loopback TCP coverage; this does not validate graphical clients."""
 from contextlib import closing
 from dataclasses import replace
-import json
 import socket
 import sqlite3
 import struct
@@ -123,8 +122,7 @@ class ContractsLocalTcpTests(unittest.TestCase):
         for packet in self.frames[login]:
             if packet[:2] == b'\xc8\x2d' and int.from_bytes(packet[2:4], 'little') in (23, 24, 25):
                 marker = decode_town_info(packet)
-                if marker.town_id in (23, 24, 25):
-                    result[marker.town_id] = marker.final_bool
+                result[marker.town_id] = marker.final_bool
         return result
 
     def group_and_accept(self):
@@ -244,9 +242,7 @@ class ContractsLocalTcpTests(unittest.TestCase):
             self.flush(self.peers[login])
             packets = [packet for packet in self.frames[login] if packet[:1] == b'\x1d']
             self.assertTrue(packets)
-            # Each 1D points at the next turn of the shared road path.
-            turns = {tuple(map(round, point)) for point in (route[2:4],)}
-            self.assertIn(struct.unpack_from('<ii', packets[-1], 17), turns)
+            self.assertEqual(struct.unpack_from('<ii', packets[-1], 17), route[2:4])
         first = next(packet for packet in reversed(self.frames['alice']) if packet[:1] == b'\x1d')
         second = next(packet for packet in reversed(self.frames['bob']) if packet[:1] == b'\x1d')
         self.assertEqual(struct.unpack_from('<ii', first, 5), struct.unpack_from('<ii', second, 5))
@@ -313,7 +309,7 @@ class ContractsLocalTcpTests(unittest.TestCase):
                 self.peers[login].send(packet)
             self.flush(self.peers[login])
             replies = self.frames[login][start:]
-            infos = {info.town_id: info for packet in replies if packet[:2] == b'\xc8\x2d'
+            infos = {info.town_id: info for packet in replies if packet[:2] == b'\xc8\x2d' and int.from_bytes(packet[2:4], 'little') in (1, 2, 23, 24, 26, 255)
                      for info in (decode_town_info(packet),)}
             self.assertEqual(infos[23].final_bool, int(login != 'carol'))
             self.assertEqual(infos[24].final_bool, 0)

@@ -7,7 +7,7 @@ from pathlib import Path
 import random
 import xml.etree.ElementTree as ET
 from .protocol.item_list import ItemRecord,decode_item_list,encode_item_list
-from .protocol.battle_loot import encode_container,encode_open_container_state
+from .protocol.battle_loot import LootTransfer,encode_container,encode_open_container_state
 from .protocol.action_points import encode_action_points
 from .item_stacking import merge_stacks
 from .inventory_capacity import validate_capacity
@@ -17,7 +17,9 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from .battle_state import BattleActor, BattleField
     from .combat import Combat
+    from .visibility import VisibilityView
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -59,6 +61,7 @@ class BattleLoot:
         self.opened=set()
         self.ground=set()
         self.sessions={}
+        self.live_receipts={}
         self.next_id=match_id_floor(combat)
         self.metadata=loot_metadata()
         from .equipment import armor_rules
@@ -121,6 +124,7 @@ class BattleLoot:
         actor=replace(actor,action_points=actor.action_points-cost)
         self.combat.field._actors[actor.actor_id]=actor
         self.opened.add(position);self.sessions[actor.actor_id]=session
+        getattr(self, 'live_receipts', {}).pop(actor.actor_id, None)
         if view is not None:view.loot_states[position]=True
         if first_open:self.combat.achievements.add(owner,'crates')
         return (encode_action_points(actor.actor_id,actor.action_points),
@@ -128,13 +132,29 @@ class BattleLoot:
                 *((encode_open_container_state(*position),) if first_open else ()),
                 encode_container(actor.actor_id,*position,self.boxes[position]))
 
-    def transfer(self,owner,request,turn,*,view=None):
+    def open_position(self, actor: 'BattleActor', turn: int) -> tuple[int, int] | None:
+        session = self.sessions.get(actor.actor_id)
+        if session is not None and session[1:] == (turn, (actor.x, actor.y)):
+            return session[0]
+        return None
+
+    def transfer(self,owner: int,request: LootTransfer,turn: int,*,
+                 view: 'VisibilityView | None'=None) -> tuple[bytes, ...]:
         position=(request.x,request.y)
         actor=self._actor(owner,request.actor_id,position,deposit=True)
-        opened=self.sessions.get(actor.actor_id)==(position,turn,(actor.x,actor.y))
+        opened=self.open_position(actor,turn)==position
+        if request.live and not opened:raise ValueError('Open this container during the current turn first')
+        if request.live:
+            from .protocol.battle_loot import encode_loot_transfer
+            previous = getattr(self, 'live_receipts', {}).get(actor.actor_id)
+            if previous is not None and request.nonce <= previous[0]:
+                if request.nonce == previous[0] and encode_loot_transfer(request) == previous[1]:
+                    return previous[2]
+                raise ValueError('Окно ящика устарело. Откройте его заново')
         direct=not opened and position==(actor.x,actor.y) and not request.withdrawals and (position not in self.boxes or position in self.ground)
         if not opened and not direct:raise ValueError('Open this container during the current turn first')
         if not request.deposits and not request.withdrawals:
+            if request.live:raise ValueError('Empty live transfer')
             self.sessions.pop(actor.actor_id,None)
             return (self.combat.inventory_packet(actor.actor_id),)
         # Empty-cell inventory is opened locally by silver.dll9B8012, without46.
@@ -148,18 +168,28 @@ class BattleLoot:
         deposited={i for i,n in request.deposits};withdrawn={i for i,n in request.withdrawals}
         if (len(deposited)!=len(request.deposits) or len(withdrawn)!=len(request.withdrawals)
                 or deposited&withdrawn):raise ValueError('Duplicate transfer selection')
+        from .equipment import armor_rules
+        equipped_deposit=False
         for pairs,source in ((request.deposits,bag),(request.withdrawals,box)):
             for identity,count in pairs:
                 empty_drill=identity in source and source[identity].template_id==52 and source[identity].count==count==0
                 if identity not in source or not (empty_drill or 0<count<=source[identity].count):raise ValueError('Unavailable loot quantity')
-                if source[identity].template_id==52 and count!=source[identity].count:
+                item=source[identity]
+                if item.template_id==52 and count!=item.count:
                     raise ValueError('A drill and its crystals must be transferred whole')
-                if source[identity].equipped:raise ValueError('Unequip item before depositing')
+                if item.equipped or item.slot:
+                    if (source is not bag or not opened or position in self.ground or count!=item.count
+                            or (item.template_id not in self.combat.catalog.weapons
+                                and item.template_id not in armor_rules())):
+                        raise ValueError('Unequip item before depositing')
+                    equipped_deposit=True
                 from .item_boosters import nontransferable
-                if source is bag and nontransferable(source[identity].template_id):raise ValueError('Предметный бустер нельзя оставлять в ящике')
-                if source[identity].optional_u32 is not None or any(source[identity].unknown_bytes_02[2:]):
+                if source is bag and nontransferable(item.template_id):raise ValueError('Предметный бустер нельзя оставлять в ящике')
+                if item.optional_u32 is not None or any(item.unknown_bytes_02[2:]):
                     raise ValueError('Marked or rented equipment cannot be left in a crate')
         temporary=set(self.combat.temporary_items)
+        range_breaks: set[int] = set()
+        practice = getattr(self.combat.field, 'practice', None)
         next_id=self.allocation_floor()
         def move(pairs,source,destination):
             nonlocal next_id
@@ -172,13 +202,18 @@ class BattleLoot:
                     if identity in temporary:temporary.add(next_id)
                     item=replace(item,instance_id=next_id,unknown_u32_01=count);next_id+=1
                 if source is bag and identity not in temporary:
-                    from .durability import wear
-                    item=wear(item,(item.unknown_words[0]+1)//2)
+                    from .durability import broken, wear
+                    defer = (practice is not None and item.template_id in self.combat.catalog.weapons
+                             and not self.combat.item_is_broken(item))
+                    item=wear(item,(item.unknown_words[0]+1)//2,keep_at_zero=defer)
                     # Account-local inventory IDs may coincide across players.
                     # Give deposited permanent items a unique match identity.
                     if item is not None:
                         if next_id>0xffffffff:raise ValueError('Loot ID space exhausted')
+                        if defer and broken(item):range_breaks.add(next_id)
                         item=replace(item,instance_id=next_id);next_id+=1
+                if item is not None and (item.equipped or item.slot):
+                    item=replace(item,unknown_u8_01=0,location_raw=0)
                 if item is not None:destination[item.instance_id]=item
         move(request.deposits,bag,box);move(request.withdrawals,box,bag)
         # Do not combine temporary supplies with permanent ammunition, even if
@@ -194,19 +229,38 @@ class BattleLoot:
             from .weight import inventory_weight
             if inventory_weight(inventory)>self.combat.weight_capacity(actor.actor_id):
                 raise ValueError('Not enough carrying capacity for the drill and crystals')
-        # Transfer confirmation refreshes ItemList;47 is reserved for opening,
-        # because its native consumer would reopen an already closed dialog.
-        encode_container(actor.actor_id,*position,newbox)
+        # Only a live transfer needs a 47 acknowledgement for the open window.
+        contents=encode_container(actor.actor_id,*position,newbox)
         reply=self.combat.inventory_packet(actor.actor_id,inventory)
+        state=replace(actor,action_points=actor.action_points-cost)
+        weight=None
+        if equipped_deposit:
+            from .equipment_bonuses import bonuses
+            resource=self.combat.resources[actor.actor_id]
+            sight_delta=bonuses(inventory,resource)['sight']-bonuses(old,resource)['sight']
+            state=replace(state,sight_radius=actor.sight_radius+sight_delta,
+                          weapons=self.combat.catalog.equipped(inventory,human=True,resource=resource))
+            weight=self.combat.weight_packet(actor.actor_id,inventory)
         self.combat._persist_inventory(actor.actor_id,old,inventory,temporary_ids=temporary)
+        if range_breaks:
+            self.combat.__dict__.setdefault('deferred_weapon_breaks', set()).update(range_breaks)
         self.combat.temporary_items=temporary
         self.combat.inventories[actor.actor_id]=inventory
         self.boxes[position]=newbox;self.next_id=next_id
         if direct and request.deposits:self.ground.add(position)
-        self.combat.field._actors[actor.actor_id]=replace(actor,action_points=actor.action_points-cost)
-        self.sessions.pop(actor.actor_id,None)
-        return (*((encode_action_points(actor.actor_id,actor.action_points-cost),) if cost else ()),reply,
+        self.combat.field._actors[actor.actor_id]=state
+        if not request.live:self.sessions.pop(actor.actor_id,None)
+        if equipped_deposit and view is not None:
+            from .durability import refresh_template
+            refresh_template(self.combat,view,actor.actor_id)
+        replies = (*((encode_action_points(actor.actor_id,actor.action_points-cost),) if cost else ()),reply,
+                *((contents,) if request.live else ()), *((weight,) if weight is not None else ()),
+                *(self.combat.skill_packets(actor.actor_id) if equipped_deposit else ()),
                 *(view.refresh() if view is not None else ()))
+        if request.live:
+            if not hasattr(self, 'live_receipts'):self.live_receipts = {}
+            self.live_receipts[actor.actor_id] = (request.nonce, encode_loot_transfer(request), replies)
+        return replies
 
     def stage_deaths(self,states,changes):
         """Prepare loot alongside combat inventories, before the shared DB commit."""
@@ -224,20 +278,16 @@ class BattleLoot:
             encode_container(identity,*position,boxes[position])
         return boxes,ground
 
-    def visible_updates(self,owner,remembered,*,field=None):
-        from .visibility import field_sight
-        from copy import copy
+    def visible_updates(self,owner: int,remembered: dict[tuple[int, int], bool],*,
+                        field: 'BattleField | None'=None) -> tuple[bytes, ...]:
+        from .visibility import object_visible
         field=field or self.combat.field
         observers=[a for a in field._actors.values() if a.health and field.allied(a.owner_id,owner)]
         replies=[]
         for p in sorted(self.ground | self.opened):
             state=bool(self.boxes[p]) if p in self.ground else True
             if remembered.get(p,False)==state:continue
-            sight_field=field
-            if p in field.blocked:
-                sight_field=copy(field);sight_field.blocked=field.blocked-{p}
-            if not any((a.x-p[0])**2+(a.y-p[1])**2<=a.sight_radius**2 and
-                       field_sight(sight_field,(a.x,a.y),p) for a in observers):continue
+            if not object_visible(field,observers,p):continue
             replies.append((bytes((0x44,*p,0,0)) if state else bytes((0x45,*p))) if p in self.ground
                            else encode_open_container_state(*p))
             remembered[p]=state

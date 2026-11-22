@@ -1,4 +1,4 @@
-"""Legacy EndTurn repeats must not consume the range's twenty-turn budget."""
+"""Legacy EndTurn repeats must not consume the range's turn budget."""
 import unittest
 from contextlib import closing
 import sqlite3
@@ -26,8 +26,8 @@ class RangeTurnRepeatTests(unittest.TestCase):
         reply = self.arena.end_turn(42, encode_end_turn(actor))
         return self.arena.finished_turn_packets(42, reply)
 
-    def advance(self):
-        self.arena.advance_turn(self.room_id, 60)
+    def advance(self, seconds=60):
+        self.arena.advance_turn(self.room_id, seconds)
 
     def assert_repeat_preserves_turn(self):
         turn = self.arena._turns[self.room_id]
@@ -43,6 +43,12 @@ class RangeTurnRepeatTests(unittest.TestCase):
 
     def test_triple_repeat_preserves_new_turn_and_displayed_ap(self):
         self.assertIn(b'\x39', self.skip())
+        self.advance()
+        self.assert_repeat_preserves_turn()
+
+    def test_repeat_window_stays_active_across_clock_rounding_boundary(self):
+        self.case.now[0] = 127.3
+        self.skip()
         self.advance()
         self.assert_repeat_preserves_turn()
 
@@ -111,17 +117,18 @@ class RangeTurnRepeatTests(unittest.TestCase):
         reply = self.arena.end_turn(42, encode_end_turn(), received_at=received_at)
         self.assertEqual(self.arena.finished_turn_packets(42, reply), ())
 
-    def test_twenty_real_turns_survive_triple_repeats(self):
-        for number in range(1, 21):
+    def test_one_hundred_real_turns_survive_triple_repeats(self):
+        squad_turn_seconds = 80  # Full three-fighter turn budget from the server.
+        for number in range(1, 101):
             self.assertEqual(self.case.field._ability_turns[self.case.identity], number)
             if number > 1:
                 self.assert_repeat_preserves_turn()
-            self.case.now[0] += 1.01
+            self.case.now[0] += (60 if number == 1 else squad_turn_seconds) - 0.01
             self.skip()
             result = self.arena.finish_training(42, self.case.path, 'alice')
-            if number < 20:
+            if number < 100:
                 self.assertFalse(result)
-                self.advance()
+                self.advance(squad_turn_seconds)
             else:
                 self.assertEqual(result[-1][:1], b'\x4c')
                 self.assertFalse(self.arena.rooms.snapshot())
@@ -151,7 +158,52 @@ class RangeTurnRepeatTests(unittest.TestCase):
 
 
 class RangeTurnNetworkTests(unittest.TestCase):
-    def test_two_tcp_accounts_keep_twenty_turns_despite_batched_repeats(self):
+    def test_two_accounts_keep_full_ap_with_a_thousand_rounds(self):
+        import json
+        from tio.owned_pets import OwnedPetStore
+        from tio.protocol.action_points import encode_action_points
+        from tio.protocol.battle_soldier import decode_battle_soldier
+        from tio.protocol.item_list import ItemRecord, encode_item_list
+        from tio.squad import SquadStore
+        from tio.weight import overload_penalty
+
+        case = network_fixtures.MultiAccountTests()
+        case.setUp()
+        self.addCleanup(case.doCleanups)
+        LocationStore(case.config.database)
+        ammo = ItemRecord(501, 3, bytes(2), 1000, 0, 0, (300, 300, 300), bytes(4), None, bytes(3))
+        saves = OwnedPetStore(case.config.database)
+        raw = json.loads((network_fixtures.ROOT / 'evidence/owned_pet_trial.json').read_text())
+        with closing(sqlite3.connect(case.config.database)) as db, db:
+            for name in ('alice', 'bob'):
+                LocationStore._save(db, name, SHOOTING_RANGE, *center(SHOOTING_RANGE))
+        squads = SquadStore(case.config.database)
+        for name in ('alice', 'bob'):
+            saves.ensure(name, bytes.fromhex(raw['packet_hex']), encode_item_list(1, (ammo,)), human=True)
+            squads.assign(name, 1, 1)
+        case.start()
+        for name in ('alice', 'bob'):
+            with self.subTest(account=name):
+                peer = case.handoff(case.begin(name))
+                case.enter(peer, name.title())
+                peer.send(CREATE_REQUEST)
+                peer.until(b'\x25')
+                peer.send(b'\x2e\0')
+                own = b'\x3b' + (1).to_bytes(4, 'little')
+                first = decode_battle_soldier(peer.until(own, max_packets=256), human_equipment=True)
+                fields = first.fields
+                self.assertEqual(fields['0x8c57e7'], 1000)
+                self.assertGreater(overload_penalty(1000, fields['0x8c57d0']), 0)
+                full_ap = fields['0x8c5694']
+                self.assertEqual(fields['0x8c571d'], full_ap)
+                ap_update = encode_action_points(first.soldier_id, full_ap)
+                peer.until(b'\x41', max_packets=256)
+                peer.send(b'\x36')
+                peer.until(ap_update, max_packets=256)
+                peer.send(encode_end_turn())
+                peer.until(ap_update, max_packets=256)
+
+    def test_two_tcp_accounts_keep_one_hundred_turns_despite_batched_repeats(self):
         case = network_fixtures.MultiAccountTests()
         case.setUp()
         self.addCleanup(case.doCleanups)
@@ -176,7 +228,7 @@ class RangeTurnNetworkTests(unittest.TestCase):
             peer.until(b'\x38', max_packets=256)
             peers.append(peer)
             sessions.append(session)
-        for number in range(1, 21):
+        for number in range(1, 101):
             for peer, session in zip(peers, sessions):
                 arena = session.arena
                 room = arena.rooms.snapshot()[0]
@@ -197,7 +249,7 @@ class RangeTurnNetworkTests(unittest.TestCase):
             now[0] += 1.01
             for peer in peers:
                 peer.send(encode_end_turn())
-                peer.until(b'\x4c' if number == 20 else b'\x38', max_packets=256)
+                peer.until(b'\x4c' if number == 100 else b'\x38', max_packets=256)
         self.assertTrue(all(not session.arena.rooms.snapshot() for session in sessions))
         self.assertIsNot(sessions[0].arena, sessions[1].arena)
 

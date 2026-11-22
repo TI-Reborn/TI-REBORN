@@ -24,6 +24,23 @@ def request(owner=1,target=100,selected=False):return (b'\x7e' if selected else 
 
 
 class DurabilityTests(unittest.TestCase):
+    def test_selected_le_kit_preserves_weapon_and_armor_maximum(self):
+        le_kit = gear(101, 128, (1000, 1000, 1000))
+        weapon = gear(words=(50, 350, 400))
+        armor = gear(template=208, words=(50, 1200, 1250))
+        for target, expected, remaining in ((weapon, (350, 350, 400), 700),
+                                            (armor, (1050, 1200, 1250), 0)):
+            with self.subTest(template=target.template_id):
+                packet = encode_item_list(1, (target, le_kit))
+                with self.assertRaises(ValueError):
+                    repair_inventory(packet, target.instance_id)
+                updated, audit = repair_inventory(packet, target.instance_id, le_kit.instance_id)
+                items = decode_item_list(updated)[1]
+                self.assertEqual(items[0].unknown_words, expected)
+                self.assertEqual(len(items), 2 if remaining else 1)
+                self.assertEqual(items[1].unknown_words[0] if len(items) > 1 else 0, remaining)
+                self.assertEqual((audit['spent'], audit['loss']), (1000 - remaining, 0))
+
     def test_manual_repair_example_and_large_deficit_percent_of_resource(self):
         fixed,left,spent,loss=repair_item(gear(),kit())
         self.assertEqual((fixed.unknown_words,left.unknown_words,spent,loss),((341,341,350),(309,600,600),291,9))

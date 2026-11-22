@@ -109,6 +109,25 @@ class AllianceServiceTests(unittest.TestCase):
         # Roster alliance denotes a crest asset, never our alliance identity.
         self.assertEqual(self.hub.players[self.sessions['bob']][1].alliance,0)
 
+    def test_profile_links_resolve_clan_name_and_only_reply_to_viewer(self):
+        self.create()
+        self.join()
+        self.clear()
+        before = self.fixture.rows()
+        viewer = self.sessions['carol']
+        self.assertTrue(self.hub.handle(viewer, b'\x68\1bETA\0'))
+        self.assertTrue(self.hub.handle(viewer, b'\x68\2Beta\0'))
+        clan = Reader(self.replies('carol', b'\xa7\1')[0])
+        clan.read(2)
+        self.assertEqual((clan.u32(), self.string(clan)), (self.fixture.ids['bob'], b'Beta'))
+        alliance = Reader(self.replies('carol', b'\xa7\2')[0])
+        alliance.read(2)
+        self.assertEqual(alliance.u32(), self.fixture.store.info('bob')['id'])
+        alliance.u32()
+        self.assertEqual(self.string(alliance), b'Alliance One')
+        self.assertFalse(self.hub.messages[self.sessions['bob']])
+        self.assertEqual(before, self.fixture.rows())
+
     def test_native_leading_clan_identity_crest_and_rating_count_are_not_storage_id(self):
         self.send('bob',b'\x01Beta Alliance\0')
         header=self.fixture.store.info('bob');self.assertNotEqual(header['id'],header['leading_clan'])
@@ -131,14 +150,29 @@ class AllianceServiceTests(unittest.TestCase):
         self.assertEqual(r.u32(),4)
         fields=[]
         for _ in range(4):
-            cid=r.u32();name=self.string(r);leader=self.string(r);members=r.u16();capacity=r.u16();lvl=r.u8()
+            cid=r.u32();name=self.string(r);leader=self.string(r);capacity=r.u16();members=r.u16();lvl=r.u8()
             numeric=tuple(r.u32() for _ in range(6));fields.append((cid,name,leader,members,capacity,lvl,numeric))
         r.finish();self.assertEqual(fields[0][6],(0,100000,0,0,0,0))
         self.assertEqual(fields[-1][1],b'Alpha');self.assertEqual(fields[-1][6],(0,90000,0,0,0,0))
-        for page,selector in ((1,0),(2,0),(0,1),(1,1),(2,1)):
+        for page,selector in ((1,0),(2,0),(1,1),(2,1)):
             self.assertTrue(self.hub.handle(bob,bytes((0x82,page,selector))))
             self.assertEqual(self.replies('bob',b'\x83')[-1],bytes((0x83,page,selector))+bytes(4))
         self.assertTrue(self.hub.handle(bob,b'\xaf\x0e'));self.assertTrue(self.replies('bob',b'\xaf\x0f'))
+        self.assertEqual(before,self.fixture.rows())
+
+    def test_native_trueskill_uses_the_displayed_numeric_field_without_writing(self):
+        from tio.ranked import schema
+        with closing(connect(self.path)) as db,db:
+            schema(db)
+            db.execute("INSERT INTO ranked_players VALUES ('alice',25,8,199,2,1,0,0,1,0,1)")
+        before=self.fixture.rows();session=self.sessions['bob']
+        session.router.team_arena.busy=lambda _:True
+        self.assertTrue(self.hub.handle(session,b'\x82\0\1'))
+        r=Reader(self.replies('bob',b'\x83')[-1]);self.assertEqual(r.read(3),b'\x83\0\1')
+        self.assertEqual(r.u32(),4)
+        self.assertEqual(r.u32(),self.fixture.ids['alice']);self.assertEqual(self.string(r),b'Alpha')
+        self.assertEqual(self.string(r),b'Alice');r.read(5)
+        self.assertEqual(tuple(r.u32() for _ in range(3)),(0,99,0))
         self.assertEqual(before,self.fixture.rows())
 
     def test_native_alliance_chat7_uses_current_membership_across_locations_and_clears_after_dissolve(self):
@@ -147,9 +181,8 @@ class AllianceServiceTests(unittest.TestCase):
         self.hub.players[self.sessions['bob']]=(None,self.hub.players[self.sessions['bob']][1])
         self.hub.chat(self.sessions['alice'],b'\x21\7'+ 'Только союзникам'.encode('utf-16-le')+b'\0\0')
         reply=encode_message(7,b'Alice','Только союзникам')
-        for a in ('bob','member'):self.assertEqual(tuple(self.hub.messages[self.sessions[a]]),(reply,))
-        # The native client shows its own outgoing text; the server no longer echoes it.
-        for a in ('alice','carol','dave'):self.assertFalse(self.hub.messages[self.sessions[a]])
+        for a in ('alice','bob','member'):self.assertEqual(tuple(self.hub.messages[self.sessions[a]]),(reply,))
+        for a in ('carol','dave'):self.assertFalse(self.hub.messages[self.sessions[a]])
         self.fixture.store.leave('bob');self.clear();self.hub.chat(self.sessions['alice'],b'\x21\7x\0\0\0')
         self.assertFalse(self.hub.messages[self.sessions['bob']])
         self.fixture.store.dissolve('alice');self.clear();self.hub.chat(self.sessions['alice'],b'\x21\7x\0\0\0')

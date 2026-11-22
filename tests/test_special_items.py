@@ -46,6 +46,33 @@ class SpecialItemsTests(unittest.TestCase):
         self.arena._turns={1:(8,{2},20)}
         return self.arena.move(8,encode_move_request(BattleMove(2,((5,2),(4,2),(3,2),(3,3)))))
 
+    def test_mine_placement_trains_engineering_and_freezes_damage(self):
+        from test_weapon_proficiency import change, profile
+        from tio.weapon_proficiency import BASE, SAVED, bits
+
+        for template in (321, 325):
+            with self.subTest(template=template):
+                self.prepare(template)
+                original = change(profile(20), {key[7]: bits(73) for key in (BASE, SAVED)})
+                self.combat.register(1, self.combat.inventories[1], human=True, pet_packet=original)
+                self.arena.mine_action(7, encode_mine_deploy(MineDeploy(1, 100, 3, 2)))
+                trained = self.combat.proficiencies[1]
+                self.assertGreater(self.combat.proficiency_rules.value(trained, True, 'Engineering'), 73)
+                self.assertEqual(self.combat.proficiency_rules.value(trained, True, 'Throwing'), 35)
+                self.combat.proficiencies[1] = change(original, {key[7]: bits(199) for key in (BASE, SAVED)})
+                self.move_enemy()
+                self.assertEqual(self.field.actor(2).health, 107)
+
+    def test_mines_use_the_native_mining_category(self):
+        import xml.etree.ElementTree as ET
+
+        items = ET.parse(ROOT / 'evidence/items_diagnostic.xml')
+        catalog = WeaponCatalog()
+        for template, raw, category in ((317, 'Throwing', 'Throwing'), (321, 'Mine', 'Engineering'),
+                                         (325, 'Mine', 'Engineering')):
+            node = items.find(f"item[@id='{template}']/value[@key='weaponType']")
+            self.assertEqual((node.get('val'), catalog.weapons[template].weapon_type), (raw, category))
+
     def test_native_codec_cases_and_strict_lengths(self):
         evidence=ROOT/'evidence/special_items_native.json'
         if not evidence.exists():self.fail('Native ABI proof must be run before acceptance')

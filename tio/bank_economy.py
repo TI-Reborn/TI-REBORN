@@ -15,7 +15,7 @@ from typing import Protocol
 import hashlib,hmac,json,os,re,secrets,time,uuid
 
 from .db_transaction import connect,transaction,current
-from .protocol.item_list import decode_item_list,encode_item_list
+from .protocol.item_list import ItemRecord,decode_item_list,encode_item_list
 from .item_ids import next_item_id
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -32,6 +32,9 @@ def policy():
     if not 1<=p['bonds']['sale_last_day']<p['bonds']['redemption_day']<=28:raise ValueError('Invalid monthly bond calendar')
     for section,keys in (('stocks',('initial_credits','daily_rise_credits','history_points')),('bonds',('credits_each','initial_redemption_credits','monthly_rise_credits','history_points')),('marks',('maximum_days','pin_iterations','pin_failures','pin_lock_seconds'))):
         if any(type(p[section][k]) is not int or not 1<=p[section][k]<=MAX for k in keys):raise ValueError('Invalid bounded economy quantity')
+    days=p['marks']['window_days']
+    if type(days) is not int or not 1<=days<=p['marks']['maximum_days']:
+        raise ValueError('Invalid native mark duration')
     return p
 
 
@@ -323,7 +326,20 @@ def _check_pin(db,mark,pin,now):
     db.execute('UPDATE bank_item_marks SET failures=0,locked_until=0 WHERE id=?',(mark['id'],));return None
 
 
+def clan_mark_holder(clan_id: int) -> str:
+    # NUL is forbidden in account logins, so shared custody cannot alias a player.
+    return '\0clan:' + str(integer(clan_id, positive=True))
+
+
+def _mark_clan(holder: str) -> int | None:
+    return int(holder[6:]) if holder.startswith('\0clan:') else None
+
+
 def _items(db,account):
+    clan_id = _mark_clan(account)
+    if clan_id is not None:
+        from .clans import ClansStore
+        return {key: (item, None, 0) for key, item in ClansStore._items(db, clan_id, 1).items()}
     from .market_inventory import owned
     owner(db,account);return owned(db,account)
 
@@ -350,7 +366,7 @@ def mark_item(db,account,instance,days,pin,key,*,now=None,allowed=True):
     if pet is None and instance not in read_scope(db,account,required=True):raise BankRejected('Предмет находится на складе другого города')
     from .item_boosters import nontransferable
     if item.count!=1 or item.template_id in (1,2,51) or nontransferable(item.template_id) or any(item.unknown_bytes_02[2:]) or item.optional_u32 is not None:raise BankRejected('Стопки, деньги, арендованные и уже меченые предметы нельзя маркировать')
-    cost=days*100
+    cost=days*policy()['marks']['credits_per_day']
     if db.execute('UPDATE wallets SET credits=credits-? WHERE account=? AND credits>=?',(cost,account,cost)).rowcount!=1:raise BankRejected('Недостаточно кредитов для метки')
     salt=secrets.token_bytes(16);digest=_hash(pin,salt);expires=stamp+days*86400
     row=db.execute("INSERT INTO bank_item_marks(owner,original_instance,holder,current_instance,template,expires,salt,pin_hash,state) VALUES (?,?,?,?,?,?,?,?,'active')",(account,instance,account,instance,item.template_id,expires,salt,digest));integer(row.lastrowid)
@@ -370,9 +386,14 @@ def _move(db,mark,destination,*,clear=False):
     if destination==mark['holder']:
         if clear:_save_item(db,destination,replace(item,unknown_bytes_02=item.unknown_bytes_02[:2]+b'\0'+item.unknown_bytes_02[3:]),pet,flag)
         return item.instance_id
-    db.execute('INSERT INTO item_sequences VALUES (?,?) ON CONFLICT(account) DO UPDATE SET next_id=MAX(next_id,excluded.next_id)',(mark['holder'],item.instance_id+1))
-    if pet is None:db.execute('DELETE FROM warehouse_items WHERE account=? AND instance_id=?',(mark['holder'],item.instance_id))
+    clan_id = _mark_clan(mark['holder'])
+    if clan_id is not None:
+        db.execute('DELETE FROM clan_items WHERE clan_id=? AND kind=1 AND instance_id=?', (clan_id,item.instance_id))
+        db.execute('UPDATE clans SET revision=revision+1 WHERE id=?', (clan_id,))
     else:
+        db.execute('INSERT INTO item_sequences VALUES (?,?) ON CONFLICT(account) DO UPDATE SET next_id=MAX(next_id,excluded.next_id)',(mark['holder'],item.instance_id+1))
+    if clan_id is None and pet is None:db.execute('DELETE FROM warehouse_items WHERE account=? AND instance_id=?',(mark['holder'],item.instance_id))
+    elif clan_id is None:
         raw=db.execute('SELECT inventory_packet FROM owned_pets WHERE account=? AND pet_id=?',(mark['holder'],pet)).fetchone()[0]
         _,items,_=decode_item_list(raw);packet=encode_item_list(pet,tuple(i for i in items if i.instance_id!=item.instance_id),flag)
         db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=?',(packet,mark['holder'],pet))
@@ -425,6 +446,72 @@ def marked_items(db,account):
     return tuple(dict(id=i,holder=h,instance=n,template=t,expires=e,state=s) for i,h,n,t,e,s in db.execute('SELECT id,holder,current_instance,template,expires,state FROM bank_item_marks WHERE owner=? ORDER BY id DESC LIMIT 100',(account,)))
 
 
+_MARK_LIST_BIT = 1 << 31
+
+
+def window_mark_rows(db, account: str, now: int) -> tuple[tuple[int, ItemRecord, int, str], ...]:
+    owner(db, account)
+    holdings = {}
+    names = {}
+    rows = []
+    for mark_id, holder, instance, template, expires in db.execute(
+            "SELECT id,holder,current_instance,template,expires FROM bank_item_marks "
+            "WHERE owner=? AND state='active' ORDER BY id", (account,)):
+        if holder not in holdings:
+            holdings[holder] = _items(db, holder)
+            # The native list hides rows whose holder name matches the player.
+            names[holder] = ('Клановый склад' if _mark_clan(holder) is not None else
+                             bytes(db.execute('SELECT name FROM characters WHERE account=? AND slot=1',
+                                              (holder,)).fetchone()[0]).decode('cp1251'))
+        found = holdings[holder].get(instance)
+        if found is None:
+            continue
+        item = found[0]
+        if item.template_id != template or not item.unknown_bytes_02[2] or item.unknown_bytes_02[3]:
+            continue
+        # The list references the mark, so a loan can change the physical ID.
+        reference = _MARK_LIST_BIT + integer(mark_id, _MARK_LIST_BIT - 2, positive=True)
+        rows.append((reference, item, max(0, min(MAX, expires - now)), names[holder]))
+    return tuple(rows)
+
+
+def _window_mark(db, account: str, reference: int) -> dict:
+    held = db.execute(
+        "SELECT id,owner FROM bank_item_marks WHERE holder=? AND current_instance=? AND state='active'",
+        (account, reference)).fetchall()
+    listed = db.execute(
+        "SELECT id,owner FROM bank_item_marks WHERE id=? AND owner=? AND state='active'",
+        (reference - _MARK_LIST_BIT, account)).fetchone() if reference >= _MARK_LIST_BIT else None
+    candidates = set(held)
+    if listed is not None:
+        candidates.add(listed)
+    if len(candidates) != 1:
+        raise BankRejected('Активная метка не найдена или предмет выбран неоднозначно')
+    mark_id, original = candidates.pop()
+    return _mark(db, original, mark_id)
+
+
+def remove_window_mark(db, account: str, reference: int, pin: str, key: str, *,
+                       now: int, busy: set[str]) -> dict:
+    mark = _window_mark(db, account, reference)
+    if mark['owner'] != account:
+        raise BankRejected('Только владелец может снять метку')
+    return reclaim_marked(db, account, mark['id'], pin, key, remove=True, now=now, busy=busy)
+
+
+def return_window_mark(db, account: str, reference: int, key: str, *, busy: set[str]) -> dict:
+    write(db)
+    mark = _window_mark(db, account, reference)
+    original, holder = mark['owner'], mark['holder']
+    if {original, holder} & busy:
+        raise BankRejected('Вернуть вещь можно после выхода обоих игроков из боя')
+    if holder == original:
+        return dict(changed_accounts=(), destroyed=False)
+    instance = _move(db, mark, original)
+    return receipt(db, 'native_mark_return', key, account, canonical(dict(mark=mark['id'])),
+                   dict(changed_accounts=sorted({original, holder}), destroyed=instance is None))
+
+
 def assert_item_mutation(db,account,instance,operation):
     if operation in ('equip','use','repair','wear'):return
     if table(db,'bank_item_marks') and db.execute("SELECT 1 FROM bank_item_marks WHERE holder=? AND current_instance=? AND state='active'",(account,instance)).fetchone():raise BankRejected('Меченую вещь нельзя продавать, уничтожать, улучшать или передавать обычным обменом')
@@ -439,6 +526,9 @@ def project_marks(db,account,packet,*,now=None):
     else:
         from .protocol.warehouse import decode_warehouse_list
         present={i.instance_id for i in decode_warehouse_list(packet)[3] if i.marked}
+        if present and int.from_bytes(packet[1:5], 'little') == 1:
+            from .clans import require, VIEW_WAREHOUSE
+            account = clan_mark_holder(require(db, account, VIEW_WAREHOUSE)['id'])
     for instance,original,expires in db.execute("SELECT current_instance,owner,expires FROM bank_item_marks WHERE holder=? AND state='active'",(account,)):
         if instance not in present:continue  # Temporary tutorial/loot IDs are not owned marks.
         name=db.execute('SELECT name FROM characters WHERE account=? ORDER BY slot LIMIT 1',(original,)).fetchone()

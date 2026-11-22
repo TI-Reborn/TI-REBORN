@@ -4,6 +4,7 @@ No existing save is backfilled: grant_starters requires the trusted creation
 boundary explicitly. Random offers are stored per account/city until hired;
 refresh/reconnect never rerolls a quoted offer or revives a consumed ID.
 """
+from contextlib import closing
 from dataclasses import replace
 from functools import lru_cache
 import json
@@ -12,7 +13,7 @@ import random
 from xml.etree import ElementTree
 
 from .ability_progression import policy
-from .db_transaction import transaction
+from .db_transaction import connect, transaction
 from .hiring import HireStore
 from .owned_pets import OwnedPetStore
 from .protocol.city_catalogs import encode_pet_shop,decode_pet_shop
@@ -214,6 +215,15 @@ def tutorial_status(path,account):
     return {'step':step,'match_id':match,'completed':bool(completed),
             'observed_events':events,
             'tip':None if completed else TUTORIAL_TIPS[step]}
+
+
+def tutorial_incomplete(path: str | Path, account: str) -> bool:
+    """Read the intro gate without creating or migrating tutorial tables."""
+    with closing(connect(path)) as db:
+        if not db.execute("SELECT 1 FROM sqlite_master WHERE name='character_tutorials'").fetchone():
+            return False
+        return db.execute('SELECT 1 FROM character_tutorials WHERE account=? AND completed=0',
+                          (account,)).fetchone() is not None
 
 
 def tutorial_begin(path,account,match_id):

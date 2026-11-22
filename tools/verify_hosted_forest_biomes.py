@@ -190,7 +190,7 @@ def main(host):
         stored=next(i for i in sa['warehouse'] if i.template_id==65487)
         a.send(create_packet(instance=stored.instance_id,count=1,price=100,step=10,buyout=200));a.until(b'\xc8\x0c')
         added=Reader(a.until(b'\xc8\x03')[2:]);assert added.u32()==1;lot=added.u32();ac.ping(a)
-        buyer_before=sb['credits'];b.send(Writer().u8(0xc8).u8(15).u32(lot).build());b.until(b'\xc8\x04');bc.ping(b)
+        buyer_before=sb['credits'];b.send(Writer().u8(0xc8).u8(14).u32(lot).build());b.until(b'\xc8\x04');bc.ping(b)
         assert sb['credits']==buyer_before-200
         assert sum(i.count for i in sb['warehouse'] if i.template_id==65487)==1
         time.sleep(2.1);ac.ping(a);assert sa['credits']==credits+30+200

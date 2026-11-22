@@ -1,6 +1,6 @@
 """Restore missing mining bindings from native IDs and installed model assets.
 
-These four records are not present in the legacy items.cfg. Numeric mining
+These records are not present in the legacy items.cfg. Numeric mining
 rules come from the manual/native pickup dialog; animation/model bindings
 use existing assets. See MINING.md for the provisional fields.
 """
@@ -21,6 +21,8 @@ RECORDS = {
         model_1='mob_sickminer', texture_1='mob_sickminer.jpg',
         anim_idle='mob_sickminer_idle', anim_run='mob_sickminer_walk',
         anim_fire='mob_sickminer_attack')),
+    65514: ('Wild Miner Body', dict(itype='armor', type='armor', bodypart='chest',
+        model_1='mob_wildminer', texture_1='mob_wildminer.jpg')),
 }
 
 

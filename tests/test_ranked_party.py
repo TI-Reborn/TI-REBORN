@@ -27,13 +27,16 @@ class RankedPartyTests(unittest.TestCase):
         self.send(1,b'\xc6\x37\0');self.assertIsNone(party(self.hub,self.owners[1]))
         self.assertTrue(any(p[0]==0xf0 for p in self.send(1,b'\xc6\x37\1')))
 
-    def test_group_waits_for_a_real_opponent_and_never_splits_members(self):
+    def test_group_waits_for_same_size_group_and_never_splits_members(self):
         self.accept();self.ready();self.hub.tick()
         self.assertEqual(set(self.hub.ranked_waiting),set(self.owners[:2]));self.assertFalse(self.hub.battles)
-        self.send(2,join((1,)));battle=self.hub.battles[self.owners[0]]
+        fixture.reserve_fighters(self.path,self.case.sessions[2],2)
+        self.send(2,join((1,2)));self.assertFalse(self.hub.battles)
+        self.send(2,b'\xc6\x23');self.accept(2,3);self.ready(2,3)
+        battle=self.hub.battles[self.owners[0]]
         self.assertIs(battle,self.hub.battles[self.owners[1]])
-        sides=battle['field'].teams;self.assertEqual(sides[self.owners[0]],sides[self.owners[1]]);self.assertNotEqual(sides[self.owners[0]],sides[self.owners[2]])
-        self.assertEqual(len(battle['field']._actors),8);self.assertEqual(len(battle['bots']),5)
+        sides=battle['field'].teams;self.assertEqual(sides[self.owners[0]],sides[self.owners[1]]);self.assertNotEqual(sides[self.owners[0]],sides[self.owners[3]])
+        self.assertEqual(len(battle['field']._actors),4);self.assertFalse(battle['bots'])
         self.assertFalse(self.hub.ranked_parties);self.assertFalse(self.hub.ranked_waiting)
 
     def test_readiness_then_leader_start_and_joint_cancel(self):

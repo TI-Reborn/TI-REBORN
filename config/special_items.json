@@ -28,7 +28,7 @@
   },
   "mine_limit_per_battle": 128,
   "mines_trigger_all_sides": true,
-  "mine_visibility": "Planting side only; hostile mines are disclosed by the explosion, not ordinary sight.",
+  "mine_visibility": "The planting side and each owner who discovers the mine with a finder can see it.",
   "flamethrower_fuel": "Native item durability is the reservoir: a 9-AP burst requires at least 9 durability and consumes 9 through normal weapon wear (existing premium half-wear applies); repair replenishes it. No invented ammunition template ID.",
   "shop_prices": {
     "319": 120,

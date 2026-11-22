@@ -11,8 +11,10 @@ import queue
 import secrets
 import selectors
 import socket
+import sqlite3
 import threading
 import time
+from typing import TYPE_CHECKING
 
 from .accounts import Accounts, identity
 from .auth_errors import LoginRejected
@@ -20,6 +22,9 @@ from tio.protocol.login import LoginFailureStatus
 from .failure_policy import storage_failure
 from .login_guard import LoginGuard,LoginThrottled
 from tio import battle_settlement
+
+if TYPE_CHECKING:
+    from tools.loopback_exchange import LoopbackExchange
 
 LOG = logging.getLogger('tio.server')
 MAX_SESSIONS = 16
@@ -78,9 +83,15 @@ class MultiServer:
         from .economy_runtime import SharedEconomy
         self.economy=SharedEconomy(self.config.database)
         battle_settlement.initialise(self.config.database)
+        from tio.db_transaction import transaction
+        from tio.reservation_quests import schema as reservation_quest_schema
+        with transaction(self.config.database) as db:
+            reservation_quest_schema(db)
         from .battle_journal import BattleJournal
         self.team_arena.journal=BattleJournal(self.team_arena,self.config.database)
         self.team_arena.journal.recover()
+        from .tournament_arena import TournamentArena
+        self.team_arena.tournaments = TournamentArena(self.team_arena, self.config.database)
         from tio.wagers import WagerStore
         from tio.db_transaction import connect as wager_connect
         from contextlib import closing as wager_closing
@@ -136,6 +147,7 @@ class MultiServer:
         with self.login_guard.hash_slot(exchange.login_peer_address,login.login_bytes):
             account = self.accounts.verify(login.login_bytes, login.password_bytes)
         with self.team_arena.lock:
+            self.accounts.require_access(account)
             from tio.battle_checkpoints import blocked
             from tio.character_identity import owners
             # Authentication remains one claim per human login. A new slot
@@ -156,9 +168,17 @@ class MultiServer:
                     raise LoginRejected('already-connected', LoginFailureStatus.ACCOUNT_IN_USE, 'Account is already connected')
                 self.active_accounts[account] = exchange
                 exchange.authenticated_account = account
+        if getattr(getattr(exchange, 'login_socket', None), 'trace_id', None) is not None:
+            exchange.login_socket.trace_account = account
         LOG.info('Login authorized requested_login=%s transport=%s',
             account, 'tls' if getattr(exchange,'login_tls',False) else 'direct')
         return account
+
+    def disconnect_banned(self, login: str) -> None:
+        with self.lock:
+            exchange = self.active_accounts.get(login)
+        if exchange is not None:
+            exchange.stop()
 
     def select_character(self,exchange,owner):
         """Bind the private journal only after an authenticated owned selection."""
@@ -185,6 +205,36 @@ class MultiServer:
                     raise ValueError('Сначала завершите текущий бой')
             if manager is None or manager.account!=owner:
                 PrivateJournal(exchange.arena,self.config.database,owner,session=exchange)
+
+    def detach_character_social(self, exchange: 'LoopbackExchange') -> None:
+        if self.contracts is not None:
+            self.contracts.disconnect(exchange)
+        self.player_trade.disconnect(exchange)
+        self.presence.disconnect(exchange)
+
+    def detach_character_play(self, exchange: 'LoopbackExchange') -> None:
+        retained = self.team_arena.disconnect(exchange)
+        if hasattr(exchange, 'probe_character_id'):
+            exchange.survival.disconnected(exchange.probe_character_id)
+            if not retained:
+                exchange.arena.disconnect(exchange.probe_character_id)
+
+    def return_to_character_select(self, exchange: 'LoopbackExchange') -> bool:
+        with self.team_arena.lock:
+            if (self.team_arena.in_battle(exchange, include_results=True)
+                    or exchange.arena._fields):
+                return False
+            self.detach_character_social(exchange)
+            self.detach_character_play(exchange)
+            for field in ('probe_character_id', 'probe_character_name', 'selected_character_slot',
+                          'private_resume_packets', '_contract_markers', '_travel_party_revision',
+                          '_prison_announced_town', '_team_heartbeat_at', '_next_city_listing',
+                          '_economy_refresh_at', '_treatment_rate'):
+                vars(exchange).pop(field, None)
+            exchange._achievement_city_confirmed = False
+            exchange._private_chat_map_confirmed = False
+            exchange.account = exchange.authenticated_account
+        return True
 
     def login_rejected(self, exchange, login, rejection):
         # A validated, bounded ASCII identifier cannot inject lines into logs.
@@ -243,13 +293,17 @@ class MultiServer:
                     raise ValueError('Game handoff source mismatch')
                 if bool(getattr(exchange,'login_tls',False)) != secure:
                     raise ValueError('Game handoff transport mismatch')
+                if getattr(connection, 'trace_id', None) is not None:
+                    connection.trace_account = exchange.authenticated_account
                 del self.pending[key]
                 exchange.handoff_queue.put_nowait((connection,(seed,reader,raw,packets)))
                 delivered = True
                 # Ownership has transferred to the login worker.
                 self.routes[threading.current_thread()] = None
                 self.route_ips.pop(threading.current_thread(),None)
-        except (OSError, ValueError, EOFError):
+        except (OSError, ValueError, EOFError) as error:
+            if isinstance(error, TimeoutError) and getattr(connection, 'trace_id', None) is not None:
+                connection.record_error('handoff', error)
             LOG.warning('Rejected incomplete or invalid game handoff')
         except Exception as exc:
             if storage_failure(exc):self.failures.put(exc)
@@ -274,18 +328,12 @@ class MultiServer:
                 exchange.game_authenticated=False
                 self.pending.pop(getattr(exchange,'handoff_key',None),None)
             try:
-                if self.contracts is not None:
-                    self.contracts.disconnect(exchange)
-                self.player_trade.disconnect(exchange)
-                self.presence.disconnect(exchange)
+                self.detach_character_social(exchange)
             except Exception as exc:
                 if storage_failure(exc):self.failures.put(exc)
                 else:LOG.exception('Presence disconnect failed')
             try:
-                retained=self.team_arena.disconnect(exchange)
-                if hasattr(exchange,'probe_character_id'):
-                    exchange.survival.disconnected(exchange.probe_character_id)
-                    if not retained:exchange.arena.disconnect(exchange.probe_character_id)
+                self.detach_character_play(exchange)
             except Exception as exc:
                 self.session_failure(exchange,exc)
             finally:
@@ -487,6 +535,8 @@ class MultiServer:
                 connection.settimeout(2)
                 connection.sendall(len(raw).to_bytes(4,'big')+raw)
                 return
+            if getattr(bridge_port, 'trace_id', None) is not None:
+                connection.start_trace(bridge_port.trace_id, kind)
             connection.settimeout(5)
             with self.lock:
                 if self.server.stopping.is_set():raise InterruptedError('Server stopping')
@@ -574,9 +624,18 @@ class MultiServer:
                         web_status.publish(self.server_population())
                         status_tick=time.monotonic()+5
                     self.team_arena.tick()
-                    self.economy.tick(self)
+                    try:
+                        self.economy.tick(self)
+                    except sqlite3.OperationalError as error:
+                        if storage_failure(error):
+                            raise
+                        LOG.warning('Economy maintenance deferred: SQLite is busy')
                     if time.monotonic()>=mail_tick:
-                        self.mail_store.expire()
+                        try:
+                            self.mail_store.expire()
+                        except sqlite3.OperationalError as error:
+                            if storage_failure(error):raise
+                            LOG.warning('Mail expiration deferred: SQLite is busy')
                         mail_tick=time.monotonic()+60
                     if time.monotonic()>=auction_tick:
                         try:self.player_auction.settle()
@@ -637,6 +696,13 @@ class MultiServer:
                     self.tls_pending.clear()
                 while not self.tls_ready.empty():
                     self.tls_ready.get_nowait()[1].close()
+                if self.server.update_restart:
+                    # The session worker owns its encryption state and final send.
+                    for exchange in sessions:
+                        exchange.stopping.set()
+                    deadline = time.monotonic() + 2.0
+                    for exchange in sessions:
+                        exchange.thread.join(max(0.0, deadline - time.monotonic()))
                 for exchange in sessions:exchange.stop()
                 for _, connection in routes:
                     if connection is not None:

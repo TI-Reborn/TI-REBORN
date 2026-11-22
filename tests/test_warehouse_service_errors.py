@@ -11,10 +11,13 @@ class WarehouseErrorTests(unittest.TestCase):
         import sqlite3
         with sqlite3.connect(':memory:') as db:
             db.execute('CREATE TABLE character_locations (account TEXT PRIMARY KEY,town_id INTEGER NOT NULL)')
-            db.execute("INSERT INTO character_locations VALUES ('a',19)")
-            with self.assertRaises(ValueError) as caught:
+            db.execute("INSERT INTO character_locations VALUES ('a',99)")
+            with self.assertRaisesRegex(ValueError, 'Склад доступен'):
                 current_town(db, 'a')
-        self.assertEqual(warehouse_error_reply(caught.exception),
+
+    def test_legacy_location_refusal_still_has_a_specific_message(self):
+        error = ValueError('Склад доступен только в городе или у входа в шахту')
+        self.assertEqual(warehouse_error_reply(error),
                          encode_shop_error('склада: склад доступен только в городе или у входа в шахту'))
 
 

@@ -6,13 +6,27 @@ parts of a movement route are never disclosed to opponents.
 from copy import copy
 from dataclasses import replace
 
-from tio.visibility import VisibilityView, visible_actors
+from tio.performance import timed
+from tio.visibility import VisibilityView, visible_actors, visible_attack
 from tio.protocol.battle_move import BattleMove, decode_battle_move, encode_battle_move
 from tio.protocol.battle_attack import decode_attack_result, encode_attack_result
 from tio.protocol.action_points import encode_action_points
 from tio.protocol.health import encode_health
 from tio.protocol.battle_soldier import decode_battle_soldier
-from tio.battle_state import BattleActor, BattleField
+from tio.battle_state import BattleField
+from tio.battle_hazards import PlantedMine
+from tio.protocol.battle_mines import MineDeployed, encode_mine_deployed
+
+
+def mine_removal_packets(field: BattleField, owner: int, mines: dict[int, PlantedMine],
+                         known_before: set[int]) -> tuple[bytes, ...]:
+    # The legacy receiver requires a resident actor even for a cell-only removal.
+    anchor = next(iter(field.actor_ids(owner)), None)
+    if anchor is None:
+        return ()
+    removed = known_before - field.combat.mines.keys()
+    return tuple(encode_mine_deployed(MineDeployed(anchor, mine.x, mine.y, mine.template_id, 3))
+                 for mine in (mines[i] for i in sorted(removed)))
 
 
 def with_inventory_weights(field: BattleField, owner: int,
@@ -39,12 +53,16 @@ def with_inventory_weights(field: BattleField, owner: int,
     return tuple(replies)
 
 
-def movement_packets(view: VisibilityView, before: dict[int, BattleActor], packet: bytes) -> tuple[bytes, ...]:
+def movement_packets(view: VisibilityView, before: dict, packet: bytes) -> tuple[bytes, ...]:
     move=decode_battle_move(packet);actor=before[move.actor_id]
+    replay=copy(view.field);replay._actors=dict(before)
     if actor.owner_id==view.owner:
         # Owned actors predict the first step. Keep the original complete path.
-        return (packet,encode_action_points(actor.actor_id,view.field.actor(actor.actor_id).action_points),*view.refresh(visuals=False))
-    replay=copy(view.field);replay._actors=dict(before)
+        replies=[packet,encode_action_points(actor.actor_id,view.field.actor(actor.actor_id).action_points)]
+        for x,y in move.path[:-1]:
+            replay._actors[actor.actor_id]=replace(actor,x=x,y=y)
+            replies.extend(view.object_updates(field=replay))
+        return (*replies,*view.refresh(visuals=False))
     shadow=VisibilityView(replay,view.owner,view.templates)
     shadow.visible=view.visible;shadow.door_states=dict(view.door_states)
     shadow.hidden_living=dict(view.hidden_living)
@@ -74,9 +92,11 @@ def movement_packets(view: VisibilityView, before: dict[int, BattleActor], packe
     return tuple(replies)
 
 
+@timed('battle.visibility')
 def project_action(view, owner, before, visible_before, packets, *, visuals=True):
     movement=next((p for p in packets if p[:1]==b'\x3d'),None)
     replies=list(movement_packets(view,before,movement)) if movement is not None else []
+    current=visible_actors(view.field,view.owner)
     # A stopped movement can include an immediate mine explosion. Keep that
     # damage/owned-inventory event after the actual animated path.
     packets=tuple(p for p in packets if p is not movement)
@@ -86,14 +106,14 @@ def project_action(view, owner, before, visible_before, packets, *, visuals=True
         identity=int.from_bytes(packet[1:5],'little')
         if opcode==0x4b:
             attack=decode_attack_result(packet)
-            if attack.actor_id in visible_before:
-                if attack.weapon_id==324:
+            shown=visible_attack(attack,visible_before,view.hidden_living.keys() | view.resident_corpses)
+            if shown is not None:
+                if attack.weapon_id==324 and attack.actor_id in visible_before:
                     from tio.flamethrower import visual_packet
                     stream=visual_packet(view,before,attack)
                     if stream is not None:replies.append(stream)
-                hits=tuple(h for h in attack.hits if h.actor_id in visible_before)
-                replies.append(encode_attack_result(replace(attack,hits=hits)))
-                hit_updates.update(h.actor_id for h in hits)
+                replies.append(encode_attack_result(shown))
+                hit_updates.update(h.actor_id for h in shown.hits)
         elif opcode==0x3b:
             # Service replies include the acting owner's fog transitions. A
             # bot can hide a human's own soldiers here (255/255, HP=1).
@@ -103,7 +123,7 @@ def project_action(view, owner, before, visible_before, packets, *, visuals=True
             resource=int.from_bytes(packet[9:13],'little')
             snapshot=decode_battle_soldier(packet,human_equipment=view.field.combat.human.get(identity,resource in (1,2,6)))
             if (snapshot.position!=(255,255) and identity in visible_before
-                    and identity in visible_actors(view.field,view.owner)):
+                    and identity in current):
                 replies.extend(view.snapshot_packets(identity))
         elif opcode==0x4e:
             if identity in visible_before:
@@ -135,14 +155,13 @@ def project_action(view, owner, before, visible_before, packets, *, visuals=True
         actor=view.field._actors.get(identity)
         if actor is not None and identity in before and actor.health!=before[identity].health and identity not in hit_updates:
             replies.append(encode_health(identity,actor.health))
-    replies.extend(view.refresh(visuals=visuals))
+    replies.extend(view.refresh(visuals=visuals,current=current))
     own_snapshots={int.from_bytes(p[1:5],'little') for p in replies if p[0]==0x3b
                    and int.from_bytes(p[5:9],'little')==view.owner}
     described={int.from_bytes(p[1:5],'little') for p in replies if p[0]==0x3b}
     # Mine/burn kills occur outside the killer's own action and carry no
     # equipment view. Refresh changed sight from this recipient's state;
     # never disclose an unseen killer's coordinates or replay a corpse fall.
-    current=visible_actors(view.field,view.owner)
     for identity in sorted(visible_before & current):
         actor=view.field._actors.get(identity)
         previous=before.get(identity)
@@ -150,8 +169,21 @@ def project_action(view, owner, before, visible_before, packets, *, visuals=True
                 and actor.sight_radius!=previous.sight_radius and identity not in described):
             replies.extend(view.snapshot_packets(identity))
             if actor.owner_id==view.owner:own_snapshots.add(identity)
-    replies.extend(view.field.combat.inventory_packet(i) for i in sorted(own_snapshots))
+    from tio.equipment_batch import shown_inventory
+    replies.extend(shown_inventory(view.field.combat,view.owner,i) for i in sorted(own_snapshots))
     return tuple(replies)
+
+
+def remember_tournament_sight(battle: dict, owner: int) -> None:
+    """Record positions the bot actually sees while the other side plays."""
+    from tio.visibility import visible_actors
+    field = battle['field']
+    for observer in sorted(battle['bots'] - {owner}):
+        observed = battle.setdefault('bot_sightings', {}).setdefault(observer, {})
+        for identity in visible_actors(field, observer):
+            actor = field.actor(identity)
+            if not field.allied(observer, actor.owner_id):
+                observed[identity] = actor
 
 
 class BotEventArena:

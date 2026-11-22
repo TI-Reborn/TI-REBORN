@@ -43,6 +43,23 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(treat(self.path,'alice',(1,))[0].credits,0)
         self.assertEqual(self.hp(),100)
 
+    def test_reservation_treatment_is_free_for_levels_one_through_three(self):
+        from dataclasses import replace
+        from tio.locations import LocationStore
+        from tio.protocol.pet_info import encode_pet_info
+
+        LocationStore(self.path)
+        pet=decode_pet_info(self.store.list('alice')[0][1],human_equipment=True)
+        for town,level,expected_cost in ((3,1,0),(3,2,0),(3,3,0),(3,4,20),(2,3,20),(-1,3,20)):
+            with self.subTest(town=town,level=level):
+                with closing(sqlite3.connect(self.path)) as db,db:
+                    db.execute('INSERT OR REPLACE INTO character_locations(account,town_id) VALUES (?,?)',('alice',town))
+                    packet=encode_pet_info(replace(pet,fields={**pet.fields,'0x8c4aef':level,'0x8c4ab1':90}))
+                    db.execute('UPDATE owned_pets SET pet_packet=? WHERE account=? AND pet_id=1',(packet,'alice'))
+                    db.execute('UPDATE wallets SET credits=? WHERE account=?',(expected_cost,'alice'))
+                assets,cost=treat(self.path,'alice',(1,))
+                self.assertEqual((assets.credits,cost,self.hp()),(0,expected_cost,100))
+
     def test_reward_and_wounds_rollback_together(self):
         before=self.hp()
         with self.assertRaises(ValueError):settle(self.path,'alice','bad',1,health={1:1,999:0})
@@ -170,11 +187,11 @@ class PassiveRecoveryTests(unittest.TestCase):
                 request(bytes.fromhex('7c0101000000'));self.assertEqual(receive(1)[0][0],0xf0)
             self.assertEqual(self.wallet.ensure('probe_user').credits,10000)
             request(bytes.fromhex('7c0101000000'))
-            packets=receive(2);self.assertEqual([p[0] for p in packets],[0xc8,0x4e])
-            self.assertEqual(packets[1],encode_health(1,100))
-            self.assertEqual(self.wallet.ensure('probe_user').credits,9998)
-            request(bytes.fromhex('7c0101000000'));receive(2)
-            self.assertEqual(self.wallet.ensure('probe_user').credits,9998)
+            packets=receive(3);self.assertEqual([p[0] for p in packets],[0xc8,0x66,0x4e])
+            self.assertEqual(decode_pet_info(packets[1],human_equipment=True).fields['0x8c4ab1'],100)
+            self.assertEqual(self.wallet.ensure('probe_user').credits,10000)
+            request(bytes.fromhex('7c0101000000'));receive(3)
+            self.assertEqual(self.wallet.ensure('probe_user').credits,10000)
         finally:
             client.close();thread.join(3);exchange.stop();server.close()
         self.assertFalse(thread.is_alive())

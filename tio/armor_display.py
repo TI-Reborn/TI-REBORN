@@ -41,7 +41,9 @@ def city_armor(path, account, owner):
             raise ValueError('Owned actor required for armor display')
         human, raw, inventory = row
         projected = project_saved_pet(db, account, owner, raw, bool(human))
-    base = decode_pet_info(projected, human_equipment=bool(human)).fields['0x8c4ac5']
+    from .implants import armor_bonus
+    fields = decode_pet_info(projected, human_equipment=bool(human)).fields
+    base = fields['0x8c4ac5'] + armor_bonus(fields,inventory)
     return total(base, inventory, bool(human), pet_cap(raw, bool(human)))
 
 

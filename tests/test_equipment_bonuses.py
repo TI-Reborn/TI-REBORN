@@ -68,6 +68,28 @@ class EquipmentBonusTests(unittest.TestCase):
         c.equip(10,ItemAction(1,1001,0))
         self.assertEqual(f.actor(1).sight_radius,9)
 
+    def test_helmet_refresh_sends_absolute_sight_after_equipping_and_removing(self):
+        from tio.battle_item_effects import initialize, refresh_sight
+        from tio.protocol.battle_item_status import encode_sight
+        from tio.visibility import visible_actors
+
+        pet, inventory = self.setup_gear(262, 6, 1)
+        helmet, = decode_item_list(inventory)[1]
+        backpack = encode_item_list(1, (replace(helmet, unknown_u8_01=0, location_raw=0),))
+        field = BattleField(14, 3, (BattleActor(1, 10, 1, 1, 20, 100, 100, 8),
+                                    BattleActor(2, 20, 10, 1, 20, 100, 100)), step_cost=1)
+        combat = Combat(field, WeaponCatalog())
+        field.combat = combat
+        combat.register(1, backpack, human=True, pet_packet=pet)
+        initialize(combat)
+        self.assertNotIn(2, visible_actors(field, 10))
+        combat.equip(10, ItemAction(1, helmet.instance_id, 0))
+        self.assertEqual(refresh_sight(combat), (encode_sight(1, 9),))
+        self.assertIn(2, visible_actors(field, 10))
+        combat.equip(10, ItemAction(1, helmet.instance_id, 255))
+        self.assertEqual(refresh_sight(combat), (encode_sight(1, 8),))
+        self.assertNotIn(2, visible_actors(field, 10))
+
     def test_exo_capacity_updates_in_battle_and_tank_not_saved_as_training(self):
         for template,resource in ((263,2),(264,2),(254,1),(256,2)):
             raw,inv=self.setup_gear(template,resource,4)

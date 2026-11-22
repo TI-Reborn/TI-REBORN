@@ -13,10 +13,27 @@ static class Program
             Environment.ExitCode = ItemEffectTooltipSelfTest.Run(args[1], args[2]) ? 0 : 1;
             return;
         }
+        if (args.Length == 3 && args[0] == "--silver-regions-self-test") { SilverRegions.Test(args[1],args[2]); return; }
+        if (args.Length == 3 && args[0] == "--silver-adapters-self-test") { NativeSilverAdaptersSelfTest.Run(args[1], args[2]); return; }
         if (args.Length == 3 && args[0] == "--rain-texture-self-test") { NativeRainWeather.Test(args[1],args[2]); return; }
         if (args.Length == 3 && args[0] == "--password-limit-self-test") { NativePasswordLimit.Test(args[1],args[2]); return; }
         Console.OutputEncoding = new System.Text.UTF8Encoding(false);
         ApplicationConfiguration.Initialize();
+        if (args.Length == 2 && args[0] == "--npc-city-menu-self-test")
+        {
+            NpcCityMenuSelfTest.Run(args[1]);
+            return;
+        }
+        if (args.Length == 2 && args[0] == "--orange-dep-proof")
+        {
+            uint address=0x21000200, state=0x21002000, query=0x50000000, protect=0x50000100, flush=0x50000200, exit=0x50000300;
+            File.WriteAllText(args[1],System.Text.Json.JsonSerializer.Serialize(new {address,state,query,protect,flush,exit,
+                cave=NativeOrangeDep.ImageCave,maximum_handlers=NativeOrangeDep.MaximumHandlers,
+                code=Convert.ToHexStringLower(NativeOrangeDep.Build(address,state,query,protect,flush,exit))}));
+            return;
+        }
+        if (args.Length == 2 && args[0] == "--startup-diagnostics-self-test") { StartupDiagnosticsSelfTest.Run(args[1]); return; }
+        if (args.Length == 2 && args[0] == "--native-startup-self-test") { NativeStartupProbeSelfTest.Run(args[1]); return; }
         if(args.Length==2 && args[0]=="--ground-hover-proof")
         {
             File.WriteAllText(args[1],System.Text.Json.JsonSerializer.Serialize(

@@ -35,7 +35,8 @@ def _durability_per_level():
 def validate(packet,inventory,human,equipment):
     from .durability import broken
     allowed,armor,weapons,_=metadata()
-    resource=decode_pet_info(packet,human_equipment=human).fields['0x8c446f']
+    fields=decode_pet_info(packet,human_equipment=human).fields
+    resource=fields['0x8c446f']
     occupied={}
     for item in decode_item_list(inventory)[1]:
         if item.equipped:
@@ -48,6 +49,8 @@ def validate(packet,inventory,human,equipment):
         if rule:
             if slot!=rule['slot'] or bool(rule['dog'])==human or bool(rule.get('miner'))!=(resource==6) or rule.get('female') and resource!=2:
                 raise RankedRejection('Предмет TrueSkill не подходит бойцу или слоту')
+            if fields['0x8c4aef'] < rule['level']:
+                raise RankedRejection(f"Для этой брони нужен уровень {rule['level']}")
         elif template not in weapons.weapons or slot not in (16,128) or not human or (weapons.sources[template].get('freaks_only')=='1')!=(resource==6):
             raise RankedRejection('Оружие TrueSkill не подходит бойцу или слоту')
         covers=rule.get('covers',(slot,)) if rule else (slot,)

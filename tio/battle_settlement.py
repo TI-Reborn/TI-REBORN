@@ -37,7 +37,7 @@ def unpack(payload):
     data=json.loads(payload)
     if data['version']!=1:raise ValueError('Unknown settlement report version')
     kwargs=data['kwargs']
-    for key in ('health','rank_report','experience_report'):
+    for key in ('health','rank_report','experience_report','tournament_proficiency'):
         if kwargs.get(key) is not None:kwargs[key]={int(i):v for i,v in kwargs[key].items()}
     if kwargs.get('statistics_report') is not None:
         totals,soldiers=kwargs['statistics_report']
@@ -98,10 +98,10 @@ def apply(path,match_id,account):
     if row is None:raise ValueError('Pending settlement report missing')
     result,kwargs=unpack(row[0])
     from .battle_rewards import settle
-    assets=settle(path,account,match_id,result,**kwargs)
-    # A crash between these transactions repeats settle, whose match/account
-    # key prevents repeating HP/XP/rank/statistics/wallet changes.
+    # Inside a gameplay transaction this scope rolls back a failed report even
+    # when the caller catches the error and continues the outer transaction.
     with closing(connect(path)) as db,db:
+        assets=settle(path,account,match_id,result,**kwargs)
         db.execute('DELETE FROM battle_settlement_jobs WHERE match_id=? AND account=?',(match_id,account))
         db.execute('UPDATE battle_failure_audit SET resolved=1 WHERE match_id=? AND account=?',(match_id,account))
     return assets

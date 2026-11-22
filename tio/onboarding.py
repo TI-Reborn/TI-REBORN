@@ -56,7 +56,6 @@ def initialize_created(path,account):
     fixture=json.loads((Path(__file__).resolve().parents[1]/'evidence/owned_pet_trial.json').read_text())
     template=bytes.fromhex(fixture['packet_hex'])
     OwnedPetStore(path).ensure(account,template,bytes.fromhex(fixture['inventory_packet_hex']),human=True)
-    WalletStore(path).ensure(account)
     starters=grant_starters(path,account,template,created=True)
     db.execute('CREATE TABLE IF NOT EXISTS character_onboarding(account TEXT PRIMARY KEY,completed INTEGER NOT NULL DEFAULT 0)')
     if decode_character_create(bytes(row[0])).options[0] in (1,2):

@@ -163,9 +163,9 @@ def run():
         replies=barrier(b,create);added=next(p for p in replies if p.startswith(b'\xc8\x03'));lot=int.from_bytes(added[6:10],'little')
         created=state();barrier(b,create);assert state()==created
         barrier(c,Writer().u8(0xc8).u8(13).u32(lot).u32(100).u32(0).build())
-        replies=barrier(b,Writer().u8(0xc8).u8(14).u32(lot).build())
+        replies=barrier(b,Writer().u8(0xc8).u8(15).u32(lot).build())
         assert any(p.startswith(b'\xf0\x8a\x01\0\0') for p in replies)
-        packet=Writer().u8(0xc8).u8(15).u32(lot).build()
+        packet=Writer().u8(0xc8).u8(14).u32(lot).build()
         with ThreadPoolExecutor(max_workers=2) as pool:
             results=list(pool.map(lambda peer:barrier(peer,packet),(a,c)))
         assert sum(any(p.startswith(b'\xc8\x04') for p in replies) for replies in results)==1

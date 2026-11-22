@@ -3,13 +3,18 @@
 This is a deterministic guard, not an exhaustive secret/security audit.
 Reports filenames and line numbers only, never matched secret values.
 """
+import argparse
+import hashlib
 from pathlib import Path
 import re
-import hashlib
 import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from tools.prepare_github_handoff import source_paths
+
 ALLOWED_EVIDENCE = {'items_diagnostic.xml', 'skills_diagnostic.xml',
                     'zones_diagnostic.xml', 'customization_diagnostic.xml', 'owned_pet_trial.json'}
 FORBIDDEN_DIRS = {'data', '.secrets', 'reports', 'work', 'output', 'backups',
@@ -24,29 +29,41 @@ PATTERNS = {
 }
 
 
-# Reviewed raster assets from the published launcher 0.1.33 source.
-REVIEWED_BINARY_ASSETS = {'launcher/Assets/client-menu/background-source.png': '397567f4506d23af30af99639f2ad8d75bac77e9db68823d035dd0ed633716be', 'launcher/Assets/client-menu/gamelogo.png': '8994736275cbf4e990fb8457b7b6ff2495e7d3c5bc3339934414304c443101ae', 'launcher/Assets/client-menu/logo-source.png': '59e15c24a3cb9b9b0849b4a5f7613ebd7a138c1d7cfa6dc402b62c1a5b555d10', 'launcher/Assets/client-menu/mainbg.jpg': 'e66272a329d77ac5a7a784a9eaf36d1d64e41e6e4f33a195530e94ba990f90a0', 'launcher/Assets/tio-launcher.ico': 'bddd284056d9aebd46fb30eaf026ff1fb9d8a5ad0fc049935fd8548fa5ef35c8', 'launcher/Assets/tio-launcher.png': 'de9b1186f24d8bdb1bea853bfe44e75832b614b5ba865a0137a561c565c5bfd5', 'launcher/Assets/wasteland.png': 'f786023d6e6ef2081ec4555f2905e738f100feef37531ba0f2349bb92c991114'}
+# Reviewed raster assets from the published launcher sources.
+REVIEWED_BINARY_ASSETS = {'launcher/Assets/client-menu/background-source.png': '397567f4506d23af30af99639f2ad8d75bac77e9db68823d035dd0ed633716be', 'launcher/Assets/client-menu/gamelogo.png': '8994736275cbf4e990fb8457b7b6ff2495e7d3c5bc3339934414304c443101ae', 'launcher/Assets/client-menu/logo-source.png': '59e15c24a3cb9b9b0849b4a5f7613ebd7a138c1d7cfa6dc402b62c1a5b555d10', 'launcher/Assets/client-menu/mainbg.jpg': 'e66272a329d77ac5a7a784a9eaf36d1d64e41e6e4f33a195530e94ba990f90a0', 'launcher/Assets/tio-launcher.ico': 'bddd284056d9aebd46fb30eaf026ff1fb9d8a5ad0fc049935fd8548fa5ef35c8', 'launcher/Assets/tio-launcher.png': 'de9b1186f24d8bdb1bea853bfe44e75832b614b5ba865a0137a561c565c5bfd5', 'launcher/Assets/wasteland.png': 'f786023d6e6ef2081ec4555f2905e738f100feef37531ba0f2349bb92c991114',
+    'launcher/Assets/onboarding-quests/ruth-dialogue.png': '858d86a0494454d6623b8fa504f342cac52196f6d4dd00049925df800dbde8c1',
+    'launcher/Assets/onboarding-quests/ruth-voss.png': '23499ea75db247f53343d98ff16bac057b6d820487f70c4dabff6aa1a434d7ab'}
 
-def check():
-    if (ROOT / '.git').exists():
-        result = subprocess.run(['git', 'ls-files', '-z'], cwd=ROOT, check=True, capture_output=True)
-        paths = [ROOT / p.decode('utf-8') for p in result.stdout.split(b'\0') if p]
+def check(root: Path = ROOT, *, exported: bool = False) -> int:
+    root = root.resolve(strict=True)
+    if not exported and (root / '.git').exists():
+        result = subprocess.run(['git', 'ls-files', '-z'], cwd=root, check=True,
+                                capture_output=True, timeout=30)
+        paths = [root / p.decode('utf-8') for p in result.stdout.split(b'\0') if p]
+        print('Checking Git-tracked files.')
+    elif exported or (root / 'SOURCE_MANIFEST.json').is_file():
+        paths = sorted(p for p in root.rglob('*') if (p.is_file() or p.is_symlink())
+                       and not set(p.relative_to(root).parts) & {'__pycache__', '.venv', '.git'})
+        print('Checking exported files.')
     else:
-        paths = [p for p in ROOT.rglob('*') if p.is_file()
-                 and not set(p.relative_to(ROOT).parts) & {'__pycache__', '.venv', '.git'}]
+        paths = source_paths(root)
+        print('Checking the source handoff selection from this workspace.')
     if not paths:
         raise RuntimeError('No files selected; stage the prepared snapshot first')
     problems = []
     for path in paths:
-        rel = path.relative_to(ROOT)
+        rel = path.relative_to(root)
         if (set(rel.parts) & FORBIDDEN_DIRS or path.suffix.lower() in FORBIDDEN_SUFFIXES
             or path.name.startswith('.env') or path.name.endswith('.local.toml')
             or '.sqlite3-' in path.name or '.db-' in path.name
             or (rel.parts[0] == 'evidence' and path.name not in ALLOWED_EVIDENCE)):
             problems.append(f'{rel.as_posix()}: forbidden state/file type')
             continue
-        if path.is_symlink():
+        if path.is_symlink() or path.resolve() != path:
             problems.append(f'{rel.as_posix()}: symbolic link')
+            continue
+        if not path.is_file():
+            problems.append(f'{rel.as_posix()}: missing file')
             continue
         raw = path.read_bytes()
         if raw.startswith(b'SQLite format 3\x00'):
@@ -75,4 +92,7 @@ def check():
 
 
 if __name__ == '__main__':
-    sys.exit(check())
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--export', type=Path, help='Check the contents of an already prepared export')
+    args = parser.parse_args()
+    sys.exit(check(args.export or ROOT, exported=args.export is not None))

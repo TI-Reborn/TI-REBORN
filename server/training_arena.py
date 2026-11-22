@@ -64,8 +64,8 @@ class TrainingArena:
         identity=getattr(self,'training_members',{}).get(owner)
         return getattr(self,'training_groups',{}).get(identity)
 
-    def busy(self,session):
-        return self.training_group(session) is not None or super().busy(session)
+    def busy(self,session,*,include_assault: bool = True):
+        return self.training_group(session) is not None or super().busy(session,include_assault=include_assault)
 
     def _training_town(self,session):
         if str(session.database)!=str(self.training_path) or session.locations is None:raise ValueError('Нужен общий сохранённый персонаж на тренировочной базе')

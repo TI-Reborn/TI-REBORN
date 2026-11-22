@@ -35,12 +35,25 @@ def transfer_private_items(path, account, packet, *, capacity):
         from .wallets import WalletStore
         from .protocol.asset_count import encode_asset_count
         current=ClansStore(path)
-        inventory,items=current.exchange(account,request.actor_id,request.warehouse_type,
+        inventory,_=current.exchange(account,request.actor_id,request.warehouse_type,
             deposits=request.first_items,withdrawals=request.second_items)
         assets=WalletStore(path).ensure(account)
-        return (inventory,*current.warehouse_packets(account,request.warehouse_type),encode_asset_count(assets))
-    inventory,items=WarehouseStore(path,capacity=capacity).exchange(
-        account,request.actor_id,deposits=request.first_items,withdrawals=request.second_items)
+        inventories = () if inventory is None else (inventory,)
+        return (*inventories,*current.warehouse_packets(account,request.warehouse_type),encode_asset_count(assets))
+    from .db_transaction import transaction
     from .wallets import WalletStore
     from .protocol.asset_count import encode_asset_count
-    return (inventory,*encode_private_warehouse_snapshot(items),encode_asset_count(WalletStore(path).ensure(account)))
+    store = WarehouseStore(path, capacity=capacity)
+    with transaction(path) as db:
+        before = dict(db.execute(
+            'SELECT pet_id,inventory_packet FROM owned_pets WHERE account=? AND pet_id<>?',
+            (account, request.actor_id))) if request.second_items else {}
+        inventory, items = store.exchange(account, request.actor_id,
+            deposits=request.first_items, withdrawals=request.second_items)
+        donors = tuple(packet
+            for owner, pet, updated in db.execute(
+                'SELECT pet_id,pet_packet,inventory_packet FROM owned_pets WHERE account=? AND pet_id<>?',
+                (account, request.actor_id)) if owner in before and updated != before[owner]
+            for packet in (updated, pet)) if before else ()
+        return (inventory, *donors, *encode_private_warehouse_snapshot(items),
+                encode_asset_count(WalletStore(path).ensure(account)))

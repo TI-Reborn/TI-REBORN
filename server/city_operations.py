@@ -3,11 +3,14 @@
 External callers supply a verified login and owned slot, never a save-owner
 key. Scene admission and item writes share the hub lock and SQLite unit.
 """
+from collections.abc import Iterator
+from contextlib import closing, contextmanager
 from datetime import datetime, timezone
 from functools import lru_cache
 import json
 from pathlib import Path
 import re
+import sqlite3
 import time
 import xml.etree.ElementTree as ET
 
@@ -15,7 +18,7 @@ from .accounts import identity
 from .bank_operations import BANK_ACTION_FIELDS, prepare_bank, execute_bank
 from . import city_receipts
 from .clan_gameplay import schedule
-from .economy_runtime import busy_accounts, city_idle
+from .economy_runtime import busy_accounts, city_idle, city_location_idle, city_session_idle, retained_accounts
 from tio import bank_economy as bank, clan_benefits as benefits
 from tio.character_identity import MAX_CHARACTERS, owner_for_slot
 from tio.cities import CITIES
@@ -130,7 +133,7 @@ class CityOperations:
             if optional: return None
             raise CityError('character_required', 409) from None
 
-    def _available(self, db, owner, blocked):
+    def _available(self, db, owner, blocked, *, unselected: set[str] | None = None):
         if owner in blocked: return False, 'battle_or_search'
         if bank.table(db, 'battle_failure_audit') and db.execute('SELECT 1 FROM battle_failure_audit WHERE account=? AND resolved=0', (owner,)).fetchone():
             return False, 'battle_or_search'
@@ -141,6 +144,8 @@ class CityOperations:
             return False, 'travelling'
         if bank.table(db, 'world_prison') and db.execute('SELECT 1 FROM world_prison WHERE account=? AND remaining>0', (owner,)).fetchone():
             return False, 'city_required'
+        if unselected is not None:
+            return (False, 'session_not_idle') if owner in unselected else (True, None)
         with self.router.lock: sessions = tuple(self.router.active_accounts.values())
         for session in sessions:
             if getattr(session, 'account', None) == owner:
@@ -179,14 +184,14 @@ class CityOperations:
                 defaultStart=default, chosenStart=chosen, timeOptions=[stamp for stamp in options if stamp>now], events=events))
         return rows
 
-    def _status(self, db, data, owner, blocked, now):
+    def _status(self, db, data, owner, blocked, now, *, unselected: set[str] | None = None):
         characters = []
         for slot in range(1, MAX_CHARACTERS+1):
             try: selected = owner_for_slot(db, data['username'], slot)
             except ValueError: continue
             characters.append(dict(slot=slot, name=public_name(db, selected)))
         wallet = db.execute('SELECT credits,gold FROM wallets WHERE account=?', (owner,)).fetchone() if owner and bank.table(db, 'wallets') else None
-        allowed, reason = self._available(db, owner, blocked) if owner else (False, 'character_required')
+        allowed, reason = self._available(db, owner, blocked, unselected=unselected) if owner else (False, 'character_required')
         if owner and not wallet: allowed, reason = False, 'wallet_required'
         town = db.execute('SELECT town_id FROM character_locations WHERE account=?', (owner,)).fetchone() if owner and bank.table(db, 'character_locations') else None
         items = []; marks = []; held = None
@@ -204,7 +209,7 @@ class CityOperations:
                 items.append(dict(instanceId=instance, templateId=item.template_id, name=item_names().get(item.template_id, str(item.template_id)),
                     upgrade=item.unknown_bytes_03[0], location='warehouse' if pet is None else 'mercenary', canMark=allowed))
             for row in bank.marked_items(db, owner):
-                holder_allowed, _ = self._available(db, row['holder'], blocked)
+                holder_allowed, _ = self._available(db, row['holder'], blocked, unselected=unselected)
                 active = row['state']=='active'
                 marks.append(dict(id=row['id'], templateId=row['template'], name=item_names().get(row['template'], str(row['template'])),
                     holderName=public_name(db, row['holder']), expires=row['expires'], state=row['state'],
@@ -226,11 +231,46 @@ class CityOperations:
             clan=dict(id=clan['id'], name=clan['name'].decode('cp1251'), credits=clan['credits'], isLeader=clan['leader']==owner) if clan else None,
             bases=bases)
 
+    @contextmanager
+    def status_snapshot(self) -> Iterator[tuple[sqlite3.Connection, set[str], set[str]]]:
+        self._running()
+        hub = self.router.team_arena
+        with hub.lock:
+            self._running()
+            blocked = set(hub.private)
+            blocked.update(account for account in hub.account_owners if hub.retained(account))
+            with self.router.lock:
+                sessions = tuple(self.router.active_accounts.values())
+            unselected = set()
+            locations = {}
+            for session in sessions:
+                account = getattr(session, 'account', None)
+                if not account:
+                    continue
+                if getattr(session, 'probe_character_id', None) is None:
+                    unselected.add(account)
+                elif not getattr(session, 'locations', None) or not city_session_idle(session, include_assault=False):
+                    blocked.add(account)
+                else:
+                    locations[account] = session.locations
+
+        # Status is advisory. Actions recheck eligibility with the live hub and writer held.
+        with closing(sqlite3.connect(self.path.resolve().as_uri() + '?mode=ro', uri=True)) as db:
+            db.execute('BEGIN')
+            blocked.update(retained_accounts(db))
+            assault = getattr(hub, 'assault_store', None)
+            for account, location in locations.items():
+                if account not in blocked and (not city_location_idle(location, account, connection=db)
+                        or assault and assault.own_group(account, connection=db) is not None):
+                    blocked.add(account)
+            yield db, blocked, unselected
+        self._running()
+
     def status(self, data):
-        validate_payload(data);self._running()
-        with self.router.team_arena.lock, transaction(self.path) as db:
-            self._running();owner=self._resolve(db, data, optional=True)
-            return self._status(db, data, owner, busy_accounts(self.router, db), int(self.clock()))
+        validate_payload(data)
+        with self.status_snapshot() as (db, blocked, unselected):
+            owner = self._resolve(db, data, optional=True)
+            return self._status(db, data, owner, blocked, int(self.clock()), unselected=unselected)
 
     def _base_action(self, db, owner, data, now):
         action=data['action'];request_id=data['requestId']

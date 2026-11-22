@@ -32,6 +32,16 @@ def token_assets(db, account, assets, now=None):
     return replace(assets, slug=int(row[0] < day), gold_slug=row[1])
 
 
+class AdmissionRejected(ValueError):
+    """A valid practice request cannot be paid from the current balances."""
+
+
+def _additional_credit_visits(db: sqlite3.Connection, account: str, day: int) -> int:
+    return db.execute('''SELECT COUNT(*) FROM range_visits
+                        WHERE account=? AND payment=3 AND started>=? AND started<?''',
+                      (account, day * 86400, (day + 1) * 86400)).fetchone()[0]
+
+
 class AdmissionStore:
     def __init__(self, path, *, clock=time.time):
         self.path, self.clock = path, clock
@@ -44,6 +54,8 @@ class AdmissionStore:
             db.execute('''CREATE TABLE IF NOT EXISTS range_visits (
                 id TEXT PRIMARY KEY, account TEXT NOT NULL, payment INTEGER NOT NULL,
                 price INTEGER NOT NULL, started REAL NOT NULL)''')
+            db.execute('''CREATE INDEX IF NOT EXISTS range_additional_credit_visits
+                        ON range_visits(account,started) WHERE payment=3''')
 
     def assets(self, account):
         assets = WalletStore(self.path).ensure(account)
@@ -54,15 +66,19 @@ class AdmissionStore:
     def quote(self, account):
         assets = self.assets(account)
         day = int(self.clock()//86400)
+        price = POLICY['credits_price']
+        additional_price = POLICY['additional_credits_price']
+        limit = POLICY['credit_visits_per_day']
         with closing(connect(self.path)) as db:
             credit_day, used = db.execute('SELECT credit_day,credit_visits FROM range_accounts WHERE account=?', (account,)).fetchone()
+            additional_used = _additional_credit_visits(db, account, day)
         flags = bytes((assets.slug>0, assets.gold_slug>0,
-                       assets.credits>=POLICY['credits_price'] and (credit_day!=day or used<POLICY['credit_visits_per_day']),
-                       False))
-        return flags, POLICY['credits_price'], 0
+                       assets.credits >= price and (credit_day != day or used < limit),
+                       assets.credits >= additional_price and additional_used < limit))
+        return flags, price, additional_price
 
     def pay(self, account, selection, visit):
-        if selection not in (0,1,2):
+        if selection not in (0,1,2,3):
             raise ValueError('Choose a practice payment')
         self.assets(account)
         now = self.clock(); day = int(now//86400)
@@ -75,20 +91,26 @@ class AdmissionStore:
             used, golden, credit_day, visits = db.execute('SELECT used_day,golden,credit_day,credit_visits FROM range_accounts WHERE account=?', (account,)).fetchone()
             price = 0
             if selection == 0:
-                if used >= day:raise ValueError('Daily practice token already used')
+                if used >= day:raise AdmissionRejected('дневной жетон тренировки уже использован')
                 db.execute('UPDATE range_accounts SET used_day=? WHERE account=?', (day,account))
             elif selection == 1:
-                if golden < 1:raise ValueError('No golden practice token')
+                if golden < 1:raise AdmissionRejected('нет жетонов для тренировки')
                 db.execute('UPDATE range_accounts SET golden=golden-1 WHERE account=?', (account,))
             else:
-                if selection == 2 and credit_day == day and visits >= POLICY['credit_visits_per_day']:
-                    raise ValueError('Daily credit practice limit reached')
-                column = 'credits' if selection == 2 else 'gold'
-                price = POLICY[column+'_price']
-                if db.execute(f'UPDATE wallets SET {column}={column}-? WHERE account=? AND {column}>=?', (price,account,price)).rowcount != 1:
-                    raise ValueError('Insufficient practice funds')
                 if selection == 2:
-                    db.execute('UPDATE range_accounts SET credit_day=?,credit_visits=? WHERE account=?', (day,visits+1 if credit_day==day else 1,account))
+                    count = visits if credit_day == day else 0
+                    price = POLICY['credits_price']
+                else:
+                    count = _additional_credit_visits(db, account, day)
+                    price = POLICY['additional_credits_price']
+                if count >= POLICY['credit_visits_per_day']:
+                    raise AdmissionRejected('достигнут дневной лимит тренировок за кредиты')
+                if db.execute('UPDATE wallets SET credits=credits-? WHERE account=? AND credits>=?',
+                              (price, account, price)).rowcount != 1:
+                    raise AdmissionRejected('недостаточно средств для тренировки')
+                if selection == 2:
+                    db.execute('UPDATE range_accounts SET credit_day=?,credit_visits=? WHERE account=?',
+                               (day, count + 1, account))
             db.execute('INSERT INTO range_visits VALUES (?,?,?,?,?)', (visit,account,selection,price,now))
 
 
@@ -148,10 +170,12 @@ class ShootingRangeService:
                 room = self.arena.rooms.create(character,ArenaCreateRequest(16,0,1,2,20*count+20,count,count,0,0))
             self.arena._records[character] = record
             self.arena._return_towns[character] = SHOOTING_RANGE
+            self.arena._return_maps.pop(character, None)
+            self.arena._map_returned.discard(character)
+            self.arena._completed.discard(character)
             return None, (settings,members)
         wire_payment = decode_room_start(packet,mode=16)
-        # Native Start callback81db34 maps both token rows to0, credits to1,
-        # gold to2. The server uses the daily token before stored golden tokens.
+        # Native Start combines both token rows into 0 and sends 1 or 2 for credit tariffs.
         selection = ((0 if self.admission.assets(account).slug else 1)
                      if wire_payment == 0 else wire_payment+1)
         from .abilities import AbilityCatalog,AbilityLevel
@@ -161,7 +185,12 @@ class ShootingRangeService:
         prepared = prepare_range(self.path,account,ticket,catalog,clock=self.clock)
         visit = str(uuid4())
         # Preparation/serialization precedes payment. No fallible scene work follows payment.
-        self.admission.pay(account,selection,visit)
+        try:
+            self.admission.pay(account,selection,visit)
+        except AdmissionRejected as error:
+            from .protocol.system_message import encode_leave_room, encode_shop_error
+            self.arena.disconnect(character)
+            return None, (encode_leave_room(), encode_shop_error(str(error)))
         self.arena._loading[room.room_id] = set()
         self.arena._fields[room.room_id] = prepared.field
         self.arena._match_ids[room.room_id] = visit

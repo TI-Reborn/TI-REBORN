@@ -8,8 +8,7 @@ from tools.import_weapon_catalog import build
 class WeaponTests(unittest.TestCase):
     def test_source_values_and_ammo_links(self):
         c=WeaponCatalog()
-        # 39 original weapons + SVD and the later sniper/grenade additions.
-        self.assertEqual(len({i for i in c.weapons if i not in (65489,321)}),43)
+        self.assertEqual(len({i for i in c.weapons if i not in (65489,321)}),39)
         self.assertEqual((c.weapons[321].damage_base,c.weapons[321].damage_random),(80,10))
         self.assertEqual((c.weapons[65489].damage_base,c.weapons[65489].damage_random,c.weapons[65489].attack_ap),(12,6,4))
         self.assertEqual(len(c.ammunition),13)

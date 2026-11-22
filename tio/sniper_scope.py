@@ -17,7 +17,7 @@ def cast(combat, owner, request, *, view=None):
     from .battle_item_effects import _atomic, _actor, _pay, clear_item_sight
     from .visibility import field_sight
     from .combat_distance import combat_distance
-    from .durability import broken, wear_inventory
+    from .durability import wear_inventory
 
     def run():
         if request.ability_id != 9 or request.unknown_u32 != 0:
@@ -28,7 +28,7 @@ def cast(combat, owner, request, *, view=None):
         if len(primary) != 1 or primary[0].template_id not in WEAPONS:
             raise ValueError('Прицел требует AWP, SVD или HK G3SG/1 в первом слоте')
         weapon = primary[0]
-        if weapon.count != 1 or broken(weapon):
+        if weapon.count != 1 or combat.item_is_broken(weapon):
             raise ValueError('Working unstacked sniper rifle required')
         field = combat.field; target = request.x, request.y
         if not field.inside(*target) or target in field.blocked:
@@ -43,7 +43,8 @@ def cast(combat, owner, request, *, view=None):
         from .premium import current
         premium = current(*combat.persistence[actor.actor_id])[0] if actor.actor_id in combat.persistence else 0
         inventory = wear_inventory(old, weapon=weapon.instance_id, weapon_ap=AP,
-            half_wear=premium == 3, remainders=combat.premium_wear_remainders)
+            half_wear=premium == 3, remainders=combat.premium_wear_remainders,
+            deferred_breaks=getattr(combat, 'deferred_weapon_breaks', None))
         replies = _pay(combat, actor, AP, inventory)
         state = combat.item_effects
         key = ('scope', actor.actor_id, state['sequence']); state['sequence'] += 1

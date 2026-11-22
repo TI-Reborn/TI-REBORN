@@ -7,7 +7,7 @@ permissions:
   contents: read
 jobs:
   server-checks:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -18,5 +18,10 @@ jobs:
         run: python tools/check_handoff.py
       - name: Validate server resources
         run: python -m server --check
-      - name: Run portable server baseline
+      - name: Install gateway test dependencies
+        run: python -m pip install -r registration/requirements.txt
+      - name: Generate local TLS test fixtures
+        shell: pwsh
+        run: ./tests/fixtures/game_tls/generate.ps1
+      - name: Run server baseline
         run: python tools/run_server_checks.py

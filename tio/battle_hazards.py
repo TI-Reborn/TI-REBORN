@@ -3,18 +3,29 @@
 Legacy XML lacks Land Mine damage, flame fuel and effect duration. Balance
 choices are declared in config/special_items.json, never supplied by clients.
 """
+from __future__ import annotations
+
 from dataclasses import dataclass, replace
 from functools import lru_cache
 import json
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from .combat_distance import combat_distance
 from .protocol.battle_attack import AttackHit, AttackResult, encode_attack_result
-from .protocol.item_list import decode_item_list, encode_item_list
-from .protocol.action_points import encode_action_points
+from .protocol.item_list import ItemRecord, decode_item_list, encode_item_list
 from .protocol.known_mines import KnownMine, encode_known_mines
 from .protocol.battle_mines import MineDeployed, encode_mine_deployed
-from .visibility import clear_sight
+from .visibility import clear_sight, field_sight
+
+if TYPE_CHECKING:
+    from .battle_state import BattleActor
+    from .combat import Combat
+    from .protocol.item_action import ItemAction
+    from .protocol.mine_defuse import MineDefuse
+    from .visibility import VisibilityView
+
+MINE_SKILL = 'Engineering'
 
 
 @lru_cache(maxsize=1)
@@ -55,18 +66,118 @@ def initialize(combat):
     if not hasattr(combat,'mines'):combat.mines={}
     if not hasattr(combat,'burns'):combat.burns={}
     if not hasattr(combat,'mine_sequence'):combat.mine_sequence=1
+    if not hasattr(combat,'mine_discoveries'):combat.mine_discoveries={}
+    if not hasattr(combat,'mine_scans'):combat.mine_scans={}
     if not hasattr(combat,'hazard_damage'):combat.hazard_damage={}
     if not hasattr(combat,'sight_kill_victims'):
         combat.sight_kill_victims={victim for _,victim in combat.rank_kills}
 
 
+def known_mine_ids(combat: Combat, owner: int) -> set[int]:
+    initialize(combat)
+    return {m.identity for m in combat.mines.values()
+            if combat.field.allied(m.source.owner_id, owner) or owner in combat.mine_discoveries.get(m.identity, ())}
+
+
 def known_mines(combat,owner):
-    initialize(combat);field=combat.field
+    field = combat.field
+    mines = (combat.mines[i] for i in sorted(known_mine_ids(combat, owner)))
     return encode_known_mines(KnownMine(m.x,m.y,m.template_id,field.teams.get(m.source.owner_id,0))
-        for m in sorted(combat.mines.values(),key=lambda m:m.identity) if field.allied(m.source.owner_id,owner))
+        for m in mines)
+
+
+def is_mine_finder(template_id: int) -> bool:
+    from .durability import definitions
+    return definitions().get(template_id, {}).get('item_type') == 'minefinder'
+
+
+def _use_device(combat: Combat, actor: BattleActor, selected: ItemRecord,
+                items: tuple[ItemRecord, ...], flag: int, *, train: bool,
+                view: VisibilityView | None) -> tuple[bytes, ...]:
+    from .battle_item_effects import _atomic, _pay, _train_proficiency
+    from .durability import definitions, wear
+    cost = int(definitions()[selected.template_id]['actionPoints'])
+    if not 1 <= cost <= 255:
+        raise ValueError('Invalid mine device AP')
+    remaining = wear(selected, 1)
+    inventory = encode_item_list(actor.actor_id, tuple(
+        remaining if i == selected else i for i in items if i != selected or remaining is not None), flag)
+    trained = _train_proficiency(combat, actor, cost, MINE_SKILL) if train else None
+
+    def spend():
+        replies = _pay(combat, actor, cost, inventory, trained=trained)
+        if view is not None and trained is not None:
+            replies += view.snapshot_packets(actor.actor_id)
+        return replies
+
+    return _atomic(combat, spend, views=() if view is None else (view,))
+
+
+def find_mines(combat: Combat, owner: int, action: ItemAction, *,
+               view: VisibilityView | None = None) -> tuple[bytes, ...]:
+    from .battle_item_effects import _actor, _selected
+    from .durability import definitions
+    actor = _actor(combat, owner, action.pet_id)
+    selected, items, flag = _selected(combat, actor, action.instance_id)
+    if (action.option != 255 or not is_mine_finder(selected.template_id) or selected.equipped
+            or selected.count != 1 or selected.unknown_words[0] <= 0):
+        raise ValueError('Требуется исправный миноискатель в рюкзаке')
+    field = combat.field
+    known = known_mine_ids(combat, owner)
+    generation = field._ability_turns[actor.actor_id]
+    origin = (actor.x, actor.y)
+    previous_generation, cells = combat.mine_scans.get(actor.actor_id, (-1, frozenset()))
+    if generation != previous_generation:
+        cells = frozenset()
+    if origin in cells:
+        return (known_mines(combat, owner),)
+    # The original finder tooltip reads the template's power field as a radius.
+    radius = int(definitions()[selected.template_id]['power'])
+    if not 1 <= radius <= 255:
+        raise ValueError('Invalid mine finder radius')
+    found = [mine.identity for mine in combat.mines.values() if mine.identity not in known
+             and combat_distance(origin, (mine.x, mine.y)) <= radius
+             and field_sight(field, origin, (mine.x, mine.y))]
+    replies = _use_device(combat, actor, selected, items, flag, train=bool(found), view=view)
+    for identity in found:
+        combat.mine_discoveries[identity] = combat.mine_discoveries.get(identity, frozenset()) | {owner}
+    combat.mine_scans[actor.actor_id] = (generation, cells | {origin})
+    return (*replies, known_mines(combat, owner))
+
+
+def defuse_mine(combat: Combat, owner: int, request: MineDefuse, *,
+                view: VisibilityView | None = None) -> tuple[bytes, ...]:
+    from .battle_item_effects import _actor
+    from .durability import definitions
+    actor = _actor(combat, owner, request.actor_id)
+    field = combat.field
+    position = (request.x, request.y)
+    known = known_mine_ids(combat, owner)
+    mine = next((m for m in combat.mines.values() if m.identity in known and (m.x, m.y) == position), None)
+    if (mine is None or not field.inside(*position) or combat_distance((actor.x, actor.y), position) != 1
+            or not field_sight(field, (actor.x, actor.y), position)
+            or any(a.health and (a.x, a.y) == position for a in field._actors.values())):
+        raise ValueError('Нужна известная мина на свободной соседней клетке')
+    _, items, flag = decode_item_list(combat.inventories[actor.actor_id])
+    # C8/40 has no instance ID. Select the first usable probe by stable inventory ID.
+    catalogue = definitions()
+    selected = min((i for i in items if i.count == 1 and not i.equipped and i.unknown_words[0] > 0
+                    and catalogue.get(i.template_id, {}).get('item_type') == 'defuse'),
+                   key=lambda i: i.instance_id, default=None)
+    if selected is None:
+        raise ValueError('Требуется исправный щуп в рюкзаке')
+    removed = encode_mine_deployed(MineDeployed(actor.actor_id, mine.x, mine.y, mine.template_id, 3))
+    replies = _use_device(combat, actor, selected, items, flag,
+                          train=not field.allied(mine.source.owner_id, owner), view=view)
+    del combat.mines[mine.identity]
+    combat.mine_discoveries.pop(mine.identity, None)
+    return (*replies, removed)
 
 
 def deploy(combat,owner,request,*,view=None):
+    from .battle_item_effects import _pay, _train_proficiency
+    from .weapon_proficiency import damage_endpoint
+
     initialize(combat);field=combat.field
     actor=field._actors.get(request.actor_id)
     if actor is None or actor.owner_id!=owner or not actor.health or not combat.human.get(actor.actor_id):
@@ -84,19 +195,31 @@ def deploy(combat,owner,request,*,view=None):
     rule=None if selected is None else rules()['mines'].get(str(selected.template_id))
     from .durability import broken
     if rule is None or selected.count!=1 or broken(selected):raise ValueError('Owned usable mine required')
-    if actor.action_points<rule['ap']:raise ValueError('Insufficient action points')
+    spent_ap=field.weapon_ap_cost(rule['ap'])
+    if actor.action_points<spent_ap:raise ValueError('Insufficient action points')
     inventory=encode_item_list(actor.actor_id,tuple(i for i in items if i!=selected),flag)
+    low, high = rule['damage_base'], rule['damage_base'] + rule['damage_random']
+    profile = combat.proficiencies.get(actor.actor_id)
+    if profile is not None:
+        skill = combat.proficiency_rules.value(profile, True, MINE_SKILL)
+        skill = min(skill, getattr(combat, 'ranked_limits', {}).get(actor.actor_id, 200))
+        low, high = damage_endpoint(low, skill), damage_endpoint(high, skill)
     mine=PlantedMine(combat.mine_sequence,actor,selected.template_id,request.x,request.y,
-        rule['damage_base'],rule['damage_random'],rule['radius'])
-    state=replace(actor,action_points=actor.action_points-rule['ap'],weapons=combat.catalog.equipped(inventory,human=True,resource=combat.resources[actor.actor_id]))
-    replies=(encode_mine_deployed(MineDeployed(actor.actor_id,mine.x,mine.y,mine.template_id)),
-             encode_action_points(actor.actor_id,state.action_points),combat.inventory_packet(actor.actor_id,inventory))
-    combat._persist_batch({actor.actor_id:inventory})
-    combat.inventories[actor.actor_id]=inventory;field._actors[actor.actor_id]=state
+        low,high-low,rule['radius'])
+    from .implant_battle import extras
+    if 19 in extras(combat,actor.actor_id):
+        from .implants import policy
+        factor=100+policy()['extra']['effects']['19']['percent']
+        mine=replace(mine,damage_base=mine.damage_base*factor//100,damage_random=mine.damage_random*factor//100)
+    # shortcut: successful mining actions use the existing proficiency gains until original server coefficients are known.
+    trained = _train_proficiency(combat, actor, rule['ap'], MINE_SKILL)
+    deployed = encode_mine_deployed(MineDeployed(actor.actor_id, mine.x, mine.y, mine.template_id))
+    replies = (deployed, *_pay(combat, actor, spent_ap, inventory, trained=trained))
     combat.mines[mine.identity]=mine;combat.mine_sequence+=1
-    if view is not None and selected.equipped:
-        from .durability import refresh_template
-        refresh_template(combat,view,actor.actor_id)
+    if view is not None and (selected.equipped or trained is not None):
+        if selected.equipped:
+            from .durability import refresh_template
+            refresh_template(combat,view,actor.actor_id)
         replies+=view.snapshot_packets(actor.actor_id)
     return (*replies,known_mines(combat,owner),*combat.skill_packets(actor.actor_id))
 
@@ -204,6 +327,7 @@ def after_move(combat,actor_id,path=()):
     replies=apply_damage(combat,mine.source,mine.template_id,(mine.x,mine.y),victims,
         lambda victim:mine.damage_base+combat.rng.randint(0,mine.damage_random))
     del combat.mines[mine.identity]
+    combat.mine_discoveries.pop(mine.identity, None)
     return (*fire,*replies)
 
 

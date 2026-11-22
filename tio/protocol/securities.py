@@ -81,8 +81,11 @@ def decode_request(packet: bytes) -> Request:
     r = Reader(packet)
     if r.u8() != OPCODE:
         raise PacketError('Expected securities request C1')
+    subcode = r.u8()
+    if subcode == 0x04:
+        raise PacketError('Настройки векселей задаются сервером')
     try:
-        action = Action(r.u8())
+        action = Action(subcode)
     except ValueError:
         raise PacketError('Unsupported securities request') from None
     fields = {name: r.u32() for name in _LAYOUT[action]}

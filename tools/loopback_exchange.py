@@ -1,4 +1,5 @@
 """Bounded loopback experiment for the statically recovered initial challenge."""
+from contextlib import ExitStack
 import json
 import sqlite3
 import zlib
@@ -9,7 +10,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from tio.protocol.transport import InitialChallenge,InitialCipher,InitialFrameReader,encode_initial_challenge,encode_initial_frame,decode_initial_reply,expected_reply_fields
-from tio.protocol.transport import InitialCompletion,encode_initial_completion
+from tio.protocol.transport import InitialCompletion,encode_initial_completion,encode_update_disconnect
 from tio.protocol.login import decode_basic_login_request,transform_auth_value,encode_login_success,encode_login_failure
 from tio.protocol.binary import PacketError
 from server.auth_errors import LoginRejected
@@ -22,7 +23,8 @@ from tio.protocol.mode1 import derive_mode1_key,encode_mode1_challenge_frame,dec
 
 from tio.protocol.auth2 import decode_auth2_request,encode_auth2_result
 
-from tio.protocol.character_select import encode_empty_character_list,CharacterRecord,encode_character_list
+from tio.protocol.character_select import (RETURN_TO_CHARACTER_SELECT, CharacterRecord,
+                                           encode_character_list, encode_empty_character_list)
 
 from tio.protocol.city_services import city_service_reply
 from tio.protocol.item_list import decode_item_list_request,encode_empty_item_list
@@ -30,6 +32,7 @@ from tio.city_catalogs import CityCatalogs
 from tio.owned_pets import OwnedPetStore
 from tio.wallets import WalletStore, STARTING_CREDITS, STARTING_GOLD
 from tio.protocol.asset_count import AssetCount, encode_asset_count
+from tio.protocol.warehouse_transfer import CLAN_DEPOSIT
 from tio.shop import PurchaseResult, ShopStore, WarehousePurchaseResult
 from tio.equipment import equip_primary_weapon
 from tio.shop_errors import shop_error_reply
@@ -69,6 +72,7 @@ class LoopbackExchange:
         self.visibility_views={}
         self.failed_searches=set()
         self._achievement_city_confirmed=False
+        self._private_chat_map_confirmed = False
         self.hiring=None
         self.ability_learning=None
         self.database=Path(database) if database is not None else None
@@ -200,7 +204,7 @@ class LoopbackExchange:
                                     plain=encode_server_login_result(0);frame=encode_initial_frame(plain,outbound);conn.sendall(frame)
                                     self.events.append({'direction':'S2C','stage':'server_login_success','plain_hex':plain.hex(),'raw_hex':frame.hex()})
                                     if self.router is None:self.listener.settimeout(5)
-                                    with self.accept_connection() as game:
+                                    with self.accept_connection() as game, ExitStack() as game_exit:
                                         self.events.append({'event':'second_connection_accepted'})
                                         if self.mode1_challenge:
                                             seed=self.mode1_handoff[0] if self.mode1_handoff else bytes(range(8))
@@ -230,7 +234,9 @@ class LoopbackExchange:
                                                     if auth.server_list_trailing_bytes!=b'':raise ValueError('Unexpected trailing06 echo')
                                                     self.events.append({'event':'auth2_request_decoded','unknown_string_01_hex':auth.unknown_string_01.hex(),'server_list_trailing_hex':auth.server_list_trailing_bytes.hex()})
                                                     plain=encode_auth2_result(0);frame=encode_initial_frame(plain,game_outbound);game.sendall(frame)
-                                                    if self.router is not None:self.router.game_authenticated(self)
+                                                    if self.router is not None:
+                                                        self.router.game_authenticated(self)
+                                                        game_exit.callback(self.send_update_disconnect, game, game_outbound)
                                                     self.events.append({'direction':'S2C','stage':'auth2_success','plain_hex':plain.hex(),'raw_hex':frame.hex()})
                                                     if self.shared_config:
                                                         self.deliver_shared_config(game,game_reader,game_outbound)
@@ -285,73 +291,11 @@ class LoopbackExchange:
                                                             plain=encode_character_create_result(4)
                                                         frame=encode_initial_frame(plain,game_outbound);game.sendall(frame)
                                                         self.events.append({'direction':'S2C','stage':'character_create_list_trial' if self.create_success_probe else 'character_create_invalid_name','plain_hex':plain.hex(),'raw_hex':frame.hex()})
-                                                    if self.select_probe:
-                                                        if self.router is not None:
-                                                            session_records,raw,packets=self.choose_character(game,game_reader,game_outbound)
-                                                        else:
-                                                            raw,packets=self.receive_choice(game,game_reader,game_outbound)
-                                                        self.events.append({'direction':'C2S','stage':'character_select','raw_hex':raw.hex(),'packets_hex':[p.hex() for p in packets]})
-                                                        if self.router is None and packets!=[bytes.fromhex('1701000000')]:raise ValueError('Unexpected character selection request')
-                                                        plain=encode_select_result(SelectResult(0,0,0));frame=encode_initial_frame(plain,game_outbound);game.sendall(frame)
-                                                        self.events.append({'direction':'S2C','stage':'character_select_result','plain_hex':plain.hex(),'raw_hex':frame.hex()})
-                                                    if self.mychar_probe:
-                                                        raw,packets=self.receive_frame(game,game_reader)
-                                                        self.events.append({'direction':'C2S','stage':'mychar_request','packets_hex':[p.hex() for p in packets]})
-                                                        if packets!=[b'\x19']:raise ValueError('Expected19')
-                                                        self.probe_character_id=session_records[0].record_id if session_records else 1
-                                                        self.probe_character_name=session_records[0].name_bytes if session_records else b'ProbeNew'
-                                                        from tio.locations import center, MAP_SPEED
-                                                        if self.locations:self.locations.refresh(self.account,self.probe_character_id)
-                                                        town=self.locations.current(self.account) if self.locations else 3
-                                                        x,y=self.locations.position(self.account) if self.locations else center(3)
-                                                        plain=encode_mychar_info(MyCharInfo(self.probe_character_id,self.probe_character_name,MAP_SPEED,x&0xffffffff,y&0xffffffff,0))
-                                                        frame=encode_initial_frame(plain,game_outbound);game.sendall(frame)
-                                                        self.events.append({'direction':'S2C','stage':'mychar_info','plain_hex':plain.hex(),'raw_hex':frame.hex()})
-                                                        assets = WalletStore(self.database).ensure(self.account) if self.database is not None else AssetCount(STARTING_CREDITS, STARTING_GOLD)
-                                                        plain = encode_asset_count(assets)
-                                                        game.sendall(encode_initial_frame(plain, game_outbound))
-                                                        self.events.append({'direction':'S2C','stage':'asset_count','credits':assets.credits,'gold':assets.gold,'plain_hex':plain.hex()})
-                                                    if self.town_probe and (not self.locations or self.locations.current(self.account) is not None):
-                                                        from tio.locations import town_packets
-                                                        town=self.locations.current(self.account) if self.locations else 3
-                                                        from server.world_runtime import project_town
-                                                        plain=project_town(self,town_packets(town,self.database)[0])
-                                                        frame=encode_initial_frame(plain,game_outbound);game.sendall(frame)
-                                                        self.events.append({'direction':'S2C','stage':'town_info_trial','plain_hex':plain.hex(),'raw_hex':frame.hex()})
-                                                    if self.enter_town_probe and (not self.locations or self.locations.current(self.account) is not None):
-                                                        plain=encode_current_town(self.locations.current(self.account) if self.locations else 3)
-                                                        frame=encode_initial_frame(plain,game_outbound);game.sendall(frame)
-                                                        self.events.append({'direction':'S2C','stage':'enter_town_command_trial','plain_hex':plain.hex()})
-                                                    if self.open_town_probe and (not self.locations or self.locations.current(self.account) is not None):
-                                                        plain=encode_open_town_view()
-                                                        frame=encode_initial_frame(plain,game_outbound);game.sendall(frame)
-                                                        self.events.append({'direction':'S2C','stage':'open_town_view_command','plain_hex':plain.hex()})
-                                                    if self.owned_pet_probe:
-                                                        trial=Path(__file__).resolve().parents[1]/'evidence/owned_pet_trial.json'
-                                                        trial_data=json.loads(trial.read_text())
-                                                        plain=bytes.fromhex(trial_data['packet_hex'])
-                                                        self.owned_inventory=bytes.fromhex(trial_data['inventory_packet_hex'])
-                                                        if self.database is not None:
-                                                            plain,self.owned_inventory=OwnedPetStore(self.database).ensure(self.account,plain,self.owned_inventory,human=trial_data['human_equipment'])
-                                                            self.hiring=HireStore(self.database,self.catalogs,bytes.fromhex(trial_data['packet_hex']))
-                                                            from tio.rental import RentalStore
-                                                            self.rentals=RentalStore(self.database)
-                                                            retained=bool(self.router and self.router.team_arena.retained(self.account))
-                                                            self.rentals.refresh(self.account,in_battle=retained)
-                                                            from tio.battle_recovery import RecoveryStore
-                                                            self.recovery=RecoveryStore(self.database)
-                                                            self.recovery.refresh(self.account,blocked=retained)
-                                                            from tio.item_stacking import compact_saved_items
-                                                            if not retained:self.events.append({'event':'item_stacks_compacted', **compact_saved_items(self.database,self.account)})
-                                                            self.events.append({'event':'owned_pet_snapshot_loaded','database':str(self.database)})
-                                                        roster=OwnedPetStore(self.database).list(self.account) if self.database is not None else ((1,plain,self.owned_inventory),)
-                                                        for owner,pet_packet,inventory_packet in roster:
-                                                            if self.database is not None:
-                                                                from tio.armor_display import project_city_pet
-                                                                pet_packet=project_city_pet(self.database,self.account,pet_packet)
-                                                            game.sendall(encode_initial_frame(pet_packet,game_outbound))
-                                                            self.events.append({'direction':'S2C','stage':'owned_pet_trial','owner_id':owner,'plain_hex':pet_packet.hex()})
-                                                    self.observe_game(game,game_reader,game_outbound)
+                                                    returning = False
+                                                    while self.play_character(game, game_reader, game_outbound, session_records, returning=returning):
+                                                        returning = True
+                                                        session_records = CharacterStore(self.database).list(self.authenticated_account)
+                                                        game.sendall(encode_initial_frame(encode_character_list(session_records), game_outbound))
 
 
 
@@ -382,6 +326,100 @@ class LoopbackExchange:
             if self.output is not None:
                 self.output.write_text(json.dumps(self.events,indent=2)+'\n',encoding='utf-8')
 
+    def play_character(self, game: socket.socket, game_reader: InitialFrameReader,
+                       game_outbound: InitialCipher,
+                       session_records: tuple[CharacterRecord, ...], *, returning: bool) -> bool | None:
+        if self.select_probe:
+            if self.router is not None:
+                session_records,raw,packets=self.choose_character(game,game_reader,game_outbound,returning=returning)
+            else:
+                raw,packets=self.receive_choice(game,game_reader,game_outbound)
+            self.events.append({'direction':'C2S','stage':'character_select','raw_hex':raw.hex(),'packets_hex':[p.hex() for p in packets]})
+            if self.router is None and packets!=[bytes.fromhex('1701000000')]:raise ValueError('Unexpected character selection request')
+            plain=encode_select_result(SelectResult(0,0,0));frame=encode_initial_frame(plain,game_outbound);game.sendall(frame)
+            self.events.append({'direction':'S2C','stage':'character_select_result','plain_hex':plain.hex(),'raw_hex':frame.hex()})
+        if self.mychar_probe:
+            if returning:
+                raw,packets=self.receive_choice(game,game_reader,game_outbound,
+                    deadline=time.monotonic()+5,allowed_opcodes=(b'\x19',))
+            else:
+                raw,packets=self.receive_frame(game,game_reader)
+            self.events.append({'direction':'C2S','stage':'mychar_request','packets_hex':[p.hex() for p in packets]})
+            if packets!=[b'\x19']:raise ValueError('Expected19')
+            self.probe_character_id=session_records[0].record_id if session_records else 1
+            self.probe_character_name=session_records[0].name_bytes if session_records else b'ProbeNew'
+            from tio.locations import center, MAP_SPEED
+            if self.locations:self.locations.refresh(self.account,self.probe_character_id)
+            town=self.locations.current(self.account) if self.locations else 3
+            x,y=self.locations.position(self.account) if self.locations else center(3)
+            plain=encode_mychar_info(MyCharInfo(self.probe_character_id,self.probe_character_name,MAP_SPEED,x&0xffffffff,y&0xffffffff,0))
+            frame=encode_initial_frame(plain,game_outbound);game.sendall(frame)
+            self.events.append({'direction':'S2C','stage':'mychar_info','plain_hex':plain.hex(),'raw_hex':frame.hex()})
+            assets = WalletStore(self.database).ensure(self.account) if self.database is not None else AssetCount(STARTING_CREDITS, STARTING_GOLD)
+            plain = encode_asset_count(assets)
+            game.sendall(encode_initial_frame(plain, game_outbound))
+            self.events.append({'direction':'S2C','stage':'asset_count','credits':assets.credits,'gold':assets.gold,'plain_hex':plain.hex()})
+        if self.town_probe and (not self.locations or self.locations.current(self.account) is not None):
+            from tio.locations import town_packets
+            town=self.locations.current(self.account) if self.locations else 3
+            from server.world_runtime import project_town
+            plain=project_town(self,town_packets(town,self.database)[0])
+            frame=encode_initial_frame(plain,game_outbound);game.sendall(frame)
+            self.events.append({'direction':'S2C','stage':'town_info_trial','plain_hex':plain.hex(),'raw_hex':frame.hex()})
+        if self.enter_town_probe and (not self.locations or self.locations.current(self.account) is not None):
+            plain=encode_current_town(self.locations.current(self.account) if self.locations else 3)
+            frame=encode_initial_frame(plain,game_outbound);game.sendall(frame)
+            self.events.append({'direction':'S2C','stage':'enter_town_command_trial','plain_hex':plain.hex()})
+        if self.open_town_probe and (not self.locations or self.locations.current(self.account) is not None):
+            plain=encode_open_town_view()
+            frame=encode_initial_frame(plain,game_outbound);game.sendall(frame)
+            self.events.append({'direction':'S2C','stage':'open_town_view_command','plain_hex':plain.hex()})
+        if self.owned_pet_probe:
+            trial=Path(__file__).resolve().parents[1]/'evidence/owned_pet_trial.json'
+            trial_data=json.loads(trial.read_text())
+            plain=bytes.fromhex(trial_data['packet_hex'])
+            self.owned_inventory=bytes.fromhex(trial_data['inventory_packet_hex'])
+            if self.database is not None:
+                plain,self.owned_inventory=OwnedPetStore(self.database).ensure(self.account,plain,self.owned_inventory,human=trial_data['human_equipment'])
+                self.hiring=HireStore(self.database,self.catalogs,bytes.fromhex(trial_data['packet_hex']))
+                from tio.rental import RentalStore
+                self.rentals=RentalStore(self.database)
+                retained=bool(self.router and self.router.team_arena.retained(self.account))
+                self.rentals.refresh(self.account,in_battle=retained)
+                from tio.battle_recovery import RecoveryStore
+                self.recovery=RecoveryStore(self.database)
+                self.recovery.refresh(self.account,blocked=retained)
+                from tio.item_stacking import compact_saved_items
+                if not retained:self.events.append({'event':'item_stacks_compacted', **compact_saved_items(self.database,self.account)})
+                self.events.append({'event':'owned_pet_snapshot_loaded','database':str(self.database)})
+            roster=OwnedPetStore(self.database).list(self.account) if self.database is not None else ((1,plain,self.owned_inventory),)
+            for owner,pet_packet,inventory_packet in roster:
+                if self.database is not None:
+                    from tio.armor_display import project_city_pet
+                    pet_packet=project_city_pet(self.database,self.account,pet_packet)
+                    from tio.avatars import project_city_pet as project_avatar
+                    pet_packet=project_avatar(self.database,self.account,pet_packet)
+                game.sendall(encode_initial_frame(pet_packet,game_outbound))
+                self.events.append({'direction':'S2C','stage':'owned_pet_trial','owner_id':owner,'plain_hex':pet_packet.hex()})
+        if self.router is None:
+            return self.observe_game(game,game_reader,game_outbound)
+        else:
+            with self.router.team_arena.delivery_wakeup(self) as wakeup:
+                return self.observe_game(game,game_reader,game_outbound,wakeup=wakeup)
+
+    def send_update_disconnect(self, game: socket.socket, outbound: InitialCipher) -> None:
+        if not self.router.server.update_restart:
+            return
+        try:
+            game.settimeout(0.25)
+            game.sendall(encode_initial_frame(encode_update_disconnect(), outbound))
+        except OSError:
+            # A peer can close first or reach the shared shutdown deadline.
+            return
+        self.events.append({'event': 'update_disconnect_sent'})
+        # Orange can report EOF before Silver drains its packet queue.
+        time.sleep(1.0)
+
     def send_server_list(self,conn,outbound,packet):
         request=decode_server_list_request(packet)
         self.events.append({'event':'server_list_request_decoded','unknown_u8':request.unknown_u8_01,'unknown_u32':request.unknown_u32_01,'trailing_hex':request.trailing_bytes.hex()})
@@ -393,6 +431,7 @@ class LoopbackExchange:
         self.events.append({'direction':'S2C','stage':'server_list','entry_count':len(entries),'plain_hex':plain.hex(),'raw_hex':frame.hex()})
 
     def deliver_shared_config(self,conn,reader,outbound,name=b'items'):
+        data=None
         if name==b'services':
             from tio.services import shared_xml
             xml=shared_xml()
@@ -400,16 +439,17 @@ class LoopbackExchange:
             from tio.premium import shared_xml
             xml=shared_xml()
         elif name==b'items':
-            from tio.item_presentation import items_xml
-            xml=items_xml(getattr(self,'interface','new'))
+            from server.implant_service import catalogue_data
+            data=catalogue_data(self)
         else:
             contracts = getattr(self.router, 'contracts', None)
             xml = (contracts.zones_xml() if name == b'zones' and contracts is not None else
                    (Path(__file__).resolve().parents[1]/('evidence/'+name.decode('ascii')+'_diagnostic.xml')).read_bytes())
+        if data is None:data=SharedConfigData(name,len(xml),zlib.compress(xml,9))
         # Missing local file has comparison value zero; a nonzero diagnostic
         # manifest value requests delivery without claiming a checksum algorithm.
         messages=[('shared_config_set',encode_shared_config_set((SharedConfigEntry(name,1),))),
-                  ('shared_config_data',encode_shared_config_data(SharedConfigData(name,len(xml),zlib.compress(xml))))]
+                  ('shared_config_data',encode_shared_config_data(data))]
         for stage,plain in messages:
             frame=encode_initial_frame(plain,outbound);conn.sendall(frame)
             self.events.append({'direction':'S2C','stage':stage,'plain_hex':plain.hex(),'raw_hex':frame.hex()})
@@ -417,17 +457,18 @@ class LoopbackExchange:
             expected=b'\xb9\x02'+name+b'\0' if stage=='shared_config_set' else b'\xb9\x04'
             self.events.append({'direction':'C2S','stage':stage+'_reply','raw_hex':raw.hex(),'packets_hex':[p.hex() for p in packets]})
             if packets != [expected]:raise ValueError('Unexpected shared config reply')
-        self.events.append({'event':'shared_config_delivery_acknowledged','xml_size':len(xml)})
+        self.events.append({'event':'shared_config_delivery_acknowledged','xml_size':data.decompressed_size})
 
-    def choose_character(self,conn,reader,outbound):
+    def choose_character(self,conn,reader,outbound,*,returning=False):
         from tio.characters import CharacterStore,CreateRejected
         from tio.protocol.character_create import decode_character_create,encode_character_create_result
         store=CharacterStore(self.database)
         login=getattr(self,'authenticated_account',self.account)
         from tio.onboarding import pending,pending_owner,prepare,OPEN_APPEARANCE
         creation=getattr(self,'_creation_owner',None) or pending_owner(self.database,login)
+        allowed_opcodes=(b'\x11',b'\x13',b'\x17',b'\x92') if returning else None
         while not self.stopping.is_set():
-            raw,packets=self.receive_choice(conn,reader,outbound)
+            raw,packets=self.receive_choice(conn,reader,outbound,allowed_opcodes=allowed_opcodes)
             if packets[0][:1] == b'\x13':
                 from server.character_operations import delete_character
                 for reply in delete_character(self, packets[0]):
@@ -499,7 +540,8 @@ class LoopbackExchange:
             raise ValueError('Select an existing character owned by this account')
         raise InterruptedError('Server stopping')
 
-    def receive_choice(self,conn,reader,outbound,*,deadline=None,allow_batch=False):
+    def receive_choice(self,conn,reader,outbound,*,deadline=None,allow_batch=False,
+                       allowed_opcodes=None):
         """Human UI choices need more time than an automatic handshake reply."""
         if not self.external_listener:return self.receive_frame(conn,reader)
         if deadline is None:deadline=time.monotonic()+300
@@ -516,9 +558,11 @@ class LoopbackExchange:
             for packet in reader.feed(chunk):
                 if packet==b'\x70':
                     conn.sendall(encode_initial_frame(b'\x9e',outbound))
-                else:received.append(packet)
+                # Pause world requests already queued by the native UI before the roster arrived.
+                elif allowed_opcodes is None or packet[:1] in allowed_opcodes:
+                    received.append(packet)
             if received:
-                reader.finish()
+                if allowed_opcodes is None:reader.finish()
                 if not allow_batch and len(received)!=1:raise ValueError('Expected one UI choice')
                 return bytes(raw),received
             # Do not retain an ever-growing trace of keepalive requests.
@@ -587,13 +631,51 @@ class LoopbackExchange:
             return False
         return character not in self.arena._completed or self._achievement_city_confirmed
 
-    def observe_game(self,game,reader,outbound):
+    def private_chat_delivery_ready(self) -> bool:
+        character = getattr(self, 'probe_character_id', None)
+        hub = self.router.team_arena
+        if self.arena._fields or hub.in_battle(self, include_results=True) or getattr(self, 'private_resume_loading', False):
+            self._private_chat_map_confirmed = False
+            return False
+        if character not in self.arena._completed:
+            return True
+        if character in self.arena._return_maps:
+            return character in self.arena._map_returned and self._private_chat_map_confirmed
+        return self._achievement_city_confirmed
+
+    def treatment_settings(self, packet: bytes | None = None, *,
+                           result_ids: tuple[int, ...] | None = None) -> bytes | None:
+        # Send updated settings before the native town or battle results UI uses the tariff.
+        if packet is not None and (not hasattr(self,'_treatment_rate') or (
+                packet[:5] not in (b'\xf0\x61\0\0\0', b'\xf0\x62\0\0\0', b'\x66\x01\0\0\0')
+                and packet[:1]!=b'\x4c')):
+            return None
+        from contextlib import closing
+        from tio.battle_recovery import treatment_quote_rate
+        from tio.db_transaction import connect
+        from tio.protocol.player_auction import encode_settings
+        from tio.rule_catalogs import enhancement_rules
+        with closing(connect(self.database)) as db,db:
+            db.execute('BEGIN')
+            rate = treatment_quote_rate(db, self.account, result_ids)
+        if packet is not None and rate==self._treatment_rate:
+            return None
+        enhancement=enhancement_rules().config
+        settings=encode_settings(int(time.time()),heal_price=rate,clan_warfare=True,mail=True,
+            enhancement=(enhancement['safe_levels'],enhancement['armor_success_percent'],enhancement['weapon_success_percent']),
+            tournament_free_entry=bool(self.router and hasattr(self.router.team_arena, 'tournaments')))
+        self._treatment_rate=rate
+        return settings
+
+    def observe_game(self,game,reader,outbound,*,wakeup: socket.socket | None = None):
         from server import warehouse_capacity
         warehouse_capacity.reset(self)
         from tio.protocol.item_list import decode_item_list
-        def encode_reply(packet, cipher):
+        def encode_reply(packet, cipher, *, refresh_implant_profile=True):
             weight_update=None
             armor_update=None
+            implant_profile=None
+            catalogue_updates=()
             if packet[:2]==b'\xc8\x39' and self.database is not None:
                 from tio.premium import project_packet
                 packet=project_packet(self.database,self.account,packet)
@@ -622,6 +704,14 @@ class LoopbackExchange:
                     from tio.armor_display import encode_armor
                     armor_update=encode_armor(owner,combat.displayed_armor(owner))
                 if not in_combat:
+                    from server.implant_service import catalogue_updates as implant_catalogue_updates
+                    catalogue_updates=implant_catalogue_updates(self)
+                    from tio.implant_equipment import city_profile
+                    implant_profile=city_profile(self.database,self.account,packet)
+                    from tio.implants import project_inventory as project_implants
+                    from tio.protocol.pet_info import decode_pet_info
+                    packet=project_implants(packet,None if implant_profile is None else
+                        decode_pet_info(implant_profile,human_equipment=True).fields)
                     from tio.weight import city_weight_update
                     weight_update=city_weight_update(self.database,self.account,packet)
                     from tio.enhancement_limits import project_owned_inventory
@@ -636,9 +726,17 @@ class LoopbackExchange:
             if self.database is not None:
                 from server.economy_runtime import project_packet
                 packet=project_packet(self.database,self.account,packet)
+                if packet[:1]==b'\x66':
+                    from tio.avatars import project_city_pet as project_avatar
+                    packet=project_avatar(self.database,self.account,packet)
+            settings=self.treatment_settings(packet)
+            frame=encode_initial_frame(settings,cipher) if settings is not None else b''
             capacity_frame=warehouse_capacity.frames(self,packet,cipher)
-            if capacity_frame is not None:return capacity_frame
-            frame=encode_initial_frame(packet,cipher)
+            if capacity_frame is not None:return frame+capacity_frame
+            frame+=b''.join(encode_initial_frame(update,cipher) for update in catalogue_updates)
+            frame+=encode_initial_frame(packet,cipher)
+            if implant_profile is not None and refresh_implant_profile:
+                frame+=encode_reply(implant_profile,cipher)
             if weight_update is not None:
                 frame+=encode_initial_frame(weight_update,cipher)
                 self.events.append({'direction':'S2C','stage':'carried_weight','plain_hex':weight_update.hex()})
@@ -674,10 +772,9 @@ class LoopbackExchange:
                 self.router.team_arena.put(owner,self.router.team_arena.assault_room_packet(group,owner))
             from server.player_auction import AuctionSession
             from server.economy_runtime import city_idle
-            from tio.protocol.player_auction import encode_settings
             self.player_auction=AuctionSession(self.router.player_auction,self.account,self.probe_character_name.decode('cp1251'),
                 gate=lambda:city_idle(self),lock=self.router.team_arena.lock)
-            game.sendall(encode_reply(encode_settings(int(time.time()),clan_warfare=True,mail=True),outbound))
+            game.sendall(encode_initial_frame(self.treatment_settings(),outbound))
             self.private_market=self.router.economy.session(self)
             self.bank_session=self.router.economy.bank_session(self)
             for reply in self.private_market.clear_sc():game.sendall(encode_reply(reply,outbound))
@@ -716,7 +813,7 @@ class LoopbackExchange:
                     continue
                 hub.drain(self,game,outbound)
                 if hub.busy(self):
-                    hub.pump(self,game,reader,outbound)
+                    hub.pump(self,game,reader,outbound,wakeup=wakeup)
                     continue
             if hasattr(self,'private_market'):
                 from server.economy_runtime import city_idle,refresh_inventory
@@ -772,7 +869,9 @@ class LoopbackExchange:
                     source=json.loads((Path(__file__).resolve().parents[1]/'config/abilities.json').read_text())
                     catalog=AbilityCatalog(AbilityLevel(r['id'],r['level'],r['fields']) for r in source['records'])
                     prepared=prepare_survival(self.database,self.account,proposal.first,catalog,mode=proposal.first.mode)
-                    room,replies=self.arena.start_survival(character,self.probe_character_name,prepared)
+                    from tio.clan_benefits import path_crest
+                    room,replies=self.arena.start_survival(character,self.probe_character_name,prepared,
+                                                           crest_id=path_crest(self.database,self.account))
                     self.survival.queue.consume(proposal)
                     self.survival.disconnected(character)
                     self.training_matches[room.room_id]=prepared.participants[1:]
@@ -815,14 +914,14 @@ class LoopbackExchange:
             for room in self.arena.rooms.snapshot():
                 bot=self.training_matches.get(room.room_id)
                 if bot is not None and room.room_id in self.arena._last_turn and room.room_id not in self.arena._turns:
-                    from tio.training_bot import play_turn
+                    from server.battle_journal import play_private_turn
                     member=self.arena.next_turn_owner(room.room_id)
                     field=self.arena._fields[room.room_id]
                     if member==room.owner_id:
                         seconds=20*len(field.living_actor_ids(member))+20 if room.request.mode else 40
                         replies=self.arena.begin_turn_packets(member,field.living_actor_ids(member),seconds)
                     else:
-                        replies=play_turn(self.arena,room.room_id,member,view=self.visibility_views.get(room.room_id))
+                        replies=play_private_turn(self.arena,room.room_id,member)
                     for reply in replies:game.sendall(encode_reply(reply,outbound))
             remaining=None if deadline is None else deadline-time.monotonic()
             if remaining is not None and remaining <= 0:
@@ -847,12 +946,30 @@ class LoopbackExchange:
                 self.events.append({'event':'client_disconnected'})
                 return
             received_at = self.arena._clock()
+            received_perf = time.perf_counter()
             packets=reader.feed(data)
             from server.economy_runtime import private_command
-            sensitive=any(private_command(p) for p in packets)
-            self.events.append({'direction':'C2S','stage':'after_auth2','raw_hex':None if sensitive else data.hex(),'packets_hex':['<private economy command>' if private_command(p) else p.hex() for p in packets]})
+            from server.item_mark_service import handles as mark_request, respond as mark_reply
+            from tio.protocol.hire import PAID_PET_RENAME
+            def private(packet):
+                return packet[:2] in (b'\xb8\x01',b'\xb8\x02',PAID_PET_RENAME) or private_command(packet)
+            sensitive=any(private(p) for p in packets)
+            self.events.append({'direction':'C2S','stage':'after_auth2','raw_hex':None if sensitive else data.hex(),'packets_hex':['<private economy command>' if private(p) else p.hex() for p in packets]})
             if self.open_town_probe:
                 for packet in packets:
+                    if self.router is not None and packet == RETURN_TO_CHARACTER_SELECT:
+                        if self.router.return_to_character_select(self):
+                            return True
+                        from tio.protocol.system_message import encode_shop_error
+                        game.sendall(encode_reply(encode_shop_error('Сначала завершите бой'), outbound))
+                        continue
+                    if self.router is not None and self.database is not None and mark_request(packet):
+                        for reply in mark_reply(self,packet):game.sendall(encode_reply(reply,outbound))
+                        continue
+                    if private(packet) and packet[:1]==b'\xb8':
+                        from tio.protocol.system_message import encode_shop_error
+                        game.sendall(encode_reply(encode_shop_error('Метки доступны на общем сервере'),outbound))
+                        continue
                     capacity_replies=warehouse_capacity.opt_in(self,packet)
                     if capacity_replies is not None:
                         for reply in capacity_replies:game.sendall(encode_initial_frame(reply,outbound))
@@ -892,7 +1009,12 @@ class LoopbackExchange:
                         continue
                     if packet[:1]==b'\x21' and self.database is not None:
                         from tio.protocol.chat import decode_send
-                        channel,text,recipient=decode_send(packet)
+                        from tio.protocol.binary import PacketError
+                        try:channel,text,recipient=decode_send(packet)
+                        except PacketError as error:
+                            from tio.protocol.system_message import encode_shop_error
+                            game.sendall(encode_reply(encode_shop_error(str(error)),outbound))
+                            continue
                         if channel==0 and not recipient and (text.strip().casefold()=='/tutorial' or text.casefold().startswith('/decreaseability ')):
                             from tio.protocol.system_message import encode_shop_error
                             try:
@@ -943,11 +1065,19 @@ class LoopbackExchange:
                         if handle_mail(self.router.presence,self,packet):
                             self.router.presence.drain(self,game,outbound)
                             continue
+                        from server.implant_service import handle as handle_implants
+                        if handle_implants(self.router.presence,self,packet):
+                            self.router.presence.drain(self,game,outbound)
+                            continue
+                        from server.city_item_transfer import handle as handle_city_item_transfer
+                        if handle_city_item_transfer(self.router.presence,self,packet):
+                            self.router.presence.drain(self,game,outbound)
+                            continue
                         from server.securities_service import handle as handle_securities
                         if handle_securities(self.router.presence,self,packet):
                             self.router.presence.drain(self,game,outbound)
                             continue
-                    if self.router is not None and self.router.team_arena.handle(self,packet):
+                    if self.router is not None and self.router.team_arena.handle(self,packet,received_at=received_perf):
                         self.router.team_arena.drain(self,game,outbound)
                         continue
                     if self.router is not None and self.database is not None:
@@ -1017,7 +1147,7 @@ class LoopbackExchange:
                             for reply in replies:game.sendall(encode_reply(reply, outbound))
                             continue
                     map_battle=any(character in r.members for r in self.arena.rooms.snapshot())
-                    map_battle_request=(map_battle and (packet[0] in (0x2a,0x2f,0x33,0x36,0x3a,0x3c,0x3e,0x40,0x46,0x49,0x4a,0x50,0x6d,0x6e,0x7c,0x7e,0x81,0xc2) or packet[:2]==b'\xc8\x3d')) or (character in self.arena._completed and packet[0] in (0x2a,0x2f,0x4a,0x50,0x7c))
+                    map_battle_request=(map_battle and (packet[0] in (0x2a,0x2f,0x33,0x36,0x3a,0x3c,0x3e,0x40,0xf5,0x46,0x49,0x4a,0x50,0x6d,0x6e,0x7c,0x7e,0x81,0xc2) or packet[:2] in (b'\xc8\x3d', b'\xc8\x40'))) or (character in self.arena._completed and packet[0] in (0x2a,0x2f,0x4a,0x50,0x7c))
                     if self.locations and self.locations.current(self.account) is None and packet[:1] not in (b'\x70',b'\xb5',b'\xc5') and not map_battle_request:
                         from tio.protocol.system_message import encode_shop_error
                         game.sendall(encode_reply(encode_shop_error('доступа к городу: сначала дойдите до входа'),outbound))
@@ -1069,8 +1199,16 @@ class LoopbackExchange:
                             self.events.append({'event':'ability_request_rejected','reason':str(error)})
                         else:
                             self.events.append({'event':'ability_request_handled','request_hex':packet.hex()})
+                            if packet[:1] in (b'\x8f', b'\x90'):
+                                from tio.protocol.abilities import decode_ability_request
+                                owner, ability, _ = decode_ability_request(packet)
+                                if ability == 35:
+                                    # Refresh the inventory after PetInfo updates the client's slot count.
+                                    inventory = OwnedPetStore(self.database).inventory(self.account, owner)
+                                    if inventory is not None:
+                                        replies += (inventory,)
                         for reply in replies:
-                            game.sendall(encode_reply(reply,outbound))
+                            game.sendall(encode_reply(reply,outbound,refresh_implant_profile=False))
                             self.events.append({'direction':'S2C','stage':'ability_reply','plain_hex':reply.hex()})
                         continue
                     if self.squad is not None and (packet[:2]==b'\xbf\x03' or packet[:1]==b'\x67'):
@@ -1149,15 +1287,18 @@ class LoopbackExchange:
                     # on the client's subsequent town/panel request, not only in
                     # the same response as449, where teardown can erase the list.
                     if self.database is not None and hasattr(self,'probe_character_id'):
-                        for reply in self.arena.city_roster_refresh(self.probe_character_id,packet,self.database,self.account):
+                        roster = self.arena.city_roster_refresh(self.probe_character_id,packet,self.database,self.account)
+                        for reply in roster:
                             game.sendall(encode_reply(reply,outbound))
                             self.events.append({'direction':'S2C','stage':'town_roster_restored','plain_hex':reply.hex()})
+                        if roster and self.probe_character_id in self.arena._map_returned:
+                            self._private_chat_map_confirmed = True
                     if packet[:1] == b'\x2a' and hasattr(self,'probe_character_id'):
                         try:
                             replies=self.arena.finish_results(self.probe_character_id,packet)
                             if replies is None:
                                 replies=(self.arena.leave(self.probe_character_id,packet),)
-                                if self.probe_character_id in self.arena._return_maps:
+                                if self.probe_character_id in self.arena._completed:
                                     replies+=self.arena.finish_results(self.probe_character_id,packet) or ()
                             elif self.database is not None:
                                 roster=OwnedPetStore(self.database).list(self.account)
@@ -1182,7 +1323,7 @@ class LoopbackExchange:
                         game.sendall(encode_reply(reply,outbound))
                         self.events.append({'direction':'S2C','stage':'arena_ready_reply','plain_hex':reply.hex()})
                         continue
-                    if (packet[:1] in (b'\x2e',b'\x36',b'\x3a',b'\x3c',b'\x3e',b'\x81',b'\x49',b'\x6d',b'\x46',b'\x40',b'\x6e',b'\xf6') or packet[:2]==b'\xc8\x3d') and hasattr(self,'probe_character_id'):
+                    if (packet[:1] in (b'\x2e',b'\x36',b'\x3a',b'\x3c',b'\x3e',b'\x81',b'\x49',b'\x6d',b'\x46',b'\x40',b'\xf5',b'\x6e',b'\xf6') or packet[:2] in (b'\xc8\x3d', b'\xc8\x40')) and hasattr(self,'probe_character_id'):
                         hazard_room=next((r for r in self.arena.rooms.snapshot() if self.probe_character_id in r.members),None)
                         hazard_field=None if hazard_room is None else self.arena._fields.get(hazard_room.room_id)
                         hazard_combat=getattr(hazard_field,'combat',None)
@@ -1192,7 +1333,7 @@ class LoopbackExchange:
                                 room=next((r for r in self.arena.rooms.snapshot() if self.probe_character_id in r.members),None)
                                 view=None if room is None else self.visibility_views.get(room.room_id)
                                 replies=self.arena.equipment_batch(self.probe_character_id,packet,view=view)
-                            elif packet[:2]==b'\xc8\x3d':
+                            elif packet[:2] in (b'\xc8\x3d', b'\xc8\x40'):
                                 room=next((r for r in self.arena.rooms.snapshot() if self.probe_character_id in r.members),None)
                                 view=None if room is None else self.visibility_views.get(room.room_id)
                                 replies=self.arena.mine_action(self.probe_character_id,packet,view=view)
@@ -1204,7 +1345,7 @@ class LoopbackExchange:
                             elif packet[:1]==b'\x6e':
                                 replies=self.arena.exchange_action(self.probe_character_id,packet)
                                 self.events.append({'event':'battle_exchange_accepted','request_hex':packet.hex()})
-                            elif packet[:1] in (b'\x46',b'\x40'):
+                            elif packet[:1] in (b'\x46',b'\x40',b'\xf5'):
                                 room=next((r for r in self.arena.rooms.snapshot() if self.probe_character_id in r.members),None)
                                 view=None if room is None else self.visibility_views.get(room.room_id)
                                 replies=self.arena.loot_action(self.probe_character_id,packet,view=view)
@@ -1270,6 +1411,9 @@ class LoopbackExchange:
                                     actors=self.arena._fields[room.room_id].actor_ids(self.probe_character_id)
                                     seconds=20*len(actors)+20 if room.request.mode else 40
                                     replies=(*replies,*self.arena.begin_turn_packets(self.probe_character_id,actors,2 if getattr(self,'turn_timeout_probe',False) else seconds))
+                                room=next(r for r in self.arena.rooms.snapshot() if self.probe_character_id in r.members)
+                                from tio.avatars import battle_assignments
+                                replies+=battle_assignments(self.arena._fields[room.room_id],self.probe_character_id)
                             elif packet[:1]==b'\x2e' and any(self.probe_character_id==r.owner_id and r.request.mode in (1,4) for r in self.arena.rooms.snapshot()):
                                 from tio.protocol.arena import decode_room_start
                                 from tio.matchmaking import SurvivalQueue
@@ -1287,7 +1431,9 @@ class LoopbackExchange:
                                     source=json.loads((Path(__file__).resolve().parents[1]/'config/abilities.json').read_text())
                                     catalog=AbilityCatalog(AbilityLevel(r['id'],r['level'],r['fields']) for r in source['records'])
                                     prepared=prepare_survival(self.database,self.account,ticket,catalog,mode=room.request.mode)
-                                    room,replies=self.arena.start_survival(self.probe_character_id,self.probe_character_name,prepared,existing_room=room)
+                                    from tio.clan_benefits import path_crest
+                                    room,replies=self.arena.start_survival(self.probe_character_id,self.probe_character_name,prepared,existing_room=room,
+                                                                           crest_id=path_crest(self.database,self.account))
                                     self.training_matches[room.room_id]=prepared.participants[1:]
                                     self.visibility_views[room.room_id]=prepared.visibility
                             else:
@@ -1319,6 +1465,8 @@ class LoopbackExchange:
                             if packet[:2]==b'\xc8\x3d':
                                 replies=(*self.arena.rejected_mine_packets(self.probe_character_id,packet),
                                          encode_shop_error('мины: проверь ход, предмет, AP и свободную соседнюю клетку'))
+                            elif packet[:2]==b'\xc8\x40':
+                                replies=(encode_shop_error(str(error)),)
                             elif packet[:1]==b'\x3e':
                                 replies=(encode_shop_error('двери: проверь ход, расстояние, AP и свободный проход'),)
                                 from tio.protocol.battle_door import decode_door_request,encode_door_state
@@ -1342,7 +1490,7 @@ class LoopbackExchange:
                                     field.combat.exchange_sessions.pop(self.probe_character_id,None)
                                     ids=tuple(int.from_bytes(packet[i:i+4],'little') for i in (1,5) if len(packet)>=i+4)
                                     replies=(*replies,*refresh(field.combat,self.probe_character_id,ids))
-                            elif packet[:1] in (b'\x46',b'\x40'):
+                            elif packet[:1] in (b'\x46',b'\x40',b'\xf5'):
                                 replies=(encode_shop_error('ящика: проверь ход, расстояние, AP и место в инвентаре'),)
                                 # Dragging changes the native bag before40 is
                                 # committed. Restore our owned authoritative bag
@@ -1361,7 +1509,7 @@ class LoopbackExchange:
                                 field=None if room is None else self.arena._fields.get(room.room_id)
                                 replies=(*replies,*restore_actor(field,self.probe_character_id,packet))
                             self.events.append({'event':'arena_loading_rejected','reason':str(error),'request_hex':packet.hex()})
-                        if packet[:1] in (b'\x3c',b'\x49',b'\x81') or packet[:2]==b'\xc8\x3d':
+                        if packet[:1] in (b'\x3c',b'\x49',b'\x81') or packet[:2] in (b'\xc8\x3d', b'\xc8\x40'):
                             room=next((r for r in self.arena.rooms.snapshot() if self.probe_character_id in r.members),None)
                             field=None if room is None else self.arena._fields.get(room.room_id)
                             combat=getattr(field,'combat',None)
@@ -1390,6 +1538,15 @@ class LoopbackExchange:
                         for reply in replies:
                             game.sendall(encode_reply(reply,outbound))
                             self.events.append({'direction':'S2C','stage':'arena_create_reply','plain_hex':reply.hex()})
+                        continue
+                    if self.router is not None and packet.startswith(PAID_PET_RENAME):
+                        from server.services_runtime import native
+                        from tio.protocol.system_message import encode_shop_error
+                        try:
+                            replies=native(self,rename_packet=packet)
+                        except ValueError as error:
+                            replies=(encode_shop_error(str(error)),)
+                        for reply in replies:game.sendall(encode_reply(reply,outbound))
                         continue
                     if self.hiring is not None and packet[:1]==b'\x64':
                         from tio.services_completion import ServiceRejected
@@ -1427,8 +1584,9 @@ class LoopbackExchange:
                             game.sendall(encode_reply(reply,outbound))
                             self.events.append({'direction':'S2C','stage':'hire_reply','plain_hex':reply.hex()})
                         continue
-                    if self.owned_pet_probe and self.database is not None and packet[:1]==b'\x6b':
-                        from tio.warehouse_service import transfer_private_items, warehouse_error_reply
+                    if self.owned_pet_probe and self.database is not None and (
+                            packet[:1] == b'\x6b' or packet.startswith(CLAN_DEPOSIT)):
+                        from tio.warehouse_service import warehouse_error_reply
                         try:
                             replies=warehouse_capacity.transfer(self,packet,capacity=self.catalogs.warehouse_capacity)
                         except ValueError as error:
@@ -1453,6 +1611,7 @@ class LoopbackExchange:
                         except (ValueError,sqlite3.Error) as error:
                             self.events.append({'event':'enhancement_rejected','request_hex':packet.hex(),'reason':str(error)})
                             reasons={'Maximum enhancement reached':'достигнут максимум +25',
+                                     'Target incompatible with LE Upgrade Kit':'Upgrade Kit LE нельзя применить к M60, Minigun и RPG',
                                      'Upgrade Kit required':'нужен Upgrade Kit',
                                      'Enhancement requires the city':'выйдите из боя',
                                      'Owned enhancement item missing':'предмет или набор уже отсутствует'}
@@ -1461,8 +1620,9 @@ class LoopbackExchange:
                             self.events.append({'event':'enhancement_committed','request_hex':packet.hex(),
                                                 'outcome':result.outcome,'level':result.level,'chance':result.chance})
                         for reply in replies:
-                            frame = warehouse_capacity.frames(self, reply, outbound) if reply[:1] == b'\x6a' else None
-                            game.sendall(encode_reply(reply, outbound) if frame is None else frame)
+                            # Capacity refresh reads canonical 6A before mark metadata is projected.
+                            frame=warehouse_capacity.frames(self,reply,outbound) if reply[:1]==b'\x6a' else None
+                            game.sendall(encode_reply(reply,outbound) if frame is None else frame)
                             self.events.append({'direction':'S2C','stage':'enhancement_reply','plain_hex':reply.hex()})
                         continue
                     if self.owned_pet_probe and self.database is not None and (packet[:1]==b'\x7e' or packet[:2]==b'\xc2\x03'):
@@ -1473,7 +1633,9 @@ class LoopbackExchange:
                             if room is not None:
                                 replies=self.arena.repair(self.probe_character_id,packet,view=self.visibility_views.get(room.room_id))
                             else:
-                                replies=repair(self.database,self.account,packet,getattr(self,'repair_selection',None))
+                                replies = warehouse_capacity.repair_clan_item(self, packet)
+                                if replies is None:
+                                    replies=repair(self.database,self.account,packet,getattr(self,'repair_selection',None))
                                 self.repair_selection=None
                         except (ValueError,sqlite3.Error) as error:
                             self.events.append({'event':'repair_rejected','reason':str(error)})
@@ -1481,10 +1643,28 @@ class LoopbackExchange:
                         for reply in replies:
                             game.sendall(encode_initial_frame(reply,outbound) if reply[:1]==b'\x6a' else encode_reply(reply,outbound))
                         continue
+                    if self.owned_pet_probe and self.database is not None and packet[:2]==b'\xc8\x49':
+                        try:
+                            if any(self.probe_character_id in room.members for room in self.arena.rooms.snapshot()):
+                                raise ValueError('Импланты можно извлекать только в городе')
+                            from tio.implant_equipment import destroy
+                            inventory=destroy(self.database,self.account,packet)
+                            owner=int.from_bytes(inventory[1:5],'little')
+                            pet=next(p for i,p,_ in OwnedPetStore(self.database).list(self.account) if i==owner)
+                            replies=(inventory,pet)
+                        except ValueError as error:
+                            replies=(shop_error_reply(error),)
+                        for reply in replies:game.sendall(encode_reply(reply,outbound))
+                        continue
                     if self.owned_pet_probe and self.database is not None and packet[:1]==b'\x33':
                         try:
                             room=next((r for r in self.arena.rooms.snapshot() if self.probe_character_id in r.members),None)
                             if room is None:
+                                from tio.implant_charging import charge
+                                charged=charge(self.database,self.account,packet)
+                                if charged is not None:
+                                    for reply in charged:game.sendall(encode_reply(reply,outbound))
+                                    continue
                                 from tio.repair import select_kit
                                 from tio.protocol.repair import repair_message
                                 selection=select_kit(self.database,self.account,packet)
@@ -1530,11 +1710,13 @@ class LoopbackExchange:
                         else:
                             if quote:
                                 replies=(encode_sale_quote(request.owner_id,result),)
+                            elif isinstance(result,WarehousePurchaseResult):
+                                replies=warehouse_capacity.purchase_replies(self,result)
                             else:
                                 self.owned_inventory=result.inventory
-                                replies=(result.inventory,encode_asset_count(result.assets))
+                                replies=result.packets()
+                            game.sendall(warehouse_capacity.encode_transfer_replies(self.database,replies,outbound,encode_reply))
                             for reply in replies:
-                                game.sendall(encode_reply(reply,outbound))
                                 self.events.append({'direction':'S2C','stage':'shop_sale_quote' if quote else 'shop_sale_update','plain_hex':reply.hex()})
                         continue
                     if self.owned_pet_probe and self.database is not None and packet[:1] in (b'\x75', b'\x78'):

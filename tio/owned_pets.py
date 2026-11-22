@@ -14,6 +14,17 @@ from .protocol.pet_info import decode_pet_info, encode_pet_info
 from .protocol.item_list import decode_item_list
 
 
+def _sync_armor(db: sqlite3.Connection, account: str, owner: int, human: int,
+                pet: bytes, inventory: bytes) -> bytes:
+    from .equipment import stow_armor_above_level
+    level = decode_pet_info(pet, human_equipment=bool(human)).fields['0x8c4aef']
+    updated = stow_armor_above_level(inventory, level)
+    if updated != inventory:
+        db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=?',
+                   (updated, account, owner))
+    return updated
+
+
 class OwnedPetStore:
     def __init__(self,path):
         self.path=Path(path)
@@ -64,23 +75,37 @@ class OwnedPetStore:
             sync_levels(db,account)
             sync(db,account)
             row=db.execute('SELECT human,pet_packet,inventory_packet FROM owned_pets WHERE account=? AND pet_id=?',(account,owner)).fetchone()
-        self.validate(bytes(row[1]),bytes(row[2]),bool(row[0]))
-        return bytes(row[1]),bytes(row[2])
+            human, pet, inventory = row
+            self.validate(pet,inventory,bool(human))
+            inventory = _sync_armor(db, account, owner, human, pet, inventory)
+        return bytes(pet),bytes(inventory)
 
     @timed('roster.list')
     def list(self, account):
         """Load one consistent roster snapshot, restricted to the current account."""
         if not isinstance(account,str) or not account:raise ValueError('Account required')
-        with closing(connect(self.path)) as db,db:
-            db.execute('BEGIN IMMEDIATE')
-            from .ranks import sync
-            from .level_progression import sync as sync_levels
-            sync_levels(db,account)
-            sync(db,account)
-            rows=db.execute('SELECT pet_id,human,pet_packet,inventory_packet FROM owned_pets WHERE account=? ORDER BY pet_id',
-                            (account,)).fetchall()
-            from .passive_stats import project_saved_roster
-            rows=project_saved_roster(db,account,rows)
+        from . import ranks, level_progression
+        from .equipment import stow_armor_above_level
+        from .passive_stats import project_saved_roster
+        query='SELECT pet_id,human,pet_packet,inventory_packet FROM owned_pets WHERE account=? ORDER BY pet_id'
+        with closing(connect(self.path)) as db:
+            for writing in (False, True):
+                with db:
+                    db.execute('BEGIN IMMEDIATE' if writing else 'BEGIN')
+                    if writing:
+                        # Re-read under the writer after releasing the read snapshot.
+                        level_progression.sync(db,account)
+                        ranks.sync(db,account)
+                    rows=db.execute(query,(account,)).fetchall()
+                    if not writing and (any(level_progression.normalize(p,bool(h))!=p for i,h,p,v in rows)
+                            or ranks.needs_sync(db,account,[(i,h,p) for i,h,p,v in rows])
+                            or any(stow_armor_above_level(v,decode_pet_info(p,human_equipment=bool(h)).fields['0x8c4aef'])!=v
+                                   for i,h,p,v in rows)):
+                        continue
+                    if writing:
+                        rows=[(i,h,p,_sync_armor(db,account,i,h,p,v)) for i,h,p,v in rows]
+                    rows=project_saved_roster(db,account,rows)
+                    break
         result=[]
         for owner,human,pet,inventory in rows:
             pet,inventory=bytes(pet),bytes(inventory)

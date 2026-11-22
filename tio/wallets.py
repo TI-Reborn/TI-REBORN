@@ -7,6 +7,7 @@ from pathlib import Path
 from .protocol.asset_count import AssetCount
 
 STARTING_CREDITS = 3_000
+NEW_CHARACTER_CREDITS = 50_000
 STARTING_GOLD = 0
 
 
@@ -19,6 +20,13 @@ class WalletStore:
                 account TEXT PRIMARY KEY NOT NULL,
                 credits INTEGER NOT NULL CHECK(credits BETWEEN 0 AND 4294967295),
                 gold INTEGER NOT NULL CHECK(gold BETWEEN 0 AND 4294967295))''')
+
+    def seed_character(self, account: str, *, first_generation: bool) -> None:
+        """Called inside slot creation; preserve any funds predating the character."""
+        with closing(connect(self.path)) as db, db:
+            db.execute('INSERT INTO wallets (account,credits,gold) VALUES (?,?,?) '
+                       'ON CONFLICT(account) DO UPDATE SET credits=MAX(credits,excluded.credits)',
+                       (account, NEW_CHARACTER_CREDITS if first_generation else 0, STARTING_GOLD))
 
     def ensure(self, account):
         if not isinstance(account, str) or not account:

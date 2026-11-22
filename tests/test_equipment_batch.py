@@ -18,7 +18,7 @@ from tio.protocol.pet_info import decode_pet_info,encode_pet_info
 from tio.protocol.battle_soldier import decode_battle_soldier
 from tio.protocol.equipment_batch import (EquipmentBatchRequest,encode_equipment_batch,
     decode_equipment_batch,STAGE,COMMIT,CANCEL)
-from tio.equipment_batch import EquipmentBatchRejected,stage,commit,cancel,policy
+from tio.equipment_batch import EquipmentBatchRejected,stage,commit,cancel,policy,rebase
 from tools.battle_actor_fixture import actor_packet
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -111,6 +111,17 @@ class EquipmentBatchTests(unittest.TestCase):
         self.assertEqual(self.stored(identity=2),self.combat.inventories[2])
         self.assertEqual(self.stored('bob',1),encode_item_list(1,decode_item_list(self.inventories[3])[1]))
 
+    def test_rebase_carries_placement_over_item_use_but_not_over_regearing(self):
+        self.field._actors[1]=replace(self.field.actor(1),health=50)
+        self.stage(1,102,4)
+        self.combat.use_medical(10,ItemAction(1,106,255))
+        shown={i.instance_id:i for i in decode_item_list(rebase(self.combat,10)[0])[1]}
+        self.assertEqual((shown[102].client_slot,shown[101].equipped,shown[106].count),(16,False,1))
+        self.assertEqual(self.combat.equipment_batches[10]['actors'][1]['base'],self.combat.inventories[1])
+        self.combat.equip(10,ItemAction(1,103,255))
+        self.assertEqual(rebase(self.combat,10),(self.combat.inventory_packet(1),))
+        self.assertNotIn(10,self.combat.equipment_batches)
+
     def test_other_real_account_cannot_stage_owner_equipment(self):
         self.stage(1,102,4);before=self.state()
         with self.assertRaises(EquipmentBatchRejected):self.stage(1,102,4,owner=20,batch=7)
@@ -166,7 +177,7 @@ class EquipmentBatchTests(unittest.TestCase):
         self.assertEqual(self.stored(identity=2),outside)
 
     def test_restored_slots_still_validate_saved_inventory_before_charging_ap(self):
-        self.stage(1,102,255);self.stage(1,101,4)
+        self.stage(1,102,4);self.stage(1,101,4)
         _,items,flag=decode_item_list(self.stored())
         outside=encode_item_list(1,tuple(replace(i,unknown_words=(299,300,300)) if i.instance_id==101 else i for i in items),flag)
         with closing(sqlite3.connect(self.path)) as db,db:
@@ -208,7 +219,7 @@ class EquipmentBatchTests(unittest.TestCase):
             self.assertEqual(self.state(),before)
 
     def test_changed_then_restored_gear_still_costs_two_once_noop_costs_zero(self):
-        self.stage(1,102,255);self.stage(1,101,4);self.commit()
+        self.stage(1,102,4);self.stage(1,101,4);self.commit()
         self.assertEqual(self.combat.inventories[1],self.inventories[1])
         self.assertEqual(self.field.actor(1).action_points,13)
         self.stage(1,101,4,batch=2);self.commit(batch=2)

@@ -64,7 +64,7 @@ static class NativeDoorGrid
     internal static bool BindRecon(IntPtr process,uint allocation,uint silver,string image)
     {
         using var file=File.OpenRead(image);
-        if(NativePasswordLimit.CompatibilityHash(File.ReadAllBytes(image))!="717d89cd25912d593ac9b6cf0f593faac509f42d7572ccf63ba063f41cef9625") return false;
+        if(!SilverRegions.Matches(File.ReadAllBytes(image),"recon")) return false;
         byte[] pointers=new byte[8];
         BitConverter.GetBytes(checked(silver+0x818bf8)).CopyTo(pointers,0);
         BitConverter.GetBytes(checked(silver+0x818c00)).CopyTo(pointers,4);

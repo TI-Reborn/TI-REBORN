@@ -5,17 +5,75 @@ stored inventories retain the existing codec. There is no invented mark opcode.
 RTTI6122bf: +31=fmarked,+33=frent,+38=markerOwnerName,+40=markTimeLeft.
 """
 import struct
-from .binary import Reader,PacketError
-from .item_list import decode_item_list,encode_item_list
+from dataclasses import dataclass, field
+from enum import IntEnum
+from .binary import Reader,Writer,PacketError
+from .item_list import ItemRecord,decode_item_list,encode_item_list
 from .warehouse import decode_warehouse_list,encode_warehouse_list
 
 
-def _branch(name,remaining):
+def _owner_name(name):
     if not isinstance(name,str) or not 1<=len(name)<=100 or any(ord(c)<32 for c in name):raise PacketError('Invalid mark owner name')
-    if type(remaining) is not int or not 0<=remaining<=0xffffffff:raise PacketError('Invalid remaining mark seconds')
     try:encoded=name.encode('utf-16le')
     except UnicodeError as e:raise PacketError('Invalid mark owner UTF16') from e
-    return b'\x01'+encoded+b'\0\0'+b'\x01'+struct.pack('<I',remaining)
+    return encoded+b'\0\0'
+
+
+def _branch(name,remaining):
+    if type(remaining) is not int or not 0<=remaining<=0xffffffff:raise PacketError('Invalid remaining mark seconds')
+    return b'\x01'+_owner_name(name)+b'\x01'+struct.pack('<I',remaining)
+
+
+class Action(IntEnum):
+    SET = 1
+    REMOVE = 2
+    RETURN = 3
+    LIST = 4
+
+
+@dataclass(frozen=True)
+class Request:
+    action: Action
+    instance: int = 0
+    days: int = 0
+    pin: str = field(default='', repr=False)
+
+
+def decode_request(packet: bytes) -> Request:
+    reader = Reader(packet)
+    if reader.u8() != 0xb8 or reader.u8() not in (1, 2, 3, 4):
+        raise PacketError('Некорректный запрос метки')
+    action = Action(packet[1])
+    if action is Action.LIST:
+        reader.finish()
+        return Request(action)
+    instance = reader.u32()
+    if not instance:
+        raise PacketError('Предмет не выбран')
+    if action is Action.RETURN:
+        if reader.u8() not in (0, 1):
+            raise PacketError('Некорректный запрос возврата')
+        reader.finish()
+        return Request(action, instance)
+    days = reader.u16() if action is Action.SET else 0
+    raw_pin = reader.read(len(packet) - reader.offset)
+    if not 5 <= len(raw_pin) <= 13 or raw_pin[-1] != 0 or not raw_pin[:-1].isdigit():
+        raise PacketError('PIN должен состоять из 4–12 цифр')
+    return Request(action, instance, days, raw_pin[:-1].decode('ascii'))
+
+
+def encode_list(rows: tuple[tuple[int, ItemRecord, int, str], ...]) -> bytes:
+    writer = Writer().u8(0xc8).u8(0x29).u32(len(rows))
+    for instance, item, remaining, name in rows:
+        current, maximum, _ = item.unknown_words
+        enhance, damage, special = item.unknown_bytes_03
+        writer.u32(instance).u32(item.template_id).u32(item.count)
+        writer.data.extend(item.unknown_bytes_01)
+        writer.u16(current).u16(maximum).u8(enhance).u8(damage).u8(special).u32(remaining)
+        writer.data.extend(_owner_name(name))
+    if len(writer.data) > 65533:
+        raise PacketError('Список меток слишком большой')
+    return writer.build()
 
 
 def project(packet, metadata):

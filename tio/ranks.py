@@ -6,7 +6,9 @@ See RANKS.md for explicit choices where the original server is unavailable.
 """
 
 from .db_transaction import connect
+from .mobs import MOB_RESOURCES
 from bisect import bisect_right
+from collections.abc import Collection
 from contextlib import closing
 from dataclasses import replace
 from fractions import Fraction
@@ -100,7 +102,27 @@ def sync(db, account, *, now=None, active=False):
 
 def write_packets(db, account, rows=None):
     rows = roster(db, account) if rows is None else rows
-    if not rows: return
+    for owner, updated in packet_updates(db, account, rows):
+        db.execute('UPDATE owned_pets SET pet_packet=? WHERE account=? AND pet_id=?', (updated,account,owner))
+
+
+def needs_sync(db: sqlite3.Connection, account: str, rows: list, *, now=None) -> bool:
+    """Check lazy imports, decay and packet projection without taking a writer."""
+    tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    if not {'soldier_ranks', 'rank_clock'} <= tables:
+        return True
+    due = db.execute('SELECT next_decay FROM rank_clock WHERE account=?', (account,)).fetchone()
+    if due is None or int(time.time() if now is None else now) >= due[0]:
+        return True
+    saved = {r[0] for r in db.execute('SELECT pet_id FROM soldier_ranks WHERE account=?', (account,))}
+    if any(owner not in saved for owner, _, _ in rows):
+        return True
+    return bool(packet_updates(db, account, rows))
+
+
+def packet_updates(db: sqlite3.Connection, account: str, rows: list) -> list[tuple[int, bytes]]:
+    if not rows: return []
+    updates = []
     states = dict((i,(p,d)) for i,p,d in db.execute('SELECT pet_id,points,debt FROM soldier_ranks WHERE account=?', (account,)))
     hired = set()
     if db.execute("SELECT 1 FROM sqlite_master WHERE name='hired_candidates'").fetchone():
@@ -112,7 +134,8 @@ def write_packets(db, account, rows=None):
         points,debt = states[owner]
         updated = project(packet,bool(human),points,commander_rank=commander_rank,debt=debt)
         if updated != packet:
-            db.execute('UPDATE owned_pets SET pet_packet=? WHERE account=? AND pet_id=?', (updated,account,owner))
+            updates.append((owner, updated))
+    return updates
 
 
 def settle_ranks(db, account, match_id, result, report, *, now=None, escaped=False,
@@ -166,7 +189,8 @@ def credit_percent(db, account):
     return int(points//250) if points >= 0 else -min(90,int(-points//500))
 
 
-def battle_report(combat, owner, *, weekly_rank_per_kill=0,weekly_rank_by_victim=None):
+def battle_report(combat, owner, *, weekly_rank_per_kill=0,weekly_rank_by_victim=None,
+                  actor_ids: Collection[int] | None = None):
     """Optional server-frozen weekly badge bonus, before normal rank settlement.
 
     Capture clan_benefits.rank_per_kill at each accepted death and preserve the
@@ -185,12 +209,13 @@ def battle_report(combat, owner, *, weekly_rank_per_kill=0,weekly_rank_by_victim
     if getattr(combat,'wager',False):weekly_rank_per_kill=0
     owners=getattr(combat,'actor_owners',None)
     if owners is None:owners={i:a.owner_id for i,a in combat.field._actors.items()}
+    eligible_ids = combat.persistence if actor_ids is None else actor_ids
     result = {i:[0,a.health==0] for i,a in combat.field._actors.items()
-              if a.owner_id == owner and i in combat.persistence}
+              if a.owner_id == owner and i in eligible_ids}
     weekly_victims=set()
     for killer,victim in combat.rank_kills:
         if killer not in result: continue
-        if combat.resources.get(victim) in (100,103):continue
+        if combat.resources.get(victim) in MOB_RESOURCES:continue
         kl,kp = combat.rank_profiles[killer]
         vl,vp = combat.rank_profiles[victim]
         from .battle_item_effects import rank_bonus

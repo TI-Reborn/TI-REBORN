@@ -16,6 +16,17 @@ class WeatherTests(BattleItemFixture):
         while not weather.raining(self.field):self.field.scene_metadata['seed']+=1
         effects.initialize(self.combat)
 
+    def test_hosted_policy_rains_in_its_configured_share_of_outdoor_matches(self):
+        # Owner re-enabled rain on 2026-11-14 after the launcher texture fix.
+        percent=weather.policy()['rain_percent']
+        self.assertGreater(percent,0)
+        self.prepare()
+        wet=0
+        for seed in range(2000):
+            self.field.scene_metadata={'profile':'reservation','seed':seed,'objects':[]}
+            wet+=weather.raining(self.field)
+        self.assertAlmostEqual(wet/2000,percent/100,delta=0.04)
+
     def test_codec_rejects_wrong_lengths_flags_duplicate_coordinates_and_dry_data(self):
         packet=encode_weather(True,3,((1,2),(3,4)))
         self.assertEqual(decode_weather(packet),(True,3,((1,2),(3,4))))

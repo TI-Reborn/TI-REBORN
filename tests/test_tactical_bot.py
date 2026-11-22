@@ -108,6 +108,20 @@ class TacticalBotTests(unittest.TestCase):
             self.assertFalse(heal(field,1,actions))
             self.assertEqual(field.actor(1).health,60)
 
+    def test_dog_bot_ignores_human_medicine(self):
+        field, _, actions = self.scene()
+        combat = field.combat
+        combat.proficiencies.pop(1)
+        bandage, meat = item(20, 34), item(21, 32)
+        combat.register(1, encode_item_list(1, (bandage,)), human=False)
+        field._actors[1] = replace(field.actor(1), health=60)
+        self.assertFalse(heal(field, 1, actions))
+        self.assertEqual(field.actor(1).health, 60)
+        combat.register(1, encode_item_list(1, (bandage, meat)), human=False)
+        self.assertTrue(heal(field, 1, actions))
+        self.assertEqual(field.actor(1).health, 75)
+        self.assertEqual(decode_item_list(combat.inventories[1])[1], (bandage,))
+
     def test_loot_is_limited_to_usable_gear_matching_ammo_and_safe_weight(self):
         field,_,_=self.scene(enemy=(23,15))
         contents=(item(10,301),item(11,3,100000),item(12,34,100),item(13,302),item(14,2,10000))

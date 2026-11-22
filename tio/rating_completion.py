@@ -213,16 +213,15 @@ def standings(db,*,scope=None,now=None,offset=0,limit=10):
     all_rows=db.execute(f'''SELECT v.team_id,t.members,v.mu,v.sigma,v.skill,v.wins,v.losses,v.draws,v.unrated
         FROM {table} v JOIN wall_rating_teams t ON t.team_id=v.team_id
         WHERE v.{column}=? AND v.wins+v.losses+v.draws>0 ORDER BY v.skill DESC,v.team_id''',(scope,)).fetchall()
-    from .rating_visibility import excluded
-    all_rows=[row for row in all_rows if not any(excluded(db,owner) for owner in json.loads(row[1]))]
+    from .rating_visibility import exclusion_filter, character_names
+    hidden=exclusion_filter(db)
+    all_rows=[row for row in all_rows if not any(hidden(owner) for owner in json.loads(row[1]))]
+    display_names=character_names(db,(owner for row in all_rows[offset:offset+limit] for owner in json.loads(row[1])))
     result=[];previous=None;place=0
     for index,(team,accounts,mu,sigma,points,wins,losses,draws,unrated) in enumerate(all_rows,1):
         if previous!=points:place=index;previous=points
         if not offset<=index-1<offset+limit:continue
-        names=[]
-        for account in json.loads(accounts):
-            row=db.execute('SELECT name FROM characters WHERE account=? ORDER BY slot LIMIT 1',(account,)).fetchone() if db.execute("SELECT 1 FROM sqlite_master WHERE name='characters'").fetchone() else None
-            names.append(bytes(row[0]).decode('cp1251',errors='replace') if row else account)
+        names=[display_names.get(account,account) for account in json.loads(accounts)]
         result.append(dict(team_id=team,members=json.loads(accounts),names=names,place=place,skill=points,mu=mu,sigma=sigma,
                            wins=wins,losses=losses,draws=draws,unrated=unrated,scope=scope,archived=bool(archived)))
     return tuple(result)
@@ -308,13 +307,10 @@ def public_listing(db,*,format='wall',scope=None,offset=0,limit=10,now=None):
     query_standings=team_ratings.standings if format=='pairs' else standings
     result=query_standings(db,scope=scope,offset=offset,limit=limit)
     rows=[]
-    has_characters=bool(db.execute("SELECT 1 FROM sqlite_master WHERE name='characters'").fetchone())
+    from .rating_visibility import character_names, exclusion_filter
+    display_names=character_names(db,(owner for row in result for owner in row['members']))
     for row in result:
-        names=[]
-        for owner in row['members']:
-            saved=db.execute('SELECT name FROM characters WHERE account=? ORDER BY slot LIMIT 1',(owner,)).fetchone() if has_characters else None
-            name=bytes(saved[0]).decode('cp1251',errors='replace') if saved else 'Удалённый персонаж'
-            names.append(name)
+        names=[display_names.get(owner,'Удалённый персонаж') for owner in row['members']]
         rows.append(dict(teamId=row['team_id'],names=names,place=row['place'],skill=row['skill'],
                          wins=row['wins'],losses=row['losses'],draws=row['draws'],unrated=row['unrated']))
     table='team_rating_values' if format=='pairs' else 'wall_rating_values'
@@ -325,9 +321,9 @@ def public_listing(db,*,format='wall',scope=None,offset=0,limit=10,now=None):
     archived=bool(season and season[0]=='archived')
     values_table=archive if archived else table
     column='season_id' if archived else 'scope'
-    from .rating_visibility import excluded
+    hidden=exclusion_filter(db)
     teams_table='team_rating_teams' if format=='pairs' else 'wall_rating_teams'
-    total=sum(not any(excluded(db,owner) for owner in json.loads(members)) for (members,) in db.execute(
+    total=sum(not any(hidden(owner) for owner in json.loads(members)) for (members,) in db.execute(
         'SELECT t.members FROM '+values_table+' v JOIN '+teams_table+' t ON t.team_id=v.team_id WHERE v.'+column+'=? AND v.wins+v.losses+v.draws>0',(scope,))) if has_tables else 0
     season_rows=rating_seasons.listing(db) if format=='pairs' else seasons(db)
     return dict(version=1,format=format,playersPerSide=2 if format=='pairs' else 4,

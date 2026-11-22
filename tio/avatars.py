@@ -3,10 +3,14 @@ import json,struct
 from pathlib import Path
 from functools import lru_cache
 from contextlib import closing
+from typing import TYPE_CHECKING
 from .db_transaction import connect,transaction
 from .protocol.binary import Reader,Writer,PacketError
 
 ROOT=Path(__file__).resolve().parents[1]
+
+if TYPE_CHECKING:
+    from .battle_state import BattleField
 
 
 @lru_cache(maxsize=1)
@@ -24,6 +28,24 @@ def selections(path,account):
     with closing(connect(path)) as db:
         if not db.execute("SELECT 1 FROM sqlite_master WHERE name='pet_avatars'").fetchone():return {}
         return dict(db.execute('SELECT pet_id,avatar_id FROM pet_avatars WHERE account=?',(account,)))
+
+
+def project_city_pet(path: str | Path, account: str, packet: bytes) -> bytes:
+    """Keep the selected portrait in native66 without changing saved pet data."""
+    from .protocol.pet_info import decode_pet_info, encode_pet_info
+
+    owner = int.from_bytes(packet[1:5], 'little')
+    with closing(connect(path)) as db:
+        row = db.execute('SELECT human FROM owned_pets WHERE account=? AND pet_id=?',
+                         (account, owner)).fetchone()
+    if row is None:
+        return packet
+    avatar = selections(path, account).get(owner, 0)
+    pet = decode_pet_info(packet, human_equipment=bool(row[0]))
+    if pet.fields['0x8c4ba9'] == avatar:
+        return packet
+    pet.fields['0x8c4ba9'] = avatar
+    return encode_pet_info(pet)
 
 
 def assign(path,account,pet_id,avatar_id,*,allowed):
@@ -60,6 +82,27 @@ def snapshot(path,account):
     selected=selections(path,account)
     with closing(connect(path)) as db:
         return encode_assignments((pet,selected.get(pet,0)) for pet, in db.execute('SELECT pet_id FROM owned_pets WHERE account=? ORDER BY pet_id',(account,)))
+
+
+# Native RECV_BattleSoldierAdd 8c5044 copies this BattleSoldier field into
+# model+60DC, the same portrait slot FC assigns.
+SOLDIER_AVATAR = '0x8c581d'
+
+
+def soldier_avatar(field: 'BattleField', actor_id: int, fields: dict, *, hidden: bool = False) -> dict:
+    """Return 3B fields carrying the scene avatar; a hidden model discloses none."""
+    if SOLDIER_AVATAR not in fields or not hasattr(field, 'avatar_ids'):
+        return fields
+    return {**fields, SOLDIER_AVATAR: 0 if hidden else field.avatar_ids.get(actor_id, 0)}
+
+
+def battle_assignments(field: 'BattleField', owner: int) -> tuple[bytes, ...]:
+    """Use scene actor IDs and disclose only this recipient's visible actors."""
+    if not hasattr(field, 'avatar_ids'):
+        return ()
+    from .visibility import visible_actors
+    return (encode_assignments((i, field.avatar_ids.get(i, 0))
+                               for i in sorted(visible_actors(field, owner))[:31]),)
 
 
 def image_packet(identity):

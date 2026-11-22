@@ -2,13 +2,13 @@ import unittest
 from dataclasses import replace
 from types import SimpleNamespace
 from tio.battle_state import BattleActor,BattleField
-from tio.combat import Combat
+from tio.combat import Combat, MEDICAL_ITEMS
 from tio.weapons import WeaponCatalog
 from tio.protocol.item_list import encode_item_list,decode_item_list
 from tio.protocol.battle_attack import AttackRequest,decode_attack_result
 from tio.protocol.ability_cast import AbilityCast,encode_ability_cast
 from tio.protocol.abilities import AbilityEntry,decode_abilities
-from tio.protocol.item_action import ItemAction
+from tio.protocol.item_action import ItemAction, encode_item_action
 from tio.arena_service import ArenaService
 from test_combat import item,FixedRandom
 
@@ -96,6 +96,30 @@ class WeaponEffectsTests(unittest.TestCase):
         before=(dict(field._actors),dict(combat.inventories))
         with self.assertRaises(ValueError):combat.use_medical(7,ItemAction(1,200,255))
         self.assertEqual((field._actors,combat.inventories),before)
+
+    def test_dog_can_use_only_dog_meat_through_battle_item_action(self):
+        for resource in (3, 4, 5):
+            field, combat = self.setup_effect(301)
+            bag = encode_item_list(1, tuple(item(template, template) for template in MEDICAL_ITEMS))
+            combat.register(1, bag, human=False)
+            combat.resources[1] = resource
+            wounded = field._actors[1] = replace(field.actor(1), health=1)
+            arena = ArenaService(clock=lambda: 10)
+            arena.rooms = SimpleNamespace(snapshot=lambda: (SimpleNamespace(room_id=1, members=(7, 8)),))
+            arena._fields[1] = field
+            arena._turns[1] = (7, {1}, 20)
+
+            for template in MEDICAL_ITEMS.keys() - {32}:
+                with self.subTest(resource=resource, template=template):
+                    with self.assertRaises(ValueError):
+                        arena.equip(7, encode_item_action(ItemAction(1, template, 255)))
+                    self.assertEqual(field.actor(1), wounded)
+                    self.assertEqual(combat.inventories[1], bag)
+
+            arena.equip(7, encode_item_action(ItemAction(1, 32, 255)))
+            self.assertEqual(field.actor(1), replace(wounded, health=16, action_points=39))
+            self.assertEqual({i.template_id for i in decode_item_list(combat.inventories[1])[1]},
+                             MEDICAL_ITEMS.keys() - {32})
 
     def test_incomplete_original_effects_are_not_treated_as_bullets(self):
         for weapon in (323,334,340):

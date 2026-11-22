@@ -78,6 +78,8 @@ class BattleReconnect:
         from tio.weapon_effects import battle_skills
         skills=tuple(encode_abilities(i,battle_skills(field.combat.learned.get(i,()),field.combat.inventories[i],field.combat.human[i]))
                      for i in field.actor_ids(owner))
+        if battle.get('kind') == 'tournament':
+            self.tournaments.send_battle(battle, owner)
         self.put(owner,b'\x6c'+encode_battle_settings_body(settings),self.battle_members_packet(battle,owner),
             *self.tactical_mark_packets(battle,owner),self.battle_order_packet(battle,owner),battle['ground'])
         self.put(owner,*view.refresh(),*skills,
@@ -95,7 +97,8 @@ class BattleReconnect:
         remaining=max(0,int(turn[2]-self.clock()))
         if 'points' in battle:
             from tio.protocol.ranked import encode_turn
-            self.put(owner,encode_turn(field.teams[turn[0]],self.players[owner].probe_character_id if turn[0]==owner else turn[0],next(iter(turn[1]))))
+            actor=next(i for i in field.actor_ids(turn[0]) if i in turn[1])
+            self.put(owner,encode_turn(field.teams[turn[0]],self.players[owner].probe_character_id if turn[0]==owner else turn[0],actor,squad=len(turn[1])>1))
         self.put(owner,*field.ability_status_packets(owner,field.actor_ids(owner)))
         if turn[0]==owner and remaining:
             self.put(owner,encode_your_turn(remaining))
@@ -128,8 +131,9 @@ class BattleReconnect:
 
     def battle_members_packet(self,battle,viewer,update=False):
         room=battle['room'];field=battle['field'];session=self.players[viewer]
+        from .battle_crests import member_crest
         records=tuple(BattleMemberRecord(session.probe_character_id if m==viewer else m,
-            battle['names'][m],0,bytes((1,1,i,field.teams[m],1,int(m not in self.offline))))
+            battle['names'][m],member_crest(battle,m),bytes((1,1,i,field.teams[m],1,int(m not in self.offline))))
             for i,m in enumerate(room.members))
         return encode_battle_members(room.request.mode,int(update),records)
 
@@ -206,6 +210,8 @@ class BattleReconnect:
                 arena=session.arena;room=next(r for r in arena.rooms.snapshot() if owner in r.members)
                 field=arena._fields[room.room_id]
                 replies=arena.member_loaded(owner,packet)
+                from tio.avatars import battle_assignments
+                replies+=battle_assignments(field,owner)
                 if room.room_id not in arena._turns and room.room_id not in arena._last_turn and field.living_actor_ids(owner):
                     from tio.protocol.battle_turn import turn_seconds
                     replies+=arena.begin_turn_packets(owner,field.living_actor_ids(owner),turn_seconds(len(field.living_actor_ids(owner))))
@@ -255,7 +261,16 @@ class BattleReconnect:
                         self.abort_contract(b, 'reconnect_timeout')
                         self.forget(owner)
                         continue
+                    if b.get('kind') == 'tournament':
+                        b['ranked_winner'] = 1 - b['field'].teams[owner]
+                        self.finish(b)
+                        self.forget(owner)
+                        continue
                     if 'points' in b:
+                        if b.get('ranked_winner') is not None:
+                            self.finish(b)
+                            self.forget(owner)
+                            continue
                         side=b['field'].teams[owner]
                         allies=[o for o in b['humans'] if o!=owner and b['field'].teams[o]==side and b['field'].living_actor_ids(o)]
                         if allies:b.setdefault('ranked_forfeits',set()).add(self.players[owner].account)
@@ -274,6 +289,9 @@ class BattleReconnect:
         with self.lock:
             self.stop_wagers()
             for battle in {id(b):b for b in self.battles.values()}.values():
+                if battle.get('kind') == 'tournament':
+                    self.snapshot(battle)
+                    continue
                 owners=tuple(battle['humans'])
                 try:
                     if battle.get('kind') == 'contract':

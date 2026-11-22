@@ -31,8 +31,9 @@ def image():
     return pefile.PE(data=raw).get_memory_mapped_image()
 
 
-def emulator():
-    mapped = image()
+def emulator(mapped=None):
+    if mapped is None:
+        mapped = image()
     u = Uc(UC_ARCH_X86, UC_MODE_32)
     u.mem_map(0, 0x1000)
     u.mem_map(0x400000, (len(mapped)+0xfff)&~0xfff)

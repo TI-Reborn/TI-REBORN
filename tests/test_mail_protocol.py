@@ -49,11 +49,14 @@ class MailProtocolTests(unittest.TestCase):
         warehouse=(mail.PostWarehouseItem(77,'Alice','Тема',1800000000,self.item),)
         self.assertEqual(mail.decode_post_warehouse(mail.encode_post_warehouse(warehouse)),warehouse)
 
-    def test_ui_nul_and_generated_byte_length_are_distinct(self):
+    def test_ui_utf16_and_generated_utf8_are_distinct(self):
         draft=mail.encode_draft(mail.DraftRequest(0,b'Bob','Я','Ё'))
         self.assertEqual(draft,b'\xb7\x07\0Bob\0'+ 'Я\0Ё\0'.encode('utf-16le')+b'\0\0')
         packet=mail.encode_body(mail.MailBody(77,'Я','Ё',1800000000,10,False,False,'',100))
-        self.assertEqual(packet[6:10],b'\x02\0'+ 'Я'.encode('utf-16le'))
+        self.assertEqual(packet[6:10],b'\x02\0'+ 'Я'.encode('utf-8'))
+        packet=mail.encode_body(mail.MailBody(77,'Bob','A',1800000000,10,False,False,'OK!',100))
+        self.assertEqual(packet[6:14],b'\x03\0Bob\x01\0A')
+        self.assertEqual(mail.decode_body(packet).body, 'OK!')
         self.assertEqual(mail.encode_post_warehouse()[:6],b'\xb7\x75\0\0\0\0')
 
     def test_all_truncations_and_trailing_bytes_rejected(self):
@@ -71,7 +74,7 @@ class MailProtocolTests(unittest.TestCase):
         with self.assertRaises(PacketError):mail.decode_body_request(b'\xb7\x0e\x03'+bytes(4))
 
     def test_malformed_lengths_attachment_counts_and_text_rejected(self):
-        with self.assertRaises(PacketError):mail.decode_body(b'\xb7\x7a'+bytes(4)+b'\x01\0X')
+        with self.assertRaises(PacketError):mail.decode_body(b'\xb7\x7a'+bytes(4)+b'\x01\0\xff')
         with self.assertRaises(PacketError):mail.decode_draft(b'\xb7\x07\0Bob\0'+bytes(4)+struct.pack('<H',65))
         with self.assertRaises(PacketError):mail.decode_post_warehouse(b'\xb7\x75'+struct.pack('<I',1001))
         for text in ('x\0y','\ud800','x'*8001):

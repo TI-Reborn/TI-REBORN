@@ -1,7 +1,6 @@
 """Native TrueSkill: authoritative real-account squads, levels4..20.
 
-Complete four-fighter teams take priority; balanced smaller duels retain
-the existing low-population policy. Selections never rewrite barracks slots.
+Equal fighter counts for solo squads and premade groups.
 """
 from contextlib import closing
 import logging
@@ -10,7 +9,7 @@ from types import SimpleNamespace
 import struct
 from tio.db_transaction import connect
 from tio.matchmaking import SearchTicket, SquadAdmissionError
-from tio.ranked_party import (MAX_FIGHTERS, HUMAN_RESOURCES, MINER_RESOURCE,
+from tio.ranked_party import (MAX_FIGHTERS, HUMAN_RESOURCES, MINER_RESOURCE, PartyUnit,
     RankedRejection, is_ranked_level, validate_miner_count)
 from tio.protocol.binary import PacketError
 from tio.protocol.system_message import encode_shop_error
@@ -117,15 +116,22 @@ class RankedArena:
         return True
 
     def match_ranked(self,owner):
-        from tio.battle_modes import level_band
-        first=self.ranked_waiting[owner]
         from tio.character_identity import auth_account
+        from .ranked_party import party,units
         authenticated=lambda o:auth_account(self.players[o].database,self.players[o].account)
         from tio.rating_visibility import QA_LOGIN
         qa_pool=bool(QA_LOGIN.fullmatch(authenticated(owner)))
+        group=party(self,owner)
+        size=(len(self.ranked_waiting[owner].actors) if group is None else
+              sum(len(self.ranked_waiting[member].actors) for member in group.members))
         candidates=[];roots=set();skipped={'database':0,'qa_pool':0,'same_login':0}
         for t in sorted(self.ranked_waiting.values(),key=lambda t:(t.joined_at,t.character_id)):
             if self.players[t.character_id].database!=self.players[owner].database:skipped['database']+=1;continue
+            candidate_group=party(self,t.character_id)
+            if (group is None)!=(candidate_group is None):continue
+            if candidate_group is None:
+                if len(t.actors)!=size:continue
+            elif sum(candidate_group.slots.values())!=size:continue
             root=authenticated(t.character_id)
             # Reserved disposable QA logins never face ordinary players.
             # Character aliases cannot cross the authenticated root's pool.
@@ -133,36 +139,17 @@ class RankedArena:
             if root in roots:skipped['same_login']+=1;continue
             roots.add(root);candidates.append(t)
             if len(candidates)==32:break
-        from .ranked_party import units
         candidates=units(self,candidates)
-        # Prefer the closest current rating, then queue age.
-        scores={}
-        def score(t):
-            if t.character_id not in scores:
-                s=self.players[t.character_id]
-                scores[t.character_id]=ranked.skill(*ranked.snapshot(s.database,s.account))
-            return scores[t.character_id]
-        # Bounded subset DP: complete 4+4 groups may contain different numbers
-        # of real accounts (4 vs 2+2, 3+1 vs 1+1+2, etc.). Never split a squad.
-        states={(0,0):((),())}
-        for t in candidates:
-            for (a,b),groups in tuple(states.items()):
-                for side,total in enumerate((a,b)):
-                    if total+len(t.actors)>MAX_FIGHTERS:continue
-                    key=(a+len(t.actors),b) if side==0 else (a,b+len(t.actors))
-                    new=(groups[0]+(t,),groups[1]) if side==0 else (groups[0],groups[1]+(t,))
-                    states.setdefault(key,new)
-        groups=states.get((MAX_FIGHTERS,MAX_FIGHTERS))
-        if groups is None:
-            from .ranked_bots import incomplete_groups
-            groups=incomplete_groups(states,score)
-            if groups is None:
-                # Operators need the reason a visible search keeps waiting.
-                LOG.info('ranked_search_waiting owner=%s queued=%d candidates=%d skipped=%s',
-                         owner,len(self.ranked_waiting),len(candidates),
-                         ','.join(f'{k}:{v}' for k,v in skipped.items()))
-                return
-        groups=tuple(tuple(t for unit in group for t in getattr(unit,'members',(unit,))) for group in groups)
+        entrant=next((t for t in candidates if t.character_id==owner),None)
+        opponent=next((t for t in candidates if t.character_id!=owner and len(t.actors)==size),None)
+        if entrant is None or opponent is None:
+            LOG.info('ranked_search_waiting owner=%s queued=%d candidates=%d skipped=%s',
+                     owner,len(self.ranked_waiting),len(candidates),
+                     ','.join(f'{k}:{v}' for k,v in skipped.items()))
+            return
+        pair=sorted((entrant,opponent),key=lambda t:(t.joined_at,t.character_id))
+        groups=tuple(unit.members if isinstance(unit,PartyUnit) else (unit,) for unit in pair)
+        from tio.battle_modes import level_band
         tickets=tuple(t for group in groups for t in group)
         seats=[];teams=[]
         for side,group in enumerate(groups):
@@ -171,24 +158,35 @@ class RankedArena:
                 s=self.players[t.character_id]
                 if s.locations.current(s.account) not in RANKED_TOWNS:raise RankedRejection('Игрок покинул рейтинговый город')
                 seats.append((t.character_id,side,s.database,s.account,t,False));teams[-1].append(t.character_id)
-        from .ranked_bots import fill_seats
-        bots=fill_seats(self,seats,teams)
-        proposal=SimpleNamespace(mode=21,soldiers=MAX_FIGHTERS if bots else sum(len(t.actors) for t in groups[0]),band=min(level_band(l) for t in tickets for l in t.levels),captain=tickets[0].character_id)
+        proposal=SimpleNamespace(mode=21,soldiers=size,band=min(level_band(l) for t in tickets for l in t.levels),captain=tickets[0].character_id)
         from .ranked_party import consumed
-        self.start_match(proposal,seats,teams,bots,lambda:consumed(self,tickets))
+        self.start_match(proposal,seats,teams,set(),lambda:consumed(self,tickets))
 
     def ranked_packets(self,battle,owner,*,scene=False):
         points=battle.get('points')
         if points is None:return ()
         field=battle['field'];names=battle['names']
-        packets=(encode_roster(field,names,points.limit,viewer=owner,character_id=self.players[owner].probe_character_id),) if scene else ()
-        return (*packets,*encode_flags(points),encode_scores(points),self.ranked_info(owner))
+        bots = battle['bots'] if battle.get('kind') == 'tournament' else ()
+        packets=(encode_roster(field,names,points.limit,viewer=owner,character_id=self.players[owner].probe_character_id,bots=bots),) if scene else ()
+        return (*packets,*encode_flags(points),encode_scores(points))
 
     def ranked_refresh(self,battle):
         for owner in battle['humans']:self.put(owner,*self.ranked_packets(battle,owner))
 
+    def ranked_flag_count(self,battle,owner: int) -> bytes:
+        from tio.protocol.chat import encode_system_message
+        points=battle['points']
+        side=battle['field'].teams[owner]
+        ours=points.owners.count(side);theirs=points.owners.count(1-side)
+        return encode_system_message(3,b'TIO',f'Флаги — ваша команда {ours}, противник {theirs}')
+
+    def ranked_capture_refresh(self,battle,previous: tuple) -> None:
+        self.ranked_refresh(battle)
+        if tuple(battle['points'].owners)!=previous:
+            for owner in battle['humans']:self.put(owner,self.ranked_flag_count(battle,owner))
+
     def ranked_report(self,battle):
-        if battle.get('bots') or 'ranked_winner' not in battle:return None
+        if battle.get('bots') or 'ranked_teams' not in battle or 'ranked_winner' not in battle:return None
         result=dict(winner=None if battle['ranked_winner']==2 else battle['ranked_winner'],teams=battle['ranked_teams'])
         if battle.get('ranked_forfeits'):result['forfeits']=sorted(battle['ranked_forfeits'])
         return result

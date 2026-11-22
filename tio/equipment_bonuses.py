@@ -36,7 +36,8 @@ def project(packet,human,inventory):
     f['0x8c4b57']=min(65535,f['0x8c4b57']+b['carry'])
     # BASE is unmodified training; SAVED is the effective displayed skill.
     if b['melee']:f[SAVED[0]]=bits(min(200,number(f[SAVED[0]])+b['melee']))
-    return encode_pet_info(replace(pet,fields=f))
+    from .implants import project_skills
+    return project_skills(encode_pet_info(replace(pet,fields=f)),human,inventory)
 
 
 def training_profile(packet,human):

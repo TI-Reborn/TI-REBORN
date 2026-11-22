@@ -5,8 +5,10 @@ from contextvars import ContextVar
 from functools import wraps
 import hashlib
 import logging
+import sqlite3
 import time
 from types import SimpleNamespace
+from typing import TYPE_CHECKING
 
 from tio import battle_checkpoints as store
 from tio import battle_snapshot as codec
@@ -15,6 +17,28 @@ from .failure_policy import storage_failure
 
 LOG=logging.getLogger('tio.server')
 _units=ContextVar('tio_battle_units',default=())
+
+if TYPE_CHECKING:
+    from tio.arena_service import ArenaService
+
+
+def play_private_turn(arena: 'ArenaService', room_id: int,
+                      owner: int) -> tuple[bytes, ...]:
+    """Commit an NPC turn together; retry only rolled-back SQLite contention."""
+    from tio.training_bot import play_turn
+    manager = getattr(arena, '_durable', None)
+    if manager is None:
+        return play_turn(arena, room_id, owner,
+                         view=getattr(arena._fields[room_id], 'result_view', None))
+    for attempt in range(3):
+        try:
+            with manager.unit():
+                return play_turn(arena, room_id, owner, view=getattr(
+                    arena._fields[room_id], 'result_view', None))
+        except sqlite3.OperationalError as error:
+            if storage_failure(error) or attempt == 2:
+                raise
+    raise AssertionError('NPC turn retry limit did not terminate')
 
 
 class OfflineSession(SimpleNamespace):
@@ -162,7 +186,7 @@ class BattleJournal:
     def unit(self,battle):
         identity=id(battle);hub=self.hub
         if identity in _units.get():yield;return
-        before=codec.dumps(self.data(battle),clock=hub.clock,wall=self.wall)
+        before=codec.capture_rollback(self.data(battle),clock=hub.clock,wall=self.wall)
         maps={name:dict(getattr(hub,name)) for name in ('battles','completed','players','identities','account_owners','offline','returning','tickets')}
         queues={o:deque(q) for o,q in hub.queues.items()};results=set(hub.results)
         token=_units.set((*_units.get(),identity))
@@ -185,7 +209,7 @@ class BattleJournal:
                         {state['sessions'][o]['account']:o for o in state['retained']},
                         status='finished' if battle['finished'] else 'active',now=self.wall())
         except BaseException:
-            restored,_=codec.loads(before,clock=hub.clock,wall=self.wall,rebase=False)
+            restored=codec.restore_rollback(before,clock=hub.clock,wall=self.wall)
             battle.clear();battle.update(restored['battle'])
             for name,value in maps.items():setattr(hub,name,value)
             hub.queues=queues;hub.results=results
@@ -360,12 +384,16 @@ def shared_method(method):
             first=args[0] if args else None
             battle=first if isinstance(first,dict) and 'match_id' in first else hub.battles.get(first) or hub.completed.get(first)
             if battle is None:return method(hub,*args,**kwargs)
+            # Skill-list replies only read the battle; retain the hub lock.
+            if method.__name__=='battle_action' and len(args)>1 and args[1][:2]==b'\xc8\x12':
+                return method(hub,*args,**kwargs)
             if method.__name__=='tick_battle':
                 arena=battle['arena'];room=battle['room'];field=battle['field']
                 turn=arena._turns.get(room.room_id)
                 idle=(arena._loading[room.room_id]!=set(room.members) and hub.clock()<=battle['deadline']
                       or turn is not None and hub.clock()<turn[2] and len(field.living_sides())>1
-                      and any(field.actor(i).action_points>0 for i in field.living_actor_ids(turn[0])))
+                      and (any(field.actor(i).action_points>0 for i in field.living_actor_ids(turn[0]))
+                           or hub.turn_has_open_loot(battle,turn)))
                 if battle.get('kind')=='mine' and any(not field.living_actor_ids(o) for o in battle['mine_active']):idle=False
                 if battle.get('kind') == 'contract':
                     metadata = field.contract_metadata

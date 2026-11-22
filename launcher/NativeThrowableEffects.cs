@@ -12,7 +12,7 @@ static class NativeThrowableEffects
         using var stream=typeof(NativeThrowableEffects).Assembly.GetManifestResourceStream("TioLauncher.native-throwable-effects.json")!;
         var plan=JsonSerializer.Deserialize<Plan>(stream,Updater.Json)!;
         using var file=File.OpenRead(image);
-        if(NativePasswordLimit.CompatibilityHash(File.ReadAllBytes(image))!=plan.Sha256) return false;
+        if(!SilverRegions.Matches(File.ReadAllBytes(image),"throwables")) return false;
         foreach(var patch in plan.Patches)
             NativeTlsRoute.GuardedPatch(process,checked(silver+patch.Rva),Convert.FromHexString(patch.Before),Convert.FromHexString(patch.After));
         return true;

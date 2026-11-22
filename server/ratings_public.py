@@ -124,12 +124,12 @@ class RatingsPublic:
 
     def status(self, data):
         data = validate_payload(data)
-        with self.router.team_arena.lock:
-            if self.router.server.stopping.is_set(): raise CityError('service_unavailable', 503)
-            with closing(sqlite3.connect(self.path.as_uri() + '?mode=ro', uri=True)) as db:
-                db.execute('PRAGMA query_only=ON'); db.execute('BEGIN')
-                if not db.execute('SELECT 1 FROM accounts WHERE login=?', (data['username'],)).fetchone():
-                    raise CityError('account_not_found', 404)
-                result = dict(username=data['username'], ratings=rating_completion.public_listing(db,
-                    format=data['format'], scope=data['scope'], offset=data['offset'], limit=data['limit'], now=self.clock()))
-                return validate_response(result, data)
+        if self.router.server.stopping.is_set(): raise CityError('service_unavailable', 503)
+        with closing(sqlite3.connect(self.path.as_uri() + '?mode=ro', uri=True)) as db:
+            db.execute('PRAGMA query_only=ON'); db.execute('BEGIN')
+            if not db.execute('SELECT 1 FROM accounts WHERE login=?', (data['username'],)).fetchone():
+                raise CityError('account_not_found', 404)
+            result = dict(username=data['username'], ratings=rating_completion.public_listing(db,
+                format=data['format'], scope=data['scope'], offset=data['offset'], limit=data['limit'], now=self.clock()))
+        if self.router.server.stopping.is_set(): raise CityError('service_unavailable', 503)
+        return validate_response(result, data)

@@ -8,13 +8,14 @@ from .db_transaction import connect
 from contextlib import closing
 from dataclasses import replace
 import sqlite3
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import NotRequired, TypedDict
 
 from .owned_pets import OwnedPetStore
 from .protocol.item_action import TARGET_MASKS
 from .protocol.item_action import decode_item_action
-from .protocol.item_list import decode_item_list, encode_item_list
+from .protocol.item_list import ItemRecord, decode_item_list, encode_item_list
+from .durability import broken
 from .item_catalog import items_root
 from functools import lru_cache
 
@@ -37,6 +38,47 @@ def armor_coverage(template: int, slot: int, rules: Mapping[int, ArmorRule]) -> 
     return frozenset(rules.get(template, {}).get('covers', (slot,)))
 
 
+SUICIDE_JACKET = 334
+HAND_SLOTS = (16, 128)
+SUICIDE_JACKET_WEAPON = 'Жилет смертника нельзя носить вместе с оружием в руках'
+
+
+def weapon_slot(items, target_mask: int | None) -> int:
+    """Hand for a weapon: an explicit target, else a free hand, primary first.
+
+    An untargeted bag click only replaces the primary weapon when both hands
+    are already occupied.
+    """
+    if target_mask is not None:
+        return target_mask
+    taken = {i.client_slot for i in items if i.equipped}
+    return next((slot for slot in HAND_SLOTS if slot not in taken), HAND_SLOTS[0])
+
+
+def vacated_hand(selected, slot: int | None) -> int:
+    """Hand an item displaced from `slot` moves to; 0 means the bag.
+
+    Dragging a weapon from one hand onto the other exchanges the two weapons;
+    an item brought from the bag still returns the displaced one to the bag.
+    """
+    if (slot in HAND_SLOTS and selected.equipped and selected.client_slot in HAND_SLOTS
+            and selected.client_slot != slot):
+        return selected.client_slot
+    return 0
+
+
+def require_no_suicide_jacket_weapon(items, error: type[ValueError] = ValueError) -> None:
+    """Manual p64: no weapon may be used alongside a worn Suicide Jacket.
+
+    Callers check the outfit an equip action would produce; removals are
+    never refused, so older saves holding both can always be fixed.
+    """
+    worn = [i for i in items if i.equipped]
+    if (any(i.template_id == SUICIDE_JACKET and i.client_slot == 4 for i in worn)
+            and any(i.client_slot in HAND_SLOTS for i in worn)):
+        raise error(SUICIDE_JACKET_WEAPON)
+
+
 class EquipmentStore:
     def __init__(self, path, rules, *, armor=None, weapons_only=False):
         self.path = path
@@ -47,7 +89,8 @@ class EquipmentStore:
             raise ValueError('Equipment rules require recognized target masks')
         OwnedPetStore(path)
 
-    def place(self, pet_packet, human_equipment, items, instance_id, slot, *, toggle=False):
+    def place(self, pet_packet, human_equipment, items, instance_id, slot, *, toggle=False,
+              is_broken: Callable[[ItemRecord], bool] = broken):
         """Validate/place in memory; caller owns the transaction."""
         if slot is not None and slot not in TARGET_MASKS:
             raise EquipmentRejected("Unknown equipment slot")
@@ -62,8 +105,7 @@ class EquipmentStore:
         if toggle and selected.equipped:
             slot = None
         if slot is not None:
-            from .durability import broken
-            if broken(selected):raise EquipmentRejected('Сломанный предмет нельзя экипировать')
+            if is_broken(selected):raise EquipmentRejected('Сломанный предмет нельзя экипировать')
             from .protocol.pet_info import decode_pet_info
             pet=decode_pet_info(pet_packet,human_equipment=human_equipment).fields
             from .enhancement_limits import equipment_base_levels, required_level
@@ -88,9 +130,6 @@ class EquipmentStore:
                 if (source.get('freaks_only')=='1') != (pet['0x8c446f']==6):
                     raise EquipmentRejected('Weapon is incompatible with this mercenary')
         updated = []
-        if slot is not None and ((selected.template_id==334 and slot==4 and any(i.equipped and i.client_slot==16 for i in items))
-                or slot==16 and any(i.equipped and i.template_id==334 and i.client_slot==4 for i in items)):
-            raise EquipmentRejected('Для жилета смертника нужно освободить основную руку')
         for item in items:
             if item.instance_id == instance_id:
                 item = replace(item, unknown_u8_01=int(slot is not None), location_raw=slot or 0)
@@ -98,8 +137,11 @@ class EquipmentStore:
                 armor_coverage(selected.template_id, slot, self.armor) &
                 armor_coverage(item.template_id, item.client_slot, self.armor)
             ):
-                item = replace(item, unknown_u8_01=0, location_raw=0)
+                hand = vacated_hand(selected, slot)
+                item = replace(item, unknown_u8_01=int(bool(hand)), location_raw=hand)
             updated.append(item)
+        if slot is not None:
+            require_no_suicide_jacket_weapon(updated, EquipmentRejected)
         return tuple(updated)
 
     def assign(self, account, pet_id, instance_id, slot, *, toggle=False):
@@ -142,7 +184,12 @@ def equip_primary_weapon(path, account, packet):
     if inventory is None:raise EquipmentRejected('Owned pet missing')
     selected=next((i for i in decode_item_list(inventory)[1] if i.instance_id==action.instance_id),None)
     if selected is None:raise EquipmentRejected('Owned item missing')
-    slot=action.target_mask or armor.get(selected.template_id,{}).get('slot',16)
+    from .implants import catalog as implant_catalog
+    if selected.template_id in implant_catalog():
+        from .implant_equipment import install
+        return install(path, account, action)
+    if selected.template_id in armor:slot=action.target_mask or armor[selected.template_id]['slot']
+    else:slot=weapon_slot(decode_item_list(inventory)[1],action.target_mask)
     return EquipmentStore(path, rules,armor=armor,weapons_only=True).assign(
         account, action.pet_id, action.instance_id, slot, toggle=action.option == 255)
 
@@ -181,6 +228,17 @@ def swap_city_weapons(path, account, packet):
 def armor_rules() -> dict[int, ArmorRule]:
     """Fresh copy of the cached armor rules (callers and snapshots may own it)."""
     return {identity: dict(rule) for identity, rule in _armor_rules().items()}
+
+
+def stow_armor_above_level(inventory: bytes, level: int) -> bytes:
+    """Return armor equipped under older level rules to the owner's bag."""
+    rules = _armor_rules()
+    owner, items, flags = decode_item_list(inventory)
+    updated = tuple(replace(item, unknown_u8_01=0, location_raw=0)
+                    if item.equipped and item.template_id in rules
+                    and level < rules[item.template_id]['level'] else item
+                    for item in items)
+    return inventory if updated == items else encode_item_list(owner, updated, flags)
 
 
 @lru_cache(maxsize=1)

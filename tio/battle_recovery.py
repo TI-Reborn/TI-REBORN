@@ -1,19 +1,56 @@
-"""Paid treatment and durable out-of-battle recovery; rates are local policy."""
+"""Treatment and durable out-of-battle recovery; rates are local policy."""
 
 from .db_transaction import connect
 from contextlib import closing
 import sqlite3,json,time,math
 from pathlib import Path
+from .cities import town_in
+from .level_progression import LEVEL
 from .protocol.binary import Reader, PacketError
 from .protocol.pet_info import PetInfo, decode_pet_info, encode_pet_info
 from .protocol.asset_count import AssetCount
-from .passive_stats import project_saved_pet
+from .protocol.health import encode_health
+from .passive_stats import project_saved_pet, project_saved_roster
 
 POLICY=json.loads((Path(__file__).resolve().parents[1]/'config/recovery.json').read_text(encoding='utf-8'))
 CREDITS_PER_HP = POLICY['credits_per_hp']
 SECONDS_PER_HP = POLICY['seconds_per_hp']
 if type(CREDITS_PER_HP) is not int or CREDITS_PER_HP<=0:raise ValueError('Invalid treatment tariff')
 if type(SECONDS_PER_HP) is not int or SECONDS_PER_HP<=0:raise ValueError('Invalid recovery interval')
+
+
+def _treatment_town(db: sqlite3.Connection, account: str) -> int | None:
+    if not db.execute("SELECT 1 FROM sqlite_master WHERE name='character_locations'").fetchone():
+        return None
+    return town_in(db, account)
+
+
+def treatment_rate(town: int | None, level: int) -> int:
+    return 0 if town == 3 and 1 <= level <= 3 else CREDITS_PER_HP
+
+
+def _missing_health(pet: PetInfo) -> int:
+    return max(0, pet.fields['0x8c4a07'] - pet.fields['0x8c4ab1'])
+
+
+def treatment_quote_rate(db: sqlite3.Connection, account: str,
+                         ids: tuple[int, ...] | None = None) -> float:
+    """Convert the squad's total quote to the legacy client's single tariff."""
+    town = _treatment_town(db, account)
+    if town != 3:
+        return CREDITS_PER_HP
+    rows = db.execute('SELECT pet_id,human,pet_packet,inventory_packet FROM owned_pets WHERE account=?',
+                      (account,)).fetchall()
+    rows = [row for row in rows if ids is None or row[0] in ids]
+    rates = {owner: treatment_rate(town, decode_pet_info(packet, human_equipment=bool(human)).fields[LEVEL])
+             for owner, human, packet, _ in rows}
+    if len(set(rates.values())) <= 1:
+        return next(iter(rates.values()), CREDITS_PER_HP)
+    missing = {owner: _missing_health(decode_pet_info(packet, human_equipment=bool(human)))
+               for owner, human, packet, _ in project_saved_roster(db, account, rows)}
+    total = sum(missing.values())
+    # shortcut: the Hospital can select a subset locally, exact previews need client support.
+    return sum(hp * rates[owner] for owner, hp in missing.items()) / total if total else CREDITS_PER_HP
 
 
 def decode_treatment(data):
@@ -47,6 +84,7 @@ def treat(path,account,ids,*,blocked=False):
     if not account or not 1<=len(ids)<=31 or len(set(ids))!=len(ids):raise ValueError('Invalid treatment recipients')
     with closing(connect(path)) as db,db:
         db.execute('BEGIN IMMEDIATE')
+        town = _treatment_town(db, account)
         updates={};cost=0
         for owner in ids:
             row=db.execute('SELECT human,pet_packet FROM owned_pets WHERE account=? AND pet_id=?',(account,owner)).fetchone()
@@ -54,12 +92,13 @@ def treat(path,account,ids,*,blocked=False):
             human,raw=row
             pet=decode_pet_info(project_saved_pet(db,account,owner,raw,bool(human)),human_equipment=bool(human))
             hp=pet.fields['0x8c4ab1'];maximum=pet.fields['0x8c4a07']
-            cost+=max(0,maximum-hp)*CREDITS_PER_HP
+            cost += _missing_health(pet) * treatment_rate(town, pet.fields[LEVEL])
             updates[owner]=max(hp,maximum)
         wallet=db.execute('SELECT credits,gold FROM wallets WHERE account=?',(account,)).fetchone()
         if wallet is None or wallet[0]<cost:raise ValueError('Insufficient treatment credits')
         save_wounds(db,account,updates)
-        db.execute('UPDATE wallets SET credits=credits-? WHERE account=?',(cost,account))
+        if cost:
+            db.execute('UPDATE wallets SET credits=credits-? WHERE account=?',(cost,account))
         return AssetCount(wallet[0]-cost,wallet[1]),cost
 
 
@@ -105,7 +144,9 @@ class RecoveryStore:
                         base=decode_pet_info(raw,human_equipment=bool(human))
                         base.fields['0x8c4ab1']=hp
                         db.execute('UPDATE owned_pets SET pet_packet=? WHERE account=? AND pet_id=?',(encode_pet_info(base),account,owner))
-                        pet.fields['0x8c4ab1']=hp;changed.append(encode_pet_info(pet))
+                        pet.fields['0x8c4ab1']=hp
+                        # HP ticks do not replace the native profile/portrait.
+                        changed.append(encode_pet_info(pet) if owner in rank_changed else encode_health(owner,hp))
                         rank_changed.discard(owner)
                 if owner in rank_changed:changed.append(encode_pet_info(pet))
                 if hp>=maximum:stamp=now

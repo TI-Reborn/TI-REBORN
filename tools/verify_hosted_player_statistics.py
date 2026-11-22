@@ -25,7 +25,7 @@ def decode(packet):
     values=dict(zip(keys,(r.u32() for _ in keys)))
     for k in ('rating','squad_rank'):
         if values[k]>=0x80000000:values[k]-=0x100000000
-    about,contact,website=wide(),wide(),wide();soldiers=[]
+    about,website,contact=wide(),wide(),wide();soldiers=[]
     for _ in range(r.u8()):
         nick=ansi();lvl=r.u8();r.u32();xp=r.u32();r.u32();rank=r.u32();r.u32();r.u32()
         soldiers.append(dict(name=nick,level=lvl,xp=xp,rank=rank))

@@ -31,7 +31,7 @@ QA_BASE = ROOT/'reports/arena-surroundings-implementation/client-qa'
 MARKER = '.tio-owned-qa'
 PROOF = 'qa-client-provenance.json'
 CREATOR = 'tools/prepare_hosted_graphical_qa.py'
-BINARIES = {'ti.exe', 'orange.dll', 'silver.dll', 'gold.dll', 'ode.dll', 'd3dx9_26.dll'}
+BINARIES = {'ti.exe', 'orange.dll', 'silver.dll', 'gold.dll', 'ode.dll', 'd3dx9_26.dll', 'tio_crest.dll'}
 CONFIGS = {'base/config.cfg', 'base/autoexec.cfg'}
 IMMUTABLE = {'.t', '.s', '.png', '.tga', '.jpg', '.jpeg', '.dds', '.bmp',
              '.wav', '.ogg', '.mp3', '.avi', '.fx', '.ttf'}

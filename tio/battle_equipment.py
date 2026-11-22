@@ -10,7 +10,8 @@ def inventory_after_snapshot(fields, viewer, packet):
         actor=field._actors.get(actor_id)
         combat=getattr(field,'combat',None)
         if actor is not None and actor.owner_id==viewer and combat is not None and actor_id in combat.inventories:
-            return combat.inventory_packet(actor_id)
+            from .equipment_batch import shown_inventory
+            return shown_inventory(combat,viewer,actor_id)
     return None
 
 

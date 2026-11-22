@@ -1,6 +1,8 @@
 """Only the proven empty branch of SILVER889eac CharSelectInfo10."""
 from .binary import PacketError
 
+RETURN_TO_CHARACTER_SELECT = b'\xc8\xfa'
+
 def encode_empty_character_list():
     return b'\x10\0\0'
 

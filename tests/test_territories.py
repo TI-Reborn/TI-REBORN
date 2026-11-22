@@ -100,7 +100,7 @@ class TerritoriesTests(unittest.TestCase):
             from tio.locations import center,LocationStore
             self.assertEqual(outpost['levels'],[4,20])
             self.assertEqual(outpost['max_upgrade'],3)
-            self.assertEqual(center(7),(316,-228))
+            self.assertEqual(center(7),(325,-400))
             LocationStore(self.path)
             with closing(sqlite3.connect(self.path)) as db,db:
                 LocationStore._save(db,'a0',7,*center(7))

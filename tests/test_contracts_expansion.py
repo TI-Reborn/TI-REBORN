@@ -12,7 +12,7 @@ from server.contracts_ui import execute, snapshot
 from server.team_arena import TeamArena
 from server.contracts_service import ContractsService
 from server.battle_journal import BattleJournal
-from tio.contract_loot import roll_upgrade, UPGRADE_WEIGHTS
+from tio.contract_loot import roll_upgrade, stage_boss_loot, UPGRADE_WEIGHTS
 from tio.owned_pets import OwnedPetStore
 from tio.wallets import WalletStore
 from tio.protocol.battle_position import BattlePositionRequest, encode_position_request
@@ -27,10 +27,26 @@ class ExpansionTests(unittest.TestCase):
     setUp = combat_fixture.ContractsCombatTests.setUp
     rows = combat_fixture.ContractsCombatTests.rows
     clear_enemies = combat_fixture.ContractsCombatTests.clear_enemies
-    collect_boss = combat_fixture.ContractsCombatTests.collect_boss
-    clear_and_collect = combat_fixture.ContractsCombatTests.clear_and_collect
     group = combat_fixture.ContractsCombatTests.group
     start = combat_fixture.ContractsCombatTests.start
+
+    def collect_boss(self, battle, hub=None):
+        hub = hub or self.hub
+        with hub.journal.unit(battle):
+            field = battle['field']
+            stage_boss_loot(field)
+            position = field.contract_metadata['boss_position']
+            item, = field.loot.boxes[position]
+            owner = min(battle['humans'])
+            actor = field.actor(field.actor_ids(owner)[0])
+            field._actors[actor.actor_id] = replace(actor, x=position[0], y=position[1], action_points=20)
+            battle['arena']._turns[battle['room'].room_id] = (owner, frozenset((actor.actor_id,)), self.now+60)
+            hub.perform_action(battle, owner, encode_position_request(BattlePositionRequest(actor.actor_id, *position)))
+            hub.perform_action(battle, owner, encode_loot_transfer(LootTransfer(actor.actor_id, *position, (), ((item.instance_id, 1),))))
+
+    def clear_and_collect(self, battle):
+        self.clear_enemies(battle)
+        self.collect_boss(battle)
 
     def solo(self, template='solo_dogs'):
         self.service.parties.create('alice', (1,))
@@ -111,11 +127,13 @@ class ExpansionTests(unittest.TestCase):
         saved = decode_item_list(next(inv for i, _, inv in OwnedPetStore(self.path).list('alice') if i == 1))[1]
         self.assertEqual(sum(i.instance_id == loot[0].instance_id for i in saved), 1)
         self.hub.tick()
+        self.assertFalse(battle['finished'])  # The physical crates still contain supplies.
+        self.hub.finish_contract(battle, abandon_loot=True)
         self.assertTrue(battle['finished'])
 
     def test_probability_table_has_exact_percentages_and_rejects_invalid_rolls(self):
-        self.assertEqual(Counter(roll_upgrade(n) for n in range(100)), dict(enumerate(UPGRADE_WEIGHTS)))
-        for roll in (-1, 100, True, 1.5):
+        self.assertEqual(Counter(roll_upgrade(n) for n in range(10_000)), dict(enumerate(UPGRADE_WEIGHTS)))
+        for roll in (-1, 10_000, True, 1.5):
             with self.assertRaises(ValueError):
                 roll_upgrade(roll)
 
@@ -131,7 +149,7 @@ class ExpansionTests(unittest.TestCase):
                 field.actor(field.actor_ids(next(iter(battle['bots'])))[0]), 10)
         self.clear_and_collect(battle)
         before = WalletStore(self.path).ensure('alice').credits
-        self.hub.finish_contract(battle)
+        self.hub.finish_contract(battle, abandon_loot=True)
         with closing(sqlite3.connect(self.path)) as db:
             gains = list(db.execute('SELECT gain FROM experience_battle_audit WHERE account=? AND match_id=?',
                                    ('alice', battle['match_id'])))
@@ -150,7 +168,7 @@ class ExpansionTests(unittest.TestCase):
         self.assertFalse(battle['finished'])
         self.assertTrue(battle['field'].loot.boxes[battle['field'].contract_metadata['boss_position']])
         self.collect_boss(battle)
-        self.hub.finish_contract(battle)
+        self.hub.finish_contract(battle, abandon_loot=True)
         self.assertTrue(battle['finished'])
 
     def test_boss_death_during_live_turn_commits_backpack_before_other_enemies_die(self):
@@ -189,7 +207,7 @@ class ExpansionTests(unittest.TestCase):
         self.assertEqual(next_hub.journal.recover(), [battle['match_id']])
         again = next_hub.battles[self.owners[0]]
         self.assertEqual(again['field'].loot.boxes[position], ())
-        next_hub.finish_contract(again)
+        next_hub.finish_contract(again, abandon_loot=True)
         self.assertTrue(again['finished'])
         all_items = [i for account in ('alice', 'bravo') for _, _, raw in OwnedPetStore(self.path).list(account)
                      for i in decode_item_list(raw)[1]]

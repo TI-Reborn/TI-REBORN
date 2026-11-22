@@ -10,7 +10,7 @@ class MiningRatingMenuTests(unittest.TestCase):
         service.locations=Mock()
         service.arena=Mock()
         service.arena._durable=None
-        service.market=Mock()
+        service.market=Mock();service.market.ratings.return_value=()
         return service
 
     def test_all_role_rating_pages_are_public_reads_in_any_location(self):
@@ -22,7 +22,7 @@ class MiningRatingMenuTests(unittest.TestCase):
                 self.assertEqual(replies,(bytes((0xb0,0x29,selector,0,0)),))
             service.locations.current.assert_not_called()
             self.assertEqual(service.arena.mock_calls,[])
-            self.assertEqual(service.market.mock_calls,[])
+            self.assertEqual([c.args[0] for c in service.market.ratings.call_args_list],[1,2,3])
 
     def test_malformed_rating_request_does_not_reach_admission(self):
         service=self.service()

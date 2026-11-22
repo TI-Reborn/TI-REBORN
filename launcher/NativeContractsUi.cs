@@ -40,7 +40,7 @@ internal sealed class NativeContractsUi : IDisposable
     }
     internal static void Install(IntPtr process,uint silver,string image)
     {
-        if(NativePasswordLimit.CompatibilityHash(File.ReadAllBytes(image))!=plan.RootElement.GetProperty("silver_sha256").GetString())
+        if(!SilverRegions.Matches(File.ReadAllBytes(image),"contracts"))
             throw new InvalidDataException("Unsupported native contracts window image.");
         int size=plan.RootElement.GetProperty("size").GetInt32();var memory=VirtualAllocEx(process,IntPtr.Zero,(nuint)size,0x3000,0x04);
         if(memory==IntPtr.Zero || memory.ToInt64()>uint.MaxValue-size)throw new IOException("Cannot allocate native contracts window.");

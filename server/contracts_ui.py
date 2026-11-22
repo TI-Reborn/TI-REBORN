@@ -45,6 +45,7 @@ def snapshot(service, session):
     leader = bool(party and party['leader'] == owner)
     city = bool(party and party['state'] == 'city')
     ready = bool(party and all(m['online'] and m['ready'] for m in members))
+    at_range = service.at_shooting_range(session)
     data = dict(schema=1, name=service.name(owner), server_time=service.clock(),
         party=dict(id=party['id'], revision=party['revision'], state=party['state'], members=members) if party else None,
         invitations=invitations, pets=pets, selected=selected, catalog=templates,
@@ -53,8 +54,10 @@ def snapshot(service, session):
                       reward=contract['template']['reward'], target=contract['target']) if contract else None,
         result=dict(name=json.loads(result[0])['name'], outcome=result[1], finished_at=result[2],
                     reward=json.loads(result[3]) if result[3] else None, paid=bool(result[4])) if result else None,
-        permissions=dict(create=not party and not busy, invite=leader and city and not frozen and not busy,
-            edit=city and not frozen and not busy, take=(not party or leader and city) and not frozen and not busy,
+        permissions=dict(create=not at_range and not party and not busy,
+            invite=not at_range and leader and city and not frozen and not busy,
+            edit=city and not frozen and not busy,
+            take=not at_range and (not party or leader and city) and not frozen and not busy,
             ready=bool(party and party['state'] in ('city','at_target') and not busy),
             depart=leader and city and frozen and ready and not busy,
             start=leader and bool(party and party['state']=='at_target') and frozen and ready and not busy,
@@ -136,8 +139,21 @@ def handle(router, token, request):
         if len(sessions)!=1: return dict(ok=False,error='Войдите персонажем в игру',code='not_authenticated')
         session=sessions[0]
         now=time.monotonic()
-        if now-getattr(session,'_contracts_ui_last',0)<.15:
+        action = request.get('action')
+        timer = '_contracts_ui_last'
+        if action == 'location_npcs':
+            timer = '_location_npcs_last'
+        elif action == 'ruth':
+            timer = '_ruth_ui_last'
+        if now-getattr(session,timer,0)<.15:
             return dict(ok=False,error='Подождите перед следующим действием',code='rate_limited')
-        session._contracts_ui_last=now
-        try: return dict(ok=True,state=execute(service,session,request))
+        setattr(session,timer,now)
+        try:
+            if action == 'location_npcs':
+                from .location_npc_ui import snapshot as location_npcs
+                return dict(ok=True,state=location_npcs(service.hub,session,request))
+            if action == 'ruth':
+                from .reservation_quest_ui import execute as ruth
+                return dict(ok=True,state=ruth(service.hub,session,request))
+            return dict(ok=True,state=execute(service,session,request))
         except (ValueError,UnicodeError) as error: return dict(ok=False,error=str(error))

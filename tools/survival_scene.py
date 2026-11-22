@@ -150,6 +150,8 @@ def prepare_survival(path, account, ticket, catalog, *, arena_map=None, seed=Non
             if not human or any(e.ability_id==22 for e in learned): rules.append((owner,actor_id,fields['0x8c446f'],learned))
     field = BattleField(arena_map.ground.width,arena_map.ground.height,actors,blocked=arena_map.blocked,step_cost=1,teams=teams,transparent_obstacles=arena_map.transparent_obstacles)
     field.battle_mode = mode
+    from tio.avatars import selections
+    field.avatar_ids = selections(path, account)
     field.scene_metadata = {'profile':'fixed_fixture'}
     if generated is not None:
         field.patrol_waypoints = generated.patrol
@@ -159,7 +161,14 @@ def prepare_survival(path, account, ticket, catalog, *, arena_map=None, seed=Non
     from tio.combat import Combat
     field.combat=Combat(field,weapons)
     for actor_id,inventory,human,persistent,p in combat_inventories:
-        field.combat.register(actor_id,inventory,human=human,path=path if persistent else None,account=account,pet_packet=p)
+        from tio.passive_stats import _project_passives
+        source_id=actor_sources[actor_id]
+        raw=next(bytes(row[2]) for row in rows if row[0]==source_id)
+        unpowered=_project_passives(ProficiencyRules().normalize(raw,human),human,sources[source_id][3],catalog,inventory=inventory)
+        base_health=decode_pet_info(unpowered,human_equipment=human).fields['0x8c4a07']
+        health_bonus=max((r.number('value') or 0 for r in catalog.records if r.ability_id==1),default=0)
+        field.combat.register(actor_id,inventory,human=human,path=path if persistent else None,account=account,pet_packet=p,
+            implant_health=(base_health,health_bonus))
         field._actors[actor_id]=replace(field.actor(actor_id),action_points=field.combat.turn_budget(actor_id,field._turn_points[actor_id]))
     from tio.battle_doors import BattleDoors
     permissions={}

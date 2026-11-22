@@ -1,8 +1,11 @@
 """Bounded TLS bootstrap and replaceable credentials for the shared backend.
 
-Only login accepts a bridge preface. Its port is used with a fixed loopback
-address; no client-provided address or IP replaces the actual network peer.
+The bridge port is used with a fixed loopback address. The actual network
+peer and handoff tokens remain authoritative.
 """
+import errno
+import logging
+import socket
 import ssl
 import struct
 import threading
@@ -20,6 +23,70 @@ BRIDGE_PREFACE_SIZE = 8
 # Preface flag bits chosen in the launcher; launcher/TlsBridge.cs sets them.
 LANGUAGE_FLAG = 1
 INTERFACE_FLAG = 2
+TRACE_VERSION = 4
+LOG = logging.getLogger('tio.server.tls')
+
+
+class TracedTLSSocket(ssl.SSLSocket):
+    """Record the first terminal I/O observation before the socket is closed."""
+
+    trace_id: str | None = None
+    trace_account: str | None = None
+
+    def start_trace(self, trace_id: str, kind: str) -> None:
+        self._trace_lock = threading.Lock()
+        self._trace_ended = False
+        self._trace_kind = kind
+        self.trace_id = trace_id
+
+    def _record_end(self, operation: str, event: str, error: OSError | None = None) -> None:
+        if self.trace_id is None:
+            return
+        with self._trace_lock:
+            if self._trace_ended:
+                return
+            self._trace_ended = True
+            LOG.info('tls_relay_end trace_id=%s kind=%s operation=%s event=%s '
+                     'account=%r error=%s errno=%s',
+                     self.trace_id, self._trace_kind, operation, event, self.trace_account,
+                     type(error).__name__ if error is not None else '-',
+                     error.errno if error is not None else '-')
+
+    def record_error(self, operation: str, error: OSError) -> None:
+        if isinstance(error, (ssl.SSLEOFError, ssl.SSLZeroReturnError)):
+            event = 'eof'
+        elif isinstance(error, ConnectionResetError) or error.errno == errno.ECONNRESET:
+            event = 'reset'
+        else:
+            event = 'timeout' if isinstance(error, TimeoutError) else 'error'
+        self._record_end(operation, event, error)
+
+    def recv(self, buflen: int = 1024, flags: int = 0) -> bytes:
+        try:
+            data = super().recv(buflen, flags)
+        except OSError as error:
+            # A timeout without errno can be the game loop's ordinary poll.
+            if not isinstance(error, socket.timeout) or error.errno is not None:
+                self.record_error('read', error)
+            raise
+        if buflen and not data:
+            self._record_end('read', 'eof')
+        return data
+
+    def sendall(self, data: bytes, flags: int = 0) -> None:
+        try:
+            super().sendall(data, flags)
+        except OSError as error:
+            self.record_error('write', error)
+            raise
+
+    def shutdown(self, how: int) -> None:
+        self._record_end('shutdown', 'local_close')
+        super().shutdown(how)
+
+    def close(self) -> None:
+        self._record_end('close', 'local_close')
+        super().close()
 
 
 def bridge_preface(port):
@@ -72,11 +139,11 @@ def read_bridge_preface(connection, deadline, launch_manifests=None):
             parse_constant=lambda _: (_ for _ in ()).throw(ValueError('Invalid number')))
         if not isinstance(request,dict): raise ValueError('Invalid control body')
         return ContractsControl(token,request)
-    if magic != BRIDGE_MAGIC or version not in (1,2,3) or flags & ~(LANGUAGE_FLAG|INTERFACE_FLAG):
+    if magic != BRIDGE_MAGIC or version not in (1, 2, 3, TRACE_VERSION) or flags & ~(LANGUAGE_FLAG|INTERFACE_FLAG):
         raise ValueError('Invalid TLS bridge preface')
-    if launch_manifests is not None and version not in (2,3):
+    if launch_manifests is not None and version == 1:
         raise ValueError('Current launcher update verification is required')
-    if version in (2,3):
+    if version >= 2:
         identity=bytearray()
         while len(identity)<38:
             remaining=deadline-time.monotonic()
@@ -91,7 +158,8 @@ def read_bridge_preface(connection, deadline, launch_manifests=None):
     result=BridgePort(port)
     result.language='english' if flags&LANGUAGE_FLAG else 'russian'
     result.interface=ORIGINAL if flags&INTERFACE_FLAG else NEW
-    result.control_token=_exact(connection,32,deadline) if version==3 else None
+    result.control_token = _exact(connection, 32, deadline) if version >= 3 else None
+    result.trace_id = _exact(connection, 16, deadline).hex() if version == TRACE_VERSION else None
     return result
 
 
@@ -132,6 +200,7 @@ def build_context(config):
         return tuple((s.st_dev,s.st_ino,s.st_size,s.st_mtime_ns) for s in (cert_path.stat(),key_path.stat()))
     before=stamps()
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.sslsocket_class = TracedTLSSocket
     context.minimum_version = ssl.TLSVersion.TLSv1_2
     context.options |= ssl.OP_NO_COMPRESSION
     context.load_cert_chain(str(cert_path), str(key_path))

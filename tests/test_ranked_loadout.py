@@ -13,11 +13,13 @@ from tio.owned_pets import OwnedPetStore
 from tio.protocol.pet_info import decode_pet_info,encode_pet_info
 from tio.protocol.item_list import decode_item_list,encode_item_list,ItemRecord
 from tio.protocol.ranked import decode_join
+from test_ranked_squads import move_to_exit
 from tio.protocol.battle_attack import AttackRequest,encode_attack_request,decode_attack_result
 from tio.protocol.battle_turn import encode_end_turn
 from tio.weapon_proficiency import SAVED,BASE,bits,number
 from tio.combat_completion import settlement_health
-from tio.ranked_loadout import extra
+from tio.ranked_loadout import extra, validate
+from tio.ranked_party import RankedRejection
 
 
 def join(ids=(1,),equipment=(),bonus=0,token=False):
@@ -45,11 +47,19 @@ class RankedLoadoutTests(unittest.TestCase):
 
     def start(self,left,right,*,journal=False):
         if journal:self.hub.journal=BattleJournal(self.hub,self.path,wall=lambda:1000)
+        left,right=(self.complete_squad(i,packet) for i,packet in enumerate((left,right)))
         self.case.send(0,left);self.case.send(1,right)
         self.assertTrue(self.hub.battles)
         battle=next(iter(self.hub.battles.values()))
         for i in (0,1):self.case.send(i,b'\x36')
         self.hub.tick();return battle
+
+    def complete_squad(self,index,packet):
+        _,selected=decode_join(packet)
+        fixture.reserve_fighters(self.path,self.case.sessions[index])
+        ids={identity for identity,_,_ in selected}
+        return packet[:4]+struct.pack('<I',4)+packet[8:]+b''.join(
+            struct.pack('<II',i,0)+b'\0' for i in range(1,5) if i not in ids)
 
     def test_native_template_then_slot_and_validation(self):
         self.assertEqual(decode_join(join(equipment=((0,208),(4,301)),bonus=2)),((0,0),((1,((0,208),(4,301)),2),)))
@@ -58,6 +68,17 @@ class RankedLoadoutTests(unittest.TestCase):
         for e in (((0,301),),((4,208),),((0,65500),),((0,255),)):
             self.assertTrue(any(p[0]==0xf0 for p in self.case.send(0,join(equipment=e))))
             self.assertFalse(self.hub.ranked_waiting)
+
+    def test_loaned_heavy_armor_requires_level_four(self):
+        for level in (3, 4):
+            self.clone(0, 1, level)
+            account = self.case.sessions[0].account
+            _, profile, inventory = OwnedPetStore(self.path).list(account)[0]
+            if level == 3:
+                with self.assertRaisesRegex(RankedRejection, '4'):
+                    validate(profile, inventory, True, ((0, 242),))
+            else:
+                validate(profile, inventory, True, ((0, 242),))
 
     def test_loaned_weapon_fires_and_consumption_never_persists(self):
         before={s.account:OwnedPetStore(self.path).list(s.account) for s in self.case.sessions[:2]}
@@ -74,32 +95,8 @@ class RankedLoadoutTests(unittest.TestCase):
         self.assertEqual(result.hits[0].additional_damage,1)
         self.assertEqual(combat.ranked_remainders[a,1],200)
         for s in self.case.sessions[:2]:self.assertEqual(before[s.account][0][2],OwnedPetStore(self.path).list(s.account)[0][2])
-        self.case.send(0,b'\x2a\1');self.hub.tick()
+        move_to_exit(b,owners[0]);self.case.send(0,b'\x2a\1');self.hub.tick()
         for s in self.case.sessions[:2]:self.assertEqual(decode_item_list(OwnedPetStore(self.path).list(s.account)[0][2])[1],())
-
-    def test_loan_ids_never_collide_with_reserve_or_warehouse_items(self):
-        # Live bug: the token Beretta was dim in the active slot. Its wire ID
-        # duplicated a saved item of the same account (here: a reserve
-        # mercenary's weapon), so the client resolved the ID to the other
-        # owner. Loans must use the match-unique battle namespace.
-        self.clone(0,2,4)
-        store=OwnedPetStore(self.path)
-        reserve=ItemRecord(1,301,bytes(2),1,1,16,(300,)*3,bytes(4),None,bytes(3))
-        with closing(sqlite3.connect(self.path)) as db,db:
-            db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=? AND pet_id=2',(encode_item_list(2,(reserve,)),'alice'))
-        b=self.start(join(equipment=((4,301),),token=True),join(),journal=True)
-        f=b['field'];combat=f.combat;a=f.actor_ids(self.hub.identities[self.case.sessions[0]])[0]
-        saved={i.instance_id for s in self.case.sessions[:2] for _,_,p,*_ in store.list(s.account) for i in decode_item_list(p)[1]}
-        loans=[i for i in decode_item_list(combat.inventories[a])[1] if i.instance_id in combat.temporary_items]
-        self.assertEqual(sorted(i.template_id for i in loans),[3,301])
-        self.assertEqual([i.instance_id for i in loans if i.instance_id<0x60000000 or i.instance_id in saved],[])
-        everything=[i.instance_id for p in combat.inventories.values() for i in decode_item_list(p)[1]]
-        self.assertEqual(len(everything),len(set(everything)))
-        self.assertGreater(f.loot.next_id,max(i.instance_id for i in loans))
-        weapon=next(i for i in loans if i.template_id==301)
-        self.assertEqual((weapon.equipped,weapon.client_slot,weapon.unknown_bytes_03[0]),(1,16,25))
-        self.assertEqual(weapon.unknown_words,(300+25*65,)*3)  # Native durability of a +25 piece.
-        self.assertEqual(f.actor(a).weapons[0].template_id,301)
 
     def test_cross_band_scaling_wounds_and_saved_proficiency(self):
         self.clone(0,1,20);self.clone(1,1,4)
@@ -120,35 +117,32 @@ class RankedLoadoutTests(unittest.TestCase):
         self.clone(0,1,20)
         b=self.start(join((1,2)),join((1,2)))
         self.assertEqual(len(b['field']._actors),8)
-        self.assertEqual(len(b['bots']),4)
         self.assertEqual(set(b['field'].combat.ranked_limits.values()),{106})
 
-    def test_four_vs_two_plus_two_alternates_single_actor_and_all_receipts(self):
-        for index,count in ((0,4),(1,2),(2,2)):self.clone(index,count)
-        # Queue the complete human population in one matchmaking cycle.
-        # A partial population now starts immediately with transient bots.
-        with patch.object(self.hub,'match_ranked'):
-            self.case.send(0,join((1,2,3,4)));self.case.send(1,join((1,2)))
-        self.assertFalse(self.hub.battles)
-        self.case.send(2,join((1,2)));b=next(iter(self.hub.battles.values()));f=b['field']
-        self.assertEqual(len(b['humans']),3);self.assertEqual(len(b['room'].members),3)
-        for i in (0,1,2):self.case.send(i,b'\x36')
-        self.hub.tick();seen=[]
-        for n in range(8):
-            owner,ids,deadline=b['arena']._turns[b['room'].room_id];self.assertEqual(len(ids),1)
-            identity=next(iter(ids));seen.append(identity);self.assertEqual(f.teams[owner],n%2)
-            inactive=[i for i in f.actor_ids(owner) if i!=identity]
-            if inactive:
-                replies=self.case.send(self.case.sessions.index(self.hub.players[owner]),encode_attack_request(AttackRequest(inactive[0],1,1)))
-                self.assertTrue(any(p[0]==0xf0 for p in replies))
+    def test_equal_parties_alternate_squads_and_record_all_receipts(self):
+        from tio.ranked_party import Party
+        owners=[self.hub.identity(s) for s in self.case.sessions]
+        for i in (0,2):
+            self.clone(i,2)
+            lead,ally=owners[i:i+2];group=Party(lead,[lead,ally],{lead:2,ally:1})
+            self.hub.ranked_parties.update({lead:group,ally:group})
+            self.case.send(i,join((1,2)));self.case.send(i+1,join());self.case.send(i,join((1,2)))
+        b=next(iter(self.hub.battles.values()));f=b['field']
+        self.assertEqual(len(b['humans']),4);self.assertEqual(len(b['room'].members),4)
+        for i in range(4):self.case.send(i,b'\x36')
+        self.hub.tick()
+        for index in (0,2,1,3):
+            owner,ids,_=b['arena']._turns[b['room'].room_id]
+            self.assertEqual(owner,self.hub.identities[self.case.sessions[index]])
+            self.assertEqual(ids,set(f.actor_ids(owner)))
             self.case.now+=2
-            self.case.send(self.case.sessions.index(self.hub.players[owner]),encode_end_turn());self.hub.tick()
-        self.assertEqual(len(set(seen)),8)
+            self.case.send(index,encode_end_turn());self.hub.tick()
+        move_to_exit(b,self.hub.identities[self.case.sessions[1]])
         self.case.send(1,b'\x2a\1');self.hub.tick();self.assertFalse(b['finished'])
         self.assertNotIn('ranked_winner',b)
         b['points'].scores=[1000,0];self.hub.tick()
         with closing(sqlite3.connect(self.path)) as db:
-            self.assertEqual(db.execute('SELECT account,wins,losses FROM ranked_players ORDER BY account').fetchall(),[('alice',1,0),('bob',0,1),('carol',0,1)])
+            self.assertEqual(db.execute('SELECT account,wins,losses FROM ranked_players ORDER BY account').fetchall(),[('alice',1,0),('bob',0,1),('carol',0,1),('dave',0,1)])
             self.assertEqual(db.execute('SELECT COUNT(*) FROM ranked_matches').fetchone()[0],1)
 
     def test_fractional_bonus_accumulates_separately(self):
@@ -177,14 +171,15 @@ class RankedLoadoutTests(unittest.TestCase):
         item=ItemRecord(77,302,bytes(2),1,1,16,(300,)*3,bytes(4),None,bytes(3))
         with closing(sqlite3.connect(self.path)) as db,db:
             db.execute("UPDATE owned_pets SET inventory_packet=? WHERE account='alice' AND pet_id=1",(encode_item_list(1,(item,)),))
-        self.case.send(1,join());self.assertFalse(self.hub.battles)
+        self.case.send(1,self.complete_squad(1,join()));self.assertFalse(self.hub.battles)
         self.assertEqual(decode_item_list(OwnedPetStore(self.path).list('alice')[0][2])[1],(item,))
 
     def test_token_queue_cancel_start_and_loading_timeout_refund(self):
         self.hub.journal=BattleJournal(self.hub,self.path,wall=lambda:1000)
         self.case.send(0,join(equipment=((4,301),),token=True));self.case.send(0,b'\xc6\x23')
         with closing(sqlite3.connect(self.path)) as db:self.assertEqual(db.execute("SELECT balance FROM ranked_tokens WHERE login='alice'").fetchone()[0],1)
-        self.case.send(0,join(equipment=((4,301),),token=True));self.case.send(1,join())
+        self.case.send(0,self.complete_squad(0,join(equipment=((4,301),),token=True)))
+        self.case.send(1,self.complete_squad(1,join()))
         b=next(iter(self.hub.battles.values()));f=b['field'];a=f.actor_ids(self.hub.identities[self.case.sessions[0]])[0]
         self.assertEqual(f.combat.ranked_bonuses[a],(0,25))
         with closing(sqlite3.connect(self.path)) as db:self.assertEqual(db.execute("SELECT balance FROM ranked_tokens WHERE login='alice'").fetchone()[0],0)

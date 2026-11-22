@@ -14,7 +14,7 @@ from tio.onboarding import prepare
 from tio.protocol import securities as wire
 from tio.protocol.asset_count import decode_asset_count
 from tio.protocol.character_create import CharacterCreateRequest
-from tio.wallets import WalletStore
+from tio.wallets import NEW_CHARACTER_CREDITS, WalletStore
 
 SALE_DAY = int(datetime(2026, 10, 8, 12, tzinfo=timezone.utc).timestamp())
 REDEMPTION_DAY = int(datetime(2026, 10, 25, 12, tzinfo=timezone.utc).timestamp())
@@ -33,7 +33,8 @@ class SecuritiesServiceTests(unittest.TestCase):
                               private={}, account_owners={})
         router = SimpleNamespace(team_arena=hub, lock=threading.RLock(), active_accounts={})
         for owner, name in (('alice-login', 'Alice'), ('bobby-login', 'Bobby')):
-            characters.create(owner, CharacterCreateRequest(name.encode(), 0, (1, 0, 0, 0))); prepare(self.path, owner)
+            characters.create(owner, CharacterCreateRequest(name.encode(), 0, (1, 0, 0, 0)))
+            prepare(self.path, owner)
             session = Session(); session.__dict__.update(database=self.path, account=owner, owned_pet_probe=True, probe_character_id=1,
                 arena=SimpleNamespace(_fields={}, rooms=SimpleNamespace(snapshot=lambda: ())),
                 survival=SimpleNamespace(searching=lambda actor: False), router=router,
@@ -71,15 +72,15 @@ class SecuritiesServiceTests(unittest.TestCase):
     def test_stock_trades_use_the_echoed_quote_and_update_native_assets(self):
         packet = b'\xc1\x07' + struct.pack('<II', 100, 3)
         assets = decode_asset_count(self.find(self.send('alice-login', packet), b'\xc8\x39'))
-        self.assertEqual((assets.credits, assets.spectra_stock), (2700, 3))
+        self.assertEqual((assets.credits, assets.spectra_stock), (NEW_CHARACTER_CREDITS - 300, 3))
         self.now += 86400  # One UTC day raises the shared quote to 101.
         stale = self.send('bobby-login', packet)
         self.assertEqual(stale[0][:1], b'\xf0')
         self.assertEqual(self.find(stale, b'\xc1\x06'), wire.encode_pyramid_config(wire.PyramidConfig(101, 101, 101)))
-        self.assertEqual(self.credits('bobby-login'), 3000)
+        self.assertEqual(self.credits('bobby-login'), NEW_CHARACTER_CREDITS)
         sold = self.send('alice-login', b'\xc1\x08' + struct.pack('<II', 101, 3))
         self.assertEqual(decode_asset_count(self.find(sold, b'\xc8\x39')).spectra_stock, 0)
-        self.assertEqual(self.credits('alice-login'), 3003)
+        self.assertEqual(self.credits('alice-login'), NEW_CHARACTER_CREDITS + 3)
 
     def test_bond_purchase_and_redemption_follow_the_monthly_windows(self):
         bought = self.send('alice-login', b'\xc1\x09' + struct.pack('<I', 2))
@@ -90,8 +91,8 @@ class SecuritiesServiceTests(unittest.TestCase):
         self.assertEqual(self.send('bobby-login', b'\xc1\x09' + struct.pack('<I', 1))[0][:1], b'\xf0')
         redeemed = self.send('alice-login', b'\xc1\x03' + struct.pack('<II', 0, 2))
         self.assertEqual(decode_asset_count(self.find(redeemed, b'\xc8\x39')).spectra_bonds, 0)
-        self.assertEqual(self.credits('alice-login'), 3000)
-        self.assertEqual(self.credits('bobby-login'), 3000)
+        self.assertEqual(self.credits('alice-login'), NEW_CHARACTER_CREDITS)
+        self.assertEqual(self.credits('bobby-login'), NEW_CHARACTER_CREDITS)
 
     def test_redeeming_for_another_holder_is_refused(self):
         self.send('alice-login', b'\xc1\x09' + struct.pack('<I', 1)); self.now = REDEMPTION_DAY
@@ -103,7 +104,7 @@ class SecuritiesServiceTests(unittest.TestCase):
     def test_trades_require_an_idle_city_but_queries_do_not(self):
         session = self.sessions['alice-login']; session.survival.searching = lambda actor: True
         self.assertEqual(self.send('alice-login', b'\xc1\x09' + struct.pack('<I', 1))[0][:1], b'\xf0')
-        self.assertEqual(self.credits('alice-login'), 3000)
+        self.assertEqual(self.credits('alice-login'), NEW_CHARACTER_CREDITS)
         self.assertTrue(self.find(self.send('alice-login', b'\xc1\x0c'), b'\xc1\x0d'))
 
     def test_histories_project_the_recorded_quotes(self):
@@ -118,7 +119,7 @@ class SecuritiesServiceTests(unittest.TestCase):
     def test_malformed_requests_get_an_error_without_mutation(self):
         self.assertEqual(self.send('alice-login', b'\xc1\x09\x01')[0][:1], b'\xf0')
         self.assertEqual(self.send('alice-login', b'\xc1\x04')[0][:1], b'\xf0')
-        self.assertEqual(self.credits('alice-login'), 3000)
+        self.assertEqual(self.credits('alice-login'), NEW_CHARACTER_CREDITS)
 
 
 if __name__ == '__main__':

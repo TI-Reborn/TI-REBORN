@@ -100,6 +100,41 @@ class ClanTests(unittest.TestCase):
         self.assertEqual(self.store.items('alice',1),())
         self.assertEqual(sum(i.count for a in ('alice','bob') for i in decode_item_list(self.pets.inventory(a,1))[1]),20)
 
+    def test_warehouse_log_is_private_and_keeps_name_and_template_after_withdrawal(self):
+        from server.social_commands import command
+        from tio.db_transaction import transaction
+
+        def read(account, text='!clan log'):
+            with transaction(self.path) as db:
+                packets=command(db,SimpleNamespace(account=account),text,city_idle=False)
+                self.assertTrue(all(p[:1]==b'\x22' and p[5]==4 for p in packets))
+                return '\n'.join(p[p.index(b'\0',6)+1:-2].decode('utf-16le') for p in packets)
+
+        _,stock=self.exchange('alice',deposits=((1001,4),))
+        key=stock[0].instance_id
+        self.rights('bob',DEFAULT_RIGHTS|WITHDRAW_WAREHOUSE)
+        self.exchange('bob',withdrawals=((key,4),))
+        self.exchange('bob',2,deposits=((0xffff0001,100),))
+        with transaction(self.path) as db:
+            db.execute("UPDATE characters SET name=? WHERE account='bob'",(b'Bobby',))
+            record(db,self.cid,'alice','items','1:[(12345, 2)]:[]')
+        log=read('bob')
+        from tio.item_catalog import items_root
+        item_name=items_root().find(f"item[@id='{self.item.template_id}']").get('name')
+        self.assertIn('Bob забрал',log)
+        self.assertIn(f'Alice положил {item_name} ×4',log)
+        self.assertIn('#12345 ×2',log)
+        self.assertNotIn('Bobby',log)
+        self.assertNotIn('100 кредит',log)
+        with transaction(self.path) as db:
+            for _ in range(5):
+                record(db,self.cid,'alice','items','1:[(6789, 1)]:[]')
+        self.assertIn('!clan log 2',read('alice'))
+        self.assertIn('Bob забрал',read('alice','!clan log 2'))
+        with self.assertRaises(ClanRejected):read('carol')
+        self.rights('bob',VIEW_SAFE)
+        with self.assertRaises(ClanRejected):read('bob')
+
     def test_treasury_native_arrays_rights_and_conservation(self):
         self.exchange('bob',2,deposits=((0xffff0001,500),(0xffff0002,100)))
         self.assertEqual((self.store.info('alice')['credits'],self.store.info('alice')['gold']),(500,100))
@@ -167,6 +202,17 @@ class ClanTests(unittest.TestCase):
         money=[i for i in decode_item_list(projection)[1] if i.instance_id in MONEY_IDS]
         self.assertEqual([(i.template_id,i.count) for i in money],[(1,9950),(2,10000)])
         self.assertFalse(any(i.instance_id in MONEY_IDS for i in decode_item_list(self.pets.inventory('bob',1))[1]))
+
+    def test_repair_points_use_native_hidden_currency_type_in_both_catalogues(self):
+        from xml.etree import ElementTree as ET
+        from tio.item_presentation import NEW, ORIGINAL, items_xml
+
+        for interface in (NEW, ORIGINAL):
+            with self.subTest(interface=interface):
+                root = ET.fromstring(items_xml(interface))
+                item = root.find(f"item[@id='{REPAIR_TEMPLATE}']/value[@key='itype']")
+                self.assertIsNotNone(item)
+                self.assertEqual(item.get('val'), 'repairpoints')
 
     def test_clan_chat_never_reaches_other_account(self):
         from server.presence import Presence
@@ -239,6 +285,53 @@ class ClanTests(unittest.TestCase):
         self.rights('bob',DEFAULT_RIGHTS|WITHDRAW_UPGRADES)
         self.exchange('bob',2,withdrawals=((key,1),))
         self.assertEqual(self.store.items('alice',2)[0].count,1)
+
+    def test_le_kit_and_its_points_cannot_enter_clan_storage(self):
+        from tio.db_transaction import transaction
+        from tio.warehouse_completion import stash
+
+        kit = replace(self.item, template_id=128, unknown_words=(1000, 1000, 1000))
+        personal = encode_item_list(1, (kit,))
+        with transaction(self.path) as db:
+            db.execute('UPDATE owned_pets SET inventory_packet=? WHERE account=?', (personal, 'alice'))
+            stash(db, 'alice', (replace(kit, instance_id=8500),), origin='test-clan-repair')
+        for kind in (1, 2):
+            with self.subTest(kind=kind), self.assertRaisesRegex(ClanRejected, 'Repair Kit LE'):
+                self.exchange('alice', kind, deposits=((kit.instance_id, 1),))
+        with self.assertRaisesRegex(ValueError, 'Недостаточно ремонтных очков'):
+            self.exchange('alice', 2, deposits=((0xffff0073, 1),))
+        self.assertEqual(self.store.info('bob')['repair'], 0)
+        self.assertEqual(WarehouseStore(self.path).items('alice')[0].unknown_words, (1000, 1000, 1000))
+        with closing(connect(self.path)) as db:
+            self.assertEqual(db.execute('SELECT inventory_packet FROM owned_pets WHERE account=?',
+                                        ('alice',)).fetchone()[0], personal)
+
+    def test_shared_repair_debits_personal_kits_and_updates_clanmates_item(self):
+        from tio.db_transaction import transaction
+        from tio.warehouse_completion import stash
+
+        repair_points = 0xffff0073
+        kit = replace(self.item, instance_id=8500, template_id=17, unknown_u32_01=2,
+                      unknown_words=(600, 600, 600))
+        coat = replace(self.item, template_id=222, unknown_u32_01=1, unknown_words=(100, 180, 180))
+        with transaction(self.path) as db:
+            stash(db, 'alice', (kit,), origin='test-clan-repair')
+            db.execute("UPDATE owned_pets SET inventory_packet=? WHERE account='bob'", (encode_item_list(1, (coat,)),))
+        _, shelf = self.exchange('bob', deposits=((coat.instance_id, 1),))
+        target = shelf[0].instance_id
+        self.exchange('alice', 2, deposits=((repair_points, 625),))
+        self.assertEqual(sorted(i.unknown_words[0] for i in WarehouseStore(self.path).items('alice')), [575])
+        self.assertEqual(self.store.info('bob')['repair'], 625)
+
+        with self.assertRaises(ClanRejected):
+            self.store.repair_warehouse_item('bob', 1, target)
+        self.rights('bob', DEFAULT_RIGHTS | WITHDRAW_REPAIR)
+        self.store.repair_warehouse_item('bob', 1, target)
+        self.assertEqual(self.store.items('alice', 1)[0].unknown_words, (178, 178, 180))
+        self.assertEqual(self.store.info('alice')['repair'], 547)
+        with self.assertRaises(ValueError):
+            self.store.repair_warehouse_item('bob', 1, target)
+        self.assertEqual(self.store.info('alice')['repair'], 547)
 
 
 if __name__=='__main__':unittest.main()

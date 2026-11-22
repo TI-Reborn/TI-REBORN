@@ -131,5 +131,32 @@ class SharedWarehouseTests(unittest.TestCase):
             with self.assertRaises(ValueError):self.store.exchange(stranger,1,withdrawals=((100,1),))
             self.assertEqual(self.snapshot(),before)
 
+    def test_third_expansion_accepts_49th_slot_and_survives_reopen_in_another_town(self):
+        from wallet_fixture import fund_wallet
+        from tio.services import purchase
+        from test_services import request
+        fund_wallet(self.path, 'alice', credits=100_000, gold=0)
+        for number in (1, 2):
+            purchase(self.path, 'alice', request(level=number))
+        gun = replace(self.kit, template_id=301, unknown_u32_01=1,
+                      unknown_words=(300,) * 3)
+        self.insert(tuple(replace(gun, instance_id=1000 + i) for i in range(48)), 2)
+        self.move(3)
+        before = self.snapshot()
+        with self.assertRaisesRegex(ValueError, 'Недостаточно места'):
+            self.store.exchange('alice', 1, deposits=((100, 1),))
+        self.assertEqual(self.snapshot(), before)
+        purchase(self.path, 'alice', request(level=3))
+        self.move(13)
+        _, stored = self.store.exchange('alice', 1, deposits=((100, 1),))
+        self.assertEqual(len(stored), 49)
+        self.move(18)
+        reopened = stock.WarehouseCompletionStore(self.path)
+        self.assertEqual(reopened.items('alice'), stored)
+        with transaction(self.path) as db:
+            status = stock.status(db, 'alice')
+            self.assertEqual((status['capacity'], status['used']), (64, 49))
+            self.assertEqual(stock.capacity(db, 'bob'), 32)
+
 
 if __name__=='__main__':unittest.main()

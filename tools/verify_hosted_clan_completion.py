@@ -124,7 +124,7 @@ def clan_page(packet,kind,selector):
     r=Reader(packet);require(r.read(3)==bytes((0x83,kind,selector)),'Wrong clan page');count=r.u32();require(count<=100,'Clan page exceeds100')
     rows=[]
     for _ in range(count):
-        identity,name,leader=r.u32(),cstring(r),cstring(r);members,capacity,level=r.u16(),r.u16(),r.u8()
+        identity,name,leader=r.u32(),cstring(r),cstring(r);capacity,members,level=r.u16(),r.u16(),r.u8()
         crest,influence,rating,alliance,unknown3,unknown4=(r.u32() for _ in range(6))
         require(identity>0 and name and members<=capacity and not unknown3 and not unknown4,'Invalid public clan row')
         rows.append(dict(id=identity,crest=crest,influence=influence,rating=rating,alliance_crest=alliance))

@@ -78,6 +78,29 @@ class WarehouseLatencyTests(unittest.TestCase):
         self.assertEqual(decode_item_list(bag)[1], ())
         self.assertEqual([item.instance_id for item in decode_warehouse_list(stock)[3]], [300])
 
+    def test_passive_marked_stock_does_not_replace_the_warehouse_with_an_empty_list(self):
+        from tio.protocol.item_marks import metadata, project_warehouse
+        from tio.protocol.warehouse import encode_private_warehouse_snapshot
+
+        self.transfer()
+        warehouse_capacity.opt_in(self.session, OPT_IN)
+        warehouse_capacity.query(self.session, b'\x69\0')
+        owner = self.session.account
+        marked = replace(self.item, unknown_bytes_02=b'\0\0\1\0')
+        with transaction(self.path) as db:
+            db.execute('UPDATE warehouse_items SET item_packet=? WHERE account=?',
+                       (encode_item_list(0, (marked,)), owner))
+        packet, = encode_private_warehouse_snapshot((marked,))
+        projected = project_warehouse(packet, {300: ('Owner', 60)})
+        self.assertEqual(metadata(projected), {300: ('Owner', 60)})
+
+        cipher = InitialCipher('S2C')
+        frame = warehouse_capacity.frames(self.session, projected, cipher)
+        replies = InitialFrameReader(InitialCipher('S2C')).feed(frame)
+        stock = next(p for p in replies if p[:1]==b'\x6a')
+        self.assertEqual([item.instance_id for item in decode_warehouse_list(stock)[3]], [300])
+        self.assertTrue(warehouse_capacity.state(self.session).enabled)
+
     def test_own_transfer_does_not_trigger_duplicate_full_inventory_push(self):
         refresh_inventory(self.session, force=True)
         self.transfer()

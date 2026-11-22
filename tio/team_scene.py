@@ -138,7 +138,8 @@ def prepare(seats, mode, *, seed=None, ranked=False, profile='reservation',arena
         _,items,flag=decode_item_list(old.inventories[local])
         inventory=encode_item_list(identity,items,flag)
         field.combat.register(identity,inventory,human=old.human[local],
-            path=None if bot else path,account=account,pet_packet=old.proficiencies[local])
+            path=None if bot else path,account=account,pet_packet=old.proficiencies[local],
+            implant_health=(old.item_effects['implants'][local]['base'],old.item_effects['implants'][local]['health_bonus']))
         field.combat.storage_ids[identity]=local
         for name in ('miner_defense','dog_bonuses','weapon_accuracy_bonuses','human_critical_bonuses','weight_capacities','display_unarmored_bonuses','learned','skill_lists'):
             if local in getattr(old,name):getattr(field.combat,name)[identity]=getattr(old,name)[local]

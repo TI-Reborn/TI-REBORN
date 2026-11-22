@@ -187,7 +187,7 @@ disassembly 0x87dafc, referenced UTF-16 strings`. Их serializers не реал
 | Direction | Opcode | Name / subsystem | Consumer | Fields established in this cycle | Response / side effect | Notes |
 |---|---|---|---|---|---|---|
 | Local transport event | `00` | RECV_EventConnectResult | `0x87c984` | u32 read | manipulates `0xac48e0`, opens auth UI on a branch | **Не считать S2C wire opcode** |
-| Local transport event | `01` | RECV_EventDisconnected | `0x87cd9c` | u32 read | clears `0xac48e0`, error/UI branches | **Не считать C2S challenge request** |
+| S2C / local transport event | `01` | RECV_EventDisconnected | `0x87cd9c` | u32 reason | clears `0xac48e0`, error/UI branches | `01 55 50 47 44` сообщает об обновлении. C2S challenge reply использует собственный формат. |
 | S2C application | `04` | RECV_LSLoginResult / login | `0x87d00c` | leading u8 status; 0 normal branch, 0x12 separate branch | status 0 calls `0x87c76c` (builder starts `05`) | remaining error-specific fields UNKNOWN; requires full review |
 | S2C application | `06` | RECV_LSServerList / login | `0x87d1cc` | UNKNOWN; preserved original code | list UI details not reconstructed | no speculative count/record codec |
 | S2C application | `08` | RECV_LSServerLoginResult / login | `0x87d400` | UNKNOWN; preserved original code | handoff details UNKNOWN | no endpoint/token assumptions |

@@ -32,6 +32,18 @@ static class GameInterfaceSelfTest
             var (expected, replacement) = NativeInterfaceMode.Patch();
             Check(expected.Length == replacement.Length && expected[0] == 0 && replacement[0] == 1, "Native patch selects the original layout");
             Check(expected.AsSpan(1).SequenceEqual(replacement.AsSpan(1)), "Native patch changes only the mode flag");
+
+            var hd = NativeHdMapTextures.Plan;
+            Check(hd.CallSite == 0x6b12f9 && hd.CallSiteBytes == "e8867de0ff", "HD maps replace the pinned LoadFromFile call");
+            Check(hd.DimensionsSite == 0x6b133a && hd.DimensionsSiteBytes == "e8d1edf5ff" &&
+                hd.DimensionsOffset == 0x200, "HD maps wrap the pinned texture creation call");
+            const uint allocation = 0x20000000;
+            byte[] code = NativeHdMapTextures.Build(allocation);
+            Check(hd.Relocations.Select(r => r.Target).SequenceEqual(new uint[] { 0x4b9084, 0x610110 }) &&
+                hd.Relocations.All(r => allocation + (uint)r.Offset + 4 + (uint)BitConverter.ToInt32(code, r.Offset) == r.Target),
+                "HD map adapter calls the original loader and texture creator");
+            Check(NativeHdMapTextures.Call(hd.CallSite, allocation).SequenceEqual(new byte[] { 0xe8, 0x02, 0xed, 0x94, 0x1f }), "HD map hook calls the adapter");
+            Check(!NativeHdMapTextures.Apply(IntPtr.Zero, 0x400000, GameInterface.Original), "Original interface keeps native map textures");
             File.WriteAllText(report, JsonSerializer.Serialize(new { passed = true, checks }));
         }
         catch (Exception error) { File.WriteAllText(report, JsonSerializer.Serialize(new { passed = false, error = error.ToString(), checks })); Environment.ExitCode = 1; }

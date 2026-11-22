@@ -58,7 +58,8 @@ def preview(combat,owner,action,inventory):
         slot=action.target_mask or armor[template]['slot']
     elif template in combat.catalog.weapons and template not in (300,333,337):
         rules={template:(16,128)}
-        slot=action.target_mask or 16
+        from .equipment import weapon_slot
+        slot=weapon_slot(items,action.target_mask)
     else:raise ValueError('Пакетная смена доступна только для оружия и брони')
     # EquipmentStore validates species/sex, level, enhancement and wear. The
     # saved proficiency packet supplies authoritative actor level/class.
@@ -69,7 +70,7 @@ def preview(combat,owner,action,inventory):
     store.rules={template:frozenset(rules[template])}
     store.armor=armor;store.weapons_only=True
     updated=store.place(profile,combat.human[actor.actor_id],items,action.instance_id,slot,
-                        toggle=action.option==255)
+                        toggle=action.option==255,is_broken=combat.item_is_broken)
     return encode_item_list(actor.actor_id,updated,unknown)
 
 
@@ -88,6 +89,49 @@ def cancel(combat,owner,*,batch_id=None,forget_receipts=False):
     else:restores=()
     if forget_receipts:combat.equipment_batch_receipts.pop(owner,None)
     return restores
+
+
+def _carry(record,current):
+    """Staged placement re-applied to a changed inventory, or None if stale.
+
+    Valid only while the change left every surviving item's own placement
+    alone (a consumed stack, a looted item) and kept each staged item.
+    """
+    def placement(item):return (item.unknown_u8_01,item.location_raw)
+    base={i.instance_id:placement(i) for i in decode_item_list(record['base'])[1]}
+    staged={i.instance_id:placement(i) for i in decode_item_list(record['preview'])[1]}
+    identity,items,unknown=decode_item_list(current)
+    present={i.instance_id for i in items}
+    if any(i.instance_id in base and placement(i)!=base[i.instance_id] for i in items):return None
+    if any(staged[k]!=base[k] and k not in present for k in base):return None
+    updated=[replace(i,unknown_u8_01=staged[i.instance_id][0],location_raw=staged[i.instance_id][1])
+             if i.instance_id in staged else i for i in items]
+    return encode_item_list(identity,updated,unknown)
+
+
+def rebase(combat,owner):
+    """Keep a preview across the owner's item use or loot; return what to show.
+
+    Those actions answer with the authoritative inventory, so every staged
+    actor's preview is sent again. A preview that no longer fits is cancelled.
+    """
+    initialize(combat)
+    batch=combat.equipment_batches.get(owner)
+    if batch is None:return ()
+    records={}
+    for identity,record in batch['actors'].items():
+        current=combat.inventories.get(identity)
+        preview=None if current is None else record['preview'] if current==record['base'] else _carry(record,current)
+        if preview is None:return cancel(combat,owner)
+        records[identity]={**record,'base':current,'preview':preview}
+    combat.equipment_batches[owner]={**batch,'actors':records}
+    return tuple(combat.inventory_packet(identity,records[identity]['preview']) for identity in sorted(records))
+
+
+def shown_inventory(combat,owner,identity):
+    """What the owner's window displays: a pending preview, else live state."""
+    record=getattr(combat,'equipment_batches',{}).get(owner,{}).get('actors',{}).get(identity)
+    return combat.inventory_packet(identity,None if record is None else record['preview'])
 
 
 def pending(combat,owner):

@@ -1,4 +1,4 @@
-﻿"""The new tab drawing preserves native ownership, stack and registers."""
+"""The new tab drawing preserves native ownership, stack and registers."""
 import struct
 import unittest
 
@@ -18,7 +18,7 @@ class NavigationNativeTests(unittest.TestCase):
             machine.mem_map(0x400000, 0x900000)
             machine.mem_map(0x30000000, 0x10000)
             origin, state = 0x8c8000, 0x89ff00
-            machine.mem_write(0x400000+origin, navigation.payload(origin, state, 0xa45400, state+0xc))
+            machine.mem_write(0x400000+origin, navigation.payload(origin, state))
             machine.mem_write(0x400000+state, struct.pack('<I', enabled))
             machine.reg_write(UC_X86_REG_EAX, 0xffffffff)
             machine.reg_write(UC_X86_REG_EBP, 0x30001000)
@@ -38,7 +38,7 @@ class NavigationNativeTests(unittest.TestCase):
                 machine.mem_map(0x400000, 0x900000)
                 machine.mem_map(0x30000000, 0x10000)
                 origin, state=0x8c8000, 0x89ff00
-                machine.mem_write(0x400000+origin, navigation.payload(origin, state, 0xa45400, state+0xc))
+                machine.mem_write(0x400000+origin, navigation.payload(origin, state))
 
                 def put(address, value):
                     machine.mem_write(address, struct.pack('<I', value & 0xffffffff))
@@ -51,7 +51,7 @@ class NavigationNativeTests(unittest.TestCase):
                 put(0x400000+state, 1); put(0xad1094, parent)
                 put(button+0x4c, parent); put(parent+0x2c, children)
                 put(children+4, values); put(values+4*child_index, button)
-                put(button+0x38, 96); put(button+0x3c, 56)
+                put(button+0x38, 106); put(button+0x3c, 64)
                 machine.mem_write(button+0x49, b'\x01\x01')
                 calls=[]
 

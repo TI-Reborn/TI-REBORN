@@ -34,7 +34,7 @@ class ArmorDisplayTests(unittest.TestCase):
     wear=test_armor_equipment.ArmorTests.wear
 
     def test_city_and_battle_sum_worn_only_and_refresh_without_accumulation(self):
-        pet,_=self.seed((251,252,253,242))
+        pet,_=self.seed((251,252,253,242),level=4)
         base=decode_pet_info(pet,human_equipment=True).fields['0x8c4ac5']
         for i,opt in ((1001,0),(1002,2),(1003,3)):bag=self.wear(i,opt)
         expected=base+63+85+48

@@ -144,8 +144,10 @@ class ContractsCombat:
             if bots_alive and humans_alive:
                 raise ValueError('Зачистка ещё не завершена')
             victory = bool(humans_alive and not bots_alive)
-            from tio.contract_loot import stage_boss_loot
-            if victory and stage_boss_loot(field) and not abandon_loot:
+            from tio.contract_loot import remaining_loot, stage_boss_loot
+            if victory:
+                stage_boss_loot(field)
+            if victory and remaining_loot(field) and not abandon_loot:
                 return
             store = ContractStore(battle['contract_path'])
             receipt = store.transition(battle['contract_id'], 'active', 'completed' if victory else 'failed',
@@ -164,7 +166,7 @@ class ContractsCombat:
                 self.completed[owner] = battle
 
     def abort_contract(self, battle, reason):
-        """One departure aborts the entire mission; no partial winning payout."""
+        """Abort a mission on a collective failure; voluntary departures are separate."""
         if battle.get('kind') != 'contract':
             return
         if battle['finished']:
@@ -188,6 +190,33 @@ class ContractsCombat:
                 self.completed[owner] = battle
                 self.put(owner, encode_shop_error('Контракт прекращён. Группа возвращена в город.'))
                 self.to_city(owner)
+
+    def withdraw_contract(self, battle: dict, owner: int) -> None:
+        """Retire only the departing account; the remaining mission continues."""
+        if battle.get('kind') != 'contract' or battle['finished'] or owner not in battle['humans']:
+            raise ValueError('Игрок не участвует в активном контракте')
+        with self._contract_unit(battle):
+            path = battle['contract_path']
+            account = battle['reward_roster'][owner][0]
+            self.settle(battle, owner, 0, escaped=True)
+            store = ContractStore(path)
+            store.withdraw(battle['contract_id'], account, battle['match_id'])
+            party = PartyStore(path).withdraw_from_battle(battle['contract_party_id'], account)
+            battle.setdefault('contract_departed', set()).add(owner)
+            with transaction(path) as db:
+                LocationStore._save(db, account, battle['city_id'], *center(battle['city_id']))
+                db.execute('DELETE FROM map_journeys WHERE account=?', (account,))
+                if party is None:
+                    db.execute('DELETE FROM travel_party_journeys WHERE party_id=?', (battle['contract_party_id'],))
+            if len(battle['humans']) == 1:
+                battle['contract_receipt'] = store.transition(battle['contract_id'], 'active', 'failed',
+                    match_id=battle['match_id'], outcome='aborted')
+                battle['contract_result'] = 0
+                battle['finished'] = True
+                battle['contract_returned'] = True
+            self.completed[owner] = battle
+            self.to_city(owner)
+            self.remove_from_battle(battle, owner)
 
     def contract_settlement_inputs(self, battle, owner, *, escaped=False):
         if owner not in battle['reward_roster']:
@@ -225,12 +254,14 @@ class ContractsCombat:
             party = parties.snapshot(battle['contract_party_id'], connection=db)
             if party is None:
                 raise ValueError('Группа активного контракта исчезла')
-            expected = {(member['owner'], member['login']) for member in battle['contract_roster']}
+            departed = {battle['reward_roster'][owner][0] for owner in battle.get('contract_departed', ())}
+            roster = [member for member in battle['contract_roster'] if member['owner'] not in departed]
+            expected = {(member['owner'], member['login']) for member in roster}
             if {(member['owner'], member['login']) for member in party['members']} != expected:
                 raise ValueError('Состав группы активного контракта изменился')
             town = battle['city_id']
             point = center(town)
-            for member in battle['contract_roster']:
+            for member in roster:
                 LocationStore._save(db, member['owner'], town, *point)
                 db.execute('DELETE FROM map_journeys WHERE account=?', (member['owner'],))
             db.execute('DELETE FROM travel_party_journeys WHERE party_id=?', (battle['contract_party_id'],))
@@ -244,6 +275,8 @@ class ContractsCombat:
         """Restore authoritative city positions before the standard native exit."""
         if battle.get('kind') != 'contract':
             return False
+        if owner in battle.get('contract_departed', ()):
+            return True
         if not battle['finished'] or owner not in battle['reward_roster']:
             raise ValueError('Сначала завершите всю миссию контракта')
         self._return_contract_party(battle)
