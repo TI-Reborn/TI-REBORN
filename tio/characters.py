@@ -37,13 +37,17 @@ class CharacterStore:
             if slot is None:raise CreateRejected(2)
             from .character_lifecycle import allocate
             owner = allocate(db, account, slot)
-            if slot != 1 and owner == alias(account, slot):
+            first_generation = owner == alias(account, slot)
+            if slot != 1 and first_generation:
                 # An alias is unloggable. Never reuse unexpected old data under
                 # it, or mint a fresh wallet over a historical owner.
                 if db.execute('SELECT 1 FROM characters WHERE account=?',(owner,)).fetchone():
                     raise ValueError('Character owner key already exists')
                 db.execute('INSERT INTO character_identities VALUES (?,?,?)',(account,slot,owner))
             db.execute('INSERT INTO characters VALUES (?,?,?,?,?)',(owner,1,request.name_bytes,key,raw))
+            if not first_generation or request.options[0] in (1, 2):
+                from .wallets import WalletStore
+                WalletStore(self.path).seed_character(owner, first_generation=first_generation)
             if request.options[0] in (1,2):
                 from .onboarding import initialize_created
                 initialize_created(self.path,owner)

@@ -144,6 +144,28 @@ class MultiAccountTests(unittest.TestCase):
             while True:
                 self.assertNotEqual(peer.receive(), b'\x01UPGD')
 
+    def test_busy_auction_tick_retries_and_keeps_game_listener_running(self):
+        from tio.sc_auction import SCAuctionStore
+
+        tick = SCAuctionStore.tick
+        retried = threading.Event()
+        first = True
+
+        def busy_once(store, **kwargs):
+            nonlocal first
+            if first:
+                first = False
+                raise sqlite3.OperationalError('database is locked')
+            result = tick(store, **kwargs)
+            retried.set()
+            return result
+
+        with patch.object(SCAuctionStore, 'tick', busy_once):
+            self.start()
+            self.assertTrue(retried.wait(5))
+            for login in ('alice', 'bob'):
+                self.character_screen(self.handoff(self.begin(login)))
+
     def test_busy_mail_expiration_keeps_game_listener_running(self):
         from tio.mail import MailStore
 

@@ -141,14 +141,22 @@ class WagerStoreTests(unittest.TestCase):
             self.assertEqual(db.execute('SELECT status FROM wager_matches').fetchone(),('active',))
             self.assertEqual(list(db.execute('SELECT * FROM wager_receipts')),[])
 
-    def test_payout_overflow_is_atomic_and_keeps_pot_for_repair(self):
+    def test_payout_overflow_settles_once_and_can_be_collected_after_spending(self):
         self.reserve(); self.active()
         with transaction(self.path) as db: db.execute("UPDATE wallets SET credits=4294967290 WHERE account='alice'")
-        before=self.balances()
-        with self.assertRaises(ValueError), transaction(self.path) as db:
-            wagers.settle(db,'m',dict(version=1,winner_side=0,refund_reason=None))
-        self.assertEqual(self.balances(),before)
-        with closing(sqlite3.connect(self.path)) as db: self.assertEqual(db.execute('SELECT COUNT(*) FROM wager_leases').fetchone(),(2,))
+        from tio import market_inventory
+        for _ in range(2):
+            with transaction(self.path) as db:
+                receipts = wagers.settle(db, 'm', dict(version=1, winner_side=0, refund_reason=None))
+                self.assertEqual(receipts, {'alice': ('win', 200), 'bob': ('lose', 0)})
+                self.assertEqual(db.execute('SELECT COUNT(*) FROM wager_leases').fetchone(), (0,))
+                self.assertEqual(db.execute('SELECT account,amount FROM market_payables').fetchall(), [('alice', 195)])
+        self.assertEqual(self.balances()['alice'], wagers.MAX_CREDITS)
+        with transaction(self.path) as db:
+            market_inventory.debit(db, 'alice', 200)
+            market_inventory.collect(db, 'alice')
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM market_payables').fetchone(), (0,))
+        self.assertEqual(self.balances()['alice'], wagers.MAX_CREDITS - 5)
 
     def test_level_delta_admission_and_no_gold_stakes(self):
         req=request(delta=2)

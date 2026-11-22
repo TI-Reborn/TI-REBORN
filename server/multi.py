@@ -624,7 +624,12 @@ class MultiServer:
                         web_status.publish(self.server_population())
                         status_tick=time.monotonic()+5
                     self.team_arena.tick()
-                    self.economy.tick(self)
+                    try:
+                        self.economy.tick(self)
+                    except sqlite3.OperationalError as error:
+                        if storage_failure(error):
+                            raise
+                        LOG.warning('Economy maintenance deferred: SQLite is busy')
                     if time.monotonic()>=mail_tick:
                         try:
                             self.mail_store.expire()

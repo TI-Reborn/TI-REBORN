@@ -21,6 +21,13 @@ class WalletStore:
                 credits INTEGER NOT NULL CHECK(credits BETWEEN 0 AND 4294967295),
                 gold INTEGER NOT NULL CHECK(gold BETWEEN 0 AND 4294967295))''')
 
+    def seed_character(self, account: str, *, first_generation: bool) -> None:
+        """Called inside slot creation; preserve any funds predating the character."""
+        with closing(connect(self.path)) as db, db:
+            db.execute('INSERT INTO wallets (account,credits,gold) VALUES (?,?,?) '
+                       'ON CONFLICT(account) DO UPDATE SET credits=MAX(credits,excluded.credits)',
+                       (account, NEW_CHARACTER_CREDITS if first_generation else 0, STARTING_GOLD))
+
     def ensure(self, account):
         if not isinstance(account, str) or not account:
             raise ValueError('Account required')
