@@ -127,11 +127,13 @@ class ExpansionTests(unittest.TestCase):
         saved = decode_item_list(next(inv for i, _, inv in OwnedPetStore(self.path).list('alice') if i == 1))[1]
         self.assertEqual(sum(i.instance_id == loot[0].instance_id for i in saved), 1)
         self.hub.tick()
+        self.assertFalse(battle['finished'])  # The physical crates still contain supplies.
+        self.hub.finish_contract(battle, abandon_loot=True)
         self.assertTrue(battle['finished'])
 
     def test_probability_table_has_exact_percentages_and_rejects_invalid_rolls(self):
-        self.assertEqual(Counter(roll_upgrade(n) for n in range(100)), dict(enumerate(UPGRADE_WEIGHTS)))
-        for roll in (-1, 100, True, 1.5):
+        self.assertEqual(Counter(roll_upgrade(n) for n in range(10_000)), dict(enumerate(UPGRADE_WEIGHTS)))
+        for roll in (-1, 10_000, True, 1.5):
             with self.assertRaises(ValueError):
                 roll_upgrade(roll)
 
@@ -147,7 +149,7 @@ class ExpansionTests(unittest.TestCase):
                 field.actor(field.actor_ids(next(iter(battle['bots'])))[0]), 10)
         self.clear_and_collect(battle)
         before = WalletStore(self.path).ensure('alice').credits
-        self.hub.finish_contract(battle)
+        self.hub.finish_contract(battle, abandon_loot=True)
         with closing(sqlite3.connect(self.path)) as db:
             gains = list(db.execute('SELECT gain FROM experience_battle_audit WHERE account=? AND match_id=?',
                                    ('alice', battle['match_id'])))
@@ -166,7 +168,7 @@ class ExpansionTests(unittest.TestCase):
         self.assertFalse(battle['finished'])
         self.assertTrue(battle['field'].loot.boxes[battle['field'].contract_metadata['boss_position']])
         self.collect_boss(battle)
-        self.hub.finish_contract(battle)
+        self.hub.finish_contract(battle, abandon_loot=True)
         self.assertTrue(battle['finished'])
 
     def test_boss_death_during_live_turn_commits_backpack_before_other_enemies_die(self):
@@ -205,7 +207,7 @@ class ExpansionTests(unittest.TestCase):
         self.assertEqual(next_hub.journal.recover(), [battle['match_id']])
         again = next_hub.battles[self.owners[0]]
         self.assertEqual(again['field'].loot.boxes[position], ())
-        next_hub.finish_contract(again)
+        next_hub.finish_contract(again, abandon_loot=True)
         self.assertTrue(again['finished'])
         all_items = [i for account in ('alice', 'bravo') for _, _, raw in OwnedPetStore(self.path).list(account)
                      for i in decode_item_list(raw)[1]]

@@ -84,7 +84,7 @@ class ContractSceneTests(unittest.TestCase):
                 self.assertIsInstance(skills[actor], bytes)
         self.assertEqual(field.living_sides(), {('team', 0), ('team', 1)})
         self.assertEqual((decode_battle_ground(ground).width, decode_battle_ground(ground).height), (38, 38))
-        self.assertFalse(field.loot.boxes)
+        self.assertTrue(field.loot.boxes)
 
     def test_npcs_have_native_existing_models_equipment_and_no_persistent_account(self):
         record = self.record('checkpoint')
@@ -96,6 +96,8 @@ class ContractSceneTests(unittest.TestCase):
             role = record['template']['scene_policy']['roles'][role_name]
             counts[role_name] += 1
             actor = field.actor(actor_id)
+            if actor_id == field.contract_metadata['boss']:
+                role = {**role, 'health': role['health'] * 2, 'name': role['name'] + ' — босс'}
             self.assertEqual((actor.health, actor.max_health, actor.action_points, actor.sight_radius),
                              (role['health'], role['health'], role['action_points'], role['sight_radius']))
             packet = views[42].snapshot(actor_id)
@@ -119,16 +121,17 @@ class ContractSceneTests(unittest.TestCase):
     def test_npc_equipment_does_not_turn_into_transferable_death_loot(self):
         field, _, _, _, bot = prepare(self.seats(), self.record())
         before = self.rows()
+        crates = dict(field.loot.boxes)
         states = {identity: replace(field.actor(identity), health=0) for identity in field.actor_ids(bot)}
         changes = {}
         boxes, ground = field.loot.stage_deaths(states, changes)
         self.assertFalse(boxes)
         self.assertFalse(ground)
         self.assertFalse(changes)
-        self.assertFalse(field.loot.boxes)
+        self.assertEqual(field.loot.boxes, crates)
         self.assertEqual(self.rows(), before)
 
-    def test_all_three_maps_reproduce_their_seed_and_keep_native_footprints(self):
+    def test_maps_reproduce_their_seed_and_keep_native_footprints(self):
         for name in self.templates:
             with self.subTest(name=name):
                 record = self.record(name)
@@ -149,7 +152,8 @@ class ContractSceneTests(unittest.TestCase):
                         if field.inside(*point) and point not in field.blocked and point not in reached:
                             reached.add(point); pending.append(point)
                 self.assertTrue(all((a.x, a.y) in reached for a in field._actors.values()))
-                self.assertFalse(field.loot.boxes)
+                self.assertTrue(field.loot.boxes)
+                self.assertEqual(field.loot.boxes, second[0].loot.boxes)
                 for actor_id in field._actors:
                     self.assertNotIn((field.actor(actor_id).x, field.actor(actor_id).y), field.doors.states)
                 changed = prepare(self.seats(), self.record(name, seed=902))
@@ -188,18 +192,23 @@ class ContractSceneTests(unittest.TestCase):
             prepare([(*seats[0][:-1], True)], self.record())
         self.assertEqual(self.rows(), before)
 
-    def test_changed_or_wounded_real_selection_rejected(self):
+    def test_changed_real_selection_rejected(self):
         seat = self.seats(1)[0]
         owner, side, path, account, ticket, bot = seat
         with self.assertRaisesRegex(ValueError, 'no longer owned'):
             prepare([(owner, side, path, account, replace(ticket, actors=(999, 1)), bot)], self.record())
+
+    def test_wounded_selection_retains_saved_health(self):
+        seat = self.seats(1)[0]
+        account = seat[3]
         with closing(sqlite3.connect(self.path)) as db, db:
             packet = db.execute('SELECT pet_packet FROM owned_pets WHERE account=? AND pet_id=2', (account,)).fetchone()[0]
             pet = decode_pet_info(packet, human_equipment=True)
             hurt = encode_pet_info(replace(pet, fields={**pet.fields, '0x8c4ab1': 1}))
             db.execute('UPDATE owned_pets SET pet_packet=? WHERE account=? AND pet_id=2', (hurt, account))
-        with self.assertRaisesRegex(ValueError, 'wounded'):
-            prepare([seat], self.record())
+        field, _, _, _, _ = prepare([seat], self.record())
+        identity = next(i for i in field.actor_ids(seat[0]) if field.combat.storage_ids[i] == 2)
+        self.assertEqual(field.actor(identity).health, 1)
 
 
 if __name__ == '__main__':

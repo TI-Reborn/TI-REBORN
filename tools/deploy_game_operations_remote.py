@@ -15,6 +15,13 @@ import time
 ROOT=Path('/opt/tio-emulator')
 DATABASE=Path('/var/lib/tio-server/reservation.sqlite3')
 CONFIG=Path('/etc/tio-server/server.toml')
+MAP_ROLLBACK_SOURCE = '''
+import sys
+from tio.db_transaction import transaction
+from tio.world_layout import restore_legacy_layout
+with transaction(sys.argv[1]) as db:
+    restore_legacy_layout(db)
+'''
 SCOPES={
     'services':frozenset(('server/game_operations.py','server/service_operations.py',
         'server/city_services.py','server/services_runtime.py','server/services_v2.py')),
@@ -23,6 +30,12 @@ SCOPES={
         'server/private_market.py','tio/player_auction.py','tools/loopback_exchange.py')),
 }
 SCOPES['bank-trade']=SCOPES['bank']|SCOPES['trade']
+SCOPES['global-map'] = frozenset((
+    'tio/locations.py','tio/party_travel.py','tio/world_encounters.py',
+    'tio/world_completion.py','tio/cities.py','tio/roads.py','tio/world_layout.py',
+    'tio/protocol/map_route.py','config/world_roads.json','config/world_completion.json',
+    'config/mining.json','config/pve_contracts.json','config/english_translations.json',
+    'evidence/zones_diagnostic.xml','tools/loopback_exchange.py'))
 SCOPES['battle-screen-fixes']=frozenset(('server/team_arena.py','tio/visibility.py'))
 SCOPES['bot-finishing']=frozenset(('tio/tactical_bot.py','tio/bot_finishing.py'))
 SCOPES['bot-credit-rewards']=frozenset(('tio/reward_policy.py','server/team_arena.py'))
@@ -140,9 +153,13 @@ def main():
     parser.add_argument('--backup',required=True,type=Path)
     parser.add_argument('--scope',choices=tuple(SCOPES),default='services')
     parser.add_argument('--prepare-only',action='store_true',help='Validate and back up without replacing code or restarting')
+    parser.add_argument('--keep-stopped',action='store_true',
+        help='Global-map cutover: leave the service stopped until its client manifest is published')
     parser.add_argument('--maintenance-restart',action='store_true',
         help='Explicitly authorized restart with connected players; still refuses retained battles and settlements')
     args=parser.parse_args()
+    if args.keep_stopped and (args.scope!='global-map' or args.prepare_only):
+        parser.error('--keep-stopped requires a global-map cutover')
     files=SCOPES[args.scope]
     if args.backup.parent!=Path('/root') or not args.backup.name.startswith('tio-before-game-operations-'):
         raise RuntimeError('Unexpected protected backup path')
@@ -227,6 +244,12 @@ def main():
         run('runuser','-u','tio','--',str(ROOT/'.venv/bin/python'),'-m','server','--config',str(CONFIG),'--check')
         with closing(sqlite3.connect(DATABASE.as_uri()+'?mode=ro',uri=True)) as db:
             if before!=snapshot(db):raise RuntimeError('Player data changed during code replacement')
+        if args.keep_stopped:
+            report=dict(passed=True,scope=args.scope,backup=str(args.backup),service='inactive',
+                        client_publication_pending=True,files_verified=len(manifest),
+                        local_player_data_uploaded=False,database_restored=False)
+            (args.backup/'deployment.json').write_text(json.dumps(report,indent=2))
+            print(json.dumps(report));return
         run('systemctl','start','tio-server');stopped=False
         time.sleep(2)
         status=run('systemctl','is-active','tio-server').stdout.strip()
@@ -248,6 +271,8 @@ def main():
         print(json.dumps(report))
     except BaseException:
         if not stopped:run('systemctl','stop','tio-server')
+        if args.scope=='global-map' and 'tio/world_layout.py' in applied:
+            run(str(ROOT/'.venv/bin/python'),'-c',MAP_ROLLBACK_SOURCE,str(DATABASE))
         for path in applied:
             saved=args.backup/'files'/path;target=ROOT/path
             if saved.is_file():shutil.copy2(saved,target)
